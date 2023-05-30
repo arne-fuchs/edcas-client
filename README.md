@@ -77,7 +77,7 @@ cargo build
 Then edit your min-ed-launcher config:
 
 ```bash
-nano .config/min-ed-launcher/settings.json
+nano ~/.config/min-ed-launcher/settings.json
 ```
 
 and add this to your processes:
