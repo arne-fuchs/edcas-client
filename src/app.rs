@@ -35,11 +35,9 @@ pub struct EliteRustClient {
 impl Default for EliteRustClient {
     fn default() -> Self {
         let settings = settings::Settings::default();
-        let path = env::current_dir().unwrap().join("logs").join(format!("{}.log", Local::now().format("%Y-%m-%d::%H:%M")));
-
         let current_dir = env::current_dir().unwrap();
         let logs_dir = current_dir.join("logs");
-        let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d::%H:%M"));
+        let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H:%M"));
 
         let log_path = logs_dir.join(&log_filename);
         let path = log_path.strip_prefix(&current_dir).unwrap_or(&log_path);
