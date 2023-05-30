@@ -1,5 +1,5 @@
 # EDCAS
-### Elite Dangerous Commander Assistent System
+### Elite Dangerous Commander Assistant System
 
 Shows system information compact for explorer.
 
