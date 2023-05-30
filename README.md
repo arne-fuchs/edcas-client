@@ -16,6 +16,13 @@ Shows system information compact for explorer.
 * Be able to iterate back to look at past systems of your session to see if you missed something
 * Written in rust so you know its good
 
+## Notice
+
+```
+Currently only tested on Linux!!!
+Looking for Windows tester!
+```
+
 ## Build Requirements
 
 ```bash
