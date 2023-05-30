@@ -22,7 +22,9 @@ Shows system information compact for explorer.
 sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev libzmq3-dev git
 ```
 
-<a href=https://www.rust-lang.org/tools/install >Rust with cargo</a>
+* gcc 12 required
+* <a href=https://www.rust-lang.org/tools/install >Rust with cargo</a>
+
 
 ## Building
 
