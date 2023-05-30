@@ -250,12 +250,12 @@ pub fn update(explorer: &mut Explorer, ctx: &Context, _frame: &mut Frame) {
                 });
 
                 ui.with_layout(Layout::top_down_justified(Align::Center), |ui| {
-                    ui.heading(&explorer.system.name)
+                    ui.heading(&system.name)
                 });
 
                 ui.with_layout(Layout::left_to_right(Align::LEFT), |ui| {
                     if ui.button("->").clicked() {
-                        if explorer.index + 1 < explorer.pages.len() {
+                        if explorer.index + 1 <= explorer.pages.len() {
                             explorer.index = explorer.index + 1;
                         }
                     }
