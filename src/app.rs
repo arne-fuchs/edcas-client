@@ -1,5 +1,6 @@
 use std::{env, fs, thread};
 use std::fs::File;
+use std::path::PathBuf;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
@@ -48,17 +49,38 @@ impl Default for EliteRustClient {
         let log_path = logs_dir.join(&log_filename);
         let path = log_path.strip_prefix(&current_dir).unwrap_or(&log_path);
 
-        println!("Log file: {:?}",path.clone());
-        let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
+        if let Ok(entries) = fs::read_dir(&logs_dir) {
+            let mut log_files: Vec<PathBuf> = entries
+                .filter_map(|entry| entry.ok().map(|e| e.path()))
+                .collect();
 
+            log_files.sort_by(|a, b| b.metadata().unwrap().modified().unwrap().cmp(&a.metadata().unwrap().modified().unwrap()));
+
+            let logs_to_keep = 5;
+            if log_files.len() > logs_to_keep {
+                for log_file in log_files.into_iter().skip(logs_to_keep) {
+                    if let Err(err) = fs::remove_file(log_file) {
+                        println!("Error deleting log file: {:?}", err);
+                    }
+                }
+            }
+        }
+
+        println!("Log file: {:?}",path.clone());
+
+        let level = log::LevelFilter::from_str(settings.log_level.as_str()).unwrap();
+
+        println!("Log Level: {:?}",level);
+
+        let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
             .name(path.to_str().unwrap())
             .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest"])
-            .level_filter(log::LevelFilter::from_str(settings.log_level.as_str()).unwrap());
+            .level_filter(level);
 
         let _logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
             .name(path.to_str().unwrap())
             .target_exclusions(&["h2", "hyper", "rustls"])
-            .level_filter(log::LevelFilter::from_str(settings.log_level.as_str()).unwrap());
+            .level_filter(level);
 
         let config = fern_logger::LoggerConfig::build()
             .with_output(logger_output_config)

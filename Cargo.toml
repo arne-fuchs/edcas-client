@@ -6,7 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = "0.21.1"
+eframe = "0.21.3"
 egui_extras = { version = "0.21.0", features = ["image"] }
 image = { version = "0.24.5", features = ["png"] }
 #iota-client = { git = "https://github.com/iotaledger/iota.rs", rev = "df302750701667ad28f4830d8bfbb214291036b1" }
