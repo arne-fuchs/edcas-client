@@ -265,7 +265,6 @@ pub fn update(explorer: &mut Explorer, ctx: &Context, _frame: &mut Frame) {
             });
 
         egui::ScrollArea::vertical()
-            .always_show_scroll(true)
             .stick_to_right(true)
             .show(ui, |ui| {
                 //Fixme Without separator scrollbar is in the middle of field. With it, it doesnt show at all
