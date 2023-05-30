@@ -1,6 +1,7 @@
 {
   "local-pow": false,
   "log-level": "Debug",
+  "password": "CoUBZ9W6eRVpTKEYrgj3",
   "nft-adapter": {
     "attempts": 3,
     "timeout": 5

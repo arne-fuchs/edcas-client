@@ -324,7 +324,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Settings) -
 
                     // Set the stronghold password
                     manager
-                        .set_stronghold_password("CoUBZ9W6eRVpTKEYrgj3")
+                        .set_stronghold_password(settings.password.as_str())
                         .await.unwrap();
 
                     // Get the account we generated with `01_create_wallet`
@@ -350,7 +350,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Settings) -
                 .block_on(async {
                     // Setup Stronghold secret_manager
                     let mut secret_manager = StrongholdSecretManager::builder()
-                        .password("CoUBZ9W6eRVpTKEYrgj3")
+                        .password(settings.password.as_str())
                         .build(PathBuf::from("wallet.stronghold")).unwrap();
 
                     // Only required the first time, can also be generated with `manager.generate_mnemonic()?`

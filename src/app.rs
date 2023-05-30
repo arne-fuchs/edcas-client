@@ -36,6 +36,7 @@ impl Default for EliteRustClient {
     fn default() -> Self {
         let settings = settings::Settings::default();
         let path = env::current_dir().unwrap().join("logs").join(format!("{}.log", Local::now().format("%Y-%m-%d::%H:%M")));
+        println!("Log directory: {:?}",path.as_path().clone());
         let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
 
             .name(path.to_str().unwrap())

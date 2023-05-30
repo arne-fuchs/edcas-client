@@ -19,7 +19,8 @@ pub struct Settings {
     pub n_attempts: u64,
     pub faucet_url: String,
     pub log_level: String,
-    pub local_pow: bool
+    pub local_pow: bool,
+    pub password: String,
 }
 
 impl Default for Settings {
@@ -53,7 +54,8 @@ impl Default for Settings {
             n_attempts: json["nft-adapter"]["attempts"].as_u64().unwrap(),
             faucet_url: json["faucet-url"].to_string(),
             log_level: json["log-level"].to_string(),
-            local_pow: json["local-pow"].as_bool().unwrap()
+            local_pow: json["local-pow"].as_bool().unwrap(),
+            password: json["password"].to_string()
         }
     }
 }
