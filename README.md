@@ -67,6 +67,30 @@ In Linux, it would be something like
 And on Windows
 ```C:\users\YOURUSERHERE\Saved Games\Frontier Developments\Elite Dangerous```
 
+## Using it with <a href=https://github.com/rfvgyhn/min-ed-launcher>min-ed-launcher</a>
+
+Go and first build the project with
+```bash
+cargo build
+```
+
+Then edit your min-ed-launcher config:
+
+```bash
+nano .config/min-ed-launcher/settings.json
+```
+
+and add this to your processes:
+
+```json
+"processes": [
+        {
+          "fileName": "/PATHTOPROJECT/edcas-client/start.sh",
+          "arguments": ""
+        }
+    ],
+```
+
 ## Planned Features
 
 ### Accounts [In progress]
