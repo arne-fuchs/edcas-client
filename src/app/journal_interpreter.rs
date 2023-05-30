@@ -42,6 +42,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, inventory: &mut 
 
             explorer.body_list.clear();
             explorer.body_signal_list.clear();
+            explorer.system_signal_list.clear();
             explorer.body = Body::default();
 
             info!("Found system: {}",explorer.system.name.clone());

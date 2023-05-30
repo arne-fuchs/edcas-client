@@ -288,6 +288,7 @@ pub fn update(explorer: &mut Explorer, ctx: &Context, _frame: &mut Frame) {
             .show(ui, |ui| {
                 body::draw_body_info(explorer, ui);
             });
+        ui.heading("Body Signals");
         egui::ScrollArea::vertical()
             .show(ui, |ui| {
                 draw_body_signal_list(&explorer.system, &body_signal_list, ui, &explorer.body_signal_icons);
