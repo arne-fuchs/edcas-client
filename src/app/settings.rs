@@ -130,7 +130,6 @@ impl App for Settings {
                                 "timeout": self.n_timeout,
                                 "attempts": self.n_attempts
                             },
-                            "faucet-url": self.faucet_url,
                             "local-pow": false,
                             "log-level": "Debug",
                             "password": self.password,
