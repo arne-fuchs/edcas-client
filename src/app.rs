@@ -1,4 +1,5 @@
-use std::{env, thread};
+use std::{env, fs, thread};
+use std::fs::File;
 use std::str::FromStr;
 use std::thread::sleep;
 use std::time::Duration;
@@ -7,6 +8,7 @@ use bus::{Bus, BusReader};
 use chrono::Local;
 use eframe::App;
 use eframe::egui;
+use eframe::egui::accesskit::Role::Directory;
 use json::JsonValue;
 use log::info;
 
@@ -38,6 +40,10 @@ impl Default for EliteRustClient {
         let current_dir = env::current_dir().unwrap();
         let logs_dir = current_dir.join("logs");
         let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H-%M"));
+
+        if let Err(err) = fs::create_dir_all(&logs_dir) {
+            println!("Error while creating directory: {:?}", err);
+        }
 
         let log_path = logs_dir.join(&log_filename);
         let path = log_path.strip_prefix(&current_dir).unwrap_or(&log_path);
