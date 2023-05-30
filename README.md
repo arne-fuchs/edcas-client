@@ -96,6 +96,8 @@ Material should have colors where green is full, red is empty and yellow-ish is 
 ### Material Tracker
 Idea: Pick a modification and the tool tracks the missing materials and list them for you.
 Best case would be a description where you can get them
+### Fuel Warning
+Idea: Play sound or spoken text if you jump and fuel is low after jump
 ### (EDDN Adapter)
 
 
