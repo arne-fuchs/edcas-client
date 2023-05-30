@@ -82,15 +82,17 @@ impl Default for EliteRustClient {
                 j_reader.run(&mut journal_bus);
             }
         });
-        info!("Starting Tangle Interpreter");
-        //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
-        let local_settings = settings.clone();
-        thread::spawn(move || {
-            let mut tangle_interpreter = tangle_interpreter::initialize(tangle_journal_bus_reader, local_settings);
-            loop {
-                tangle_interpreter.run();
-            }
-        });
+        if settings.allow_share_data {
+            info!("Starting Tangle Interpreter");
+            //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
+            let local_settings = settings.clone();
+            thread::spawn(move || {
+                let mut tangle_interpreter = tangle_interpreter::initialize(tangle_journal_bus_reader, local_settings);
+                loop {
+                    tangle_interpreter.run();
+                }
+            });
+        }
         info!("Done starting threads");
 
         Self {

@@ -21,6 +21,7 @@ pub struct Settings {
     pub log_level: String,
     pub local_pow: bool,
     pub password: String,
+    pub allow_share_data: bool,
 }
 
 impl Default for Settings {
@@ -55,7 +56,8 @@ impl Default for Settings {
             faucet_url: json["faucet-url"].to_string(),
             log_level: json["log-level"].to_string(),
             local_pow: json["local-pow"].as_bool().unwrap(),
-            password: json["password"].to_string()
+            password: json["password"].to_string(),
+            allow_share_data: json["allow-share-data"].as_bool().unwrap(),
         }
     }
 }
@@ -89,16 +91,15 @@ impl App for Settings {
 
                     ui.label("Connection Settings for the EDCAS Network");
                     ui.end_row();
+                    ui.label("Allow to share journal log data:");
+                    ui.checkbox(&mut self.allow_share_data,"");
+                    ui.end_row();
                     ui.label("Node Url:");
                     ui.text_edit_singleline(&mut self.base_url);
                     ui.end_row();
 
                     ui.label("Port:");
                     ui.text_edit_singleline(&mut self.port.to_string());
-                    ui.end_row();
-
-                    ui.label("Faucet URL:");
-                    ui.text_edit_singleline(&mut self.faucet_url);
                     ui.end_row();
 
                     ui.label("Nft Adapter Timeout:");
@@ -131,7 +132,9 @@ impl App for Settings {
                             },
                             "faucet-url": self.faucet_url,
                             "local-pow": false,
-                            "log-level": "Debug"
+                            "log-level": "Debug",
+                            "password": self.password,
+                            "allow-share-data": self.allow_share_data,
                         }
                     );
                     let mut settings_file: File = File::create("settings.json").unwrap();
