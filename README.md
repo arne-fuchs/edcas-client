@@ -84,6 +84,10 @@ and add this to your processes:
     ],
 ```
 
+## Known issues
+
+Currently, wayland doesn't work. I am heading into it to resolve the issue asap.
+
 ## Planned Features
 
 ### Accounts [In progress]
