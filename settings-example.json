@@ -1,0 +1,15 @@
+{
+  "local-pow": false,
+  "log-level": "Debug",
+  "nft-adapter": {
+    "attempts": 3,
+    "timeout": 5
+  },
+  "node": {
+    "base-url": "https://api.paesserver.de",
+    "port": 443
+  },
+  "reader": {
+    "journal-directory": ""
+  }
+}
