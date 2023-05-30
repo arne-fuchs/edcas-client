@@ -18,8 +18,14 @@ Shows system information compact for explorer.
 
 ## Build Requirements
 
+
+### Debian based
 ```bash
 sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev libzmq3-dev git
+```
+### Arch based
+``` 
+cargo alsa-lib fontconfig clang zeromq rocksdb
 ```
 
 * gcc 12 required
