@@ -16,13 +16,6 @@ Shows system information compact for explorer.
 * Be able to iterate back to look at past systems of your session to see if you missed something
 * Written in rust so you know its good
 
-## Notice
-
-```
-Currently only tested on Linux!!!
-Looking for Windows tester!
-```
-
 ## Build Requirements
 
 ```bash
@@ -96,6 +89,7 @@ and add this to your processes:
 ### Accounts [In progress]
 Accounts on based on the <a href=https://www.iota.org/ >IOTA Protocol<a/>
 ### News page
+### Fetching already known systems from remote db
 ### Inventory & Material management
 Idea: Showing Inventory cargo prices with history and galactic average and highest price.
 Material should have colors where green is full, red is empty and yellow-ish is in between.
