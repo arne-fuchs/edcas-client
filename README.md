@@ -65,7 +65,7 @@ In Linux, it would be something like
 ```/home/YOURUSERHERE/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous```
 
 And on Windows
-```C:\users\YOURUSERHERE\Saved Games\Frontier Developments\Elite Dangerous```
+```C:\\users\\YOURUSERHERE\\Saved Games\\Frontier Developments\\Elite Dangerous```
 
 ## Using it with <a href=https://github.com/rfvgyhn/min-ed-launcher>min-ed-launcher</a>
 
