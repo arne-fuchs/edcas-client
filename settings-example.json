@@ -6,7 +6,7 @@
     "timeout": 5
   },
   "node": {
-    "base-url": "https://api.paesserver.de",
+    "base-url": "https://tangle.paesserver.de",
     "port": 443
   },
   "reader": {
