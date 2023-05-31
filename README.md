@@ -21,11 +21,11 @@ Shows system information compact for explorer.
 
 ### Debian based
 ```bash
-sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev libzmq3-dev git
+sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev git
 ```
 ### Arch based
 ``` 
-cargo alsa-lib fontconfig clang zeromq rocksdb
+cargo alsa-lib fontconfig clang rocksdb
 ```
 
 * gcc 12 required
