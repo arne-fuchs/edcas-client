@@ -227,6 +227,7 @@ pub fn update(explorer: &mut Explorer, ctx: &Context, _frame: &mut Frame) {
     egui::SidePanel::left("system_data").show(ctx, |ui| {
         draw_planet_count(explorer,ui);
         ui.separator();
+        ui.heading("System Signals");
         egui::ScrollArea::vertical()
             .show(ui, |ui| {
                 draw_system_signal_list(&signal_list, ui);
