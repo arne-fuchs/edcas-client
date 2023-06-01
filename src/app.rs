@@ -10,11 +10,12 @@ use chrono::Local;
 use eframe::App;
 use eframe::egui;
 use eframe::egui::accesskit::Role::Directory;
+use iota_wallet::iota_client::crypto::hashes::Digest;
 use json::JsonValue;
 use log::info;
 
 use crate::app::inventory::InventoryState;
-use crate::app::State::{About, Explorer, Inventory, Settings};
+use crate::app::State::{About, Explorer, Inventory, News, Settings};
 use crate::egui::Context;
 
 mod about;
@@ -25,6 +26,7 @@ mod journal_reader;
 mod journal_interpreter;
 mod inventory;
 mod tangle_interpreter;
+mod news;
 
 pub struct EliteRustClient {
     about: about::About,
@@ -33,6 +35,7 @@ pub struct EliteRustClient {
     journal_log_bus_reader: BusReader<JsonValue>,
     inventory: InventoryState,
     settings: settings::Settings,
+    news: news::News,
 }
 
 impl Default for EliteRustClient {
@@ -118,9 +121,10 @@ impl Default for EliteRustClient {
         info!("Done starting threads");
 
         Self {
+            news: news::News::default(),
             about: about::About::default(),
             explorer: explorer::Explorer::default(),
-            state: About,
+            state: News,
             journal_log_bus_reader: journal_bus_reader,
             inventory: InventoryState {
                 raw: vec![],
@@ -135,6 +139,7 @@ impl Default for EliteRustClient {
 }
 
 enum State {
+    News,
     About,
     Settings,
     Explorer,
@@ -144,7 +149,7 @@ enum State {
 impl App for EliteRustClient {
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
         let Self {
-            about, explorer, state, journal_log_bus_reader, inventory,settings
+            news, about, explorer, state, journal_log_bus_reader, inventory,settings
         } = self;
 
         let mut style: egui::Style = (*ctx.style()).clone();
@@ -156,6 +161,9 @@ impl App for EliteRustClient {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // Top panel as menu bar
             egui::menu::bar(ui, |menu_bar| {
+                if menu_bar.button("News").clicked() {
+                    *state = News;
+                }
                 if menu_bar.button("Explorer").clicked() {
                     *state = Explorer;
                 }
@@ -180,6 +188,7 @@ impl App for EliteRustClient {
 
         egui::CentralPanel::default().show(ctx, |_ui| {
             match self.state {
+                News => { news.update(ctx,frame) }
                 About => { about::update(  about, ctx, frame) }
                 Settings => { settings.update(ctx,frame) }
                 Explorer => { explorer::update(explorer, ctx, frame) }

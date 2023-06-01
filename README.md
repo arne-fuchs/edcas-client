@@ -94,9 +94,9 @@ and add this to your processes:
 
 ## Planned Features
 
+### News page [Done]
 ### Accounts [In progress]
 Accounts on based on the <a href=https://www.iota.org/ >IOTA Protocol<a/>
-### News page
 ### Fetching already known systems from remote db
 ### Inventory & Material management
 Idea: Showing Inventory cargo prices with history and galactic average and highest price.
