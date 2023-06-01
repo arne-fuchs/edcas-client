@@ -95,7 +95,7 @@ and add this to your processes:
 ## Planned Features
 
 ### Accounts [In progress]
-Accounts on based on the <a href=https://www.iota.org/ >IOTA Protocol<a/>
+Accounts based on the <a href=https://www.iota.org/ >IOTA Protocol<a/>
 ### News page
 ### Fetching already known systems from remote db
 ### Inventory & Material management
