@@ -1,4 +1,5 @@
 use std::default::Default;
+use std::env;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
@@ -34,10 +35,13 @@ impl Default for Settings {
         let mut journal_path = json["reader"]["journal-directory"].to_string();
         let path = Path::new(&journal_path);
         if !path.exists() {
-            if cfg!(windows) {
+            if cfg!(target_os = "windows") {
                 journal_path = String::from("%USERPROFILE%\\Saved Games\\Frontier Developments\\Elite Dangerous");
-            } else if cfg!(linux) {
-                journal_path = String::from("~/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
+            } else if cfg!(target_os = "linux") {
+                let mut home = env::var("HOME").unwrap_or("~".to_string());
+                home.push_str("/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
+                println!("{}", &home);
+                journal_path = home;
             }
         }
         let mut node_url = json["node"]["base-url"].to_string();
