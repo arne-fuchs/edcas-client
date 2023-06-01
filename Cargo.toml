@@ -30,3 +30,6 @@ fern-logger = "0.5.0"
 log = "0.4.17"
 #Text to speech
 #tts_rust = "0.3.3"
+
+[target.x86_64-pc-windows-msvc]
+linker = "lld-link" # Note the lack of extension, which means it will work on both Windows and unix style platforms

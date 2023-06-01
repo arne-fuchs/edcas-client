@@ -1,2 +1,8 @@
 /target
 settings.json
+/edcas-client
+wallet.stronghold
+walletdb
+Cargo.lock
+edcas-client.iml
+edcas-client.tar.gz
