@@ -36,13 +36,15 @@ impl Default for Settings {
         let path = Path::new(&journal_path);
         if !path.exists() {
             if cfg!(target_os = "windows") {
-                journal_path = String::from("%USERPROFILE%\\Saved Games\\Frontier Developments\\Elite Dangerous");
+                let mut userprofile = env::var("USERPROFILE").unwrap_or("".to_string());
+                userprofile.push_str("\\Saved Games\\Frontier Developments\\Elite Dangerous");
+                journal_path = userprofile;
             } else if cfg!(target_os = "linux") {
                 let mut home = env::var("HOME").unwrap_or("~".to_string());
                 home.push_str("/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
-                println!("{}", &home);
                 journal_path = home;
             }
+            println!("Journal logs: {}",&journal_path);
         }
         let mut node_url = json["node"]["base-url"].to_string();
         node_url.push_str(":");
