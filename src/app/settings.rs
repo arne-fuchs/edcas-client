@@ -1,5 +1,5 @@
 use std::default::Default;
-use std::env;
+use std::{env, fs};
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
@@ -27,7 +27,15 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        let mut settings_file: File = File::open("settings.json").unwrap();
+        let settings_file_result = File::open("settings.json");
+        let mut settings_file = match settings_file_result {
+            Ok(settings_file) => {settings_file}
+            Err(err) => {
+                println!("Couldn't find settings file: {}\n Trying to copy example file...",err);
+                fs::copy("settings-example.json","settings.json").unwrap();
+                File::open("settings.json").unwrap()
+            }
+        };
         let mut json_string: String = String::from("");
         settings_file.read_to_string(&mut json_string).unwrap();
         let json = json::parse(&json_string).unwrap();

@@ -46,28 +46,6 @@ cd into it and build it
 cd edcas-client && cargo build
 ```
 
-## Configure
-
-Copy the config
-
-```bash
-cp settings-example.json settings.json
-```
-
-Edit the settings.json
-
-```bash
-nano settings.json
-```
-
-Go to journal-directory and paste in the absolute path to the journal directory of Elite.
-
-In Linux, it would be something like
-```/home/YOURUSERHERE/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous```
-
-And on Windows
-```C:\\users\\YOURUSERHERE\\Saved Games\\Frontier Developments\\Elite Dangerous```
-
 ## Using it with <a href=https://github.com/rfvgyhn/min-ed-launcher>min-ed-launcher</a>
 
 Go and first build the project with
