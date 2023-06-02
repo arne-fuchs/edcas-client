@@ -34,11 +34,12 @@ Shows system information compact for explorer.
 ```bash
 sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev libssl git
 ```
-### Arch based
-Required dependincies:
-``` 
-cargo alsa-lib fontconfig gcc12 gcc12-libs
+### Arch
+```bash 
+sudo pacman -S cargo alsa-lib fontconfig git
 ```
+From AUR: `gcc12 gcc12-libs`
+
 At the moment (2.07.2023) rocksdb does not like to compile with c++ > 12.
 This results in build failing.
 
