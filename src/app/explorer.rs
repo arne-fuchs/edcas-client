@@ -400,7 +400,11 @@ fn draw_body_signal_list(system: &System, body_signal_list: &Vec<BodySignal>, ui
             for body_signal in body_signal_list{
                 for signal in &body_signal.signals{
                     ui.label(body_signal.body_name.trim_start_matches(&system.name));
-                    ui.label(&signal.type_localised);
+                    if &signal.type_localised == "null"{
+                        ui.label(&signal.r#type);
+                    }else {
+                        ui.label(&signal.type_localised);
+                    }
 
                     let id = body_signal.body_name.clone().add(&signal.r#type.to_string().clone());
 
