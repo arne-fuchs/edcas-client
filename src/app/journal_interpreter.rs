@@ -368,7 +368,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
             let mut material_json = json["Materials"].pop();
             while material_json != Null {
                 materials.push(MiningMaterial {
-                    name: material_json["name"].to_string(),
+                    name: material_json["Name"].to_string(),
                     name_localised: material_json["Name_Localised"].to_string(),
                     proportion: material_json["Proportion"].as_f64().unwrap_or(-1.0),
                 });
