@@ -86,7 +86,7 @@ impl News {
                         .max_col_width(1000.0)
                         .show(ui,|ui|{
                             ui.label("");
-                            ui.label(&news.text);
+                            ui.label(&news.text.replace("\n","\n\n"));
                             ui.label("");
                             ui.end_row();
                         });
