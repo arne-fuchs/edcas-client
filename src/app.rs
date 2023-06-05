@@ -1,7 +1,10 @@
 use std::{env, fs, thread};
+use std::borrow::{Borrow, BorrowMut};
 use std::fs::File;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::str::FromStr;
+use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
 
@@ -13,9 +16,10 @@ use eframe::egui::accesskit::Role::Directory;
 use iota_wallet::iota_client::crypto::hashes::Digest;
 use json::JsonValue;
 use log::info;
+use crate::app::cargo_reader::CargoReader;
 
 use crate::app::materials::MaterialState;
-use crate::app::State::{About, Explorer, Inventory, News, Settings};
+use crate::app::State::{About, Explorer, MaterialInventory, Mining, News, Settings};
 use crate::egui::Context;
 
 mod about;
@@ -28,6 +32,7 @@ mod materials;
 mod tangle_interpreter;
 mod news;
 mod mining;
+mod cargo_reader;
 
 pub struct EliteRustClient {
     about: about::About,
@@ -37,6 +42,8 @@ pub struct EliteRustClient {
     inventory: MaterialState,
     settings: settings::Settings,
     news: news::News,
+    cargo_reader: Arc<Mutex<CargoReader>>,
+    mining: mining::Mining,
 }
 
 impl Default for EliteRustClient {
@@ -121,6 +128,12 @@ impl Default for EliteRustClient {
         }
         info!("Done starting threads");
 
+        let cargo_reader = Arc::new(Mutex::new((cargo_reader::initialize(settings.journal_directory.clone()))));
+        let mining = mining::Mining{
+            prospectors: Default::default(),
+            cargo: cargo_reader.clone(),
+        };
+
         Self {
             news: news::News::default(),
             about: about::About::default(),
@@ -132,7 +145,9 @@ impl Default for EliteRustClient {
                 manufactured: vec![],
                 encoded: vec![]
             },
-            settings
+            settings,
+            cargo_reader,
+            mining,
         }
     }
 }
@@ -142,13 +157,14 @@ enum State {
     About,
     Settings,
     Explorer,
-    Inventory,
+    MaterialInventory,
+    Mining,
 }
 
 impl App for EliteRustClient {
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
         let Self {
-            news, about, explorer, state, journal_log_bus_reader, inventory,settings
+            news, about, explorer, state, journal_log_bus_reader, inventory,settings,mining,cargo_reader
         } = self;
 
         let mut style: egui::Style = (*ctx.style()).clone();
@@ -160,30 +176,52 @@ impl App for EliteRustClient {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // Top panel as menu bar
             egui::menu::bar(ui, |menu_bar| {
-                if menu_bar.button("News").clicked() {
+                let news_button = menu_bar.button("News");
+                if news_button.clicked() {
                     *state = News;
                 }
-                if menu_bar.button("Explorer").clicked() {
+                let explorer_button =  menu_bar.button("Explorer");
+                if explorer_button.clicked() {
                     *state = Explorer;
                 }
-                if menu_bar.button("Inventory").clicked() {
-                    *state = Inventory;
+                let mining_button = menu_bar.button("Mining");
+                if mining_button.clicked() {
+                    *state = Mining;
                 }
-                if menu_bar.button("Settings").clicked() {
+                let materials_button = menu_bar.button("Materials");
+                if materials_button.clicked() {
+                    *state = MaterialInventory;
+                }
+                let settings_button = menu_bar.button("Settings");
+                if settings_button.clicked() {
                     *state = Settings;
                 }
-                if menu_bar.button("About").clicked() {
+                let about_button = menu_bar.button("About");
+                if about_button.clicked() {
                     *state = About;
+                }
+
+                match state{
+                    News => {news_button.highlight();}
+                    About => {about_button.highlight();}
+                    Settings => {settings_button.highlight();}
+                    Explorer => {explorer_button.highlight();}
+                    MaterialInventory => {materials_button.highlight();}
+                    Mining => {mining_button.highlight();}
                 }
             });
         });
 
         match journal_log_bus_reader.try_recv() {
             Ok(val) => {
-                journal_interpreter::interpret_json(val.clone(), explorer,  inventory);
+                journal_interpreter::interpret_json(val.clone(), explorer,  inventory, mining);
             }
             Err(_) => {}
         }
+        {
+            cargo_reader.lock().unwrap().run();
+        }
+
 
         egui::CentralPanel::default().show(ctx, |_ui| {
             match self.state {
@@ -191,7 +229,8 @@ impl App for EliteRustClient {
                 About => { about::update(  about, ctx, frame) }
                 Settings => { settings.update(ctx,frame) }
                 Explorer => { explorer::update(explorer, ctx, frame) }
-                Inventory => { inventory.update(ctx,frame)}
+                MaterialInventory => { inventory.update(ctx, frame)}
+                Mining => {mining.update(ctx,frame)}
             }
         });
         //TODO more efficient way to send updates -> render only if new data comes in?

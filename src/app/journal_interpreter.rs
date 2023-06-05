@@ -3,8 +3,9 @@ use log::{info, warn};
 
 use crate::app::explorer::{Body, BodySignal, Explorer, Page, Signal, SystemSignal};
 use crate::app::materials::{MaterialState, Material};
+use crate::app::mining::{Mining, Prospector, MiningMaterial};
 
-pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, inventory: &mut MaterialState) {
+pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_inventory: &mut MaterialState, mining: &mut Mining) {
     let event = json["event"].as_str().unwrap();
     info!("Interpreter event received: {}", event);
 
@@ -348,9 +349,9 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, inventory: &mut 
                 a_name.cmp(&b_name)
             });
 
-            inventory.raw = raw;
-            inventory.manufactured = manufactured;
-            inventory.encoded = encoded;
+            material_inventory.raw = raw;
+            material_inventory.manufactured = manufactured;
+            material_inventory.encoded = encoded;
         }
         "Cargo" => {}
         "MaterialCollected" => {}
@@ -359,7 +360,31 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, inventory: &mut 
         "DropItems" => {}
         "LaunchDrone" => {}
         "MiningRefined" => {}
-        "ProspectedAsteroid" => {}
+        "ProspectedAsteroid" => {
+            //{ "timestamp":"2023-06-05T12:05:12Z", "event":"ProspectedAsteroid", "Materials":[ { "Name":"rutile", "Name_Localised":"Rutil", "Proportion":35.986309 }, { "Name":"Bauxite", "Name_Localised":"Bauxit", "Proportion":13.713245 } ], "Content":"$AsteroidMaterialContent_Low;", "Content_Localised":"Materialgehalt: Niedrig", "Remaining":100.000000 }
+            let mut json = json.clone();
+
+            let mut materials: Vec<MiningMaterial> = Vec::new();
+            let mut material_json = json["Materials"].pop();
+            while material_json != Null {
+                materials.push(MiningMaterial {
+                    name: material_json["name"].to_string(),
+                    name_localised: material_json["Name_Localised"].to_string(),
+                    proportion: material_json["Proportion"].as_f64().unwrap_or(-1.0),
+                });
+                material_json = json["Materials"].pop();
+            }
+
+            let prospector: Prospector = Prospector{
+                timestamp: json["timestamp"].to_string(),
+                event: json["event"].to_string(),
+                materials,
+                content: json["Content"].to_string(),
+                content_localised: json["Content_Localised"].to_string(),
+                remaining: json["Remaining"].as_f64().unwrap_or(-1.0),
+            };
+            mining.prospectors.push_front(prospector);
+        }
         "CargoTransfer" => {}
         "CollectCargo" => {}
 
