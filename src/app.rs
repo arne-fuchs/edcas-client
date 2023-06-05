@@ -14,7 +14,7 @@ use iota_wallet::iota_client::crypto::hashes::Digest;
 use json::JsonValue;
 use log::info;
 
-use crate::app::inventory::InventoryState;
+use crate::app::materials::MaterialState;
 use crate::app::State::{About, Explorer, Inventory, News, Settings};
 use crate::egui::Context;
 
@@ -24,16 +24,17 @@ mod simple_transaction;
 mod explorer;
 mod journal_reader;
 mod journal_interpreter;
-mod inventory;
+mod materials;
 mod tangle_interpreter;
 mod news;
+mod mining;
 
 pub struct EliteRustClient {
     about: about::About,
     explorer: explorer::Explorer,
     state: State,
     journal_log_bus_reader: BusReader<JsonValue>,
-    inventory: InventoryState,
+    inventory: MaterialState,
     settings: settings::Settings,
     news: news::News,
 }
@@ -126,12 +127,10 @@ impl Default for EliteRustClient {
             explorer: explorer::Explorer::default(),
             state: News,
             journal_log_bus_reader: journal_bus_reader,
-            inventory: InventoryState {
+            inventory: MaterialState {
                 raw: vec![],
                 manufactured: vec![],
-                encoded: vec![],
-                cargo: vec![],
-                refinery: vec![],
+                encoded: vec![]
             },
             settings
         }

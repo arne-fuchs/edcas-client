@@ -1,17 +1,11 @@
 use eframe::{App, egui, Frame};
 use eframe::egui::{Context, Ui};
 
-pub struct InventoryState {
+pub struct MaterialState {
     pub raw: Vec<Material>,
     pub manufactured: Vec<Material>,
     pub encoded: Vec<Material>,
-    pub cargo: Vec<Cargo>,
-    pub refinery: Vec<Refinery>,
 }
-
-pub struct Cargo {}
-
-pub struct Refinery {}
 
 pub struct Material {
     pub name: String,
@@ -19,10 +13,10 @@ pub struct Material {
     pub count: u64,
 }
 
-impl App for InventoryState {
+impl App for MaterialState {
     fn update(&mut self, ctx: &Context, frame: &mut Frame) {
         let Self {
-            raw, manufactured, encoded, cargo, refinery
+            raw, manufactured, encoded
         } = self;
 
         egui::CentralPanel::default()

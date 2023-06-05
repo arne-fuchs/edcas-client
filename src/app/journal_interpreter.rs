@@ -2,9 +2,9 @@ use json::{JsonValue, Null};
 use log::{info, warn};
 
 use crate::app::explorer::{Body, BodySignal, Explorer, Page, Signal, SystemSignal};
-use crate::app::inventory::{InventoryState, Material};
+use crate::app::materials::{MaterialState, Material};
 
-pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, inventory: &mut InventoryState) {
+pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, inventory: &mut MaterialState) {
     let event = json["event"].as_str().unwrap();
     info!("Interpreter event received: {}", event);
 
