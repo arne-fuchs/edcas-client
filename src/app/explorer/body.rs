@@ -155,7 +155,9 @@ pub enum BodyClass {
 }
 
 pub fn get_body_class_from_body(body: &Body) -> BodyClass {
-
+    if body.name.contains(" Ring"){
+        return Ring
+    }
 
     match body.planet_class.as_str() {
         "Ammonia world" => AmmoniaWorld,
@@ -193,9 +195,6 @@ pub fn get_body_class_from_body(body: &Body) -> BodyClass {
         "Water giant" => WaterGiant,
         "Star" => Star,
         _ => {
-            if body.name.contains(" Ring "){
-                return Ring
-            }
             if body.planet_class.is_empty() || body.planet_class.eq("N/A") || body.planet_class.eq("null"){
                 return Star;
             }
