@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use json::{JsonValue, Null};
 use log::{info, warn};
 
@@ -89,7 +90,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
             }
             info!("Body {} number of signals: {}",json["BodyName"].to_string(),signals.len().clone());
 
-
             let body_signal = BodySignal {
                 timestamp: json["timestamp"].to_string(),
                 event: json["event"].to_string(),
@@ -99,16 +99,16 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
                 signals,
             };
 
-            explorer.body_signal_list.push(body_signal);
+            let id = body_signal.body_id;
 
-            explorer.body_signal_list.sort_by(|signal_a, signal_b| {
-                //TODO Better sorting -> All signals have to be looked at. Sort by largest in the list maybe
-                signal_a.signals.first().unwrap().count.cmp(&signal_b.signals.first().unwrap().count).reverse()
-            });
+            if !explorer.body_signal_list.iter().any(|x| x.body_id == id) {
+                explorer.body_signal_list.push(body_signal);
 
-            explorer.body_signal_list.dedup_by(|signal_a, signal_b| {
-                signal_a.body_id == signal_b.body_id
-            });
+                explorer.body_signal_list.sort_by(|signal_a, signal_b| {
+                    //TODO Better sorting -> All signals have to be looked at. Sort by largest in the list maybe
+                    signal_a.signals.first().unwrap().count.cmp(&signal_b.signals.first().unwrap().count).reverse()
+                });
+            }
         }
         "FSSSignalDiscovered" => {
             //{ "timestamp":"2023-05-29T22:40:26Z", "event":"FSSSignalDiscovered", "SystemAddress":672296347049, "SignalName":"$MULTIPLAYER_SCENARIO80_TITLE;", "SignalName_Localised":"Unbewachtes Navigationssignal" }
