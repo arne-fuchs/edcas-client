@@ -29,7 +29,7 @@ rem Copy files and directories
 xcopy /E graphics "%folder_name%\graphics"
 copy settings-example.json "%folder_name%\settings-example.json"
 copy settings-example.json "%folder_name%\settings.json"
-copy start.sh "%folder_name%\"
+copy start.bat "%folder_name%\"
 copy target\release\edcas-client.exe "%folder_name%\"
 
 rem Create ZIP archive
