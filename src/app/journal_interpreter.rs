@@ -488,6 +488,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
         "AsteroidCracked" => {}
         "EscapeInterdiction" => {}
         "TechnologyBroker" => {}
+        "NavBeaconDetail" => {}
 
 
         //Jesus
