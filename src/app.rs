@@ -85,7 +85,7 @@ impl Default for EliteRustClient {
 
         let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
             .name(path.to_str().unwrap())
-            .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest"])
+            .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest","tree_builder"])
             .level_filter(level);
 
         let _logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()

@@ -1,4 +1,4 @@
-use std::fs;
+use std::{fs, process};
 use std::fs::{DirEntry, File};
 use std::io::{BufRead, BufReader};
 use bus::{Bus};
@@ -75,9 +75,10 @@ impl JournalReader {
                             Ok(json) => {
                                 let event = json["event"].as_str().unwrap();
                                 if event == "Shutdown" {
-                                    debug!("\n\nReached Shutdown -> increasing index and reading older journals\n");
-                                    self.index = self.index + 1;
-                                    self.reader = get_journal_log_by_index(self.directory_path.clone(),self.index.clone())
+                                    process::exit(0);
+                                    //debug!("\n\nReached Shutdown -> increasing index and reading older journals\n");
+                                    //self.index = self.index + 1;
+                                    //self.reader = get_journal_log_by_index(self.directory_path.clone(),self.index.clone())
                                 }
                                 journal_bus.broadcast(json);
                             }

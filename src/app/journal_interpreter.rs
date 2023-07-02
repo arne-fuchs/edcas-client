@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 use json::{JsonValue, Null};
-use log::{info, warn};
+use log::{debug, error, info, warn};
+use serde_json::Value;
 
 use crate::app::explorer::{Body, BodySignal, Explorer, Page, Signal, SystemSignal};
 use crate::app::materials::{MaterialState, Material};
@@ -367,10 +368,38 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
             let mut materials: Vec<MiningMaterial> = Vec::new();
             let mut material_json = json["Materials"].pop();
             while material_json != Null {
+                let mut buy_price = 0f64;
+                let answer: Option<Value> = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+                    .block_on(async {
+                        let url = format!("https://api.edcas.de/data/commodity/{}",material_json["Name"].to_string().to_lowercase());
+                        debug!("Api call to edcas: {}", url.clone());
+                        let result = reqwest::get(url.clone()).await;
+                        return match result {
+                            Ok(response) => {
+                                let json_data: Value = response.json().await.unwrap();
+                                Some(json_data)
+                            }
+                            Err(err) => {
+                                error!("Couldn't reach edcas api under {} Reason: {}", url.clone(),err);
+                                None
+                            }
+                        }
+                    });
+
+                match answer {
+                    None => {}
+                    Some(json) => {
+                        buy_price = json["buy_price"].as_f64().unwrap_or(0f64);
+                    }
+                }
                 materials.push(MiningMaterial {
                     name: material_json["Name"].to_string(),
                     name_localised: material_json["Name_Localised"].to_string(),
                     proportion: material_json["Proportion"].as_f64().unwrap_or(-1.0),
+                    buy_price
                 });
                 material_json = json["Materials"].pop();
             }

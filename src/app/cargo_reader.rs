@@ -1,10 +1,12 @@
+use std::fmt::Error;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::ptr::null;
 use std::string::FromUtf8Error;
 use image::io::Reader;
-use json::Null;
-use log::error;
+use json::{Error as JsonError, JsonValue, Null};
+use log::{debug, error};
+use serde_json::Value;
 
 pub struct CargoReader {
     directory_path: String,
@@ -17,6 +19,9 @@ pub struct Cargo {
     pub name_localised: String,
     pub count: i64,
     pub stolen: i64,
+    pub buy_price: f64,
+    pub sell_price: f64,
+    pub avg_price: f64
 }
 
 pub fn initialize(mut directory_path: String) -> CargoReader {
@@ -48,16 +53,66 @@ impl CargoReader {
                                 Ok(json) => {
                                     let mut json = json.clone();
                                     let mut cargo_json = json["Inventory"].pop();
-                                    self.inventory.clear();
+                                    let mut new_inventory: Vec<Cargo> = vec![];
                                     while cargo_json != Null {
-                                        self.inventory.push(Cargo {
+                                        let name =  cargo_json["Name"].to_string();
+                                        let mut buy_price = -1f64;
+                                        let mut sell_price = -1f64;
+                                        let mut avg_price = -1f64;
+                                        for old_cargo in &self.inventory{
+                                            if old_cargo.name == name {
+                                                buy_price = old_cargo.buy_price;
+                                                sell_price = old_cargo.sell_price;
+                                                avg_price = old_cargo.avg_price;
+                                            }
+                                        }
+
+                                        //No old api data found -> requesting it from edcas api
+                                        if buy_price == -1f64 {
+                                            let answer: Option<Value> = tokio::runtime::Builder::new_current_thread()
+                                                .enable_all()
+                                                .build()
+                                                .unwrap()
+                                                .block_on(async {
+                                                    let url = format!("https://api.edcas.de/data/commodity/{}",name.clone());
+                                                    debug!("Api call to edcas: {}", url.clone());
+                                                    let result = reqwest::get(url.clone()).await;
+                                                    return match result {
+                                                        Ok(response) => {
+                                                            let json_data: Value = response.json().await.unwrap();
+                                                            Some(json_data)
+                                                        }
+                                                        Err(err) => {
+                                                            error!("Couldn't reach edcas api under {} Reason: {}", url.clone(),err);
+                                                            None
+                                                        }
+                                                    }
+                                                });
+
+                                            match answer {
+                                                None => {}
+                                                Some(json) => {
+                                                    buy_price = json["buy_price"].as_f64().unwrap_or(0f64);
+                                                    sell_price = json["sell_price"].as_f64().unwrap_or(0f64);
+                                                    avg_price = json["avg_price"].as_f64().unwrap_or(0f64);
+                                                }
+                                            }
+
+                                        }
+
+                                        new_inventory.push(Cargo {
                                             name: cargo_json["Name"].to_string(),
                                             name_localised: cargo_json["Name_Localised"].to_string(),
                                             count: cargo_json["Count"].as_i64().unwrap_or(-1),
                                             stolen: cargo_json["Stolen"].as_i64().unwrap_or(-1),
+                                            buy_price,
+                                            sell_price,
+                                            avg_price
                                         });
                                         cargo_json = json["Inventory"].pop();
                                     }
+                                    self.inventory.clear();
+                                    self.inventory = new_inventory;
                                 }
                                 Err(err) => {
                                     error!("Couldn't parse cargo string to json: {}", err);

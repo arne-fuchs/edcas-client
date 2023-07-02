@@ -1,6 +1,7 @@
 use eframe::egui;
 use eframe::egui::ColorImage;
 use log::debug;
+use num_format::{Locale, ToFormattedString};
 
 use crate::app::explorer::{Body, Explorer, icons};
 use crate::app::explorer::body::BodyClass::{AmmoniaWorld, BeltCluster, ClassIGasGiant, ClassIIGasGiant, ClassIIIGasGiant, ClassIVGasGiant, ClassVGasGiant, EarthlikeWorld, GasGiantwithAmmoniabasedLife, GasGiantwithWaterbasedLife, HeliumRichGasGiant, HighMetalContentPlanet, HighMetalContentTerraformablePlanet, IcyBody, MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown, WaterGiant, WaterWorld, WaterWorldTerraformable};
@@ -89,10 +90,10 @@ pub fn draw_body_info(data: &mut Explorer, ui: &mut egui::Ui) {
     ui.label("Profit");
     ui.end_row();
     ui.label("Discovery");
-    ui.label(profit.0.to_string());
+    ui.label(profit.0.to_formatted_string(&Locale::en));
     ui.end_row();
     ui.label("Mapping");
-    ui.label(profit.1.to_string());
+    ui.label(profit.1.to_formatted_string(&Locale::en));
     ui.end_row();
     ui.label("");
     ui.label("");

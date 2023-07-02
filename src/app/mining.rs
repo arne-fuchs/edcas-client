@@ -3,6 +3,10 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use eframe::{App, egui, Frame};
 use eframe::egui::Context;
+use eframe::egui::WidgetType::CollapsingHeader;
+use log::{debug, error};
+use num_format::{Locale, ToFormattedString};
+use serde_json::Value;
 use crate::app::cargo_reader::{Cargo, CargoReader};
 
 pub struct Mining {
@@ -14,6 +18,7 @@ pub struct MiningMaterial {
     pub name: String,
     pub name_localised: String,
     pub proportion: f64,
+    pub buy_price: f64
 }
 
 pub struct Prospector {
@@ -56,7 +61,7 @@ impl App for Mining {
                                             }
                                             ui.end_row();
                                             ui.label("Remaining: ");
-                                            ui.label(prospector.remaining.to_string());
+                                            ui.label(format!("{}%",prospector.remaining));
                                             ui.end_row();
                                         });
 
@@ -75,7 +80,9 @@ impl App for Mining {
                                                     label.push_str(&material.name_localised);
                                                 }
                                                 label.push_str("\n");
-                                                label.push_str(material.proportion.to_string().as_str());
+                                                label.push_str(format!("{}%",material.proportion as u64).as_str());
+                                                label.push_str("\n");
+                                                label.push_str(format!("{} Credits/Unit",material.buy_price as u64).as_str());
                                                 ui.label(label);
                                             }
                                         });
@@ -88,24 +95,38 @@ impl App for Mining {
                     });
             });
 
-        egui::SidePanel::left("cargo_data").show(ctx, |ui| {
-            egui::Grid::new("page_grid")
-                .num_columns(2)
-                .striped(true)
-                .min_col_width(100.0)
-                .max_col_width(300.0)
-                .show(ui,|ui|{
-                    for cargo in &self.cargo.lock().unwrap().inventory{
-                        if cargo.name_localised != "null"{
-                            ui.label(&cargo.name_localised);
-                        }else {
-                            ui.label(&cargo.name);
-                        }
-                        ui.label(cargo.count.to_string());
-                        ui.end_row();
 
+        egui::CentralPanel::default().show(ctx, |ui| {
+            egui::CollapsingHeader::new("Cargo")
+                .default_open(true)
+                .show(ui, |ui| {
+                    for cargo in &self.cargo.lock().unwrap().inventory{
+                        let mut name = &cargo.name;
+                        if cargo.name_localised != "null"{
+                            name = &cargo.name_localised;
+                        }
+                        egui::CollapsingHeader::new(name)
+                            .default_open(true)
+                            .show(ui, |ui| {
+                                egui::Grid::new("page_grid")
+                                    .num_columns(2)
+                                    .min_col_width(100.0)
+                                    .max_col_width(300.0)
+                                    .show(ui,|ui|{
+                                        ui.label("Count: ");
+                                        ui.label((cargo.count as u64).to_string());
+                                        ui.end_row();
+                                        if cargo.buy_price as u64 > 0 {
+                                            ui.label("Avg. buy price:");
+                                            ui.label(format!("{} Credits", (cargo.buy_price as u64).to_formatted_string(&Locale::en)));
+                                            ui.end_row();
+                                        }
+                                    });
+                            });
+                        ui.end_row();
                     }
                 });
+
         });
     }
 }
