@@ -59,6 +59,9 @@ impl Default for Settings {
                 home.push_str("/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
                 journal_directory = home;
             }
+            if !Path::new(&journal_directory).exists() {
+                journal_directory = String::from(".");
+            }
             println!("Journal logs: {}", &journal_directory);
         }
 
@@ -73,6 +76,9 @@ impl Default for Settings {
                 let mut home = env::var("HOME").unwrap_or("~".to_string());
                 home.push_str("/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics");
                 graphics_directory = home;
+            }
+            if !Path::new(&graphics_directory).exists() {
+                graphics_directory = String::from(".");
             }
             println!("Graphics path: {}", &graphics_directory);
         }
