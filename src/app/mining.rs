@@ -39,7 +39,7 @@ impl App for Mining {
 
         egui::SidePanel::left("prospect_data")
             .show(ctx, |ui| {
-                ui.heading("Prospectors");
+                ui.heading("Prospector History");
                 ui.separator();
                 egui::ScrollArea::vertical()
                     .stick_to_right(true)
