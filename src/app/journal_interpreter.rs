@@ -369,7 +369,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
             let mut material_json = json["Materials"].pop();
             while material_json != Null {
                 let mut buy_price = 0f64;
-                let answer: Option<Value> = tokio::runtime::Builder::new_current_thread()
+                let answer: Option<JsonValue> = tokio::runtime::Builder::new_current_thread()
                     .enable_all()
                     .build()
                     .unwrap()
@@ -379,8 +379,18 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
                         let result = reqwest::get(url.clone()).await;
                         return match result {
                             Ok(response) => {
-                                let json_data: Value = response.json().await.unwrap();
-                                Some(json_data)
+                                let text = response.text().await.unwrap();
+                                let result = json::parse(text.as_str());
+                                return match result {
+                                    Ok(json) => {
+                                        Some(json)
+                                    }
+                                    Err(err) => {
+                                        error!("Couldn't parse answer to json: {}",err);
+                                        error!("Value: {}", text);
+                                        None
+                                    }
+                                }
                             }
                             Err(err) => {
                                 error!("Couldn't reach edcas api under {} Reason: {}", url.clone(),err);
@@ -392,7 +402,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
                 match answer {
                     None => {}
                     Some(json) => {
-                        buy_price = json["buy_price"].as_f64().unwrap_or(0f64);
+                        buy_price = json["highest_sell_price"]["sell_price"].as_f64().unwrap_or(0f64);
                     }
                 }
                 materials.push(MiningMaterial {

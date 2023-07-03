@@ -69,7 +69,7 @@ impl CargoReader {
 
                                         //No old api data found -> requesting it from edcas api
                                         if buy_price == -1f64 {
-                                            let answer: Option<Value> = tokio::runtime::Builder::new_current_thread()
+                                            let answer: Option<JsonValue> = tokio::runtime::Builder::new_current_thread()
                                                 .enable_all()
                                                 .build()
                                                 .unwrap()
@@ -79,8 +79,18 @@ impl CargoReader {
                                                     let result = reqwest::get(url.clone()).await;
                                                     return match result {
                                                         Ok(response) => {
-                                                            let json_data: Value = response.json().await.unwrap();
-                                                            Some(json_data)
+                                                            let text = response.text().await.unwrap();
+                                                            let result = json::parse(text.as_str());
+                                                            return match result {
+                                                                Ok(json) => {
+                                                                    Some(json)
+                                                                }
+                                                                Err(err) => {
+                                                                    error!("Couldn't parse answer to json: {}",err);
+                                                                    error!("Value: {}", text);
+                                                                    None
+                                                                }
+                                                            }
                                                         }
                                                         Err(err) => {
                                                             error!("Couldn't reach edcas api under {} Reason: {}", url.clone(),err);
