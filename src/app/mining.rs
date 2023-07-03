@@ -83,7 +83,7 @@ impl App for Mining {
                                                 label.push_str("\n");
                                                 label.push_str(format!("{}%",material.proportion as u64).as_str());
                                                 label.push_str("\n");
-                                                label.push_str(format!("{} Credits/Unit",material.buy_price as u64).as_str());
+                                                label.push_str(format!("{} Credits/Unit",(material.buy_price as u64).to_formatted_string(&Locale::en)).as_str());
                                                 ui.label(label);
                                             }
                                         });
