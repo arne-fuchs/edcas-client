@@ -1,3 +1,4 @@
+use std::char::ToUppercase;
 use std::collections::VecDeque;
 use std::rc::Rc;
 use std::sync::{Arc, Mutex};
@@ -101,11 +102,14 @@ impl App for Mining {
                 .default_open(true)
                 .show(ui, |ui| {
                     for cargo in &self.cargo.lock().unwrap().inventory{
-                        let mut name = &cargo.name;
+                        let mut name = cargo.name.clone();
                         if cargo.name_localised != "null"{
-                            name = &cargo.name_localised;
+                            name = cargo.name_localised.clone();
+                        }else {
+                            let char = name.chars().next().unwrap().to_uppercase().to_string();
+                            name.replace_range(0..1, char.as_str());
                         }
-                        egui::CollapsingHeader::new(name)
+                        egui::CollapsingHeader::new(format!("{} ({})",name,&cargo.count))
                             .default_open(true)
                             .show(ui, |ui| {
                                 egui::Grid::new("page_grid")
@@ -113,12 +117,19 @@ impl App for Mining {
                                     .min_col_width(100.0)
                                     .max_col_width(300.0)
                                     .show(ui,|ui|{
-                                        ui.label("Count: ");
-                                        ui.label((cargo.count as u64).to_string());
-                                        ui.end_row();
                                         if cargo.buy_price as u64 > 0 {
                                             ui.label("Avg. buy price:");
                                             ui.label(format!("{} Credits", (cargo.buy_price as u64).to_formatted_string(&Locale::en)));
+                                            ui.end_row();
+                                            ui.label("Highest bid:");
+                                            ui.label(format!("{} Credits",cargo.highest_sell_price.to_formatted_string(&Locale::en)));
+                                            ui.end_row();
+                                            if ui.button(format!("{} 🗐", &cargo.highest_sell_station)).clicked() {
+                                                ui.output_mut(|o| o.copied_text = cargo.highest_sell_station.clone());
+                                            }
+                                            if ui.button(format!("{} 🗐", &cargo.highest_sell_system)).clicked() {
+                                                ui.output_mut(|o| o.copied_text = cargo.highest_sell_system.clone());
+                                            }
                                             ui.end_row();
                                         }
                                     });

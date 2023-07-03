@@ -21,7 +21,13 @@ pub struct Cargo {
     pub stolen: i64,
     pub buy_price: f64,
     pub sell_price: f64,
-    pub avg_price: f64
+    pub mean_price: f64,
+    pub highest_sell_price: u64,
+    pub highest_sell_station: String,
+    pub highest_sell_system: String,
+    pub lowest_buy_price: u64,
+    pub lowest_buy_station: String,
+    pub lowest_buy_system: String,
 }
 
 pub fn initialize(mut directory_path: String) -> CargoReader {
@@ -58,12 +64,25 @@ impl CargoReader {
                                         let name =  cargo_json["Name"].to_string();
                                         let mut buy_price = -1f64;
                                         let mut sell_price = -1f64;
-                                        let mut avg_price = -1f64;
+                                        let mut mean_price = -1f64;
+                                        let mut highest_sell_price = 0u64;
+                                        let mut highest_sell_station = String::from("N/A");
+                                        let mut highest_sell_system = String::from("N/A");
+                                        let mut lowest_buy_price = 0u64;
+                                        let mut lowest_buy_station = String::from("N/A");
+                                        let mut lowest_buy_system = String::from("N/A");
+
                                         for old_cargo in &self.inventory{
                                             if old_cargo.name == name {
                                                 buy_price = old_cargo.buy_price;
                                                 sell_price = old_cargo.sell_price;
-                                                avg_price = old_cargo.avg_price;
+                                                mean_price = old_cargo.mean_price;
+                                                highest_sell_price = old_cargo.highest_sell_price;
+                                                highest_sell_station = old_cargo.highest_sell_station.clone();
+                                                highest_sell_system = old_cargo.highest_sell_system.clone();
+                                                lowest_buy_price = old_cargo.lowest_buy_price;
+                                                lowest_buy_station = old_cargo.lowest_buy_station.clone();
+                                                lowest_buy_system = old_cargo.lowest_buy_system.clone();
                                             }
                                         }
 
@@ -104,7 +123,13 @@ impl CargoReader {
                                                 Some(json) => {
                                                     buy_price = json["buy_price"].as_f64().unwrap_or(0f64);
                                                     sell_price = json["sell_price"].as_f64().unwrap_or(0f64);
-                                                    avg_price = json["avg_price"].as_f64().unwrap_or(0f64);
+                                                    mean_price = json["avg_price"].as_f64().unwrap_or(0f64);
+                                                    highest_sell_price = json["highest_sell_price"]["sell_price"].as_u64().unwrap_or(0);
+                                                    highest_sell_station = json["highest_sell_price"]["station"].to_string();
+                                                    highest_sell_system = json["highest_sell_price"]["system"].to_string();
+                                                    lowest_buy_price = json["lowest_buy_price"]["buy_price"].as_u64().unwrap_or(0);
+                                                    lowest_buy_station = json["lowest_buy_price"]["station"].to_string();
+                                                    lowest_buy_system = json["lowest_buy_price"]["system"].to_string();
                                                 }
                                             }
 
@@ -117,7 +142,13 @@ impl CargoReader {
                                             stolen: cargo_json["Stolen"].as_i64().unwrap_or(-1),
                                             buy_price,
                                             sell_price,
-                                            avg_price
+                                            mean_price,
+                                            highest_sell_price,
+                                            highest_sell_station,
+                                            highest_sell_system,
+                                            lowest_buy_price,
+                                            lowest_buy_station,
+                                            lowest_buy_system,
                                         });
                                         cargo_json = json["Inventory"].pop();
                                     }
