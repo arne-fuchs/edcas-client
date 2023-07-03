@@ -402,7 +402,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
                 match answer {
                     None => {}
                     Some(json) => {
-                        buy_price = json["highest_sell_price"]["sell_price"].as_f64().unwrap_or(0f64);
+                        buy_price = json["buy_price"].as_f64().unwrap_or(0f64);
                     }
                 }
                 materials.push(MiningMaterial {
