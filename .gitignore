@@ -7,3 +7,4 @@ Cargo.lock
 edcas-client.iml
 edcas-client.tar.gz
 edcas-client.zip
+custom_graphics_override.xml

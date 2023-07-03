@@ -12,6 +12,7 @@
     "port": 443
   },
   "reader": {
-    "journal-directory": ""
+    "journal-directory": "",
+    "graphics-directory": ""
   }
 }
