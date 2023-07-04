@@ -44,6 +44,7 @@ pub struct EliteRustClient {
     news: news::News,
     cargo_reader: Arc<Mutex<CargoReader>>,
     mining: mining::Mining,
+    timestamp: String,
 }
 
 impl Default for EliteRustClient {
@@ -148,6 +149,7 @@ impl Default for EliteRustClient {
             settings,
             cargo_reader,
             mining,
+            timestamp: String::from(""),
         }
     }
 }
@@ -164,7 +166,7 @@ enum State {
 impl App for EliteRustClient {
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
         let Self {
-            news, about, explorer, state, journal_log_bus_reader, inventory,settings,mining,cargo_reader
+            news, about, explorer, state, journal_log_bus_reader, inventory,settings,mining,cargo_reader,timestamp
         } = self;
 
         let mut style: egui::Style = (*ctx.style()).clone();
@@ -201,6 +203,9 @@ impl App for EliteRustClient {
                     *state = About;
                 }
 
+                menu_bar.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
+                    ui.label(timestamp.as_str());
+                });
                 match state{
                     News => {news_button.highlight();}
                     About => {about_button.highlight();}
@@ -213,8 +218,9 @@ impl App for EliteRustClient {
         });
 
         match journal_log_bus_reader.try_recv() {
-            Ok(val) => {
-                journal_interpreter::interpret_json(val.clone(), explorer,  inventory, mining);
+            Ok(json) => {
+                self.timestamp = json["timestamp"].to_string();
+                journal_interpreter::interpret_json(json.clone(), explorer,  inventory, mining);
             }
             Err(_) => {}
         }
