@@ -1,0 +1,3353 @@
+{
+  "encoded": [
+    {
+      "name": "tg_shutdowndata",
+      "name_localised": "Massive Energy Surge Analytics",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Data",
+      "locations": [],
+      "sources": [
+        "Thargoid Titan EMP"
+      ],
+      "engineering": [],
+      "synthesis": [],
+      "description": "Information regarding a massive Thargoid energy surge, collected during the period between detonation and impact."
+    },
+    {
+      "name": "tg_interdictiondata",
+      "name_localised": "Thargoid Interdiction Telemetry",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Data",
+      "locations": [],
+      "sources": [
+        "Thargoid interdiction"
+      ],
+      "engineering": [],
+      "synthesis": [],
+      "description": "Data recorded during a failed attempt to avoid interdiction by a Thargoid present in supercruise."
+    },
+    {
+      "name": "shieldpatternanalysis",
+      "name_localised": "Aberrant Shield Pattern Analysis",
+      "grade": 4,
+      "maximum": 250,
+      "category" : "Shield Data",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "Ship scanning (Combat ships, mostly in Boom Systems)"
+      ],
+      "engineering": [
+        "Blast Resistant Shield Booster",
+        "Kinetic Resistant Shield Booster",
+        "Meta Alloy Hull Reinforcement",
+        "Thermal Resistant Shield Booster"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from combat oriented vessels.\n\nEnergy shields are formed from complex interlocking fields, the mathematical basis for which is well understood. However, analysis will sometimes indicate a behaviour that doesn't sit properly with this accepted module. This often proves to be spurious data, but underground researchers are looking into other possible causes."
+    },
+    {
+      "name": "compactemissionsdata",
+      "name_localised": "Abnormal Compact Emissions Data",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Emission Data",
+      "locations": [
+        "Signal sources"
+      ],
+      "sources": [
+        "Private data beacons"
+      ],
+      "engineering": [
+        "Clean Thrusters",
+        "Long Range Detailed Surface Scanner",
+        "Long Range Scanner",
+        "Long Range Sensors"
+      ],
+      "synthesis": [],
+      "description": "Discovered in private data beacons salvaged from deep space. Known to be salvaged from signal sources.\n\nMany systems compress their emissions data as it can quickly fill even massive amounts of storage. Preselected exceptions within the data set are usually kept in a lossless format and these are often of interest to other people and organisations."
+    },
+    {
+      "name": "adaptiveencryptors",
+      "name_localised": "Adaptive Encryptors Capture",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Encryption Files",
+      "locations": [
+        "Settlement (from surface scan missions)"
+      ],
+      "sources": [
+        "Private Data Beacons"
+      ],
+      "engineering": [
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner"
+      ],
+      "synthesis": [],
+      "description": "Discovered in private data beacons salvaged from deep space. Known to be salvaged from signal sources.\n\nPolymorphic encryption systems form a state of the art system for data encryption which are considered untraceable. There are rumours that the system has a weakness in state transition with re-encoding, and captures of these changes are eagerly sought after by some people."
+    },
+    {
+      "name": "bulkscandata",
+      "name_localised": "Anomalous Bulk Scan Data",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Data Archives",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "Ship scanning (Transport ships)",
+        "Hackable Comms Array (Space Installations and Megaships)"
+      ],
+      "engineering": [
+        "Engine Focused Power Distributor",
+        "Long Range Frame Shift Drive Interdictor",
+        "System Focused Power Distributor",
+        "Weapon Focused Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from haulage vessels.\n\nData files follow predictable formats, although in larger data sets individual components can be identified which vary from the expected pattern analysis and these can prove very useful to the right people."
+    },
+    {
+      "name": "fsdtelemetry",
+      "name_localised": "Anomalous FSD Telemetry",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Wake Scans",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "High wake scanning"
+      ],
+      "engineering": [
+        "FSD Interrupt",
+        "Long Range Frame Shift Drive Interdictor"
+      ],
+      "synthesis": [],
+      "description": "Captured from high energy wakes with a wake scanner.\n\nFSD drives are a relatively new technology and interesting quirks can be discovered from the telemetry of their control software."
+    },
+    {
+      "name": "disruptedwakeechoes",
+      "name_localised": "Atypical Disrupted Wake Echoes",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Wake Scans",
+      "locations": [
+        "Mission reward (usually in Boom system states)"
+      ],
+      "sources": [
+        "High wake scanning"
+      ],
+      "engineering": [
+        "Increased Range Frame Shift Drive",
+        "Long Range Frame Shift Drive Interdictor"
+      ],
+      "synthesis": [],
+      "description": "Captured from high energy wakes with a wake scanner.\n\nData recorded from a disrupted frame shift wake usually follows a familiar pattern. Sometimes these show abnormalities which often makes the data more valuable."
+    },
+    {
+      "name": "encryptionarchives",
+      "name_localised": "Atypical Encryption Archives",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Encryption Files",
+      "locations": [
+        "Surface Installation (from surface scan missions)"
+      ],
+      "sources": [
+        "Private Data Beacons"
+      ],
+      "engineering": [
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner"
+      ],
+      "synthesis": [],
+      "description": "Discovered in private data beacons salvaged from deep space.\n\nThe nature of encrypted data makes it difficult to predict its contents, however certain forms of data have recognisable structures even when encrypted. This can then be used to break into the data and as such is highly prized in some quarters."
+    },
+    {
+      "name": "scandatabanks",
+      "name_localised": "Classified Scan Databanks",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Data Archives",
+      "locations": [
+        "Surface Installation"
+      ],
+      "sources": [
+        "Hackable Data Transmitter (Space Installations)",
+        "Ship scanning (trading ships)"
+      ],
+      "engineering": [
+        "Wide Angle Detailed Surface Scanner",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors",
+        "Engineer Ram Tah"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from haulage vessels.\n\nA popular method for hiding sensitive data is to embed it within innocuous information. Such methods are usually quite sophisticated, but occasionally will be found by chance and can be processed by those with the right skills and equipment."
+    },
+    {
+      "name": "classifiedscandata",
+      "name_localised": "Classified Scan Fragment",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Data Archives",
+      "locations": [
+        "Surface Installation",
+        "Mission reward (usually in Boom system states)"
+      ],
+      "sources": [
+        "Ship scanning (military and authority ships)",
+        "Hackable Data Transmitter and Hackable Comms Array (space Installations)"
+      ],
+      "engineering": [
+        "Wide Angle Detailed Surface Scanner",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors",
+        "Expanded Capture Arc Frame Shift Drive Interdictor"
+      ],
+      "synthesis": [],
+      "description": "Captured from settlement data point networks.\n\nSome sensor systems will automatically squirt data batches when they encounter certain contact profiles. The nature of these profiles is usually kept a secret, but there is a demand in certain quarters for any captures of this data."
+    },
+    {
+      "name": "industrialfirmware",
+      "name_localised": "Cracked Industrial Firmware",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Encoded Firmware",
+      "locations": [
+        "Mission reward",
+        "Surface Installation"
+      ],
+      "sources": [],
+      "engineering": [
+        "Charge Enhanced Power Distributor",
+        "Dirty Thrusters",
+        "Double Shot Weapon",
+        "High Charge Capacity Power Distributor",
+        "Long Range Weapon",
+        "Short Range Weapon",
+        "Specialised Shield Cell Bank"
+      ],
+      "synthesis": [],
+      "description": "Captured from settlement data point networks. Known to be salvaged from signal sources.\n\nControl software for industrial hardware interfaces normally follows strict operational and installation guidelines. Cracked versions of these can be found, but are often kept secret as such industrial espionage is punished severely, making these cracks quite valuable."
+    },
+    {
+      "name": "dataminedwake",
+      "name_localised": "Datamined Wake Exceptions",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Wake Scans",
+      "locations": [
+        "Private Data Beacons",
+        "Mission reward",
+        "Encoded Emissions"
+      ],
+      "sources": [
+        "High wake scanning"
+      ],
+      "engineering": [
+        "Increased Range Frame Shift Drive"
+      ],
+      "synthesis": [],
+      "description": "Captured from high energy wakes with a wake scanner.\n\nMany automated wake scanner systems will generate an exceptions log when they encounter data that doesn't match the pre-programmed profiles. Most of these turn out to be junk, but there are rumours that something more insidious has been discovered."
+    },
+    {
+      "name": "decodedemissiondata",
+      "name_localised": "Decoded Emission Data",
+      "grade": 4,
+      "maximum": 250,
+      "category" : "Emission Data ",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "Ship scanning (combat ships)"
+      ],
+      "engineering": [
+        "Clean Thrusters",
+        "Long Range Detailed Surface Scanner",
+        "Long Range Scanner",
+        "Long Range Sensors",
+        "Tiana Fortune"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from combat oriented vessels. Known to be salvaged from signal sources.\n\nEmission data takes a variety of forms and is often merged into wider datasets to search for anomalies and other stand out data. This tends to be compressed in decoded packages to maintain a separate copy of anomalous results."
+    },
+    {
+      "name": "shieldcyclerecordings",
+      "name_localised": "Distorted Shield Cycle Recordings",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Shield Data",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "Hackable Comms Array (Space Installations and Megaships)",
+        "Ship scanning (trading ships)"
+      ],
+      "engineering": [
+        "Enhanced Low Power Shield Generator",
+        "Heavy Duty Shield Booster",
+        "Kinetic Resistant Shield Generator",
+        "Screening Shell",
+        "Thermal Resistant Shield Generator"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from haulage vessels.\n\nData from a scan of a shield system over a given time period is a normally reliable data set, as long as the input variables are correctly compensated for. In rare cases this data doesn't fit probable patterns and is of keen interest to certain individuals."
+    },
+    {
+      "name": "encodedscandata",
+      "name_localised": "Divergent Scan Data",
+      "grade": 4,
+      "maximum": 250,
+      "category" : "Data Archives",
+      "locations": [
+        "Mission reward",
+        "Surface Installation"
+      ],
+      "sources": [
+        "Hackable Comms Array (Space Installations and Megaships)"
+      ],
+      "engineering": [
+        "Expanded Capture Arc FSD Interdictor",
+        "Wide Angle Detailed Surface Scanner",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors"
+      ],
+      "synthesis": [],
+      "description": "Captured from settlement data point networks.\n\nScan data usually forms a large data set, with only a small quantity of pertinent information. For the most part these are easily analysed, but some sensor data has unusual properties and while this is often caused by a malfunction can yield some interesting results."
+    },
+    {
+      "name": "hyperspacetrajectories",
+      "name_localised": "Eccentric Hyperspace Trajectories",
+      "grade": 4,
+      "maximum": 250,
+      "category" : "Wake Scans",
+      "locations": [],
+      "sources": [
+        "High wake scanning"
+      ],
+      "engineering": [
+        "Increased Range Frame Shift Drive"
+      ],
+      "synthesis": [],
+      "description": "Captured from high energy wakes with a wake scanner.\n\nHyperspace trajectories follow predictable paths through higher dimensional space, although there are sometimes strange results in the data not accounted for in current theory."
+    },
+    {
+      "name": "scrambledemissiondata",
+      "name_localised": "Exceptional Scrambled Emission Data",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Emission Data",
+      "locations": [
+        "Private Data Beacons",
+        "Satellites",
+        "Mission reward"
+      ],
+      "sources": [
+        "Ship scanning"
+      ],
+      "engineering": [
+        "Efficient Weapon",
+        "Specialised Shield Cell Bank"
+      ],
+      "synthesis": [],
+      "description": "Used by factions as a reward for mission contracts. Known to be salvaged from signal sources.\n\nEven with scrambled data it is possible to generate a high level analysis through pattern recognition and data sequencing. In some cases unexpected data clusters can be identified and are of interest to some people with the right expertise to use the data."
+    },
+    {
+      "name": "guardian_moduleblueprint",
+      "name_localised": "Guardian Module Blueprint Fragment",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Guardian Data",
+      "locations": [
+        "Ancient Data Terminal"
+      ],
+      "sources": [],
+      "engineering": [],
+      "synthesis": [
+        "Guardian Frame Shift Drive Booster",
+        "Guardian Hull Reinforcement Package",
+        "Guardian Hybrid Power Distributor",
+        "Guardian Hybrid Power Plant",
+        "Guardian Module Reinforcement Package",
+        "Guardian Shield Reinforcement Package"
+      ],
+      "description": "A fragmentary Guardian schematic relating to module technology."
+    },
+    {
+      "name": "guardian_vesselblueprint",
+      "name_localised": "Guardian Vessel Blueprint Fragment",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Guardian Data",
+      "locations": [
+        "Ancient Data Terminal"
+      ],
+      "sources": [],
+      "engineering": [
+        "XG7 Trident",
+        "XG8 Javelin",
+        "XG9 Lance"
+      ],
+      "synthesis": [],
+      "description": "A fragmentary Guardian schematic relating to starship technology."
+    },
+    {
+      "name": "guardian_weaponblueprint",
+      "name_localised": "Guardian Weapon Blueprint Fragment",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Guardian Data",
+      "locations": [
+        "Ancient Data Terminal"
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Gauss Cannon (Fixed, Class 1)",
+        "Guardian Gauss Cannon (Fixed, Class 2)",
+        "Guardian Plasma Charger (Fixed, Class 1)",
+        "Guardian Plasma Charger (Fixed, Class 2)",
+        "Guardian Plasma Charger (Fixed, Class 3)",
+        "Guardian Plasma Charger (Turreted, Class 1)",
+        "Guardian Plasma Charger (Turreted, Class 2)",
+        "Guardian Plasma Charger (Turreted, Class 3)",
+        "Guardian Shard Cannon (Fixed, Class 1)",
+        "Guardian Shard Cannon (Fixed, Class 2)",
+        "Guardian Shard Cannon (Fixed, Class 3)",
+        "Guardian Shard Cannon (Turreted, Class 1)",
+        "Guardian Shard Cannon (Turreted, Class 2)",
+        "Guardian Shard Cannon (Turreted, Class 3)"
+      ],
+      "synthesis": [],
+      "description": "A fragmentary Guardian schematic relating to military technology."
+    },
+    {
+      "name": "shieldsoakanalysis",
+      "name_localised": "Inconsistent Shield Soak Analysis",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Shield Data",
+      "locations": [
+        "Mission reward (usually in Boom system states)",
+        "Hackable Comms Array (Space Installations and Megaships)"
+      ],
+      "sources": [
+        "Ship scanning (trading ships)"
+      ],
+      "engineering": [
+        "Enhanced Low Power Shield Generator",
+        "Heavy Duty Shield Booster",
+        "Kinetic Resistant Shield Generator",
+        "Thermal Resistant Shield Generator"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from haulage vessels.\n\nAccumulated data of shield responses to impacts rarely reveals anything unusual in anything except experimental models. This isn't always the case and analysing irregularities often reveals useful data about the shields."
+    },
+    {
+      "name": "archivedemissiondata",
+      "name_localised": "Irregular Emission Data",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Emission Data",
+      "locations": [
+        "Private Data Beacons",
+        "Mission reward (usually at Military or Agriculture Surface Ports)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Efficient Weapon",
+        "Low emissions Power Plant"
+      ],
+      "synthesis": [],
+      "description": "Used by factions as a reward for mission contracts. Known to be salvaged from signal sources.\n\nEmission data mostly contains identifiable readings, but anomalies often crop up. While these are often caused by system faults they can reveal interesting data or even weaknesses in sensor and stealth technology."
+    },
+    {
+      "name": "consumerfirmware",
+      "name_localised": "Modified Consumer Firmware",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Encoded Firmware",
+      "locations": [
+        "Surface Installation",
+        "Satellites",
+        "Private Data Beacons",
+        "Hackable Comms Array (Space Installations and Megaships)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Charge Enhanced Power Distributor",
+        "Clean Thrusters",
+        "Dirty Thrusters",
+        "High Charge Capacity Power Distributor",
+        "Kinetic Resistant Shield Generator",
+        "Long Range Weapon",
+        "Rapid Fire Weapon",
+        "Screening Shell",
+        "Short Range Weapon"
+      ],
+      "synthesis": [],
+      "description": "Used by factions as a reward for mission contracts. Known to be salvaged from signal sources. Known to be found in small settlement data point networks.\n\nControl software for consumer level devices typically follows the manufacturer's specification, unless it has been modified and these changes can be used by other interested parties."
+    },
+    {
+      "name": "embeddedfirmware",
+      "name_localised": "Modified Embedded Firmware",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Encoded Firmware",
+      "locations": [
+        "Surface Installation (Medium and High Security)",
+        "Mission reward",
+        "Hackable Data Transmitter and Hackable Comms Array (space Installations)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Double Shot Weapon",
+        "Overcharged Weapon"
+      ],
+      "synthesis": [],
+      "description": "Captured from settlement data point networks.\n\nEmbedded systems typically require specific firmware for their operation. There is a black market for modifications to the base firmware, often for performance tuning or other reasons."
+    },
+    {
+      "name": "symmetrickeys",
+      "name_localised": "Open Symmetric Keys",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Encryption Files",
+      "locations": [
+        "Surface Installation",
+        "Private Data Beacons",
+        "Satellites",
+        "Mission reward"
+      ],
+      "sources": [],
+      "engineering": [
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner",
+        "Long Range Frame Shift Drive Interdictor"
+      ],
+      "synthesis": [],
+      "description": "Captured from settlement data point networks. Known to be salvaged from signal sources.\n\nSymmetric keys provide access controls for encrypted data, often on a ship, or even station wide basis. Capturing these provides the owner (with the right skills and equipment) a valuable access tool."
+    },
+    {
+      "name": "ancientbiologicaldata",
+      "name_localised": "Pattern Alpha Obelisk Data",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Guardian Data",
+      "locations": [
+        "Ancient Ruins",
+        "Guardian Structure"
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Hybrid Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Data captured from obelisks found at ancient ruins. This data pattern is distinctive and has been designated as 'Pattern Alpha'. There are many theories as to what this data might represent.\nUsually contains data about biology."
+    },
+    {
+      "name": "ancientculturaldata",
+      "name_localised": "Pattern Beta Obelisk Data",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Guardian Data",
+      "locations": [
+        "Ancient Ruins",
+        "Guardian Structure"
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Hull Reinforcement Package",
+        "XG7 Trident"
+      ],
+      "synthesis": [],
+      "description": "Data captured from obelisks found at ancient ruins. This data pattern is distinctive and has been designated as 'Pattern Beta'. The meaning of this pattern has not yet been determined.\nUsually contains data about culture."
+    },
+    {
+      "name": "ancientlanguagedata",
+      "name_localised": "Pattern Delta Obelisk Data",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Guardian Data",
+      "locations": [
+        "Ancient Ruins",
+        "Guardian Structure"
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Shield Reinforcement Package"
+      ],
+      "synthesis": [],
+      "description": "Captured from obelisks found at ancient ruins, this data pattern is distinctive, and has been designated as 'Pattern Delta'. The meaning of this data type is not yet known.\nUsually contains data about language."
+    },
+    {
+      "name": "ancienttechnologicaldata",
+      "name_localised": "Pattern Epsilon Obelisk Data",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Guardian Data",
+      "locations": [
+        "Ancient Ruins",
+        "Guardian Structure"
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Hybrid Power Plant",
+        "Guardian Module Reinforcement Package",
+        "XG7 Trident",
+        "XG8 Javelin",
+        "XG9 Lance"
+      ],
+      "synthesis": [],
+      "description": "Downloaded from obelisks found at ancient ruins, this data pattern is distinctive, and has been designated as 'Pattern Epsilon'. As yet, the pattern's meaning is unknown.\nUsually contains data about technology."
+    },
+    {
+      "name": "ancienthistoricaldata",
+      "name_localised": "Pattern Gamma Obelisk Data",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Guardian Data",
+      "locations": [
+        "Ancient Ruins",
+        "Guardian Structure"
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Hull Reinforcement Package"
+      ],
+      "synthesis": [],
+      "description": "Unknown data extracted from obelisks found at ancient ruins, this data pattern is distinctive, and has been designated as 'Pattern Gamma'. The secrets of this information have yet to be unlocked.\nUsually contains data about history."
+    },
+    {
+      "name": "shieldfrequencydata",
+      "name_localised": "Peculiar Shield Frequency Data",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Shield Data",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "Ship scanning"
+      ],
+      "engineering": [
+        "Regeneration Sequence"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from combat oriented vessels.\n\nScanned data from shield frequency changes and patterns rarely generate anything out of the ordinary, but when they do they can be of keen interest to various people."
+    },
+    {
+      "name": "securityfirmware",
+      "name_localised": "Security Firmware Patch",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Encoded Firmware",
+      "locations": [
+        "Surface Installation",
+        "Mission reward (Boom and Retreat system states)",
+        "Hackable Data Transmitter (Space Installations)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Double Shot Weapon",
+        "Drag Drives"
+      ],
+      "synthesis": [],
+      "description": "Captured from settlement data point networks.\n\nHigh grade firmware for secure hardware interfaces have to use their manufacturer's authorised updates. These can be expensive and sometimes custom built patches are used instead. These provide the components necessary to manipulate the firmware in unauthorised ways."
+    },
+    {
+      "name": "tg_shipflightdata",
+      "name_localised": "Ship Flight Data",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Data",
+      "locations": [],
+      "sources": [
+        "Thargoid Interceptor",
+        "Thargoid Scout"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "AX Explosive Munitions"
+      ],
+      "description": "Data collected from a detailed scan of a Thargoid vessel using a Xeno Scanner. This data contains information relating to the flight mechanics, flight systems and combat manoeuvres of a Thargoid ship. Research into this data is currently ongoing, with many engineers speculating that the information could hold the key to developing anti-Thargoid strategies and improve human technology to counter the threat posed by this race. Therefore, Thargoid related data is highly sought after for scientific research or can be used in the synthesis of various anti-Thargoid ammunition types."
+    },
+    {
+      "name": "tg_shipsystemsdata",
+      "name_localised": "Ship Systems Data",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Data",
+      "locations": [],
+      "sources": [
+        "Thargoid Interceptor",
+        "Thargoid Scout"
+      ],
+      "engineering": [],
+      "synthesis": [],
+      "description": "Data collected from a detailed scan of a Thargoid vessel using a Xeno Scanner. This data contains information relating to the internal systems of a Thargoid ship. Research into this data is currently ongoing, with many engineers speculating that the information could hold the key to developing anti-Thargoid strategies and improve human technology to counter the threat posed by this race. Therefore, Thargoid related data is highly sought after for scientific research or can be used in the synthesis of various anti-Thargoid ammunition types."
+    },
+    {
+      "name": "legacyfirmware",
+      "name_localised": "Specialised Legacy Firmware",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Encoded Firmware",
+      "locations": [
+        "Surface Installation",
+        "Satellites",
+        "Private Data Beacons",
+        "Mission reward"
+      ],
+      "sources": [],
+      "engineering": [
+        "Charge Enhanced Power Distributor",
+        "Clean Thrusters",
+        "Dirty Thrusters",
+        "High Charge Capacity Power Distributor",
+        "Rapid Fire Weapon",
+        "Specialised Shield Cell Bank"
+      ],
+      "synthesis": [],
+      "description": "Used by factions as a reward for mission contracts. Known to be salvaged from signal sources. Known to be found in small settlement data point networks.\n\nSpecialised legacy firmware is the control software from earlier versions of the technology. These can be rare finds and have some uses in developing new versions with backwards compatibility."
+    },
+    {
+      "name": "wakesolutions",
+      "name_localised": "Strange Wake Solutions",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Wake Scans ",
+      "locations": [
+        "Mission reward (Boom system states)"
+      ],
+      "sources": [
+        "High wake scanning"
+      ],
+      "engineering": [
+        "Expanded Capture Arc Frame Shift Drive Interdictor",
+        "Increased Range Frame Shift Drive"
+      ],
+      "synthesis": [],
+      "description": "Captured from high energy wakes with a wake scanner.\n\nData for frame shift wake destination solutions usually follows a predictable pattern. The technology is still new enough that oddities can be found."
+    },
+    {
+      "name": "encryptioncodes",
+      "name_localised": "Tagged Encryption Codes",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Encryption Files",
+      "locations": [
+        "Surface Installation",
+        "Satellites",
+        "Private Data Beacons",
+        "Mission reward (Boom system states)",
+        "Hackable Data Transmitter (Space Installations)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Expanded Capture Arc Frame Shift Drive Interdictor",
+        "Long Range Frame Shift Drive Interdictor"
+      ],
+      "synthesis": [],
+      "description": "Captured from settlement data point networks. Known to be salvaged from signal sources.\n\nEncryption codes are typically very sensitive data because of their use in decrypting confidential information. In the right circumstances these can be captured remotely and as such are highly sought after by certain people."
+    },
+    {
+      "name": "tg_compositiondata",
+      "name_localised": "Thargoid Material Composition Data",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Data",
+      "locations": [
+        "Thargoid Surface Site"
+      ],
+      "sources": [],
+      "engineering": [],
+      "synthesis": [],
+      "description": "Data collected during a basic scan of Thargoid structures."
+    },
+    {
+      "name": "tg_residuedata",
+      "name_localised": "Thargoid Residue Data",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Thargoid Data",
+      "locations": [
+        "Thargoid Surface Site"
+      ],
+      "sources": [],
+      "engineering": [],
+      "synthesis": [],
+      "description": "Data collected during a basic scan of Thargoid structures."
+    },
+    {
+      "name": "unknownshipsignature",
+      "name_localised": "Thargoid Ship Signature",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "",
+      "locations": [],
+      "sources": [
+        "Thargoid Interceptor",
+        "Thargoid Scout"
+      ],
+      "engineering": [
+        "Thargoid Data"
+      ],
+      "synthesis": [],
+      "description": "The ship signature of a Thargoid Interceptor."
+    },
+    {
+      "name": "tg_structuraldata",
+      "name_localised": "Thargoid Structural Data",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Thargoid Data",
+      "locations": [
+        "Thargoid Surface Site"
+      ],
+      "sources": [],
+      "engineering": [],
+      "synthesis": [],
+      "description": "Data collected during a basic scan of Thargoid structures."
+    },
+    {
+      "name": "unknownwakedata",
+      "name_localised": "Thargoid Wake Data",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Thargoid Data",
+      "locations": [],
+      "sources": [
+        "High wake scanning (Thargoid Interceptor)"
+      ],
+      "engineering": [],
+      "synthesis": [],
+      "description": "Wake data of a Thargoid Interceptor."
+    },
+    {
+      "name": "emissiondata",
+      "name_localised": "Unexpected Emission Data",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Emission Data",
+      "locations": [
+        "Private Data Beacons"
+      ],
+      "sources": [
+        "Ship scanning (combat ships)"
+      ],
+      "engineering": [
+        "Clean Thrusters",
+        "Efficient Weapon",
+        "Long Range Detailed Surface Scanner",
+        "Long Range Scanner",
+        "Long Range Sensors"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from combat oriented vessels. Known to be salvaged from signal sources.\n\nMost users prefer their accumulated emission data to conform to the expected parameters. Sometimes strange distortions or readings are encountered and these can prove most illuminating."
+    },
+    {
+      "name": "scanarchives",
+      "name_localised": "Unidentified Scan Archives",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Data Archives",
+      "locations": [
+        "Hackable Comms Array (Space Installations and Megaships)"
+      ],
+      "sources": [
+        "Ship scanning (trading ships)"
+      ],
+      "engineering": [
+        "Engine Focused Power Distributor",
+        "Force Block",
+        "Long Range FSD Interdictor",
+        "System Focused Power Distributor",
+        "Weapon Focused Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from haulage vessels.\n\nMost scanners keep a log of their readings and that typically fits within the performance profile for the instrumentation and is tagged by identification heuristics. Sometimes scan data isn't tagged and so becomes of interest to those investigating various anomalies."
+    },
+    {
+      "name": "shielddensityreports",
+      "name_localised": "Untypical Shield Scans",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Shield Data",
+      "locations": [
+        "Hackable Comms Array (Space Installations and Megaships)"
+      ],
+      "sources": [
+        "Ship scanning (combat ships)"
+      ],
+      "engineering": [
+        "Blast Resistant Shield Booster",
+        "Enhanced Low Power Shield Generator",
+        "Heavy Duty Shield Booster",
+        "Kinetic Resistant Shield Booster",
+        "Kinetic Resistant Shield Generator",
+        "Thermal Resistant Shield Booster",
+        "Thermal Resistant Shield Generator"
+      ],
+      "synthesis": [],
+      "description": "Collected during basic scan: frequently pulled from combat oriented vessels.\n\nShield technology has been established for centuries, so finding shield behaviour that doesn't match the expected results can be of great interest to various individuals and organisations."
+    },
+    {
+      "name": "encryptedfiles",
+      "name_localised": "Unusual Encrypted Files",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Encryption Files",
+      "locations": [
+        "Surface Installation",
+        "Satellites",
+        "Private Data Beacons",
+        "Mission reward (Boom system states)",
+        "Hackable Comms Array (Space Installations and Megaships)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Expanded Capture Arc FSD Interdictor",
+        "Long Range FSD Interdictor"
+      ],
+      "synthesis": [],
+      "description": "Captured from settlement data point networks. Known to be salvaged from signal sources.\n\nData files are often encrypted, on occasion a novel method of encryption can be encountered which is usefull elsewhere."
+    }
+  ],
+  "manufactured": [
+    {
+      "name": "tg_abrasion03",
+      "name_localised": "Hardened Surface Fragments",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid Titan"
+      ],
+      "engineering": [],
+      "synthesis": [],
+      "description": "An abrasion sample taken from the upper surface of a Thargoid Titan. This material is extremely strong and resistant to multiple types of damage."
+    },
+    {
+      "name": "tg_abrasion01",
+      "name_localised": "Heat Exposure Specimen",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid Titan"
+      ],
+      "engineering": [],
+      "synthesis": [],
+      "description": "An abrasion sample taken from near a Thargoid Titan heat vent. The material appears to have been affected by common fluctuations in temperature, and shows evidence of microbiological life."
+    },
+    {
+      "name": "tg_abrasion02",
+      "name_localised": "Phasing Membrane Residue",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid Titan"
+      ],
+      "engineering": [],
+      "synthesis": [],
+      "description": "An abrasion sample taken from near a visible membrane of a Thargoid Titan. The material is viscous and oddly inert once separated from its place of origin."
+    },
+    {
+      "name": "tg_causticshard",
+      "name_localised": "Caustic Shard",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid interdiction"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "Caustic Sinks"
+      ],
+      "description": "A single shard of crystallised caustic gas"
+    },
+    {
+      "name": "tg_causticgeneratorparts",
+      "name_localised": "Corrosive Mechanisms",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid Caustic Generators"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "Caustic Sinks"
+      ],
+      "description": "Components recovered from the debris of a destroyed caustic generator. They are reactive to heat sources in close proximity."
+    },
+    {
+      "name": "basicconductors",
+      "name_localised": "Basic Conductors",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Conductive",
+      "locations": [],
+      "sources": [
+        "Signal sources",
+        "Ship salvage (Trader ships)"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "Heat Sink"
+      ],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources.\n\nBasic conductors control the ability of electricity to flow within the system."
+    },
+    {
+      "name": "tg_biomechanicalconduits",
+      "name_localised": "Bio-Mechanical Conduits",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid Scouts",
+        "Thargoid Interceptors"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "AX Explosive Munitions",
+        "Enzyme Missile Munitions"
+      ],
+      "description": "Bio-mechanical power conduits removed from Thargoid ships and other technology. These conduits appear to allow for the distribution of huge amounts of energy and seem to have the ability to self repair to a certain extent. Further analysis is required, but these items might be used to enhance human technology."
+    },
+    {
+      "name": "biotechconductors",
+      "name_localised": "Biotech Conductors",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Conductive",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [],
+      "engineering": [
+        "Long Range Weapon",
+        "Short Range Weapon"
+      ],
+      "synthesis": [],
+      "description": "Biotech conductors allow the flow of biotech materials (usually a fluid) to pass through the material."
+    },
+    {
+      "name": "chemicaldistillery",
+      "name_localised": "Chemical Distillery",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Chemical",
+      "locations": [
+        "Abandoned Settlement Salvage",
+        "Signal Sources (High Security Systems)"
+      ],
+      "sources": [
+        "Ship Salvage (Transport ships)"
+      ],
+      "engineering": [
+        "Charge Enhanced Power Distributor",
+        "Increased Range Frame Shift Drive"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in high security systems.\n\nChemical distillery allows the isolation of a chemical from another chemical."
+    },
+    {
+      "name": "chemicalmanipulators",
+      "name_localised": "Chemical Manipulators",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Chemical",
+      "locations": [
+        "Abandoned Settlement",
+        "Mission reward",
+        "Signal sources (Anarchy and/or Outbreak systems)"
+      ],
+      "sources": [
+        "Ship Salvage (Transport ships)"
+      ],
+      "engineering": [
+        "Charge Enhanced Power Distributor",
+        "Increased Range Frame Shift Drive",
+        "Overcharged Power Plant"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in high security systems.\n\nChemical manipulators provide a means to control a chemical process."
+    },
+    {
+      "name": "chemicalprocessors",
+      "name_localised": "Chemical Processors",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Chemical",
+      "locations": [
+        "Mission reward",
+        "Abandoned Settlement",
+        "Signal sources"
+      ],
+      "sources": [
+        "Ship salvage (Transport ships)",
+        "Mission reward"
+      ],
+      "engineering": [
+        "Charge Enhanced Power Distributor",
+        "Increased Range Frame Shift Drive"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in high security systems.\n\nChemical processors are used to facilitate specific chemical processes. They can be reconfigured for different processes."
+    },
+    {
+      "name": "chemicalstorageunits",
+      "name_localised": "Chemical Storage Units",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Chemical",
+      "locations": [
+        "Signal sources"
+      ],
+      "sources": [
+        "Ship salvage"
+      ],
+      "engineering": [
+        "Corrosive Shell"
+      ],
+      "synthesis": [
+        "Caustic Sinks"
+      ],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in high security systems.\n\nChemical storage units are used to contain chemicals in different states."
+    },
+    {
+      "name": "compactcomposites",
+      "name_localised": "Compact Composites",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Composite",
+      "locations": [
+        "Signal sources"
+      ],
+      "sources": [
+        "Ship salvage (military and security vessels)"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "Chaff"
+      ],
+      "description": "Component found in ships: frequently used by military and authority vessels. Known to be salvaged from signal sources.\n\nCompact composites are combined materials engineered for their space saving while still retaining their core strength and flexibility."
+    },
+    {
+      "name": "compoundshielding",
+      "name_localised": "Compound Shielding",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Shielding",
+      "locations": [
+        "Mission reward",
+        "Abandoned Settlement",
+        "Signal sources (High Security, Boom or Retreat systems)"
+      ],
+      "sources": [
+        "Ship salvage (Combat ships)"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "Reinforced Thrusters",
+        "Shielded Frame Shift Drive",
+        "Shielded Module",
+        "Shielded Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources in high security systems.\n\nCompound Shielding is a complex management of layered shields to provide a more effective barrier."
+    },
+    {
+      "name": "conductiveceramics",
+      "name_localised": "Conductive Ceramics",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Conductive",
+      "locations": [
+        "Signal sources (Anarchy systems)",
+        "Abandoned Settlement "
+      ],
+      "sources": [
+        "Ship salvage (transport ships)"
+      ],
+      "engineering": [
+        "Clean Thrusters",
+        "Focused Weapon",
+        "Lightweight Armour",
+        "Lightweight Hull Reinforcement Package",
+        "Lightweight Module",
+        "Lightweight Sensors",
+        "Lightweight Weapon",
+        "Overcharged Power Plant",
+        "Overcharged Weapon",
+        "Reinforced Shield Generator",
+        "Resistance Augmented Shield Booster"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in anarchy systems.\n\nConductive Ceramics allow electrical circuits to be constructed within ceramics."
+    },
+    {
+      "name": "conductivecomponents",
+      "name_localised": "Conductive Components",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Conductive",
+      "locations": [
+        "Signal sources (Anarchy systems)",
+        "Abandoned Settlement"
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Blast Resistant Shield Booster",
+        "Clean Thrusters",
+        "Engine Focused Power Distributor",
+        "Focused Weapon",
+        "Lightweight Armour",
+        "Lightweight Hull Reinforcement Package",
+        "Lightweight Module",
+        "Lightweight Sensors",
+        "Lightweight Weapon",
+        "Overcharged Power Plant",
+        "Overcharged Weapon",
+        "Reinforced Shield Generator",
+        "Resistance Augmented Shield Booster",
+        "Specialised Shield Cell Bank",
+        "System Focused Power Distributor",
+        "Weapon Focused Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in anarchy systems.\n\nConductive components are the basic elements for energy transfer within circuits."
+    },
+    {
+      "name": "conductivepolymers",
+      "name_localised": "Conductive Polymers",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Conductive",
+      "locations": [
+        "Mission reward",
+        "Convoy Beacons",
+        "Abandoned Settlement",
+        "Signal sources (Anarchy systems in the Outbreak state)"
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Long Range Weapon",
+        "Overcharged Weapon",
+        "Reinforced Shield Generator",
+        "Short Range Weapon"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in anarchy systems.\n\nConductive polymers are organic polymers that can be used to conduct electricity."
+    },
+    {
+      "name": "configurablecomponents",
+      "name_localised": "Configurable Components",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Mechanical Components",
+      "locations": [
+        "Signal sources (Low security systems)",
+        "Abandoned Settlement"
+      ],
+      "sources": [
+        "Ship salvage (Transport ships)"
+      ],
+      "engineering": [
+        "Dirty Thrusters",
+        "Double Shot Weapon",
+        "Rapid Fire Weapon",
+        "Reinforced Shield Generator",
+        "Short Range Weapon"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in low security systems.\n\nThese are common components whose purpose can be defined after manufacture."
+    },
+    {
+      "name": "fedcorecomposites",
+      "name_localised": "Core Dynamics Composites",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Composite",
+      "locations": [
+        "High Grade Emissions in Federal systems"
+      ],
+      "sources": [
+        "Ship salvage (combat ships)"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "Long Range Scanner",
+        "Long Range Sensors",
+        "Shielded Module",
+        "Shielded Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Advanced component found in Federal systems. Known to be salvaged from signal sources.\n\nCore Dynamics composites are a development by Core Dynamics providing increased protection over standard composites."
+    },
+    {
+      "name": "crystalshards",
+      "name_localised": "Crystal Shards",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Crystals",
+      "locations": [
+        "Abandoned Settlement"
+      ],
+      "sources": [
+        "Ship salvage (combat ships)"
+      ],
+      "engineering": [
+        "Scramble Spectrum"
+      ],
+      "synthesis": [
+        "Guardian Shard Cannon Munitions"
+      ],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources.\n\nCrystal shards are fragments from whole crystals."
+    },
+    {
+      "name": "electrochemicalarrays",
+      "name_localised": "Electrochemical Arrays",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Capacitors",
+      "locations": [
+        "Signal Sources (Anarchy systems)",
+        "Mission Reward (data delivery)",
+        "Abandoned Settlement "
+      ],
+      "sources": [
+        "Ship salvage (Military and Authority ships)"
+      ],
+      "engineering": [
+        "Engine Focused Power Distributor",
+        "Faster Boot Sequence Frame Shift Drive",
+        "Heavy Duty Shield Booster",
+        "Long Range Detailed Surface Scanner",
+        "Long Range Scanner",
+        "Long Range Sensors",
+        "Overcharged Weapon",
+        "Short Range Weapon",
+        "System Focused Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by military and authority vessels. Known to be salvaged from signal sources in anarchy systems.\n\nElectrochemical arrays are used for very small scale detection in microfluids."
+    },
+    {
+      "name": "exquisitefocuscrystals",
+      "name_localised": "Exquisite Focus Crystals",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Crystals",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "Destroying Anacondas in Hazardous Resource Extraction Sites"
+      ],
+      "engineering": [
+        "Blast Resistant Shield Booster",
+        "Charge Enhanced Power Distributor",
+        "Kinetic Resistant Shield Booster",
+        "Thermal Resistant Shield Booster"
+      ],
+      "synthesis": [],
+      "description": "Used by factions as a reward for mission contracts.\n\nExquisite focus crystals are finely crafted to ensure optimum performance within laser systems."
+    },
+    {
+      "name": "filamentcomposites",
+      "name_localised": "Filament Composites",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Composite",
+      "locations": [
+        "Signal sources"
+      ],
+      "sources": [
+        "Ship salvage (Military and authority ships)"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "Chaff"
+      ],
+      "description": "Component found in ships: frequently used by military and authority vessels. Known to be salvaged from signal sources.\n\nFilament composites use embedded filaments to improve the strength of the material."
+    },
+    {
+      "name": "uncutfocuscrystals",
+      "name_localised": "Flawed Focus Crystals",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Crystals",
+      "locations": [
+        "Signal sources",
+        "Mission rewards",
+        "Abandoned Settlement "
+      ],
+      "sources": [
+        "Ship salvage (Combat ships)"
+      ],
+      "engineering": [
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources.\n\nThese crystals contain minor flaws but can be repaired or re-cut for use as focus crystals for directed energy systems like lasers, but have not been processed into a useable form."
+    },
+    {
+      "name": "focuscrystals",
+      "name_localised": "Focus Crystals",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Crystals",
+      "locations": [
+        "Abandoned Settlement",
+        "Mission reward",
+        "Signal sources (High security systems)"
+      ],
+      "sources": [
+        "Ship salvage (Combat ships)"
+      ],
+      "engineering": [
+        "Blast Resistant Shield Booster",
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner",
+        "Focused Weapon",
+        "Kinetic Resistant Shield Booster",
+        "Kinetic Resistant Shield Generator",
+        "Long Range Weapon",
+        "Resistance Augmented Shield Booster",
+        "Thermal Resistant Shield Booster",
+        "Thermal Resistant Shield Generator"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources in high security systems.\n\nFocus crystals are used to direct and concentrate directed energy systems - typically lasers."
+    },
+    {
+      "name": "galvanisingalloys",
+      "name_localised": "Galvanising Alloys",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Alloys",
+      "locations": [
+        "Signal sources (systems in Election state)",
+        "Mission reward",
+        "Abandoned Settlement"
+      ],
+      "sources": [
+        "Ship salvage (combat ships)"
+      ],
+      "engineering": [
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Shield Booster",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [
+        "Caustic Sinks"
+      ],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources.\n\nGalvanising alloys are alloys with additional protection from corrosion."
+    },
+    {
+      "name": "gridresistors",
+      "name_localised": "Grid Resistors",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Capacitors",
+      "locations": [
+        "Signal Sources",
+        "Mission reward",
+        "Abandoned Settlement"
+      ],
+      "sources": [
+        "Ship salvage (military and authority ships)"
+      ],
+      "engineering": [
+        "Charge Enhanced Power Distributor",
+        "Expanded Capture Arc Frame Shift Drive Interdictor",
+        "Faster Boot Sequence Frame Shift Drive",
+        "Heavy Duty Shield Booster",
+        "Kinetic Resistant Shield Booster",
+        "Rapid Charge Shield Cell Bank"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by military and authority vessels. Known to be salvaged from signal sources.\n\nGrid resistors are a form of serial resistor (often in a 2 or 3 dimensional array) that are used for a variety of purposes, including: radio interference reduction, parasitic oscillation prevention and grid current limitation."
+    },
+    {
+      "name": "guardian_powercell",
+      "name_localised": "Guardian Power Cell",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Guardian Components",
+      "locations": [
+        "Guardian Structure"
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Frame Shift Drive Booster",
+        "Guardian Gauss Cannon (Fixed, Class 2)",
+        "Guardian Hybrid Power Distributor",
+        "Guardian Plasma Charger (Fixed, Class 1)",
+        "Guardian Plasma Charger (Turreted, Class 1)",
+        "Guardian Plasma Charger Munitions",
+        "Guardian Shard Cannon Munitions",
+        "Guardian Shield Reinforcement Package",
+        "XG7 Trident",
+        "XG8 Javelin",
+        "XG9 Lance"
+      ],
+      "synthesis": [],
+      "description": "This appears to be some kind of battery used to power Guardian technology."
+    },
+    {
+      "name": "guardian_powerconduit",
+      "name_localised": "Guardian Power Conduit",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Guardian Components",
+      "locations": [
+        "Guardian Structure"
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Gauss Cannon (Fixed, Class 1)",
+        "Guardian Gauss Cannon Munitions",
+        "Guardian Hybrid Power Plant",
+        "Guardian Module Reinforcement Package",
+        "Guardian Plasma Charger (Fixed, Class 2)",
+        "Guardian Plasma Charger (Fixed, Class 3)",
+        "Guardian Plasma Charger (Turreted, Class 2)",
+        "Guardian Plasma Charger (Turreted, Class 3)",
+        "Guardian Plasma Charger Munitions",
+        "Shard Cannon (Fixed, Class 1)",
+        "Shard Cannon (Turreted, Class 1)"
+      ],
+      "synthesis": [],
+      "description": "This material consists of conduits and wiring used to transfer power within Guardian technology."
+    },
+    {
+      "name": "guardian_sentinel_weaponparts",
+      "name_localised": "Guardian Sentinel Weapon Parts",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Guardian Components",
+      "locations": [],
+      "sources": [
+        "Guardian Sentinels"
+      ],
+      "engineering": [
+        "Guardian Gauss Cannon (Fixed, Class 1)",
+        "Guardian Gauss Cannon Munitions",
+        "Guardian Plasma Charger (Fixed, Class 1)",
+        "Guardian Plasma Charger (Fixed, Class 2)",
+        "Guardian Plasma Charger (Fixed, Class 3)",
+        "Guardian Plasma Charger (Turreted, Class 1)",
+        "Guardian Plasma Charger (Turreted, Class 2)",
+        "Guardian Plasma Charger (Turreted, Class 3)",
+        "Guardian Plasma Charger Munitions",
+        "Guardian Shard Cannon (Fixed, Class 1)",
+        "Guardian Shard Cannon (Turreted, Class 1)",
+        "Guardian Shard Cannon Munitions",
+        "XG9 Lance"
+      ],
+      "synthesis": [],
+      "description": "These are weapon components from a Guardian Sentinel. In their current state they are inoperable, but may be useful for research and development."
+    },
+    {
+      "name": "guardian_techcomponent",
+      "name_localised": "Guardian Technology Component",
+      "grade": 2,
+      "maximum": 200,
+      "category" : "Guardian Components",
+      "locations": [
+        "Guardian Structure "
+      ],
+      "sources": [],
+      "engineering": [
+        "Guardian Frame Shift Drive Booster",
+        "Guardian Gauss Cannon (Fixed, Class 2)",
+        "Guardian Plasma Charger (Fixed, Class 1)",
+        "Guardian Plasma Charger (Turreted, Class 1)",
+        "Guardian Plasma Charger Munitions",
+        "Guardian Shard Cannon (Fixed, Class 1)",
+        "Guardian Shard Cannon (Fixed, Class 2)",
+        "Guardian Shard Cannon (Fixed, Class 3)",
+        "Guardian Shard Cannon (Turreted, Class 1)",
+        "Guardian Shard Cannon (Turreted, Class 2)",
+        "Guardian Shard Cannon (Turreted, Class 3)",
+        "Guardian Shield Reinforcement Package",
+        "XG7 Trident",
+        "XG8 Javelin",
+        "XG9 Lance"
+
+      ],
+      "synthesis": [],
+      "description": "This salvage contains circuitry and other components of Guardian origin."
+    },
+    {
+      "name": "guardian_sentinel_wreckagecomponents",
+      "name_localised": "Guardian Wreckage Components",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Guardian Components",
+      "locations": [],
+      "sources": [
+        "Guardian Sentinels"
+      ],
+      "engineering": [
+        "Guardian Gauss Cannon (Fixed, Class 1)",
+        "Guardian Gauss Cannon Munitions",
+        "Guardian Hull Reinforcement Package",
+        "Guardian Module Reinforcement Package",
+        "Guardian Plasma Charger Munitions",
+        "Guardian Shard Cannon (Fixed, Class 2)",
+        "Guardian Shard Cannon (Fixed, Class 3)",
+        "Guardian Shard Cannon (Turreted, Class 2)",
+        "Guardian Shard Cannon (Turreted, Class 3)",
+        "Guardian Shard Cannon Munitions",
+        "XG8 Javelin"
+
+      ],
+      "synthesis": [],
+      "description": "This salvage consists of internal components from a Guardian Sentinel. In their current state they are inoperable, but may be useful for research and development."
+    },
+    {
+      "name": "heatconductionwiring",
+      "name_localised": "Heat Conduction Wiring",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Heat",
+      "locations": [
+        "Signal sources",
+        "Mission reward",
+        "Abandoned Settlement"
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Overcharged Power Plant",
+        "Reinforced Thrusters",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package",
+        "Thermal Resistant Shield Booster"
+      ],
+      "synthesis": [
+        "Heat Sink"
+      ],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources.\n\nHeat conduction wiring is used to transfer heat through a material."
+    },
+    {
+      "name": "heatdispersionplate",
+      "name_localised": "Heat Dispersion Plate",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Heat",
+      "locations": [
+        "Abandoned Settlement",
+        "Mission reward",
+        "Signal sources"
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Efficient Weapon",
+        "Faster Boot Sequence Frame Shift Drive",
+        "Overcharged Power Plant",
+        "Rapid Fire Weapon",
+        "Reinforced Thrusters",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package",
+        "Thermal Resistant Shield Booster"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources.\n\nHeat dispersion plates use their surface area to disperse heat into the environment."
+    },
+    {
+      "name": "heatexchangers",
+      "name_localised": "Heat Exchangers",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Heat",
+      "locations": [
+        "Signal sources (Anarchy systems)",
+        "Abandoned Settlement "
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Efficient Weapon",
+        "Faster Boot Sequence Frame Shift Drive",
+        "Low emissions Power Plant",
+        "Reinforced Thrusters",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package",
+        "Thermal Resistant Shield Booster"
+      ],
+      "synthesis": [
+        "Heat Sink"
+      ],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in anarchy systems.\n\nHeat exchangers transfer heat between separate systems.\n\n"
+    },
+    {
+      "name": "heatresistantceramics",
+      "name_localised": "Heat Resistant Ceramics",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Thermic",
+      "locations": [],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Blast Block",
+        "Cluster Capacitors",
+        "Double Braced",
+        "Flow Control",
+        "Stripped Down",
+        "Super Conduits",
+        "Thermal Shock"
+      ],
+      "synthesis": [
+        "Guardian Gauss Cannon Munitions",
+        "Guardian Hybrid Power Plant"
+      ],
+      "description": "Component found in ships: frequently used by military and authority vessels.\n\nKnown to be salvaged from signal sources in anarchy systems. Heat resistant ceramics provide enhanced protection against thermal sources."
+    },
+    {
+      "name": "heatvanes",
+      "name_localised": "Heat Vanes",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Heat",
+      "locations": [
+        "Abandoned Settlement",
+        "Mission reward",
+        "Signal sources"
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Efficient Weapon",
+        "Faster Boot Sequence Frame Shift Drive",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in anarchy systems.\n\nHeat vanes use a series of fins for a greater surface area to disperse heat."
+    },
+    {
+      "name": "highdensitycomposites",
+      "name_localised": "High Density Composites",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Composite",
+      "locations": [
+        "Abandoned Settlement",
+        "Signal sources (low security systems)"
+      ],
+      "sources": [
+        "Ship salvage (military and authority ships) (especially vipers)"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Double Shot Weapon",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "High Capacity Weapon",
+        "High Charge Capacity Power Distributor",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Lightweight Armour",
+        "Lightweight Hull Reinforcement Package",
+        "Reinforced Module",
+        "Reinforced Thrusters",
+        "Shielded Frame Shift Drive",
+        "Shielded Module",
+        "Shielded Power Distributor",
+        "Sturdy Weapon"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by military and authority vessels. Known to be salvaged from signal sources in low security systems.\n\nHigh density composites pack the materials into extremely dense layers for added protection."
+    },
+    {
+      "name": "hybridcapacitors",
+      "name_localised": "Hybrid Capacitors",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "Capacitors",
+      "locations": [
+        "Abandoned Settlement",
+        "Mission reward",
+        "Signal sources"
+      ],
+      "sources": [
+        "Ship salvage (military and authority ships)"
+      ],
+      "engineering": [
+        "Charge Enhanced Power Distributor",
+        "Dazzle Shell",
+        "Faster Boot Sequence Frame Shift Drive",
+        "Heavy Duty Shield Booster",
+        "Kinetic Resistant Shield Booster",
+        "Long Range Detailed Surface Scanner",
+        "Long Range Scanner",
+        "Long Range Sensors",
+        "Rapid Charge Shield Cell Bank",
+        "Weapon Focused Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by military and authority vessels. Known to be salvaged from signal sources.\n\nHybrid capacitors are form of supercapacitor capable of storing and releasing vast amounts of energy."
+    },
+    {
+      "name": "imperialshielding",
+      "name_localised": "Imperial Shielding",
+      "grade": 5,
+      "maximum": 100,
+      "category" : "Shielding",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "High Grade Emissions in Imperial systems"
+      ],
+      "engineering": [
+        "Reinforced Thrusters",
+        "Resistance Augmented Shield Booster",
+        "Shielded Frame Shift Drive"
+      ],
+      "synthesis": [],
+      "description": "Advanced component found in Imperial systems. Known to be salvaged from signal sources.\n\nImperial shielding is an advanced form of shield management using proprietary technology."
+    },
+    {
+      "name": "improvisedcomponents",
+      "name_localised": "Improvised Components",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Mechanical Components",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "High Grade Emissions (HGEs in Civil Unrest systems have a higher chance of containing this material)"
+      ],
+      "engineering": [
+        "Reinforced Shield Generator"
+      ],
+      "synthesis": [],
+      "description": "Specialist component used by factions in times of civil unrest. Known to be salvaged from signal sources.\n\nThese jury rigged components can fill in for crafted or manufactured components in a pinch."
+    },
+    {
+      "name": "mechanicalcomponents",
+      "name_localised": "Mechanical Components",
+      "grade": 3,
+      "maximum": 200,
+      "category": "Mechanical Components",
+      "locations": [
+        "Abandoned Settlement",
+        "Signal sources (low security systems)"
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Dazzle Shell",
+        "Dirty Thrusters",
+        "Double Shot Weapon",
+        "Expanded Capture Arc Frame Shift Drive Interdictor",
+        "High Capacity Weapon",
+        "Rapid Fire Weapon",
+        "Reinforced Shield Generator",
+        "Wide Angle Detailed Surface Scanner",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources in low security systems.\n\nGeneral core mechanical components such as gearing."
+    },
+    {
+      "name": "mechanicalequipment",
+      "name_localised": "Mechanical Equipment",
+      "grade": 2,
+      "maximum": 250,
+      "category": "Mechanical Components",
+      "locations": [
+        "Abandoned Settlement",
+        "Signal sources (Boom system states)"
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Dirty Thrusters",
+        "Double Shot Weapon",
+        "Expanded Capture Arc Frame Shift Drive Interdictor",
+        "High Capacity Weapon",
+        "Rapid Fire Weapon",
+        "Wide Angle Detailed Surface Scanner",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources.\n\nA range of mechanical equipment."
+    },
+    {
+      "name": "mechanicalscrap",
+      "name_localised": "Mechanical Scrap",
+      "grade": 1,
+      "maximum": 300,
+      "category": "Mechanical Components",
+      "locations": [
+        "Abandoned Settlement",
+        "Debris Field",
+        "Mission reward",
+        "Signal sources"
+      ],
+      "sources": [
+        "Ship salvage (trading ships)"
+      ],
+      "engineering": [
+        "Ammo Capacity Chaff Launcher",
+        "Ammo Capacity Heat Sink Launcher",
+        "Ammo Capacity Point Defence",
+        "Dazzle Shell",
+        "Expanded Capture Arc Frame Shift Drive Interdictor",
+        "High Capacity Weapon",
+        "Rapid Fire Weapon",
+        "Screening Shell",
+        "Wide Angle Detailed Surface Scanner",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by haulage vessels. Destroyed haulage vessels can be scavenged from the aftermath of combat in shipping lanes. Known to be salvaged from signal sources.\n\nAssorted scrap from mechanical sources."
+    },
+    {
+      "name": "militarygradealloys",
+      "name_localised": "Military Grade Alloys",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Thermic",
+      "locations": [
+        "High Grade Emissions (War or Civil War system states)",
+        "Mission reward"
+      ],
+      "sources": [],
+      "engineering": [
+        "Enhanced Low Power Shield Generator",
+        "Lightweight Armour",
+        "Lightweight Hull Reinforcement Package"
+      ],
+      "synthesis": [],
+      "description": "Advanced component used by factions in times of war. Known to be salvaged from signal sources in systems in a state of civil war or war.\n\nMilitary grade alloys provide an overall improved protection over standard alloys."
+    },
+    {
+      "name": "militarysupercapacitors",
+      "name_localised": "Military Supercapacitors",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Capacitors",
+      "locations": [
+        "Mission reward",
+        "High Grade Emissions (War and Civil War system states)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Engine Focused Power Distributor",
+        "Focused Weapon",
+        "High Capacity Weapon",
+        "High Charge Capacity Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Advanced component used by factions in times of war. Known to be salvaged from signal sources.\n\nMilitary supercapacitors provide extremely high energy storage and release."
+    },
+    {
+      "name": "pharmaceuticalisolators",
+      "name_localised": "Pharmaceutical Isolators",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Chemical",
+      "locations": [
+        "Mission reward",
+        "High Grade Emissions (Outbreak system states only)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Dirty Thrusters"
+      ],
+      "synthesis": [],
+      "description": "Specialist component developed during times of outbreak. Known to be salvaged from signal sources.\n\nPharmaceutical isolators are used to extract and confine organic compounds from within a larger sample."
+    },
+    {
+      "name": "phasealloys",
+      "name_localised": "Phase Alloys",
+      "grade": 3,
+      "maximum": 200,
+      "category": "Alloys",
+      "locations": [
+        "Abandoned Settlement",
+        "Signal sources (Boom system states)"
+      ],
+      "sources": [
+        "Ship salvage (Combat ships)"
+      ],
+      "engineering": [
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Shield Booster",
+        "Lightweight Module",
+        "Lightweight Sensors",
+        "Lightweight Weapon",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources in low security systems.\n\nPhase alloys blend metals and minerals into a meta-material which exploits properties from different phase states of the individual elements."
+    },
+    {
+      "name": "polymercapacitors",
+      "name_localised": "Polymer Capacitors",
+      "grade": 4,
+      "maximum": 250,
+      "category": "Capacitors",
+      "locations": [
+        "Abandoned Settlement",
+        "Mission reward",
+        "Signal sources (Anarchy systems)"
+      ],
+      "sources": [
+        "Ship salvage (Military and Authority ships)"
+      ],
+      "engineering": [
+        "Focused Weapon",
+        "Heavy Duty Shield Booster",
+        "Long Range Scanner",
+        "Long Range Sensors",
+        "Overcharged Weapon"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by military and authority vessels. Known to be salvaged from signal sources in anarchy systems.\n\nPolymer capacitors are stable and reliable forms of capacitor for small scale electronics. They are known for handling overload situations without cascade failure."
+    },
+    {
+      "name": "precipitatedalloys",
+      "name_localised": "Precipitated Alloys",
+      "grade": 3,
+      "maximum": 200,
+      "category": "Thermic",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "Ship salvage (military and authority ships)"
+      ],
+      "engineering": [
+        "Enhanced Low Power Shield Generator",
+        "Rapid Charge Shield Cell Bank",
+        "Rapid Fire Weapon"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by military and authority vessels.\n\nPrecipitated alloys provide extra hardening over standard alloys."
+    },
+    {
+      "name": "fedproprietarycomposites",
+      "name_localised": "Proprietary Composites",
+      "grade": 4,
+      "maximum": 150,
+      "category": "Composite",
+      "locations": [
+        "Encoded Emissions",
+        "High Grade Emissions (Federal systems in the Election state)",
+        "Mission reward"
+      ],
+      "sources": [
+        "Federal ship salvage (High Intensity Conflict Zones)"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "High Capacity Weapon",
+        "High Charge Capacity Power Distributor",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Lightweight Armour",
+        "Lightweight Hull Reinforcement Package",
+        "Reinforced Thrusters",
+        "Shielded Frame Shift Drive",
+        "Shielded Module",
+        "Shielded Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Advanced component found in Federal systems. Known to be salvaged from signal sources.\n\nProprietary composites are a development for the Federal Navy providing increased resilience over standard composites.\n\n"
+    },
+    {
+      "name": "tg_propulsionelement",
+      "name_localised": "Propulsion Elements",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid Interceptor",
+        "Thargoid Scout",
+        "Caustic Generator"
+      ],
+      "engineering": [
+        "Thargoid Pulse Neutraliser"
+      ],
+      "synthesis": [
+        "AX Explosive Munitions",
+        "Enzyme Missile Munitions"
+      ],
+      "description": "Part of a Thargoid ship's propulsion system. These elements are found when damaging or fully destroying a Thargoid ship. Research into these materials is currently ongoing, with many engineers speculating that these items could hold the key to developing anti-Thargoid technologies, such as guidance systems, thrusters and ship systems. Therefore, Thargoid related materials are highly sought after for scientific research or can be used in the synthesis of various anti-Thargoid ammunition types."
+    },
+    {
+      "name": "protoheatradiators",
+      "name_localised": "Proto Heat Radiators",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Heat",
+      "locations": [
+        "Mission reward",
+        "High Grade Emissions (Boom system states only)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Efficient Weapon",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [
+        "Heat Sink"
+      ],
+      "description": "Specialist component developed during economic boom. Known to be salvaged from signal sources.\n\nProto heat radiators use fluid transfer to move heat from a system."
+    },
+    {
+      "name": "protolightalloys",
+      "name_localised": "Proto Light Alloys",
+      "grade": 4,
+      "maximum": 150,
+      "category": "Alloys",
+      "locations": [
+        "Mission reward",
+        "High Grade Emissions (Boom state systems only)"
+      ],
+      "sources": [
+        "Ship salvage (combat ships)"
+      ],
+      "engineering": [
+        "Lightweight Module",
+        "Lightweight Sensors",
+        "Lightweight Weapon"
+      ],
+      "synthesis": [],
+      "description": "Specialist component developed during economic boom. Known to be salvaged from signal sources.\n\nProto light alloys are experimental alloy techniques used to reduce the required mass for the alloy."
+    },
+    {
+      "name": "protoradiolicalloys",
+      "name_localised": "Proto Radiolic Alloys",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Alloys",
+      "locations": [
+        "High Grade Emissions (Boom state systems)"
+      ],
+      "sources": [],
+      "engineering": [
+        "Lightweight Module",
+        "Lightweight Sensors",
+        "Lightweight Weapon"
+      ],
+      "synthesis": [
+        "Chaff"
+      ],
+      "description": "Specialist component developed during economic boom. Known to be salvaged from signal sources.\n\nThese advanced alloys use radiation to form complex materials."
+    },
+    {
+      "name": "refinedfocuscrystals",
+      "name_localised": "Refined Focus Crystals",
+      "grade": 4,
+      "maximum": 150,
+      "category": "Crystals",
+      "locations": [
+        "Abandoned Settlement",
+        "Mission reward",
+        "Signal sources (High security systems)"
+      ],
+      "sources": [
+        "Ship salvage"
+      ],
+      "engineering": [
+        "Blast Resistant Shield Booster",
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner",
+        "Focused Weapon",
+        "Kinetic Resistant Shield Booster",
+        "Kinetic Resistant Shield Generator",
+        "Resistance Augmented Shield Booster",
+        "Thermal Resistant Shield Booster",
+        "Thermal Resistant Shield Generator"
+      ],
+      "synthesis": [],
+      "description": "Used by factions as a reward for mission contracts. Known to be salvaged from signal sources in high security systems.\n\nRefined focus crystals are a higher quality of focus crystal with an enhanced performance profile."
+    },
+    {
+      "name": "salvagedalloys",
+      "name_localised": "Salvaged Alloys",
+      "grade": 1,
+      "maximum": 300,
+      "category": "Alloys",
+      "locations": [
+        "Signal sources",
+        "Abandoned Settlement"
+      ],
+      "sources": [
+        "Ship salvage"
+      ],
+      "engineering": [
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Shield Booster",
+        "Lightweight Module",
+        "Lightweight Sensors",
+        "Lightweight Weapon",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources.\n\nAlloys salvaged from vehicle debris."
+    },
+    {
+      "name": "unknownenergysource",
+      "name_localised": "Sensor Fragment",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Thargoid Components",
+      "locations": [
+        "Non-Human Signal Sources",
+        "Alien Crash Sites"
+      ],
+      "sources": [
+        "Thargoid Sensors",
+        "Scavengers"
+      ],
+      "engineering": [
+        "Professor Palin",
+        "Chloe Sedesi"
+      ],
+      "synthesis": [],
+      "description": "Originally known as an 'Unknown Fragment', this is a piece of a Thargoid sensor. Since they have not been given a designation by intergalactic trade authorities, it is impossible to buy or sell them legally."
+    },
+    {
+      "name": "shieldemitters",
+      "name_localised": "Shield Emitters",
+      "grade": 2,
+      "maximum": 250,
+      "category": "Shielding",
+      "locations": [
+        "Abandoned Settlement",
+        "Signal sources (Boom state systems)"
+      ],
+      "sources": [
+        "Ship salvage (combat ships)"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "Reinforced Module",
+        "Shielded Frame Shift Drive",
+        "Shielded Module",
+        "Shielded Power Distributor",
+        "Sturdy Weapon"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources.\n\nShield emitters project the shield's energy away from the source to provide a barrier."
+    },
+    {
+      "name": "shieldingsensors",
+      "name_localised": "Shielding Sensors",
+      "grade": 3,
+      "maximum": 200,
+      "category": "Shielding",
+      "locations": [
+        "Abandoned Settlement",
+        "Mission reward",
+        "Signal sources (high security systems)"
+      ],
+      "sources": [
+        "Ship salvage (combat ships)"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "Reinforced Thrusters",
+        "Shielded Frame Shift Drive",
+        "Shielded Module",
+        "Shielded Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources in high security systems.\n\nShielding sensors are used to monitor an active shield."
+    },
+    {
+      "name": "temperedalloys",
+      "name_localised": "Tempered Alloys",
+      "grade": 1,
+      "maximum": 300,
+      "category": "Thermic",
+      "locations": [],
+      "sources": [
+        "Ship salvage (combat ships)"
+      ],
+      "engineering": [
+        "Angled Plating",
+        "Shift-Lock Canister",
+        "Thermal Conduit"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by military and authority vessels. Known to be salvaged from signal sources.\n\nTempered alloys are refined alloys used for their enhanced strength and impact resistance."
+    },
+    {
+      "name": "unknowncarapace",
+      "name_localised": "Thargoid Carapace",
+      "grade": 2,
+      "maximum": 250,
+      "category": "Thargoid Components",
+      "locations": [
+        "Thargoid Surface Site"
+      ],
+      "sources": [],
+      "engineering": [],
+      "synthesis": [
+        "AX Small Calibre Munitions"
+      ],
+      "description": "This shell like fragment is of Thargoid origin. Making up the body sections of creatures known as Scavengers these offer protection from various hazardous environments allowing the creatures to survive in the harshest of conditions."
+    },
+    {
+      "name": "unknownenergycell",
+      "name_localised": "Thargoid Energy Cell",
+      "grade": 3,
+      "maximum": 200,
+      "category": "Thargoid Components",
+      "locations": [
+        "Thargoid Scout surface crash sites"
+      ],
+      "sources": [
+        "Scavengers"
+      ],
+      "engineering": [
+        "Enzyme Missile Rack"
+      ],
+      "synthesis": [],
+      "description": "This is an energy cell of Thargoid origin. It is found in the bodies of creatures known as Scavengers and appears to operate as both the creature's heart and energy source. It is heavily mechanised, giving the creature something akin to an internal battery and is the central component to its internal systems. This discovery has led many to question if the Scavengers are sentient creatures or simple mechanical drones created by the Thargoids as workers."
+    },
+    {
+      "name": "unknownorganiccircuitry",
+      "name_localised": "Thargoid Organic Circuitry",
+      "grade": 5,
+      "maximum": 100,
+      "category": "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Scavenger"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "AX Explosive Munitions",
+        "Enzyme Missile Rack"
+      ],
+      "description": "This fragment of organic circuitry is of Thargoid origin. This item is found in the bodies of creatures known as Scavengers and appears to contain both organic and mechanical elements. This discovery has lead many to question if the Scavengers are sentient creatures or simple mechanical drones created by the Thargoids as workers."
+    },
+    {
+      "name": "unknowntechnologycomponents",
+      "name_localised": "Thargoid Technology Components",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Scavangers"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "AX Remote Flak Munitions"
+      ],
+      "description": "These technological components are of Thargoid origin. These items are found in the bodies of creatures known as Scavengers and offer evidence that these creatures are heavily modified or perhaps constructed by the Thargoids. The integration of technological elements into organic entities appears to be a key element of Thargoid engineering."
+    },
+    {
+      "name": "thermicalloys",
+      "name_localised": "Thermic Alloys",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "Thermic",
+      "locations": [
+        "Mission reward"
+      ],
+      "sources": [
+        "Ship salvage (military and authority ships)"
+      ],
+      "engineering": [
+        "Enhanced Low Power Shield Generator",
+        "Long Range Weapon",
+        "Rapid Fire Weapon"
+      ],
+      "synthesis": [
+        "Chaff"
+      ],
+      "description": "Component found in ships: frequently used by military and authority vessels.\n\nThermic alloys are designed with a better thermal adaption profile than standard alloys."
+    },
+    {
+      "name": "tg_weaponparts",
+      "name_localised": "Weapon Parts",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid Scout",
+        "Thargoid Interceptor"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "AX Remote Flak Munitions",
+        "AX Small Calibre Munitions",
+        "Enzyme Missile Munitions"
+      ],
+      "description": "Part of a Thargoid ship's weapon systems. These materials are found when damaging or fully destroying a Thargoid ship. Research into these materials in currently ongoing, with many engineers speculating that these items could hold the key to developing anti-Thargoid technologies such as weaponry and shielding. Therefore, Thargoid related materials are highly sought after for scientific research or can be used in the synthesis of various anti-Thargoid ammunition types."
+    },
+    {
+      "name": "wornshieldemitters",
+      "name_localised": "Worn Shield Emitters",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "Shielding",
+      "locations": [
+        "Abandoned Settlement",
+        "Signal sources"
+      ],
+      "sources": [
+        "Salvage from destroyed ships"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Shielded Module",
+        "Shielded Power Distributor"
+      ],
+      "synthesis": [],
+      "description": "Component found in ships: frequently used by combat oriented vessels. Known to be salvaged from signal sources.\n\nThese are used shield emitters, although the core components can be cannibalised."
+    },
+    {
+      "name": "tg_wreckagecomponents",
+      "name_localised": "Wreckage Components",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "Thargoid Components",
+      "locations": [],
+      "sources": [
+        "Thargoid Scout",
+        "Thargoid Interceptor"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "AX Remote Flak Munitions"
+      ],
+      "description": "Part of a Thargoid ship's hull and internal structure. These materials are found when damaging or fully destroying a Thargoid ship. Research into these materials in currently ongoing, with many engineers speculating that these items could hold the key to developing anti-Thargoid technologies such as ship systems, decontamination and anti-corrosive shielding and weaponry. Therefore, Thargoid related materials are highly sought after for scientific research or can be used in the synthesis of various anti-Thargoid ammunition types."
+    }
+  ],
+  "raw": [
+    {
+      "name": "antimony",
+      "name_localised": "Antimony",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "7",
+      "locations": [
+        "Planet surfaces"
+      ],
+      "sources": [
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Bronzite Chondrite",
+        "Outcrop",
+        "Crystalline Shard",
+        "Phloem Excretion"
+      ],
+      "engineering": [
+        "Heavy Duty Shield Booster"
+      ],
+      "synthesis": [
+        "Large Calibre Munitions",
+        "Small Calibre Munitions"
+      ],
+      "description": "Antimony, Sb, atomic number 51. Melting point 903K. A semi metallic chemical element used in flame proofing low friction alloys and semiconductors."
+    },
+    {
+      "name": "arsenic",
+      "name_localised": "Arsenic",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "6",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids",
+        "Mission reward"
+      ],
+      "sources": [
+        "Outcrop",
+        "Bronzite Chondrite",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Crystalline Fragments"
+      ],
+      "engineering": [
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner",
+        "Increased Range Frame Shift Drive",
+        "Reinforced Shield Generator"
+      ],
+      "synthesis": [
+        "Explosives Munitions",
+        "FSD Injection",
+        "Large Calibre Munitions",
+        "SRV Refuel"
+      ],
+      "description": "Arsenic, As, atomic number 33. Sublimation point 887K. Used in medicines, pesticides, herbicides, optoelectronic compounds and for strengthening alloys."
+    },
+    {
+      "name": "boron",
+      "name_localised": "Boron",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "7",
+      "locations": [
+        "Asteroids"
+      ],
+      "sources": [],
+      "engineering": [],
+      "synthesis": [
+        "Flechette Launcher Munitions"
+      ],
+      "description": "Boron is used in ship interior structures, insulation and in the creation of polymers and ceramics used in station and ship construction. Boron is also used in the manufacture of glass for ships and stations, offering greater strength and thermal shock resistance than other manufacturing techniques.\n\nOther uses include agricultural medicine, insecticides and some advanced medicines."
+    },
+    {
+      "name": "cadmium",
+      "name_localised": "Cadmium",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "3",
+      "locations": [
+        "Planet surfaces"
+      ],
+      "sources": [
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Outcrop"
+      ],
+      "engineering": [
+        "Dirty Thrusters",
+        "Efficient Weapon",
+        "Faster Boot Sequence Frame Shift Drive",
+        "Overcharged Power Plant"
+      ],
+      "synthesis": [
+        "FSD Injection",
+        "Plasma Munitions"
+      ],
+      "description": "Cadmium, Cd, atomic number 48. Melting point 594K. It's noted for its corrosion resistant properties and is used in medical imaging equipment and specialist laser systems."
+    },
+    {
+      "name": "carbon",
+      "name_localised": "Carbon",
+      "grade": 3,
+      "maximum": 300,
+      "category" : "1",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Outcrop",
+        "Bronzite Chondrite",
+        "Mesosiderite",
+        "Metallic Meteorite"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Double Shot Weapon",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "Reinforced Thrusters",
+        "Shielded Frame Shift Drive",
+        "Shielded Module",
+        "Shielded Power Distributor"
+      ],
+      "synthesis": [
+        "Explosives Munitions",
+        "Large Calibre Munitions"
+      ],
+      "description": "Carbon, C, atomic number 6. Sublimation point 3915K. Carbon is an element with a great many uses, mainly due to its propensity for forming strong molecular bonds. It is a malleable element and in different forms can be amongst the hardest of materials as well as the softest."
+    },
+    {
+      "name": "chromium",
+      "name_localised": "Chromium",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "2",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Bronzite Chondrite",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Outcrop",
+        "Polyporous Growth"
+      ],
+      "engineering": [
+        "Dirty Thrusters",
+        "Efficient Weapon",
+        "Engine Focused Power Distributor",
+        "Faster Boot Sequence Frame Shift Drive",
+        "Focused Weapon",
+        "High Charge Capacity Power Distributor",
+        "Rapid Charge Shield Cell Bank",
+        "System Focused Power Distributor"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "SRV Repair"
+      ],
+      "description": "Chromium, Cr, atomic number 24. Melting point 2180K. Chromium is well regarded for its strengthening and tarnish resistant properties for metals. It is also highly temperature resistant."
+    },
+    {
+      "name": "germanium",
+      "name_localised": "Germanium",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "5",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Mission reward"
+      ],
+      "engineering": [
+        "Blast Resistant Shield Booster",
+        "Expanded Probe Scanning Radius Scanner",
+        "Focused Weapon",
+        "Kinetic Resistant Shield Booster",
+        "Lightweight Armour",
+        "Lightweight Hull Reinforcement Package",
+        "Long Range Scanner",
+        "Long Range Sensors",
+        "Thermal Resistant Shield Booster",
+        "Thermal Resistant Shield Generator",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors"
+      ],
+      "synthesis": [
+        "FSD Injection"
+      ],
+      "description": "Germanium, Ge, atomic number 32. Melting point 1211K. Germanium is used in optics and for semiconductors in electronics. Semiconductor detectors allow accurate radiological identification and it is also commonly used in alloys."
+    },
+    {
+      "name": "iron",
+      "name_localised": "Iron",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "4",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids",
+        "Mission reward"
+      ],
+      "sources": [
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Bronzite Chondrite",
+        "Outcrop"
+      ],
+      "engineering": [
+        "Blast Resistant Shield Booster",
+        "Kinetic Resistant Shield Booster",
+        "Lightweight Armour",
+        "Lightweight Hull Reinforcement Package",
+        "Long Range Scanner",
+        "Long Range Sensors",
+        "Low emissions Power Plant",
+        "Thermal Resistant Shield Booster"
+      ],
+      "synthesis": [
+        "Explosives Munitions",
+        "High Velocity Munitions",
+        "Life Support",
+        "Limpets",
+        "Plasma Munitions",
+        "Small Calibre Munitions",
+        "SRV Repair"
+      ],
+      "description": "Iron, Fe, atomic number 26. Melting point 1811K. Iron is one of the most abundant heavier elements in the galaxy, primarily due to the formation through fusion in massive stars of nickel-56, which decays into an iron isotope. Although it isn't used as much in modern metals it still has many uses in chemical production. It's also an important element in medical molecular engineering applications"
+    },
+    {
+      "name": "lead",
+      "name_localised": "Lead",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "7",
+      "locations": [
+        "Asteroids"
+      ],
+      "sources": [],
+      "engineering": [],
+      "synthesis": [
+        "Enzyme Missile Munitions",
+        "Shock Cannon Munitions"
+      ],
+      "description": "Lead is a heavy metal with a higher density than most other common materials. Although lead's toxicity has been recognised for several centuries it is still used in a large range of processes due to its low cost.\n\nLead is used in munitions, solders, fusible alloys and radiation shielding."
+    },
+    {
+      "name": "manganese",
+      "name_localised": "Manganese",
+      "grade": 2,
+      "maximum": 250,
+      "locations": [
+        "Planet surfaces",
+        "Asteroids",
+        "Mission reward"
+      ],
+      "sources": [
+        "Outcrop",
+        "Crystalline Fragments",
+        "Bronzite Chondrite",
+        "Mesosiderite",
+        "Metallic Meteorite"
+      ],
+      "engineering": [
+        "Dazzle Shell",
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner",
+        "Increased Range Frame Shift Drive",
+        "Lightweight Module",
+        "Lightweight Sensors",
+        "Lightweight Weapon",
+        "Reinforced Shield Generator",
+        "Resistance Augmented Shield Booster"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "Plasma Munitions",
+        "SRV Ammo Restock",
+        "SRV Repair"
+      ],
+      "description": "Manganese, Mn, atomic number 25. Melting point 1519K. This element has many uses in metal alloys."
+    },
+    {
+      "name": "mercury",
+      "name_localised": "Mercury",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "6",
+      "locations": [
+        "Planet surfaces"
+      ],
+      "sources": [
+        "Outcrop",
+        "Mesosiderite",
+        "Metallic Meteorite"
+      ],
+      "engineering": [
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Shield Generator",
+        "Thermal Resistant Shield Generator"
+      ],
+      "synthesis": [
+        "Explosives Munitions",
+        "Large Calibre Munitions",
+        "Small Calibre Munitions",
+        "SRV Refuel"
+      ],
+      "description": "Mercury, Hg, atomic number 80. Melting point 234K. This toxic metal is famed for being a liquid at room temperature and has rare uses in some chemical processes."
+    },
+    {
+      "name": "molybdenum",
+      "name_localised": "Molybdenum",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "2",
+      "locations": [
+        "Planet surfaces",
+        "Mission reward"
+      ],
+      "sources": [
+        "Outcrop",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Bronzite Chondrite"
+      ],
+      "engineering": [
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Reinforced Module",
+        "Sturdy Weapon",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "Plasma Munitions",
+        "SRV Ammo Restock",
+        "SRV Repair"
+      ],
+      "description": "Molybdenum, Mo, atomic number 42. Melting point 2896K. This element is commonly used in alloys, but also has uses in certain chemical detectors and chemical processes."
+    },
+    {
+      "name": "nickel",
+      "name_localised": "Nickel",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "5",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Outcrop",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Bronzite Chondrite"
+      ],
+      "engineering": [
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Overcharged Weapon",
+        "Reinforced Module",
+        "Shielded Frame Shift Drive",
+        "Short Range Weapon",
+        "Sturdy Weapon",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "Explosives Munitions",
+        "Large Calibre Munitions",
+        "Life Support",
+        "Limpets",
+        "Small Calibre Munitions",
+        "SRV Repair"
+      ],
+      "description": "Nickel, Ni, atomic number 28. Melting point 1728K. It is commonly used in various alloys and also for some bio-chemical processes."
+    },
+    {
+      "name": "niobium",
+      "name_localised": "Niobium",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "1",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids",
+        "Mission reward"
+      ],
+      "sources": [
+        "Outcrop",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Bronzite Chondrite"
+      ],
+      "engineering": [
+        "Ammo Capacity Chaff Launcher",
+        "Ammo Capacity Heat Sink Launcher",
+        "Ammo Capacity Point Defence",
+        "Blast Resistant Shield Booster",
+        "Enhanced Low Power Shield Generator",
+        "Focused Weapon",
+        "Heavy Duty Shield Booster",
+        "High Capacity Weapon",
+        "Long Range Scanner",
+        "Long Range Sensors",
+        "Screening Shell",
+        "Wide Angle Detailed Surface Scanner",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors"
+      ],
+      "synthesis": [
+        "Explosives Munitions",
+        "FSD Injection"
+      ],
+      "description": "Niobium, Nb, atomic number 41. Melting point 2750K. This elements is often used in alloys, but its properties also make it useful for super-alloys needed for high temperature and extreme pressure applications. It's also used in electroceramic applications and superconductors."
+    },
+    {
+      "name": "phosphorus",
+      "name_localised": "Phosphorus",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "2",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Outcrop",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Bronzite Chondrite"
+      ],
+      "engineering": [
+        "Fast Scan Detailed Surface Scanner",
+        "Fast Scan Scanner",
+        "Increased Range Frame Shift Drive",
+        "Lightweight Module",
+        "Lightweight Sensors",
+        "Lightweight Weapon",
+        "Reinforced Shield Generator",
+        "Resistance Augmented Shield Booster"
+      ],
+      "synthesis": [
+        "Explosives Munitions",
+        "Large Calibre Munitions",
+        "Plasma Munitions",
+        "Small Calibre Munitions",
+        "SRV Ammo Restock",
+        "SRV Repair"
+      ],
+      "description": "Phosphorus, P, atomic number 15. Phosphorus is a highly reactive element used for some metallurgical production and for fertilisers."
+    },
+    {
+      "name": "polonium",
+      "name_localised": "Polonium",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "6",
+      "locations": [
+        "Planet surfaces",
+        "Mission reward"
+      ],
+      "sources": [
+        "Outcrop",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Crystalline Shard",
+        "Needle Crystals"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "Explosives Munitions",
+        "FSD Injection"
+      ],
+      "description": "Polonium, Po, atomic number 84. Melting point 527K. Polonium is an intense source of alpha particles and in sufficient quantities will generate enough heat for radioisotope thermoelectric generators. This technology is ancient by modern standards, but the properties are still useful for certain applications."
+    },
+    {
+      "name": "rhenium",
+      "name_localised": "Rhenium",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "6",
+      "locations": [
+        "Asteroids"
+      ],
+      "sources": [],
+      "engineering": [],
+      "synthesis": [
+        "Remote Release Flechette Launcher",
+        "Shock Cannon"
+      ],
+      "description": "Rhenium is a silvery-white heavy transition metal. Its atomic number is 75 and was considered one of the rarest metals on Earth. However through the ages of galactic expansion more plentiful sources of the element have been discovered and it is regularly found when extracting other ores from asteroids.\n\nRhenium is used in combustion chambers, turbine blades and exhaust systems."
+    },
+    {
+      "name": "ruthenium",
+      "name_localised": "Ruthenium",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "3",
+      "locations": [
+        "Planet surfaces"
+      ],
+      "sources": [
+        "Metallic Meteorite",
+        "Bronzite Chondrite",
+        "Outcrop",
+        "Crystalline Shard"
+      ],
+      "engineering": [
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Kinetic Resistant Shield Generator",
+        "Thermal Resistant Shield Generator"
+      ],
+      "synthesis": [
+        "AFM Refill"
+      ],
+      "description": "Ruthenium, Ru, atomic number 44. Melting point 2607K. Ruthenium is used for making platinum and palladium alloys. It's also used as a catalist for some chemical processes."
+    },
+    {
+      "name": "selenium",
+      "name_localised": "Selenium",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "4",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids",
+        "Mission reward"
+      ],
+      "sources": [
+        "Metallic Meteorite",
+        "Bronzite Chondrite",
+        "Outcrop",
+        "Mesosiderite",
+        "Crystalline Fragments"
+      ],
+      "engineering": [
+        "Dirty Thrusters",
+        "Efficient Weapon",
+        "Faster Boot Sequence Frame Shift Drive",
+        "High Charge Capacity Power Distributor",
+        "Kinetic Resistant Shield Generator",
+        "Overcharged Power Plant",
+        "Thermal Resistant Shield Generator",
+        "Weapon Focused Power Distributor"
+      ],
+      "synthesis": [
+        "Plasma Munitions",
+        "Small Calibre Munitions",
+        "SRV Ammo Restock"
+      ],
+      "description": "Selenium, Se, atomic number 34. Melting point 494K. Its primary use is in alloys and in glass production. It is also used as a catalyst in some chemical processes."
+    },
+    {
+      "name": "sulphur",
+      "name_localised": "Sulphur",
+      "grade": 1,
+      "maximum": 300,
+      "category" : "3",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Metallic Meteorite",
+        "Bronzite Chondrite",
+        "Outcrop",
+        "Mesosiderite"
+      ],
+      "engineering": [
+        "Clean Thrusters",
+        "Efficient Weapon",
+        "Engine Focused Power Distributor",
+        "High Charge Capacity Power Distributor",
+        "Long Range Weapon",
+        "Overcharged Power Plant",
+        "Rapid Charge Shield Cell Bank",
+        "System Focused Power Distributor",
+        "Weapon Focused Power Distributor"
+      ],
+      "synthesis": [
+        "Explosives Munitions",
+        "Large Calibre Munitions",
+        "Plasma Munitions",
+        "Small Calibre Munitions",
+        "SRV framework SRV Ammo Restock",
+        "SRV framework SRV Repair"
+      ],
+      "description": "Sulphur, S, atomic number 16. Melting point 388K. Sulphur is mainly used as a precursor to other chemical like sulphuric acid. It's also a key component in many biological and chemical applications, including fertilisers."
+    },
+    {
+      "name": "technetium",
+      "name_localised": "Technetium",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "2",
+      "locations": [
+        "Planet surfaces"
+      ],
+      "sources": [
+        "Bronzite Chondrite",
+        "Crystalline Shard",
+        "Metallic Meteorite",
+        "Mesosiderite",
+        "Needle Crystals",
+        "Outcrop"
+      ],
+      "engineering": [
+        "Rapid Fire Weapon",
+        "Reinforced Module",
+        "Sturdy Weapon"
+      ],
+      "synthesis": [
+        "Plasma Munitions",
+        "SRV framework SRV Ammo Restock",
+        "SRV framework SRV Refuel"
+      ],
+      "description": "Technetium, Tc, atomic number 43. Melting point 2430K. Technetium in various isotope forms is used in medical imaging technology as well as a catalyst. Its stable beta decay makes it suitable for calibration and radioactive testing."
+    },
+    {
+      "name": "tellurium",
+      "name_localised": "Tellurium",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "5",
+      "locations": [
+        "Planet surfaces"
+      ],
+      "sources": [
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Crystalline Shard",
+        "Needle Crystals"
+      ],
+      "engineering": [
+        "Faster Boot Sequence Frame Shift Drive",
+        "Overcharged Power Plant"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "SRV framework SRV Repair"
+      ],
+      "description": "Tellurium, Te, atomic number 52. Melting point 722K. Tellurium is used in alloys as well semiconductor and other electronic applications."
+    },
+    {
+      "name": "tin",
+      "name_localised": "Tin",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "4",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Bronzite Chondrite",
+        "Mesosiderite",
+        "Metallic Meteorite"
+      ],
+      "engineering": [
+        "Clean Thrusters",
+        "Enhanced Low Power Shield Generator",
+        "Heavy Duty Shield Booster",
+        "High Capacity Weapon",
+        "Lightweight Armour",
+        "Lightweight Hull Reinforcement Package",
+        "Wide Angle Detailed Surface Scanner",
+        "Wide Angle Scanner",
+        "Wide Angle Sensors"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "Large Calibre Munitions"
+      ],
+      "description": "Tin, Sn, atomic number 50. Melting point 505k. Tin is one of the first ever metal used in an alloy - notably with copper in prehistory. It's modern day usage is primarily for certain specialised alloys."
+    },
+    {
+      "name": "tungsten",
+      "name_localised": "Tungsten",
+      "grade": 3,
+      "maximum": 200,
+      "category" : "5",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Outcrop",
+        "Mesosiderite",
+        "Metallic Meteorite"
+      ],
+      "engineering": [
+        "Armoured Power Plant",
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Reinforced Module",
+        "Shielded Frame Shift Drive",
+        "Shielded Module",
+        "Shielded Power Distributor",
+        "Sturdy Weapon",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [
+        "High Velocity Munitions",
+        "Large Calibre Munitions",
+        "Small Calibre Munitions",
+        "SRV framework SRV Repair"
+      ],
+      "description": "Tungsten, W, atomic number 74. Melting point 3695K. Tungsten is a material used in a wide range of applications, including heavy metal alloys, hard materials and various chemical processes."
+    },
+    {
+      "name": "vanadium",
+      "name_localised": "Vanadium",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "1",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Outcrop",
+        "Bronzite Chondrite",
+        "Mesosiderite",
+        "Metallic Meteorite"
+      ],
+      "engineering": [
+        "Ammo Capacity Chaff Launcher",
+        "Ammo Capacity Heat Sink Launcher",
+        "Ammo Capacity Point Defence",
+        "Armoured Power Plant",
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Double Shot Weapon",
+        "Heavy Duty Armour",
+        "Heavy Duty Hull Reinforcement Package",
+        "High Capacity Weapon",
+        "Kinetic Resistant Armour",
+        "Kinetic Resistant Hull Reinforcement Package",
+        "Reinforced Thrusters",
+        "Shielded Frame Shift Drive",
+        "Shielded Module",
+        "Shielded Power Distributor",
+        "Thermal Resistant Armour",
+        "Thermal Resistant Hull Reinforcement Package"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "FSD Injection",
+        "High Velocity Munitions",
+        "SRV framework SRV Repair"
+      ],
+      "description": "Vanadium, V, atomic number 23. Melting point 2183K. Vanadium is primarily used for making alloys, but also as a catalyst in various chemical processes."
+    },
+    {
+      "name": "yttrium",
+      "name_localised": "Yttrium",
+      "grade": 4,
+      "maximum": 150,
+      "category" : "1",
+      "locations": [
+        "Planet surfaces"
+      ],
+      "sources": [
+        "Bronzite Chondrite",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Outcrop",
+        "Crystalline Shard"
+      ],
+      "engineering": [],
+      "synthesis": [
+        "FSD Injection",
+        "High Velocity Munitions",
+        "Specialised Shield Cell Bank"
+      ],
+      "description": "Yttrium, Y, atomic number 39. Melting point 1799K. Yttrium is often used as a strengthening component for various alloys. It also has uses in medicines and superconductors."
+    },
+    {
+      "name": "zinc",
+      "name_localised": "Zinc",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "4",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Bronzite Chondrite",
+        "Mesosiderite",
+        "Metallic Meteorite",
+        "Outcrop"
+      ],
+      "engineering": [
+        "Blast Resistant Armour",
+        "Blast Resistant Hull Reinforcement Package",
+        "Overcharged Weapon",
+        "Reinforced Module",
+        "Shielded Frame Shift Drive",
+        "Sturdy Weapon"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "Large Calibre Munitions",
+        "Small Calibre Munitions",
+        "SRV framework SRV Repair"
+      ],
+      "description": "Zinc, Zn, atomic number 30. Melting point 692K. Zinc is used in various alloys where its low melting point allows the casting of fine shapes. It's also used in some industrial processes and in infrared lasers."
+    },
+    {
+      "name": "zirconium",
+      "name_localised": "Zirconium",
+      "grade": 2,
+      "maximum": 250,
+      "category" : "7",
+      "locations": [
+        "Planet surfaces",
+        "Asteroids"
+      ],
+      "sources": [
+        "Mesosiderite",
+        "Outcrop"
+      ],
+      "engineering": [
+        "Blast Resistant Hull Reinforcement Package",
+        "Overcharged Weapon"
+      ],
+      "synthesis": [
+        "AFM Refill",
+        "High Velocity Munitions",
+        "Large Calibre Munitions",
+        "Small Calibre Munitions"
+      ],
+      "description": "Zirconium, Zr, atomic number 40. Melting point 2128K. As a metal Zirconium fulfils some niche purposes, but it's extensively used in compounds for high temperature applications."
+    }
+  ]
+}

@@ -16,9 +16,11 @@ use eframe::egui::accesskit::Role::Directory;
 use iota_wallet::iota_client::crypto::hashes::Digest;
 use json::JsonValue;
 use log::info;
+use num_format::Locale::en;
+use serde_json::json;
 use crate::app::cargo_reader::CargoReader;
 
-use crate::app::materials::MaterialState;
+use crate::app::materials::{Material, MaterialState};
 use crate::app::State::{About, Explorer, MaterialInventory, Mining, News, Settings};
 use crate::egui::Context;
 
@@ -39,7 +41,7 @@ pub struct EliteRustClient {
     explorer: explorer::Explorer,
     state: State,
     journal_log_bus_reader: BusReader<JsonValue>,
-    inventory: MaterialState,
+    materials: MaterialState,
     settings: settings::Settings,
     news: news::News,
     cargo_reader: Arc<Mutex<CargoReader>>,
@@ -101,6 +103,153 @@ impl Default for EliteRustClient {
 
         info!("Starting...");
         info!("Current directory: {:?}", env::current_dir().unwrap());
+        info!("Reading materials");
+
+        let mut materials = MaterialState::default();
+        let materials_content = fs::read_to_string("materials.json").unwrap();
+        let materials_json = json::parse(materials_content.as_str()).unwrap();
+
+        let encoded_array = &materials_json["encoded"];
+        for i in 0..encoded_array.len(){
+            let encoded = &encoded_array[i];
+
+            let mut locations: Vec<String> = vec![];
+            let locations_array = &encoded["locations"];
+            for j in 0..locations_array.len(){
+                locations.push(locations_array[j].to_string())
+            }
+
+            let mut sources: Vec<String> = vec![];
+            let sources_array = &encoded["sources"];
+            for j in 0..sources_array.len(){
+                sources.push(sources_array[j].to_string())
+            }
+
+            let mut engineering: Vec<String> = vec![];
+            let engineering_array = &encoded["engineering"];
+            for j in 0..engineering_array.len(){
+                engineering.push(engineering_array[j].to_string())
+            }
+
+            let mut synthesis: Vec<String> = vec![];
+            let synthesis_array = &encoded["synthesis"];
+            for j in 0..synthesis_array.len(){
+                synthesis.push(synthesis_array[j].to_string())
+            }
+
+
+            materials.encoded.insert(
+                encoded["name"].to_string(),
+                Material{
+                    name: encoded["name"].to_string(),
+                    name_localised: encoded["name_localised"].to_string(),
+                    grade: encoded["grade"].as_u64().unwrap(),
+                    count: 0,
+                    maximum: encoded["maximum"].as_u64().unwrap(),
+                    category: encoded["category"].to_string(),
+                    locations,
+                    sources,
+                    engineering,
+                    synthesis,
+                    description: encoded["description"].to_string(),
+                }
+            );
+        }
+
+        let manufactured_array = &materials_json["manufactured"];
+        for i in 0..manufactured_array.len(){
+            let manufactured = &manufactured_array[i];
+
+            let mut locations: Vec<String> = vec![];
+            let locations_array = &manufactured["locations"];
+            for j in 0..locations_array.len(){
+                locations.push(locations_array[j].to_string())
+            }
+
+            let mut sources: Vec<String> = vec![];
+            let sources_array = &manufactured["sources"];
+            for j in 0..sources_array.len(){
+                sources.push(sources_array[j].to_string())
+            }
+
+            let mut engineering: Vec<String> = vec![];
+            let engineering_array = &manufactured["engineering"];
+            for j in 0..engineering_array.len(){
+                engineering.push(engineering_array[j].to_string())
+            }
+
+            let mut synthesis: Vec<String> = vec![];
+            let synthesis_array = &manufactured["synthesis"];
+            for j in 0..synthesis_array.len(){
+                synthesis.push(synthesis_array[j].to_string())
+            }
+
+
+            materials.manufactured.insert(
+                manufactured["name"].to_string(),
+                Material{
+                    name: manufactured["name"].to_string(),
+                    name_localised: manufactured["name_localised"].to_string(),
+                    grade: manufactured["grade"].as_u64().unwrap(),
+                    count: 0,
+                    maximum: manufactured["maximum"].as_u64().unwrap(),
+                    category: manufactured["category"].to_string(),
+                    locations,
+                    sources,
+                    engineering,
+                    synthesis,
+                    description: manufactured["description"].to_string(),
+                }
+            );
+        }
+
+        let raw_array = &materials_json["raw"];
+        for i in 0..raw_array.len(){
+            let raw = &raw_array[i];
+
+            let mut locations: Vec<String> = vec![];
+            let locations_array = &raw["locations"];
+            for j in 0..locations_array.len(){
+                locations.push(locations_array[j].to_string())
+            }
+
+            let mut sources: Vec<String> = vec![];
+            let sources_array = &raw["sources"];
+            for j in 0..sources_array.len(){
+                sources.push(sources_array[j].to_string())
+            }
+
+            let mut engineering: Vec<String> = vec![];
+            let engineering_array = &raw["engineering"];
+            for j in 0..engineering_array.len(){
+                engineering.push(engineering_array[j].to_string())
+            }
+
+            let mut synthesis: Vec<String> = vec![];
+            let synthesis_array = &raw["synthesis"];
+            for j in 0..synthesis_array.len(){
+                synthesis.push(synthesis_array[j].to_string())
+            }
+
+
+            materials.raw.insert(
+                raw["name"].to_string(),
+                Material{
+                    name: raw["name"].to_string(),
+                    name_localised: raw["name_localised"].to_string(),
+                    grade: raw["grade"].as_u64().unwrap(),
+                    count: 0,
+                    maximum: raw["maximum"].as_u64().unwrap(),
+                    category: raw["category"].to_string(),
+                    locations,
+                    sources,
+                    engineering,
+                    synthesis,
+                    description: raw["description"].to_string(),
+                }
+            );
+        }
+
 
         info!("Starting threads");
         info!("Starting Journal reader");
@@ -141,11 +290,7 @@ impl Default for EliteRustClient {
             explorer: explorer::Explorer::default(),
             state: News,
             journal_log_bus_reader: journal_bus_reader,
-            inventory: MaterialState {
-                raw: vec![],
-                manufactured: vec![],
-                encoded: vec![]
-            },
+            materials,
             settings,
             cargo_reader,
             mining,
@@ -166,7 +311,7 @@ enum State {
 impl App for EliteRustClient {
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
         let Self {
-            news, about, explorer, state, journal_log_bus_reader, inventory,settings,mining,cargo_reader,timestamp
+            news, about, explorer, state, journal_log_bus_reader, materials: inventory,settings,mining,cargo_reader,timestamp
         } = self;
 
         let mut style: egui::Style = (*ctx.style()).clone();

@@ -4,18 +4,15 @@
 Shows system information compact for explorer.
 
 ![Screenshot of explorer panel](graphics/screenshots/explorer-screenshot.jpg "Explorer Panel")
-(Language depends on in-game setting)
-![Screenshot of explorer panel](graphics/screenshots/miner-screenshot.jpg "Miner Panel")
+![Screenshot of miner panel](graphics/screenshots/miner-screenshot.jpg "Miner Panel")
+![Screenshot of materials panel](graphics/screenshots/materials-screenshot.jpg "Materials Panel")
 
 ## Features
 
-* System represented in a system tree
-* Est. profit calculation per planet
-* Recognize tarraformable Planets, water worlds and earth-like worlds fast to maximize your exploration profit
-* See body signals fast and sorted by size to get those plant's data!
+* System and its data represented in a compact view
 * List signals found in system to find Raxxla ASAP.
-* Be able to iterate back to look at past systems of your session to see if you missed something
-* Get help mining by showing relevant data in the mining tab
+* Get help mining by showing relevant data
+* Keep track of your materials
 * Written in rust so you know its good
 
 ## Build Requirements

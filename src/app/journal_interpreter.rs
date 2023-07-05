@@ -1,4 +1,5 @@
 use std::collections::HashSet;
+use std::ops::Deref;
 use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
 use serde_json::Value;
@@ -7,7 +8,7 @@ use crate::app::explorer::{Body, BodySignal, Explorer, Page, Signal, SystemSigna
 use crate::app::materials::{MaterialState, Material};
 use crate::app::mining::{Mining, Prospector, MiningMaterial};
 
-pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_inventory: &mut MaterialState, mining: &mut Mining) {
+pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut MaterialState, mining: &mut Mining) {
     let event = json["event"].as_str().unwrap();
     info!("Interpreter event received: {}", event);
 
@@ -275,84 +276,142 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, material_invento
             let mut manufactured: Vec<Material> = vec![];
             let mut encoded: Vec<Material> = vec![];
 
+            let types = vec!["Raw","Manufactured","Encoded"];
             {
                 let mut material_json = json["Raw"].pop();
                 while material_json != Null {
-                    raw.push(Material {
-                        name: material_json["Name"].to_string(),
-                        name_localised: material_json["Name_Localised"].to_string(),
-                        count: material_json["Count"].as_u64().unwrap(),
-                    });
+                    let result = materials.raw.get(&material_json["Name"].to_string());
+                    match result {
+                        None => {
+                            warn!("Unknown material found! {}",material_json);
+                            warn!("Looked for {}",&material_json["Name"].to_string());
+                            let new_material = Material{
+                                name: material_json["Name"].to_string(),
+                                name_localised: material_json["Name_Localised"].to_string(),
+                                grade: 0,
+                                count: material_json["Count"].as_u64().unwrap(),
+                                maximum: 0,
+                                category: "".to_string(),
+                                locations: vec![],
+                                sources: vec![],
+                                engineering: vec![],
+                                synthesis: vec![],
+                                description: "".to_string(),
+                            };
+                            materials.raw.insert(material_json["Name"].to_string(),new_material);
+                        }
+                        Some(material) => {
+                            println!("{}",material.name.clone());
+                            println!("{}",material_json["Count"].to_string());
+                            let updated_material = Material{
+                                name: material.name.clone(),
+                                name_localised: material_json["Name_Localised"].to_string(),
+                                grade: material.grade,
+                                count: material_json["Count"].as_u64().unwrap(),
+                                maximum: material.maximum,
+                                category: material.category.clone(),
+                                locations: material.locations.clone(),
+                                sources: material.sources.clone(),
+                                engineering: material.engineering.clone(),
+                                synthesis: material.synthesis.clone(),
+                                description: material.description.clone(),
+                            };
+                            materials.raw.insert(material.name.clone(),updated_material);
+                        }
+                    }
                     material_json = json["Raw"].pop();
                 }
             }
-
-            {
-                let mut material_json = json["Manufactured"].pop();
-                while material_json != Null {
-                    manufactured.push(Material {
-                        name: material_json["Name"].to_string(),
-                        name_localised: material_json["Name_Localised"].to_string(),
-                        count: material_json["Count"].as_u64().unwrap(),
-                    });
-                    material_json = json["Manufactured"].pop();
-                }
-            }
-
             {
                 let mut material_json = json["Encoded"].pop();
                 while material_json != Null {
-                    encoded.push(Material {
-                        name: material_json["Name"].to_string(),
-                        name_localised: material_json["Name_Localised"].to_string(),
-                        count: material_json["Count"].as_u64().unwrap(),
-                    });
+                    let result = materials.encoded.get(&material_json["Name"].to_string());
+                    match result {
+                        None => {
+                            warn!("Unknown material found! {}",material_json);
+                            warn!("Looked for {}",&material_json["Name"].to_string());
+                            let new_material = Material{
+                                name: material_json["Name"].to_string(),
+                                name_localised: material_json["Name_Localised"].to_string(),
+                                grade: 0,
+                                count: material_json["Count"].as_u64().unwrap(),
+                                maximum: 0,
+                                category: "".to_string(),
+                                locations: vec![],
+                                sources: vec![],
+                                engineering: vec![],
+                                synthesis: vec![],
+                                description: "".to_string(),
+                            };
+                            materials.encoded.insert(material_json["Name"].to_string(),new_material);
+                        }
+                        Some(material) => {
+                            println!("{}",material.name.clone());
+                            println!("{}",material_json["Count"].to_string());
+                            let updated_material = Material{
+                                name: material.name.clone(),
+                                name_localised: material_json["Name_Localised"].to_string(),
+                                grade: material.grade,
+                                count: material_json["Count"].as_u64().unwrap(),
+                                maximum: material.maximum,
+                                category: material.category.clone(),
+                                locations: material.locations.clone(),
+                                sources: material.sources.clone(),
+                                engineering: material.engineering.clone(),
+                                synthesis: material.synthesis.clone(),
+                                description: material.description.clone(),
+                            };
+                            materials.encoded.insert(material.name.clone(),updated_material);
+                        }
+                    }
                     material_json = json["Encoded"].pop();
                 }
             }
-
-            raw.sort_by(|a, b| {
-                let mut a_name = a.name_localised.to_string();
-                let mut b_name = b.name_localised.to_string();
-
-                if a_name == "null" {
-                    a_name = a.name.to_string();
+            {
+                let mut material_json = json["Manufactured"].pop();
+                while material_json != Null {
+                    let result = materials.manufactured.get(&material_json["Name"].to_string());
+                    match result {
+                        None => {
+                            warn!("Unknown material found! {}",material_json);
+                            warn!("Looked for {}",&material_json["Name"].to_string());
+                            let new_material = Material{
+                                name: material_json["Name"].to_string(),
+                                name_localised: material_json["Name_Localised"].to_string(),
+                                grade: 0,
+                                count: material_json["Count"].as_u64().unwrap(),
+                                maximum: 0,
+                                category: "".to_string(),
+                                locations: vec![],
+                                sources: vec![],
+                                engineering: vec![],
+                                synthesis: vec![],
+                                description: "".to_string(),
+                            };
+                            materials.manufactured.insert(material_json["Name"].to_string(),new_material);
+                        }
+                        Some(material) => {
+                            println!("{}",material.name.clone());
+                            println!("{}",material_json["Count"].to_string());
+                            let updated_material = Material{
+                                name: material.name.clone(),
+                                name_localised: material_json["Name_Localised"].to_string(),
+                                grade: material.grade,
+                                count: material_json["Count"].as_u64().unwrap(),
+                                maximum: material.maximum,
+                                category: material.category.clone(),
+                                locations: material.locations.clone(),
+                                sources: material.sources.clone(),
+                                engineering: material.engineering.clone(),
+                                synthesis: material.synthesis.clone(),
+                                description: material.description.clone(),
+                            };
+                            materials.manufactured.insert(material.name.clone(),updated_material);
+                        }
+                    }
+                    material_json = json["Manufactured"].pop();
                 }
-                if b_name == "null" {
-                    b_name = b.name.to_string();
-                }
-                a_name.cmp(&b_name)
-            });
-
-            encoded.sort_by(|a, b| {
-                let mut a_name = a.name_localised.to_string();
-                let mut b_name = b.name_localised.to_string();
-
-                if a_name == "null" {
-                    a_name = a.name.to_string();
-                }
-                if b_name == "null" {
-                    b_name = b.name.to_string();
-                }
-                a_name.cmp(&b_name)
-            });
-
-            manufactured.sort_by(|a, b| {
-                let mut a_name = a.name_localised.to_string();
-                let mut b_name = b.name_localised.to_string();
-
-                if a_name == "null" {
-                    a_name = a.name.to_string();
-                }
-                if b_name == "null" {
-                    b_name = b.name.to_string();
-                }
-                a_name.cmp(&b_name)
-            });
-
-            material_inventory.raw = raw;
-            material_inventory.manufactured = manufactured;
-            material_inventory.encoded = encoded;
+            }
         }
         "Cargo" => {}
         "MaterialCollected" => {}
