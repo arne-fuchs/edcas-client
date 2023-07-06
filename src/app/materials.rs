@@ -8,6 +8,7 @@ pub struct MaterialState {
     pub manufactured: HashMap<String, Material>,
     pub encoded: HashMap<String, Material>,
     pub showing: Option<Material>,
+    pub search: String,
 }
 
 impl Default for MaterialState {
@@ -17,6 +18,7 @@ impl Default for MaterialState {
             manufactured: HashMap::default(),
             encoded: HashMap::default(),
             showing: None,
+            search: "".to_string(),
         }
     }
 }
@@ -52,7 +54,7 @@ pub struct Material {
 impl App for MaterialState {
     fn update(&mut self, ctx: &Context, frame: &mut Frame) {
         let Self {
-            raw, manufactured, encoded, showing
+            raw, manufactured, encoded, showing,search
         } = self;
 
         let mut bool = false;
@@ -155,6 +157,10 @@ impl App for MaterialState {
 
         egui::CentralPanel::default()
             .show(&ctx, |ui| {
+                ui.horizontal_top(|ui|{
+                    ui.label("Search: ");
+                    ui.text_edit_singleline(&mut self.search);
+                });
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     egui::Grid::new("inventory_grid")
                         .num_columns(3)
@@ -166,9 +172,9 @@ impl App for MaterialState {
                             ui.label("Manufactured");
                             ui.label("Raw");
                             ui.end_row();
-                            draw_materials(&mut self.showing, ui, &encoded);
-                            draw_materials(&mut self.showing, ui, &manufactured);
-                            draw_materials(&mut self.showing, ui, &raw);
+                            draw_materials(&mut self.showing, ui, &encoded,&self.search);
+                            draw_materials(&mut self.showing, ui, &manufactured,&self.search);
+                            draw_materials(&mut self.showing, ui, &raw,&self.search);
                             ui.end_row();
                         });
                 });
@@ -176,30 +182,32 @@ impl App for MaterialState {
     }
 }
 
-fn draw_materials(showing: &mut Option<Material>, ui: &mut Ui, materials: &HashMap<String, Material>) {
+fn draw_materials(showing: &mut Option<Material>, ui: &mut Ui, materials: &HashMap<String, Material>,search: &String) {
     ui.vertical(|ui| {
         let mut en_iter = materials.iter();
         let mut option_material = en_iter.next();
         while !option_material.is_none() {
             let material = option_material.unwrap().1;
-            ui.vertical(|mut ui| {
-                ui.vertical_centered(|mut ui| {
-                    if ui.button(material.get_name()).clicked() {
-                        let _ = showing.replace(material.clone());
-                    }
-                    let mut percentage = 0f32;
-                    if material.maximum != 0 {
-                        percentage = (material.count as f32 / material.maximum as f32) as f32;
-                    }
-                    let color = convert_color(percentage);
-                    let _ = egui::ProgressBar::new(percentage)
-                        .text(format!("{}/{}", material.count, material.maximum))
-                        .fill(Color32::from_rgb(color.0, color.1, color.2))
-                        .desired_width(ui.available_width() / 1.2)
-                        .ui(&mut ui);
+            if material.name_localised.contains(search){
+                ui.vertical(|mut ui| {
+                    ui.vertical_centered(|mut ui| {
+                        if ui.button(material.get_name()).clicked() {
+                            let _ = showing.replace(material.clone());
+                        }
+                        let mut percentage = 0f32;
+                        if material.maximum != 0 {
+                            percentage = (material.count as f32 / material.maximum as f32) as f32;
+                        }
+                        let color = convert_color(percentage);
+                        let _ = egui::ProgressBar::new(percentage)
+                            .text(format!("{}/{}", material.count, material.maximum))
+                            .fill(Color32::from_rgb(color.0, color.1, color.2))
+                            .desired_width(ui.available_width() / 1.2)
+                            .ui(&mut ui);
+                    });
                 });
-            });
-            ui.separator();
+                ui.separator();
+            }
             option_material = en_iter.next();
         }
     });
