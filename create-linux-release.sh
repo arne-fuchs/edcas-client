@@ -18,6 +18,7 @@ mkdir "$folder_name"/logs
 cp -r graphics "$folder_name"/graphics
 cp settings-example.json "$folder_name"/settings-example.json
 cp settings-example.json "$folder_name"/settings.json
+cp materials.json "$folder_name"/materials.json
 cp start.sh "$folder_name"/
 cp target/release/edcas-client "$folder_name"/
 
