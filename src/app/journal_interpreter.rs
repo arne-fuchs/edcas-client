@@ -301,8 +301,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             materials.raw.insert(material_json["Name"].to_string(),new_material);
                         }
                         Some(material) => {
-                            println!("{}",material.name.clone());
-                            println!("{}",material_json["Count"].to_string());
                             let updated_material = Material{
                                 name: material.name.clone(),
                                 name_localised: material_json["Name_Localised"].to_string(),
@@ -346,8 +344,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             materials.encoded.insert(material_json["Name"].to_string(),new_material);
                         }
                         Some(material) => {
-                            println!("{}",material.name.clone());
-                            println!("{}",material_json["Count"].to_string());
                             let updated_material = Material{
                                 name: material.name.clone(),
                                 name_localised: material_json["Name_Localised"].to_string(),

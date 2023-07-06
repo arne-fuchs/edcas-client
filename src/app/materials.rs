@@ -57,103 +57,8 @@ impl App for MaterialState {
             raw, manufactured, encoded, showing,search
         } = self;
 
-        let mut bool = false;
-        match &self.showing {
-            None => {}
-            Some(material) => {
-                Window::new(material.get_name())
-                    .collapsible(false)
-                    .resizable(true)
-                    .default_size(vec2(ctx.available_rect().width()/1.1, 600f32))
-                    .show(&ctx, |ui| {
-                        egui::Grid::new("materials_description")
-                            .num_columns(2)
-                            .max_col_width(ui.available_width() / 1.3)
-                            .show(ui, |ui| {
-                                ui.label(&material.description);
-                                ui.vertical(|mut ui| {
-                                    ui.label(format!("Grade: {}", &material.grade));
-                                    ui.label(format!("Category: {}", &material.category));
-                                    let mut percentage = 0f32;
-                                    if material.maximum != 0 {
-                                        percentage = (material.count as f32 / material.maximum as f32) as f32;
-                                    }
-                                    let color = convert_color(percentage);
-                                    let _ = egui::ProgressBar::new(percentage)
-                                        .text(format!("{}/{}", material.count, material.maximum))
-                                        .fill(Color32::from_rgb(color.0, color.1, color.2))
-                                        .desired_width(ui.available_width() / 1.2)
-                                        .ui(&mut ui);
-                                });
-                            });
+        print_material_info_window_if_available(&mut self.showing, &ctx);
 
-                        ui.separator();
-
-                        egui::ScrollArea::vertical().show(ui, |ui| {
-                            egui::Grid::new("material_info_grid")
-                                .num_columns(4)
-                                .min_col_width(ui.available_width() / 4.0)
-                                .max_col_width(ui.available_width() / 4.0)
-                                .show(ui, |ui| {
-                                    egui::Grid::new("material_location")
-                                        .striped(true)
-                                        .num_columns(1)
-                                        .show(ui, |ui| {
-                                            ui.heading("Locations");
-                                            ui.end_row();
-                                            for text in &material.locations {
-                                                ui.label(text);
-                                                ui.end_row();
-                                            }
-                                        });
-                                    egui::Grid::new("material_sources")
-                                        .striped(true)
-                                        .num_columns(1)
-                                        .show(ui, |ui| {
-                                            ui.heading("Sources");
-                                            ui.end_row();
-                                            for text in &material.sources {
-                                                ui.label(text);
-                                                ui.end_row();
-                                            }
-                                        });
-                                    egui::Grid::new("material_engineering")
-                                        .striped(true)
-                                        .num_columns(1)
-                                        .show(ui, |ui| {
-                                            ui.label("Engineering");
-                                            ui.end_row();
-                                            for text in &material.engineering {
-                                                ui.label(text);
-                                                ui.end_row();
-                                            }
-                                        });
-                                    egui::Grid::new("material_synthesis")
-                                        .striped(true)
-                                        .num_columns(1)
-                                        .show(ui, |ui| {
-                                            ui.heading("Synthesis");
-                                            ui.end_row();
-                                            for text in &material.synthesis {
-                                                ui.label(text);
-                                                ui.end_row();
-                                            }
-                                        });
-                                });
-                        });
-                        ui.separator();
-                        ui.vertical_centered(|ui| {
-                            if ui.button("Close").clicked() {
-                                bool = true;
-                            }
-                        });
-                    });
-            }
-        }
-
-        if bool {
-            self.showing = None;
-        }
 
         egui::CentralPanel::default()
             .show(&ctx, |ui| {
@@ -188,7 +93,7 @@ fn draw_materials(showing: &mut Option<Material>, ui: &mut Ui, materials: &HashM
         let mut option_material = en_iter.next();
         while !option_material.is_none() {
             let material = option_material.unwrap().1;
-            if material.name_localised.contains(search){
+            if material.name_localised.to_lowercase().contains(&search.to_lowercase()) || material.name.to_lowercase().contains(&search.to_lowercase()){
                 ui.vertical(|mut ui| {
                     ui.vertical_centered(|mut ui| {
                         if ui.button(material.get_name()).clicked() {
@@ -226,4 +131,99 @@ fn convert_color(value: f32) -> (u8, u8, u8) {
 
     // Return the resulting color as a tuple (R, G, B)
     (red, green, 0) // Assuming a fixed blue value of 0
+}
+
+pub fn print_material_info_window_if_available(mut showing: &mut Option<Material>, ctx: &Context){
+    match showing.clone() {
+        None => {}
+        Some(material) => {
+            Window::new(material.get_name())
+                .collapsible(false)
+                .resizable(true)
+                .default_size(vec2(ctx.available_rect().width()/1.1, 600f32))
+                .show(&ctx, |ui| {
+                    egui::Grid::new("materials_description")
+                        .num_columns(2)
+                        .max_col_width(ui.available_width() / 1.3)
+                        .show(ui, |ui| {
+                            ui.label(&material.description);
+                            ui.vertical(|mut ui| {
+                                ui.label(format!("Grade: {}", &material.grade));
+                                ui.label(format!("Category: {}", &material.category));
+                                let mut percentage = 0f32;
+                                if material.maximum != 0 {
+                                    percentage = (material.count as f32 / material.maximum as f32) as f32;
+                                }
+                                let color = convert_color(percentage);
+                                let _ = egui::ProgressBar::new(percentage)
+                                    .text(format!("{}/{}", material.count, material.maximum))
+                                    .fill(Color32::from_rgb(color.0, color.1, color.2))
+                                    .desired_width(ui.available_width() / 1.2)
+                                    .ui(&mut ui);
+                            });
+                        });
+
+                    ui.separator();
+
+                    egui::ScrollArea::vertical().show(ui, |ui| {
+                        egui::Grid::new("material_info_grid")
+                            .num_columns(4)
+                            .min_col_width(ui.available_width() / 4.0)
+                            .max_col_width(ui.available_width() / 4.0)
+                            .show(ui, |ui| {
+                                egui::Grid::new("material_location")
+                                    .striped(true)
+                                    .num_columns(1)
+                                    .show(ui, |ui| {
+                                        ui.heading("Locations");
+                                        ui.end_row();
+                                        for text in &material.locations {
+                                            ui.label(text);
+                                            ui.end_row();
+                                        }
+                                    });
+                                egui::Grid::new("material_sources")
+                                    .striped(true)
+                                    .num_columns(1)
+                                    .show(ui, |ui| {
+                                        ui.heading("Sources");
+                                        ui.end_row();
+                                        for text in &material.sources {
+                                            ui.label(text);
+                                            ui.end_row();
+                                        }
+                                    });
+                                egui::Grid::new("material_engineering")
+                                    .striped(true)
+                                    .num_columns(1)
+                                    .show(ui, |ui| {
+                                        ui.label("Engineering");
+                                        ui.end_row();
+                                        for text in &material.engineering {
+                                            ui.label(text);
+                                            ui.end_row();
+                                        }
+                                    });
+                                egui::Grid::new("material_synthesis")
+                                    .striped(true)
+                                    .num_columns(1)
+                                    .show(ui, |ui| {
+                                        ui.heading("Synthesis");
+                                        ui.end_row();
+                                        for text in &material.synthesis {
+                                            ui.label(text);
+                                            ui.end_row();
+                                        }
+                                    });
+                            });
+                    });
+                    ui.separator();
+                    ui.vertical_centered(|ui| {
+                        if ui.button("Close").clicked() {
+                            showing.take();
+                        }
+                    });
+                });
+        }
+    }
 }
