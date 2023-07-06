@@ -67,15 +67,18 @@ impl Default for Settings {
 
         let mut graphics_directory = json["reader"]["graphics-directory"].to_string();
         let mut graphics_path = Path::new(&graphics_directory);
+        let mut graphics_override_file = graphics_directory.clone();
         if !graphics_path.exists() {
             if cfg!(target_os = "windows") {
                 let mut userprofile = env::var("USERPROFILE").unwrap_or("".to_string());
-                userprofile.push_str("\\AppData\\Frontier Developments\\Elite Dangerous\\Options\\Graphics");
+                userprofile.push_str("\\AppData\\Local\\Frontier Developments\\Elite Dangerous\\Options\\Graphics");
                 graphics_directory = userprofile;
+                graphics_override_file = format!("{}\\GraphicsConfigurationOverride.xml", graphics_directory);
             } else if cfg!(target_os = "linux") {
                 let mut home = env::var("HOME").unwrap_or("~".to_string());
                 home.push_str("/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics");
                 graphics_directory = home;
+                graphics_override_file = format!("{}/GraphicsConfigurationOverride.xml", graphics_directory);
             }
             if !Path::new(&graphics_directory).exists() {
                 graphics_directory = String::from(".");
@@ -102,7 +105,7 @@ impl Default for Settings {
             local_pow: json["local-pow"].as_bool().unwrap(),
             password: json["password"].to_string(),
             allow_share_data: json["allow-share-data"].as_bool().unwrap(),
-            graphic_override_content: fs::read_to_string(format!("{}/GraphicsConfigurationOverride.xml", graphics_directory)).unwrap(),
+            graphic_override_content: fs::read_to_string(graphics_override_file).unwrap(),
             show_editor: false,
         }
     }
