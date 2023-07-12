@@ -81,7 +81,7 @@ impl Default for Settings {
                 graphics_override_file = format!("{}/GraphicsConfigurationOverride.xml", graphics_directory);
             }
             if !Path::new(&graphics_directory).exists() {
-                graphics_directory = String::from(".");
+                graphics_directory = String::from("");
             }
             println!("Graphics path: {}", &graphics_directory);
         }
