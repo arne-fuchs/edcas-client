@@ -94,7 +94,7 @@ impl Default for Settings {
                 .with_node(node_url.as_str()).unwrap()
                 .with_local_pow(json["local-pow"].as_bool().unwrap())
                 .finish().unwrap(),
-            journal_directory: journal_directory.to_owned(),
+            journal_directory: journal_directory.clone(),
             graphics_directory: graphics_directory.clone(),
             base_url: json["node"]["base-url"].to_string(),
             port: json["node"]["port"].as_u64().unwrap(),
@@ -105,7 +105,7 @@ impl Default for Settings {
             local_pow: json["local-pow"].as_bool().unwrap(),
             password: json["password"].to_string(),
             allow_share_data: json["allow-share-data"].as_bool().unwrap(),
-            graphic_override_content: fs::read_to_string(graphics_override_file).unwrap(),
+            graphic_override_content: fs::read_to_string(graphics_override_file).unwrap_or_default(),
             show_editor: false,
         }
     }
