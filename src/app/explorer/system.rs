@@ -2,8 +2,7 @@ use std::ops::Add;
 use eframe::egui;
 use eframe::egui::TextureHandle;
 use eframe::emath::Numeric;
-use crate::app::explorer::planet::Signal;
-use crate::app::explorer::structs::BodyImplementation;
+use crate::app::explorer::structs::{BodyImplementation, Signal};
 use crate::ICON_BODY_SIGNAL;
 
 pub struct System {

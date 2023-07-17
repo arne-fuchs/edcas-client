@@ -14,6 +14,7 @@ pub mod star;
 pub mod structs;
 pub mod belt_cluster;
 pub mod system;
+mod ring;
 
 pub struct Explorer {
     pub systems: Vec<System>,

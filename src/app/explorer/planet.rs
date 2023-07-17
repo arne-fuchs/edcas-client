@@ -5,9 +5,8 @@ use log::warn;
 use num_format::{Locale, ToFormattedString};
 
 use crate::app::explorer::planet::BodyClass::{AmmoniaWorld, BeltCluster, ClassIGasGiant, ClassIIGasGiant, ClassIIIGasGiant, ClassIVGasGiant, ClassVGasGiant, EarthlikeWorld, GasGiantwithAmmoniabasedLife, GasGiantwithWaterbasedLife, HeliumRichGasGiant, HighMetalContentPlanet, HighMetalContentTerraformablePlanet, IcyBody, MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown, WaterGiant, WaterWorld, WaterWorldTerraformable};
-use crate::app::explorer::structs::{BodyImplementation, Parent};
+use crate::app::explorer::structs::{BodyImplementation, Parent, Signal};
 use crate::{ICON_BODY, ICON_SYMBOL};
-use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
 
 
@@ -133,6 +132,7 @@ impl BodyImplementation for Planet {
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(),"");
         }
+        body_name.push_str(" ");
 
         if !self.planet_signals.is_empty(){
             for signal in &self.planet_signals{
@@ -387,22 +387,5 @@ pub fn get_color_image_from_planet_class(planet_class: BodyClass) -> ColorImage 
         Ring => { icons.ring.clone() }
         Star => { icons.star.clone() }
         Unknown => { icons.unknown.clone() }
-    }
-}
-
-#[derive(Clone)]
-pub struct Signal {
-    pub r#type: String,
-    pub type_localised: String,
-    pub count: i64,
-}
-
-impl Default for Signal {
-    fn default() -> Self {
-        Self{
-            r#type: "N/A".to_string(),
-            type_localised: "N/A".to_string(),
-            count: 0
-        }
     }
 }

@@ -45,6 +45,7 @@ impl BodyImplementation for BeltCluster {
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(),"");
         }
+        body_name.push_str(" ");
 
         if self.was_discovered && self.settings.explorer_settings.show_discovered{
             body_name.push_str("|🚩");

@@ -3,9 +3,9 @@ use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
 
 use crate::app::explorer::{Explorer, structs};
+use crate::app::explorer::structs::Signal;
 use crate::app::materials::{MaterialState, Material};
 use crate::app::mining::{Mining, Prospector, MiningMaterial};
-use crate::app::explorer::planet::Signal;
 use crate::app::explorer::system::{PlanetSignals, System, SystemSignal};
 use crate::app::settings::Settings;
 
