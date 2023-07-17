@@ -168,7 +168,7 @@ impl Default for Settings {
             node_url.push_str(json["iota"]["port"].as_str().unwrap_or("443"));
             some_client = Some(Client::builder()
                 .with_node(node_url.as_str()).unwrap()
-                .with_local_pow(json["local-pow"].as_bool().unwrap())
+                .with_local_pow(json["iota"]["local-pow"].as_bool().unwrap_or(false))
                 .finish().unwrap());
 
         }
