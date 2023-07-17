@@ -3,7 +3,6 @@ use eframe::egui;
 use eframe::egui::{TextureHandle, Ui};
 use num_format::{Locale, ToFormattedString};
 use crate::app::explorer::structs::{BodyImplementation, Parent};
-use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
 use crate::ICON_BODY;
 
@@ -86,16 +85,16 @@ impl BodyImplementation for Star {
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(),"");
         }
-
+        if self.was_discovered && self.settings.explorer_settings.show_discovered{
+            body_name.push_str("|🚩");
+        }
+        if self.was_mapped && self.settings.explorer_settings.show_mapped{
+            body_name.push_str("|🗺");
+        }
         if ui.selectable_label(false, &body_name).clicked() {
             *system_index = body_index;
         };
-        if self.was_discovered && self.settings.explorer_settings.show_discovered{
-            ui.label("|🚩");
-        }
-        if self.was_mapped && self.settings.explorer_settings.show_mapped{
-            ui.label("|🗺");
-        }
+
     }
 
     fn get_name(&self) -> &str {

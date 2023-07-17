@@ -134,11 +134,6 @@ impl BodyImplementation for Planet {
             body_name.replace_range(0..system_name.len(),"");
         }
 
-        if ui.selectable_label(false, &body_name).clicked() {
-            *system_index = body_index;
-        };
-
-        let img_size = 24.0 * texture.size_vec2() / texture.size_vec2().y;
         if !self.planet_signals.is_empty(){
             for signal in &self.planet_signals{
 
@@ -151,49 +146,59 @@ impl BodyImplementation for Planet {
                 match signal.r#type.as_str() {
                     "$SAA_SignalType_Biological;" => {
                         if self.settings.explorer_settings.show_bio {
-                            ui.label("|");
-                            ui.label(&signal.count.to_string());
-                            ui.label("🌱");
+                            body_name.push_str("|");
+                            body_name.push_str(&signal.count.to_string());
+                            body_name.push_str("🌱");
                         }
                     }
                     "$SAA_SignalType_Geological;" => {
                         if self.settings.explorer_settings.show_geo {
-                            ui.label("|");
-                            ui.label(&signal.count.to_string());
-                            ui.label("🌋");
+                            body_name.push_str("|");
+                            body_name.push_str(&signal.count.to_string());
+                            body_name.push_str("🌋");
                         }
                     }
                     "$SAA_SignalType_Xenological;" => {
                         if self.settings.explorer_settings.show_xeno {
-                            ui.label("|");
-                            ui.label(&signal.count.to_string());
-                            ui.label("👽");
+                            body_name.push_str("|");
+                            body_name.push_str(&signal.count.to_string());
+                            body_name.push_str("👽");
                         }
                     }
                     "$SAA_SignalType_Human;" => {
                         if self.settings.explorer_settings.show_human {
-                            ui.label("|");
-                            ui.label(&signal.count.to_string());
-                            ui.label("✋");
+                            body_name.push_str("|");
+                            body_name.push_str(&signal.count.to_string());
+                            body_name.push_str("✋");
                         }
                     }
                     _ => {
                         warn!("Icon for string not found: {}", signal.r#type.as_str());
                         if self.settings.explorer_settings.show_unknown {
-                            ui.label("|");
-                            ui.label(&signal.count.to_string());
-                            ui.label("？");
+                            body_name.push_str("|");
+                            body_name.push_str(&signal.count.to_string());
+                            body_name.push_str("？");
                         }
                     }
                 }
             }
         }
         if self.settings.explorer_settings.show_gravity {
-            ui.label(format!("| {} G⬇",&self.surface_gravity.to_string()));
+            body_name.push_str(format!("| {} G⬇",&self.surface_gravity.to_string()).as_str());
         }
         if self.settings.explorer_settings.show_ls{
-            ui.label(format!("| {} LS➡",(self.distance_from_arrival_ls as u64).to_formatted_string(&Locale::en)));
+            body_name.push_str(format!("| {} LS➡",(self.distance_from_arrival_ls as u64).to_formatted_string(&Locale::en)).as_str());
         }
+        if self.was_discovered && self.settings.explorer_settings.show_discovered{
+            body_name.push_str("|🚩");
+        }
+        if self.was_mapped && self.settings.explorer_settings.show_mapped{
+            body_name.push_str("|🗺");
+        }
+        if ui.selectable_label(false, &body_name).clicked() {
+            *system_index = body_index;
+        };
+
         if self.settings.explorer_settings.show_landable{
             ui.label("|");
             if self.landable{
@@ -202,6 +207,7 @@ impl BodyImplementation for Planet {
                     ICON_SYMBOL.lock().unwrap().landable.clone(),
                     egui::TextureOptions::LINEAR,
                 );
+                let img_size = 24.0 * texture.size_vec2() / texture.size_vec2().y;
                 ui.image(&texture,img_size);
             }else {
                 let texture: TextureHandle = ui.ctx().load_texture(
@@ -209,16 +215,12 @@ impl BodyImplementation for Planet {
                     ICON_SYMBOL.lock().unwrap().not_landable.clone(),
                     egui::TextureOptions::LINEAR,
                 );
+                let img_size = 24.0 * texture.size_vec2() / texture.size_vec2().y;
                 ui.image(&texture,img_size);
             }
         }
 
-        if self.was_discovered && self.settings.explorer_settings.show_discovered{
-            ui.label("|🚩");
-        }
-        if self.was_mapped && self.settings.explorer_settings.show_mapped{
-            ui.label("|🗺");
-        }
+
     }
 
     fn get_name(&self) -> &str {
