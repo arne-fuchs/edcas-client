@@ -1,18 +1,37 @@
 {
-  "local-pow": false,
-  "log-level": "Debug",
-  "password": "CoUBZ9W6eRVpTKEYrgj3",
-  "allow-share-data" : false,
-  "nft-adapter": {
-    "attempts": 3,
+  "appearance": {
+    "font-family": "Proportional",
+    "font-size": 24.0
+  },
+  "explorer": {
+    "include_system_name": true,
+    "show_bio": true,
+    "show_discovered": true,
+    "show_geo": true,
+    "show_gravity": false,
+    "show_human": true,
+    "show_landable": false,
+    "show_ls": false,
+    "show_mapped": true,
+    "show_sphere": false,
+    "show_unknown": true,
+    "show_xeno": true
+  },
+  "graphics-editor": {
+    "graphics-directory": ""
+  },
+  "iota": {
+    "allow-share-data": false,
+    "attempts": 4,
+    "base-url": "https://tangle.paesserver.de",
+    "local-pow": false,
+    "password": "CoUBZ9W6eRVpTKEYrgj3",
+    "port": 443,
     "timeout": 5
   },
-  "node": {
-    "base-url": "https://tangle.paesserver.de",
-    "port": 443
+  "journal-reader": {
+    "action-at-shutdown-signal": "nothing",
+    "directory": ""
   },
-  "reader": {
-    "journal-directory": "",
-    "graphics-directory": ""
-  }
+  "log-level": "Debug"
 }
