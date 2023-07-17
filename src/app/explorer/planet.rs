@@ -132,7 +132,6 @@ impl BodyImplementation for Planet {
         if !self.settings.explorer_settings.include_system_name{
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(),"");
-            ui.label(&body_name);
         }
 
         if ui.selectable_label(false, &body_name).clicked() {
