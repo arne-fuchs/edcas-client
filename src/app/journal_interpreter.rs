@@ -97,11 +97,21 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
 
             let id = json["BodyID"].as_i64().unwrap_or(-1);
             let len = explorer.systems.len()-1;
-            explorer.systems[len].planet_signals.push(planet_signals);
 
-            explorer.systems[len].planet_signals.sort_by(|a, b|{
-                a.signals.len().cmp(&b.signals.len())
-            });
+            let mut found = false;
+            for i in 0..explorer.systems[len].planet_signals.len(){
+                let planet_signal = &mut explorer.systems[len].planet_signals[i];
+                if planet_signal.body_id == planet_signals.body_id{
+                    planet_signal.signals = planet_signals.signals.clone();
+                    found = true;
+                }
+            }
+            if !found {
+                explorer.systems[len].planet_signals.push(planet_signals);
+                explorer.systems[len].planet_signals.sort_by(|a, b|{
+                    a.signals.len().cmp(&b.signals.len())
+                });
+            }
         }
         "FSSSignalDiscovered" => {
             //{ "timestamp":"2023-05-29T22:40:26Z", "event":"FSSSignalDiscovered", "SystemAddress":672296347049, "SignalName":"$MULTIPLAYER_SCENARIO80_TITLE;", "SignalName_Localised":"Unbewachtes Navigationssignal" }

@@ -28,6 +28,12 @@ pub struct PlanetSignals{
     pub signals: Vec<Signal>
 }
 
+impl PartialEq for PlanetSignals {
+    fn eq(&self, other: &Self) -> bool {
+        self.body_id == other.body_id
+    }
+}
+
 impl System{
     pub fn draw_body_signal_list(&self, ui: &mut egui::Ui) {
         egui::Grid::new("body_signal_grid")
