@@ -68,49 +68,53 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "FSSAllBodiesFound" => {}
         //{ "timestamp":"2022-10-16T23:46:48Z", "event":"FSSDiscoveryScan", "Progress":0.680273, "BodyCount":21, "NonBodyCount":80, "SystemName":"Ogmar", "SystemAddress":84180519395914 }
         "FSSDiscoveryScan" => {
-            let len = explorer.systems.len()-1;
-            let system = &mut explorer.systems[len];
-            system.body_count = json["BodyCount"].to_string();
-            system.non_body_count = json["NonBodyCount"].to_string();
+            if explorer.systems.len() > 0{
+                let len = explorer.systems.len()-1;
+                let system = &mut explorer.systems[len];
+                system.body_count = json["BodyCount"].to_string();
+                system.non_body_count = json["NonBodyCount"].to_string();
+            }
         }//Honk
         //{ "timestamp":"2022-07-07T20:58:06Z", "event":"SAASignalsFound", "BodyName":"IC 2391 Sector YE-A d103 B 1", "SystemAddress":3549631072611, "BodyID":15, "Signals":[ { "Type":"$SAA_SignalType_Guardian;", "Type_Localised":"Guardian", "Count":1 }, { "Type":"$SAA_SignalType_Human;", "Type_Localised":"Menschlich", "Count":9 } ] }
         "FSSBodySignals" | "SAASignalsFound" => {
             //TODO Implement NFT
             //{ "timestamp":"2022-09-07T17:50:41Z", "event":"FSSBodySignals", "BodyName":"Synuefe EN-H d11-106 6 a", "BodyID":31, "SystemAddress":3652777380195, "Signals":[ { "Type":"$SAA_SignalType_Biological;", "Type_Localised":"Biologisch", "Count":1 }, { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geologisch", "Count":3 } ] }
-            let mut signals: Vec<Signal> = Vec::new();
+            if explorer.systems.len() > 0{
+                let mut signals: Vec<Signal> = Vec::new();
 
-            for i in 0..json["Signals"].len() {
-                signals.push(Signal {
-                    r#type: json["Signals"][i]["Type"].to_string(),
-                    type_localised: json["Signals"][i]["Type_Localised"].to_string(),
-                    count: json["Signals"][i]["Count"].as_i64().unwrap_or(-1),
-                })
-            }
-
-            let planet_signals = PlanetSignals{
-                body_name: json["BodyName"].to_string(),
-                body_id: json["BodyID"].as_i64().unwrap(),
-                signals: signals.clone(),
-            };
-
-            info!("Body {} number of signals: {}",json["BodyName"].to_string(),signals.len().clone());
-
-            let id = json["BodyID"].as_i64().unwrap_or(-1);
-            let len = explorer.systems.len()-1;
-
-            let mut found = false;
-            for i in 0..explorer.systems[len].planet_signals.len(){
-                let planet_signal = &mut explorer.systems[len].planet_signals[i];
-                if planet_signal.body_id == planet_signals.body_id{
-                    planet_signal.signals = planet_signals.signals.clone();
-                    found = true;
+                for i in 0..json["Signals"].len() {
+                    signals.push(Signal {
+                        r#type: json["Signals"][i]["Type"].to_string(),
+                        type_localised: json["Signals"][i]["Type_Localised"].to_string(),
+                        count: json["Signals"][i]["Count"].as_i64().unwrap_or(-1),
+                    })
                 }
-            }
-            if !found {
-                explorer.systems[len].planet_signals.push(planet_signals);
-                explorer.systems[len].planet_signals.sort_by(|a, b|{
-                    a.signals.len().cmp(&b.signals.len())
-                });
+
+                let planet_signals = PlanetSignals{
+                    body_name: json["BodyName"].to_string(),
+                    body_id: json["BodyID"].as_i64().unwrap(),
+                    signals: signals.clone(),
+                };
+
+                info!("Body {} number of signals: {}",json["BodyName"].to_string(),signals.len().clone());
+
+                let id = json["BodyID"].as_i64().unwrap_or(-1);
+                let len = explorer.systems.len()-1;
+
+                let mut found = false;
+                for i in 0..explorer.systems[len].planet_signals.len(){
+                    let planet_signal = &mut explorer.systems[len].planet_signals[i];
+                    if planet_signal.body_id == planet_signals.body_id{
+                        planet_signal.signals = planet_signals.signals.clone();
+                        found = true;
+                    }
+                }
+                if !found {
+                    explorer.systems[len].planet_signals.push(planet_signals);
+                    explorer.systems[len].planet_signals.sort_by(|a, b|{
+                        a.signals.len().cmp(&b.signals.len())
+                    });
+                }
             }
         }
         "FSSSignalDiscovered" => {
@@ -118,58 +122,60 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             // { "timestamp":"2023-05-29T22:40:26Z", "event":"FSSSignalDiscovered", "SystemAddress":672296347049, "SignalName":"THE GENERAL MELCHETT X5W-0XL", "IsStation":true }
             //{ "timestamp":"2023-05-29T22:40:42Z", "event":"FSSSignalDiscovered", "SystemAddress":672296347049, "SignalName":"$USS_HighGradeEmissions;", "SignalName_Localised":"Unidentifizierte Signalquelle",
             // "USSType":"$USS_Type_ValuableSalvage;", "USSType_Localised":"Verschlüsselte Emissionen", "SpawningState":"", "SpawningFaction":"Murus Major Industry", "ThreatLevel":0, "TimeRemaining":707.545837 }
-            let mut name = json["SignalName_Localised"].to_string();
-            if name == "null".to_string()  {
-                name = json["SignalName"].to_string();
+            if explorer.systems.len() > 0{
+                let mut name = json["SignalName_Localised"].to_string();
                 if name == "null".to_string()  {
-                    name = json["USSType_Localised"].to_string();
+                    name = json["SignalName"].to_string();
+                    if name == "null".to_string()  {
+                        name = json["USSType_Localised"].to_string();
+                    }
                 }
-            }
 
-            let mut thread =  json["ThreatLevel"].to_string();
-            if thread == "null".to_string()  {
-                thread = "".to_string();
-            }
-
-            let system_signal = SystemSignal {
-                timestamp: json["timestamp"].to_string(),
-                event: json["event"].to_string(),
-                name,
-                thread,
-            };
-            let len = explorer.systems.len()-1;
-            explorer.systems[len].signal_list.push(system_signal);
-            explorer.systems[len].signal_list.sort_by(|a, b|{
-                if a.name == b.name{
-                    a.thread.cmp(&b.thread)
-                }else {
-                    a.name.cmp(&b.name)
+                let mut thread =  json["ThreatLevel"].to_string();
+                if thread == "null".to_string()  {
+                    thread = "".to_string();
                 }
-            });
+
+                let system_signal = SystemSignal {
+                    timestamp: json["timestamp"].to_string(),
+                    event: json["event"].to_string(),
+                    name,
+                    thread,
+                };
+                let len = explorer.systems.len()-1;
+                explorer.systems[len].signal_list.push(system_signal);
+                explorer.systems[len].signal_list.sort_by(|a, b|{
+                    if a.name == b.name{
+                        a.thread.cmp(&b.thread)
+                    }else {
+                        a.name.cmp(&b.name)
+                    }
+                });
+            }
         }
         "SAAScanComplete" => {}
         "Scan" => {
             //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435, "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant", "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ], "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730, "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734, "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320, "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
             info!("Body found: {}",json["BodyName"].to_string());
+            if explorer.systems.len() > 0{
+                let mut body = structs::generate_from_json(json,settings.clone());
 
-            let mut body = structs::generate_from_json(json,settings.clone());
+                let len = explorer.systems.len()-1;
 
-            let len = explorer.systems.len()-1;
+                for planet_signal in &mut explorer.systems[len].planet_signals{
+                    if planet_signal.body_id == body.get_id(){
+                        body.set_signals(planet_signal.signals.clone());
+                    }
+                }
 
-            for planet_signal in &mut explorer.systems[len].planet_signals{
-                if planet_signal.body_id == body.get_id(){
-                    body.set_signals(planet_signal.signals.clone());
+                let len = explorer.systems.len()-1;
+                if !explorer.systems[len].body_list.contains(&body) {
+                    //explorer.pages[len].system.body_list.push(body);
+
+                    let index = explorer.systems[len].insert_body(body);
+                    explorer.systems[len].index = index;
                 }
             }
-
-            let len = explorer.systems.len()-1;
-            if !explorer.systems[len].body_list.contains(&body) {
-                //explorer.pages[len].system.body_list.push(body);
-
-                let index = explorer.systems[len].insert_body(body);
-                explorer.systems[len].index = index;
-            }
-
         }
         //Planet scan with fss
         "ScanBaryCentre" => {}
