@@ -3,16 +3,28 @@
 
 Shows system information compact for explorer.
 
+<div style="text-align: center;"><h2>Gotta see all those planets!</h2></div>
+
 ![Screenshot of explorer panel](graphics/screenshots/explorer-screenshot.jpg "Explorer Panel")
-![Screenshot of miner panel](graphics/screenshots/miner-screenshot.jpg "Miner Panel")
+
+<div style="text-align: center;"><h2>Track your materials!</h2></div>
+
 ![Screenshot of materials panel](graphics/screenshots/materials-screenshot.jpg "Materials Panel")
+
+<div style="text-align: center;"><h2>Customize your panel!</h2></div>
+
+![Screenshot of settings panel](graphics/screenshots/settings-screenshot.jpg "Settings Panel")
+
+<div style="text-align: center;"><h2>And much more!</h2></div>
 
 ## Features
 
 * System and its data represented in a compact view
-* List signals found in system to find Raxxla ASAP.
+* List signals found in system to find Raxxla ASAP
 * Get help mining by showing relevant data
 * Keep track of your materials
+* Apply graphic override configurations (with presets or your own!)
+* Always keep track of what the feds are doing in the news tab
 * Written in rust so you know its good
 
 ## Build Requirements
@@ -68,22 +80,6 @@ and add this to your processes:
         }
     ],
 ```
-
-## Planned Features
-
-### News page [Done]
-### Accounts [In progress]
-Accounts based on the <a href=https://www.iota.org/ >IOTA Protocol<a/>
-### Fetching already known systems from remote db
-### Inventory & Material management
-Idea: Showing Inventory cargo prices with history and galactic average and highest price.
-Material should have colors where green is full, red is empty and yellow-ish is in between.
-### Material Tracker
-Idea: Pick a modification and the tool tracks the missing materials and list them for you.
-Best case would be a description where you can get them
-### Fuel Warning
-Idea: Play sound or spoken text if you jump and fuel is low after jump
-### (EDDN Adapter)
 
 
 ## Suggestions, Ideas & Bug Reports
