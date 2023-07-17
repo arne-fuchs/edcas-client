@@ -24,7 +24,7 @@ pub struct Explorer {
 
 impl Explorer {
     pub fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
-        if self.systems.len() < self.index {
+        if self.systems.len() > self.index {
             egui::SidePanel::left("system_data").show(ctx, |ui| {
                 self.systems[self.index].draw_system_info(ui);
             });
