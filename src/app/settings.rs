@@ -123,7 +123,7 @@ impl Default for Settings {
         settings_file.read_to_string(&mut json_string).unwrap();
         let json = json::parse(&json_string).unwrap();
 
-        let mut journal_directory = json["journal-reader"]["journal-directory"].to_string();
+        let mut journal_directory = json["journal-reader"]["directory"].to_string();
         let journal_path = Path::new(&journal_directory);
         if !journal_path.exists() {
             if cfg!(target_os = "windows") {
@@ -136,7 +136,7 @@ impl Default for Settings {
                 journal_directory = home;
             }
             if !Path::new(&journal_directory).exists() {
-                journal_directory = String::from(".");
+                journal_directory = String::from("");
             }
             println!("Journal logs: {}", &journal_directory);
         }
