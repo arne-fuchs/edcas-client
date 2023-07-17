@@ -323,7 +323,12 @@ impl App for EliteRustClient {
             for (text_style, font_id) in style.text_styles.iter_mut() {
                 match text_style {
                     TextStyle::Small => {
-                        font_id.size = settings.appearance_settings.font_id.size - 4.0;
+                        if  settings.appearance_settings.font_id.size > 4.0 {
+                            font_id.size = settings.appearance_settings.font_id.size - 4.0;
+                        }else {
+                            font_id.size = settings.appearance_settings.font_id.size;
+                        }
+
                     }
                     TextStyle::Heading => {
                         font_id.size = settings.appearance_settings.font_id.size + 4.0;
