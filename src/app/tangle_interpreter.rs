@@ -2,6 +2,7 @@ use std::fs::File;
 use std::ops::Add;
 use std::path::PathBuf;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::Duration;
 use bus::BusReader;
 use iota_wallet::account::{AccountHandle, SyncOptions};
@@ -25,7 +26,7 @@ use crate::app::settings::Settings;
 pub struct TangleInterpreter {
     queue: Vec<NftOptions>,
     bus: BusReader<JsonValue>,
-    settings: Settings,
+    settings: Arc<Settings>,
     account: AccountHandle,
     bech32_hrp: String,
     address: String,
@@ -231,8 +232,8 @@ impl TangleInterpreter {
 
     #[async_recursion]
     async fn attach_nft_recursive(&mut self, nft_options: Vec<NftOptions>, iteration: u64) -> Option<Transaction> {
-        let timeout_in_seconds = self.settings.n_timeout;
-        let attempts = self.settings.n_attempts;
+        let timeout_in_seconds = self.settings.iota_settings.n_timeout;
+        let attempts = self.settings.iota_settings.n_attempts;
 
         let mut balance = self.account.sync(Some(SyncOptions {
             force_syncing: true,
@@ -288,20 +289,20 @@ impl TangleInterpreter {
     }
 }
 
-pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Settings) -> TangleInterpreter {
+pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Settings>) -> TangleInterpreter {
     info!("Loading wallet");
 
-    let mut node_url = settings.base_url.clone();
-    let port = settings.port.to_string();
+    let mut node_url = settings.iota_settings.base_url.clone();
+    let port = settings.iota_settings.port.to_string();
 
     node_url.push_str(":");
     node_url.push_str(port.as_str());
 
     info!("Using URL:{}", &node_url);
-    info!("Local POW:{}", settings.local_pow);
+    info!("Local POW:{}", settings.iota_settings.local_pow);
 
     let client_options = ClientOptions::new()
-        .with_local_pow(settings.local_pow)
+        .with_local_pow(settings.iota_settings.local_pow)
         .with_node(node_url.as_str()).unwrap();
 
     //create stronghold account
@@ -324,7 +325,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Settings) -
 
                     // Set the stronghold password
                     manager
-                        .set_stronghold_password(settings.password.as_str())
+                        .set_stronghold_password(settings.iota_settings.password.as_str())
                         .await.unwrap();
 
                     // Get the account we generated with `01_create_wallet`
@@ -350,7 +351,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Settings) -
                 .block_on(async {
                     // Setup Stronghold secret_manager
                     let mut secret_manager = StrongholdSecretManager::builder()
-                        .password(settings.password.as_str())
+                        .password(settings.iota_settings.password.as_str())
                         .build(PathBuf::from("wallet.stronghold")).unwrap();
 
                     // Only required the first time, can also be generated with `manager.generate_mnemonic()?`

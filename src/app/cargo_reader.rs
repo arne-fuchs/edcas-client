@@ -1,12 +1,7 @@
-use std::fmt::Error;
-use std::fs::File;
-use std::io::{BufReader, Read};
-use std::ptr::null;
-use std::string::FromUtf8Error;
-use image::io::Reader;
-use json::{Error as JsonError, JsonValue, Null};
+use std::sync::Arc;
+use json::{JsonValue, Null};
 use log::{debug, error};
-use serde_json::Value;
+use crate::app::settings::Settings;
 
 pub struct CargoReader {
     directory_path: String,
@@ -30,7 +25,8 @@ pub struct Cargo {
     pub lowest_buy_system: String,
 }
 
-pub fn initialize(mut directory_path: String) -> CargoReader {
+pub fn initialize(settings: Arc<Settings>) -> CargoReader {
+    let mut directory_path= settings.journal_reader_settings.journal_directory.clone();
     directory_path.push_str("/Cargo.json");
 
     CargoReader {

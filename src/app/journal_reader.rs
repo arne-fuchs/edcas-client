@@ -1,20 +1,21 @@
 use std::{fs, process};
 use std::fs::{DirEntry, File};
 use std::io::{BufRead, BufReader};
+use std::sync::Arc;
 use bus::{Bus};
 use chrono::NaiveDateTime;
 use json::JsonValue;
 use log::{debug, error};
-use crate::app::settings::Settings;
+use crate::app::settings::{ActionAtShutdownSignal, Settings};
 
 pub struct JournalReader{
     pub reader: BufReader<File>,
     index: usize,
-    directory_path: String,
+    settings: Arc<Settings>
 }
 
-pub fn initialize(directory_path: String) -> JournalReader{
-    let mut reader = get_journal_log_by_index(directory_path.clone(),0);
+pub fn initialize(settings: Arc<Settings>) -> JournalReader{
+    let mut reader = get_journal_log_by_index(settings.journal_reader_settings.journal_directory.clone(),0);
     let flag = 1;
     while flag != 0 {
         let mut line = String::new();
@@ -31,7 +32,7 @@ pub fn initialize(directory_path: String) -> JournalReader{
                                 let event = json["event"].as_str().unwrap();
                                 if event == "Shutdown" {
                                     debug!("\n\nReached Shutdown -> looking for newer journals\n");
-                                    reader = get_journal_log_by_index(directory_path.clone(),0)
+                                    reader = get_journal_log_by_index(settings.journal_reader_settings.journal_directory.clone(),0)
                                 }
                             }
                             Err(err) => {
@@ -49,9 +50,9 @@ pub fn initialize(directory_path: String) -> JournalReader{
     }
 
     JournalReader{
-        reader: get_journal_log_by_index(directory_path.clone(),0),
+        reader: get_journal_log_by_index(settings.journal_reader_settings.journal_directory.clone(),0),
         index: 0,
-        directory_path,
+        settings,
     }
 }
 
@@ -75,10 +76,15 @@ impl JournalReader {
                             Ok(json) => {
                                 let event = json["event"].as_str().unwrap();
                                 if event == "Shutdown" {
-                                    process::exit(0);
-                                    //debug!("\n\nReached Shutdown -> increasing index and reading older journals\n");
-                                    //self.index = self.index + 1;
-                                    //self.reader = get_journal_log_by_index(self.directory_path.clone(),self.index.clone())
+                                    match self.settings.journal_reader_settings.action_at_shutdown_signal {
+                                        ActionAtShutdownSignal::Exit => {process::exit(0);}
+                                        ActionAtShutdownSignal::Nothing => {}
+                                        ActionAtShutdownSignal::Continue => {
+                                            debug!("\n\nReached Shutdown -> increasing index and reading older journals\n");
+                                            self.index = self.index + 1;
+                                            self.reader = get_journal_log_by_index(self.settings.journal_reader_settings.journal_directory.clone(),self.index.clone())
+                                        }
+                                    }
                                 }
                                 journal_bus.broadcast(json);
                             }

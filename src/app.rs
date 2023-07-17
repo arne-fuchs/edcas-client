@@ -1,8 +1,6 @@
 use std::{env, fs, thread};
-use std::borrow::{Borrow, BorrowMut};
-use std::fs::File;
+use std::ops::Deref;
 use std::path::PathBuf;
-use std::rc::Rc;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
@@ -12,12 +10,10 @@ use bus::{Bus, BusReader};
 use chrono::Local;
 use eframe::App;
 use eframe::egui;
-use eframe::egui::accesskit::Role::Directory;
-use iota_wallet::iota_client::crypto::hashes::Digest;
+use eframe::egui::TextStyle;
+
 use json::JsonValue;
 use log::info;
-use num_format::Locale::en;
-use serde_json::json;
 use crate::app::cargo_reader::CargoReader;
 
 use crate::app::materials::{Material, MaterialState};
@@ -27,7 +23,7 @@ use crate::egui::Context;
 mod about;
 mod settings;
 mod simple_transaction;
-mod explorer;
+pub mod explorer;
 mod journal_reader;
 mod journal_interpreter;
 mod materials;
@@ -37,21 +33,22 @@ mod mining;
 mod cargo_reader;
 
 pub struct EliteRustClient {
-    about: about::About,
-    explorer: explorer::Explorer,
-    state: State,
-    journal_log_bus_reader: BusReader<JsonValue>,
-    materials: MaterialState,
-    settings: settings::Settings,
-    news: news::News,
-    cargo_reader: Arc<Mutex<CargoReader>>,
-    mining: mining::Mining,
-    timestamp: String,
+    pub about: about::About,
+    pub explorer: explorer::Explorer,
+    pub state: State,
+    pub journal_log_bus_reader: BusReader<JsonValue>,
+    pub materials: MaterialState,
+    pub settings: settings::Settings,
+    pub news: news::News,
+    pub cargo_reader: Arc<Mutex<CargoReader>>,
+    pub mining: mining::Mining,
+    pub timestamp: String,
 }
 
 impl Default for EliteRustClient {
     fn default() -> Self {
         let settings = settings::Settings::default();
+        let settings_pointer = Arc::new(settings.clone());
         let current_dir = env::current_dir().unwrap();
         let logs_dir = current_dir.join("logs");
         let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H-%M"));
@@ -82,7 +79,7 @@ impl Default for EliteRustClient {
 
         println!("Log file: {:?}",path.clone());
 
-        let level = log::LevelFilter::from_str(settings.log_level.as_str()).unwrap();
+        let level = log::LevelFilter::from_str(settings_pointer.log_level.as_str()).unwrap();
 
         println!("Log Level: {:?}",level);
 
@@ -256,21 +253,22 @@ impl Default for EliteRustClient {
         let mut journal_bus: Bus<JsonValue> = Bus::new(100);
         let journal_bus_reader = journal_bus.add_rx();
         let tangle_journal_bus_reader = journal_bus.add_rx();
-        let directory_path = settings.journal_directory.clone();
+        let settings_pointer_clone = settings_pointer.clone();
         thread::spawn(move || {
-            let mut j_reader = journal_reader::initialize(directory_path);
+            let mut j_reader = journal_reader::initialize(settings_pointer_clone);
             loop {
                 //Sleep needed, because too frequent reads can lead to read the file while being written to it -> exception from json parser because json is not complete
                 sleep(Duration::from_millis(100));
                 j_reader.run(&mut journal_bus);
             }
         });
-        if settings.allow_share_data {
+        let settings_pointer_clone = settings_pointer.clone();
+        if settings_pointer.iota_settings.allow_share_data {
             info!("Starting Tangle Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
-            let local_settings = settings.clone();
+            let settings_pointer = settings_pointer_clone;
             thread::spawn(move || {
-                let mut tangle_interpreter = tangle_interpreter::initialize(tangle_journal_bus_reader, local_settings);
+                let mut tangle_interpreter = tangle_interpreter::initialize(tangle_journal_bus_reader, settings_pointer);
                 loop {
                     tangle_interpreter.run();
                 }
@@ -278,7 +276,7 @@ impl Default for EliteRustClient {
         }
         info!("Done starting threads");
 
-        let cargo_reader = Arc::new(Mutex::new((cargo_reader::initialize(settings.journal_directory.clone()))));
+        let cargo_reader = Arc::new(Mutex::new(cargo_reader::initialize(settings_pointer.clone())));
         let mining = mining::Mining{
             prospectors: Default::default(),
             cargo: cargo_reader.clone(),
@@ -287,7 +285,12 @@ impl Default for EliteRustClient {
         Self {
             news: news::News::default(),
             about: about::About::default(),
-            explorer: explorer::Explorer::default(),
+            explorer: explorer::Explorer{
+                systems: vec![],
+                index: 0,
+                body_list_index: None,
+                settings: settings_pointer.clone(),
+            },
             state: News,
             journal_log_bus_reader: journal_bus_reader,
             materials,
@@ -299,7 +302,7 @@ impl Default for EliteRustClient {
     }
 }
 
-enum State {
+pub enum State {
     News,
     About,
     Settings,
@@ -314,11 +317,28 @@ impl App for EliteRustClient {
             news, about, explorer, state, journal_log_bus_reader, materials: inventory,settings,mining,cargo_reader,timestamp
         } = self;
 
-        let mut style: egui::Style = (*ctx.style()).clone();
-        for (_text_style, font_id) in style.text_styles.iter_mut() {
-            font_id.size = 24.0;
+        if !settings.appearance_settings.applied {
+
+            let mut style: egui::Style = (*ctx.style()).clone();
+            for (text_style, font_id) in style.text_styles.iter_mut() {
+                match text_style {
+                    TextStyle::Small => {
+                        font_id.size = settings.appearance_settings.font_id.size - 4.0;
+                    }
+                    TextStyle::Heading => {
+                        font_id.size = settings.appearance_settings.font_id.size + 4.0;
+                    }
+                    _ => {
+                        font_id.size = settings.appearance_settings.font_id.size;
+                        font_id.family = settings.appearance_settings.font_id.family.clone();
+                    }
+                }
+            }
+            ctx.set_style(style);
+            settings.appearance_settings.font_size = settings.appearance_settings.font_id.size;
+            settings.appearance_settings.font_style = settings.appearance_settings.font_id.family.to_string();
+            settings.appearance_settings.applied = true;
         }
-        ctx.set_style(style);
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             // Top panel as menu bar
@@ -365,7 +385,7 @@ impl App for EliteRustClient {
         match journal_log_bus_reader.try_recv() {
             Ok(json) => {
                 self.timestamp = json["timestamp"].to_string();
-                journal_interpreter::interpret_json(json.clone(), explorer,  inventory, mining);
+                journal_interpreter::interpret_json(json.clone(), explorer,  inventory, mining,Arc::new(settings.clone()));
             }
             Err(_) => {}
         }
@@ -377,11 +397,11 @@ impl App for EliteRustClient {
         egui::CentralPanel::default().show(ctx, |_ui| {
             match self.state {
                 News => { news.update(ctx,frame) }
-                About => { about::update(  about, ctx, frame) }
+                About => { about.update(ctx, frame) }
                 Settings => { settings.update(ctx,frame) }
-                Explorer => { explorer::update(explorer, ctx, frame) }
-                MaterialInventory => { inventory.update(ctx, frame)}
-                Mining => {mining.update(ctx,frame)}
+                Explorer => { explorer.update(ctx,frame) }
+                MaterialInventory => { inventory.update(ctx, frame) }
+                Mining => { mining.update(ctx,frame) }
             }
         });
         //TODO more efficient way to send updates -> render only if new data comes in?

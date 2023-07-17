@@ -1,14 +1,15 @@
-use std::collections::HashSet;
-use std::ops::Deref;
+use std::sync::Arc;
 use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
-use serde_json::Value;
 
-use crate::app::explorer::{Body, BodySignal, Explorer, Page, Signal, SystemSignal};
+use crate::app::explorer::{Explorer, structs};
 use crate::app::materials::{MaterialState, Material};
 use crate::app::mining::{Mining, Prospector, MiningMaterial};
+use crate::app::explorer::planet::Signal;
+use crate::app::explorer::system::{PlanetSignals, System, SystemSignal};
+use crate::app::settings::Settings;
 
-pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut MaterialState, mining: &mut Mining) {
+pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut MaterialState, mining: &mut Mining, settings: Arc<Settings>) {
     let event = json["event"].as_str().unwrap();
     info!("Interpreter event received: {}", event);
 
@@ -17,39 +18,32 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         //{ "timestamp":"2022-10-16T20:54:45Z", "event":"Location", "DistFromStarLS":1007.705243, "Docked":true, "StationName":"Q2K-BHB", "StationType":"FleetCarrier", "MarketID":3704402432, "StationFaction":{ "Name":"FleetCarrier" }, "StationGovernment":"$government_Carrier;", "StationGovernment_Localised":"Privateigentum", "StationServices":[ "dock", "autodock", "commodities", "contacts", "exploration", "outfitting", "crewlounge", "rearm", "refuel", "repair", "shipyard", "engineer", "flightcontroller", "stationoperations", "stationMenu", "carriermanagement", "carrierfuel", "livery", "voucherredemption", "socialspace", "bartender", "vistagenomics" ], "StationEconomy":"$economy_Carrier;", "StationEconomy_Localised":"Privatunternehmen", "StationEconomies":[ { "Name":"$economy_Carrier;", "Name_Localised":"Privatunternehmen", "Proportion":1.000000 } ], "Taxi":false, "Multicrew":false, "StarSystem":"Colonia", "SystemAddress":3238296097059, "StarPos":[-9530.50000,-910.28125,19808.12500], "SystemAllegiance":"Independent", "SystemEconomy":"$economy_Tourism;", "SystemEconomy_Localised":"Tourismus", "SystemSecondEconomy":"$economy_HighTech;", "SystemSecondEconomy_Localised":"Hightech", "SystemGovernment":"$government_Cooperative;", "SystemGovernment_Localised":"Kooperative", "SystemSecurity":"$SYSTEM_SECURITY_low;", "SystemSecurity_Localised":"Geringe Sicherheit", "Population":583869, "Body":"Colonia 2 c", "BodyID":18, "BodyType":"Planet", "Factions":[ { "Name":"Jaques", "FactionState":"Investment", "Government":"Cooperative", "Influence":0.454092, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand1;", "Happiness_Localised":"In Hochstimmung", "MyReputation":100.000000, "RecoveringStates":[ { "State":"PublicHoliday", "Trend":0 } ], "ActiveStates":[ { "State":"Investment" }, { "State":"CivilLiberty" } ] }, { "Name":"Colonia Council", "FactionState":"Boom", "Government":"Cooperative", "Influence":0.331337, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":100.000000, "ActiveStates":[ { "State":"Boom" } ] }, { "Name":"People of Colonia", "FactionState":"None", "Government":"Cooperative", "Influence":0.090818, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":27.956400 }, { "Name":"Holloway Bioscience Institute", "FactionState":"None", "Government":"Corporate", "Influence":0.123752, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":-9.420000, "RecoveringStates":[ { "State":"PirateAttack", "Trend":0 } ] } ], "SystemFaction":{ "Name":"Jaques", "FactionState":"Investment" } }
         //{ "timestamp":"2022-10-16T23:25:31Z", "event":"FSDJump", "Taxi":false, "Multicrew":false, "StarSystem":"Ogmar", "SystemAddress":84180519395914, "StarPos":[-9534.00000,-905.28125,19802.03125], "SystemAllegiance":"Independent", "SystemEconomy":"$economy_HighTech;", "SystemEconomy_Localised":"Hightech", "SystemSecondEconomy":"$economy_Military;", "SystemSecondEconomy_Localised":"Militär", "SystemGovernment":"$government_Confederacy;", "SystemGovernment_Localised":"Konföderation", "SystemSecurity":"$SYSTEM_SECURITY_medium;", "SystemSecurity_Localised":"Mittlere Sicherheit", "Population":151752, "Body":"Ogmar A", "BodyID":1, "BodyType":"Star", "JumpDist":8.625, "FuelUsed":0.024493, "FuelLevel":31.975506, "Factions":[ { "Name":"Jaques", "FactionState":"Election", "Government":"Cooperative", "Influence":0.138384, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand1;", "Happiness_Localised":"In Hochstimmung", "MyReputation":100.000000, "PendingStates":[ { "State":"Outbreak", "Trend":0 } ], "ActiveStates":[ { "State":"Election" } ] }, { "Name":"ICU Colonial Corps", "FactionState":"War", "Government":"Communism", "Influence":0.119192, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":96.402496, "PendingStates":[ { "State":"Expansion", "Trend":0 } ], "ActiveStates":[ { "State":"War" } ] }, { "Name":"Societas Eruditorum de Civitas Dei", "FactionState":"War", "Government":"Dictatorship", "Influence":0.119192, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":46.414799, "ActiveStates":[ { "State":"War" } ] }, { "Name":"GalCop Colonial Defence Commission", "FactionState":"Boom", "Government":"Confederacy", "Influence":0.406061, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":-75.000000, "ActiveStates":[ { "State":"Boom" } ] }, { "Name":"Likedeeler of Colonia", "FactionState":"None", "Government":"Democracy", "Influence":0.068687, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":4.002500 }, { "Name":"Colonia Tech Combine", "FactionState":"Election", "Government":"Cooperative", "Influence":0.138384, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":4.850000, "ActiveStates":[ { "State":"Election" } ] }, { "Name":"Milanov's Reavers", "FactionState":"Bust", "Government":"Anarchy", "Influence":0.010101, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":0.000000, "RecoveringStates":[ { "State":"Terrorism", "Trend":0 } ], "ActiveStates":[ { "State":"Bust" } ] } ], "SystemFaction":{ "Name":"GalCop Colonial Defence Commission", "FactionState":"Boom" }, "Conflicts":[ { "WarType":"election", "Status":"active", "Faction1":{ "Name":"Jaques", "Stake":"Guerrero Military Base", "WonDays":1 }, "Faction2":{ "Name":"Colonia Tech Combine", "Stake":"", "WonDays":0 } }, { "WarType":"war", "Status":"active", "Faction1":{ "Name":"ICU Colonial Corps", "Stake":"Boulaid Command Facility", "WonDays":1 }, "Faction2":{ "Name":"Societas Eruditorum de Civitas Dei", "Stake":"Chatterjee's Respite", "WonDays":0 } } ] }
         "FSDJump" | "Location" | "CarrierJump" => {
-            let page = Page{
-                system: explorer.system.clone(),
-                body_list: explorer.body_list.clone(),
-                body_signal_list: explorer.body_signal_list.clone(),
-                system_signal_list: explorer.system_signal_list.clone(),
-                body: explorer.body.clone(),
+            let system = System{
+                name: json["StarSystem"].to_string(),
+                allegiance: json["SystemAllegiance"].to_string(),
+                economy_localised: json["SystemEconomy_Localised"].to_string(),
+                second_economy_localised: json["SystemSecondEconomy_Localised"].to_string(),
+                government_localised: json["SystemGovernment_Localised"].to_string(),
+                security_localised: json["SystemSecurity_Localised"].to_string(),
+                population: json["Population"].to_string(),
+                body_count: "N/A".to_string(),
+                non_body_count: "N/A".to_string(),
+                signal_list: vec![],
+                body_list: vec![],
+                planet_signals: vec![],
+                index: 0,
             };
 
 
-            explorer.pages.push(page);
+            explorer.systems.push(system);
 
-            explorer.index = explorer.pages.len();
+            explorer.index = explorer.systems.len()-1;
 
             //if explorer.index == explorer.pages.len()-1{
             //    explorer.index = explorer.pages.len();
             //}
 
-            explorer.system.name = json["StarSystem"].to_string();
-            explorer.system.allegiance = json["SystemAllegiance"].to_string();
-            explorer.system.economy_localised = json["SystemEconomy_Localised"].to_string();
-            explorer.system.second_economy_localised = json["SystemSecondEconomy_Localised"].to_string();
-            explorer.system.government_localised = json["SystemGovernment_Localised"].to_string();
-            explorer.system.security_localised = json["SystemSecurity_Localised"].to_string();
-            explorer.system.population = json["Population"].to_string();
-            explorer.system.body_count = "N/A".to_string();
-            explorer.system.non_body_count = "N/A".to_string();
-
-            explorer.body_list.clear();
-            explorer.body_signal_list.clear();
-            explorer.system_signal_list.clear();
-            explorer.body = Body::default();
-
-            info!("Found system: {}",explorer.system.name.clone());
+            info!("Found system: {}",explorer.systems[explorer.systems.len()-1].name.clone());
         }
         "SupercruiseEntry" => {}
         "SupercruiseExit" => {}
@@ -74,8 +68,10 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "FSSAllBodiesFound" => {}
         //{ "timestamp":"2022-10-16T23:46:48Z", "event":"FSSDiscoveryScan", "Progress":0.680273, "BodyCount":21, "NonBodyCount":80, "SystemName":"Ogmar", "SystemAddress":84180519395914 }
         "FSSDiscoveryScan" => {
-            explorer.system.body_count = json["BodyCount"].to_string();
-            explorer.system.non_body_count = json["NonBodyCount"].to_string();
+            let len = explorer.systems.len()-1;
+            let system = &mut explorer.systems[len];
+            system.body_count = json["BodyCount"].to_string();
+            system.non_body_count = json["NonBodyCount"].to_string();
         }//Honk
         //{ "timestamp":"2022-07-07T20:58:06Z", "event":"SAASignalsFound", "BodyName":"IC 2391 Sector YE-A d103 B 1", "SystemAddress":3549631072611, "BodyID":15, "Signals":[ { "Type":"$SAA_SignalType_Guardian;", "Type_Localised":"Guardian", "Count":1 }, { "Type":"$SAA_SignalType_Human;", "Type_Localised":"Menschlich", "Count":9 } ] }
         "FSSBodySignals" | "SAASignalsFound" => {
@@ -90,27 +86,22 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     count: json["Signals"][i]["Count"].as_i64().unwrap_or(-1),
                 })
             }
-            info!("Body {} number of signals: {}",json["BodyName"].to_string(),signals.len().clone());
 
-            let body_signal = BodySignal {
-                timestamp: json["timestamp"].to_string(),
-                event: json["event"].to_string(),
+            let planet_signals = PlanetSignals{
                 body_name: json["BodyName"].to_string(),
-                body_id: json["BodyID"].as_i64().unwrap_or(-1),
-                system_address: json["SystemAddress"].as_i64().unwrap(),
-                signals,
+                body_id: json["BodyID"].as_i64().unwrap(),
+                signals: signals.clone(),
             };
 
-            let id = body_signal.body_id;
+            info!("Body {} number of signals: {}",json["BodyName"].to_string(),signals.len().clone());
 
-            if !explorer.body_signal_list.iter().any(|x| x.body_id == id) {
-                explorer.body_signal_list.push(body_signal);
+            let id = json["BodyID"].as_i64().unwrap_or(-1);
+            let len = explorer.systems.len()-1;
+            explorer.systems[len].planet_signals.push(planet_signals);
 
-                explorer.body_signal_list.sort_by(|signal_a, signal_b| {
-                    //TODO Better sorting -> All signals have to be looked at. Sort by largest in the list maybe
-                    signal_a.signals.first().unwrap().count.cmp(&signal_b.signals.first().unwrap().count).reverse()
-                });
-            }
+            explorer.systems[len].planet_signals.sort_by(|a, b|{
+                a.signals.len().cmp(&b.signals.len())
+            });
         }
         "FSSSignalDiscovered" => {
             //{ "timestamp":"2023-05-29T22:40:26Z", "event":"FSSSignalDiscovered", "SystemAddress":672296347049, "SignalName":"$MULTIPLAYER_SCENARIO80_TITLE;", "SignalName_Localised":"Unbewachtes Navigationssignal" }
@@ -134,10 +125,11 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                 timestamp: json["timestamp"].to_string(),
                 event: json["event"].to_string(),
                 name,
-                thread: "".to_string(),
+                thread,
             };
-            explorer.system_signal_list.push(system_signal);
-            explorer.system_signal_list.sort_by(|a,b|{
+            let len = explorer.systems.len()-1;
+            explorer.systems[len].signal_list.push(system_signal);
+            explorer.systems[len].signal_list.sort_by(|a, b|{
                 if a.name == b.name{
                     a.thread.cmp(&b.thread)
                 }else {
@@ -146,54 +138,30 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             });
         }
         "SAAScanComplete" => {}
-        //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435, "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant", "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ], "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730, "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734, "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320, "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
         "Scan" => {
+            //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435, "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant", "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ], "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730, "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734, "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320, "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
             info!("Body found: {}",json["BodyName"].to_string());
 
-            let body = Body {
-                name: json["BodyName"].to_string(),
-                body_id: json["BodyID"].to_string(),
-                parents: json["Parents"].to_string().to_owned(),
-                star_system: json["StarSystem"].to_string(),
-                system_address: json["SystemAddress"].to_string(),
-                distance_from_arrival_ls: json["DistanceFromArrivalLS"].to_string(),
-                tidal_lock: json["TidalLock"].to_string(),
-                terraform_state: json["TerraformState"].to_string(),
-                planet_class: json["PlanetClass"].to_string(),
-                atmosphere: json["Atmosphere"].to_string(),
-                atmosphere_composition: json["AtmosphereComposition"].to_string(),
-                volcanism: json["Volcanism"].to_string(),
-                mass_em: json["MassEM"].to_string(),
-                radius: json["Radius"].to_string(),
-                surface_gravity: json["SurfaceGravity"].to_string(),
-                surface_temperature: json["SurfaceTemperature"].to_string(),
-                surface_pressure: json["SurfacePressure"].to_string(),
-                landable: json["Landable"].to_string(),
-                semi_major_axis: json["SemiMajorAxis"].to_string(),
-                eccentricity: json["Eccentricity"].to_string(),
-                orbital_inclination: json["OrbitalInclination"].to_string(),
-                periapsis: json["Periapsis"].to_string(),
-                orbital_period: json["OrbitalPeriod"].to_string(),
-                ascending_node: json["AscendingNode"].to_string(),
-                mean_anomaly: json["MeanAnomaly"].to_string(),
-                rotation_period: json["RotationPeriod"].to_string(),
-                axial_tilt: json["AxialTilt"].to_string(),
-                was_discovered: json["WasDiscovered"].to_string(),
-                was_mapped: json["WasMapped"].to_string(),
-            };
+            let mut body = structs::generate_from_json(json,settings.clone());
 
-            explorer.body = body.clone();
-            explorer.body_list.push(body);
+            let len = explorer.systems.len()-1;
 
-            explorer.body_list.sort_by(|body_a, body_b| {
-                let id_a: i32 = body_a.body_id.parse().unwrap();
-                let id_b: i32 = body_b.body_id.parse().unwrap();
-                id_a.cmp(&id_b)
-            });
-            explorer.body_list.dedup_by(|body_a, body_b| {
-                body_a.name.eq(&body_b.name)
-            });
-        }//Planet scan with fss
+            for planet_signal in &mut explorer.systems[len].planet_signals{
+                if planet_signal.body_id == body.get_id(){
+                    body.set_signals(planet_signal.signals.clone());
+                }
+            }
+
+            let len = explorer.systems.len()-1;
+            if !explorer.systems[len].body_list.contains(&body) {
+                //explorer.pages[len].system.body_list.push(body);
+
+                let index = explorer.systems[len].insert_body(body);
+                explorer.systems[len].index = index;
+            }
+
+        }
+        //Planet scan with fss
         "ScanBaryCentre" => {}
 
         //Maintenance
@@ -272,11 +240,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "Materials" => {
             let mut json = json.clone();
 
-            let mut raw: Vec<Material> = vec![];
-            let mut manufactured: Vec<Material> = vec![];
-            let mut encoded: Vec<Material> = vec![];
-
-            let types = vec!["Raw","Manufactured","Encoded"];
             {
                 let mut material_json = json["Raw"].pop();
                 while material_json != Null {
