@@ -118,21 +118,23 @@ impl BodyImplementation for Planet {
 
         let img_size = 32.0 * texture.size_vec2() / texture.size_vec2().y;
         ui.image(&texture, img_size);
-        if self.landable && self.settings.explorer_settings.show_sphere{
-            let texture: TextureHandle = ui.ctx().load_texture(
-                "tree-view-landable-sphere_icon",
-                ICON_SYMBOL.lock().unwrap().landable_sphere.clone(),
-                egui::TextureOptions::LINEAR,
-            );
-            let img_size = 32.0 * texture.size_vec2() / texture.size_vec2().y;
-            ui.image(&texture,img_size);
-        }
+
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name{
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(),"");
         }
-        body_name.push_str(" ");
+        ui.label(" ");
+
+        if ui.selectable_label(false, &body_name).clicked() {
+            *system_index = body_index;
+        };
+
+
+        if self.landable && self.settings.icons.get("landable").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("landable").unwrap().get_richtext());
+        }
 
         if !self.planet_signals.is_empty(){
             for signal in &self.planet_signals{
@@ -145,79 +147,63 @@ impl BodyImplementation for Planet {
                 //⛅☁ -> Atmosphere
                 match signal.r#type.as_str() {
                     "$SAA_SignalType_Biological;" => {
-                        if self.settings.explorer_settings.show_bio {
-                            body_name.push_str("|");
-                            body_name.push_str(&signal.count.to_string());
-                            body_name.push_str("🌱");
+                        if self.settings.icons.get("bio_signal").unwrap().enabled {
+                            ui.label("|");
+                            ui.label(&signal.count.to_string());
+                            ui.label(self.settings.icons.get("bio_signal").unwrap().get_richtext());
                         }
                     }
                     "$SAA_SignalType_Geological;" => {
-                        if self.settings.explorer_settings.show_geo {
-                            body_name.push_str("|");
-                            body_name.push_str(&signal.count.to_string());
-                            body_name.push_str("🌋");
+                        if self.settings.icons.get("geo_signal").unwrap().enabled {
+                            ui.label("|");
+                            ui.label(&signal.count.to_string());
+                            ui.label(self.settings.icons.get("geo_signal").unwrap().get_richtext());
                         }
                     }
                     "$SAA_SignalType_Xenological;" => {
-                        if self.settings.explorer_settings.show_xeno {
-                            body_name.push_str("|");
-                            body_name.push_str(&signal.count.to_string());
-                            body_name.push_str("👽");
+                        if self.settings.icons.get("xeno_signal").unwrap().enabled {
+                            ui.label("|");
+                            ui.label(&signal.count.to_string());
+                            ui.label(self.settings.icons.get("xeno_signal").unwrap().get_richtext());
                         }
                     }
                     "$SAA_SignalType_Human;" => {
-                        if self.settings.explorer_settings.show_human {
-                            body_name.push_str("|");
-                            body_name.push_str(&signal.count.to_string());
-                            body_name.push_str("✋");
+                        if self.settings.icons.get("human_signal").unwrap().enabled {
+                            ui.label("|");
+                            ui.label(&signal.count.to_string());
+                            ui.label(self.settings.icons.get("human_signal").unwrap().get_richtext());
                         }
                     }
                     _ => {
                         warn!("Icon for string not found: {}", signal.r#type.as_str());
-                        if self.settings.explorer_settings.show_unknown {
-                            body_name.push_str("|");
-                            body_name.push_str(&signal.count.to_string());
-                            body_name.push_str("？");
+                        if self.settings.icons.get("unknown_signal").unwrap().enabled {
+                            ui.label("|");
+                            ui.label(&signal.count.to_string());
+                            ui.label(self.settings.icons.get("unknown_signal").unwrap().get_richtext());
                         }
                     }
                 }
             }
         }
-        if self.settings.explorer_settings.show_gravity {
-            body_name.push_str(format!("| {} G⬇",&self.surface_gravity.to_string()).as_str());
-        }
-        if self.settings.explorer_settings.show_ls{
-            body_name.push_str(format!("| {} LS➡",(self.distance_from_arrival_ls as u64).to_formatted_string(&Locale::en)).as_str());
-        }
-        if self.was_discovered && self.settings.explorer_settings.show_discovered{
-            body_name.push_str("|🚩");
-        }
-        if self.was_mapped && self.settings.explorer_settings.show_mapped{
-            body_name.push_str("|🗺");
-        }
-        if ui.selectable_label(false, &body_name).clicked() {
-            *system_index = body_index;
-        };
-
-        if self.settings.explorer_settings.show_landable{
+        if self.settings.icons.get("gravity").unwrap().enabled {
             ui.label("|");
-            if self.landable{
-                let texture: TextureHandle = ui.ctx().load_texture(
-                    "tree-view-landable_icon",
-                    ICON_SYMBOL.lock().unwrap().landable.clone(),
-                    egui::TextureOptions::LINEAR,
-                );
-                let img_size = 24.0 * texture.size_vec2() / texture.size_vec2().y;
-                ui.image(&texture,img_size);
-            }else {
-                let texture: TextureHandle = ui.ctx().load_texture(
-                    "tree-view-not-landable_icon",
-                    ICON_SYMBOL.lock().unwrap().not_landable.clone(),
-                    egui::TextureOptions::LINEAR,
-                );
-                let img_size = 24.0 * texture.size_vec2() / texture.size_vec2().y;
-                ui.image(&texture,img_size);
-            }
+            ui.label(self.surface_gravity.to_string());
+            ui.label("G");
+            ui.label(self.settings.icons.get("gravity").unwrap().get_richtext());
+        }
+        if self.settings.icons.get("distance").unwrap().enabled{
+            ui.label("|");
+            ui.label((self.distance_from_arrival_ls as u64).to_formatted_string(&Locale::en));
+            ui.label("LS");
+            ui.label(self.settings.icons.get("distance").unwrap().get_richtext());
+        }
+        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("discovered").unwrap().get_richtext());
+        }
+        if self.was_discovered && self.settings.icons.get("mapped").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
         }
 
 

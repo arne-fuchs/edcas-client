@@ -45,18 +45,22 @@ impl BodyImplementation for BeltCluster {
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(),"");
         }
-        body_name.push_str(" ");
-
-        if self.was_discovered && self.settings.explorer_settings.show_discovered{
-            body_name.push_str("|🚩");
-        }
-        if self.was_mapped && self.settings.explorer_settings.show_mapped{
-            body_name.push_str("|🗺");
-        }
 
         if ui.selectable_label(false, &body_name).clicked() {
             *system_index = body_index;
         };
+        ui.label(" ");
+
+        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("discovered").unwrap().get_richtext());
+        }
+        if self.was_discovered && self.settings.icons.get("mapped").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
+        }
+
+
 
     }
 

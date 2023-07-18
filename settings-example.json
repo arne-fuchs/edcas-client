@@ -4,18 +4,7 @@
     "font-size": 24.0
   },
   "explorer": {
-    "include_system_name": true,
-    "show_bio": true,
-    "show_discovered": true,
-    "show_geo": true,
-    "show_gravity": false,
-    "show_human": true,
-    "show_landable": false,
-    "show_ls": false,
-    "show_mapped": true,
-    "show_sphere": false,
-    "show_unknown": true,
-    "show_xeno": true
+    "include_system_name": true
   },
   "graphics-editor": {
     "graphics-directory": ""
@@ -33,5 +22,87 @@
     "action-at-shutdown-signal": "nothing",
     "directory": ""
   },
+  "icons": [
+    {
+      "name": "gravity",
+      "char": "⬇",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": false
+    },
+    {
+      "name": "bio_signal",
+      "char": "\uD83C\uDF31",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": true
+    },
+    {
+      "name": "geo_signal",
+      "char": "\uD83C\uDF0B",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": true
+    },
+    {
+      "name": "human_signal",
+      "char": "✋",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": true
+    },
+    {
+      "name": "xeno_signal",
+      "char": "\uD83D\uDC7D",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": true
+    },
+    {
+      "name": "unknown_signal",
+      "char": "？",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": true
+    },
+    {
+      "name": "distance",
+      "char": "➡",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": false
+    },
+    {
+      "name": "discovered",
+      "char": "\uD83D\uDEA9",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": true
+    },
+    {
+      "name": "mapped",
+      "char": "\uD83D\uDDFA",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": true
+    },
+    {
+      "name": "landable",
+      "char": "\uD83D\uDC63",
+      "r": 255,
+      "g": 255,
+      "b": 255,
+      "enabled": true
+    }
+  ],
   "log-level": "Debug"
 }

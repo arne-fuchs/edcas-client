@@ -7,15 +7,29 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::str::FromStr;
 use eframe::{App, egui, Frame};
-use eframe::egui::{Color32, Context, TextureHandle, vec2, Window};
+use eframe::egui::{Color32, Context, RichText, vec2, Window};
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
+use eframe::epaint::ahash::HashMap;
 use iota_wallet::iota_client::Client;
 use serde_json::json;
 
 use crate::app::settings::ActionAtShutdownSignal::{Exit, Continue, Nothing};
 
 use crate::egui::global_dark_light_mode_switch;
-use crate::ICON_SYMBOL;
+
+#[derive(Clone)]
+pub struct Icon {
+    pub name: String,
+    pub char: String,
+    pub color: Color32,
+    pub enabled: bool,
+}
+
+impl Icon {
+    pub fn get_richtext(&self) -> RichText {
+        RichText::new(&self.char).color(self.color)
+    }
+}
 
 #[derive(Clone)]
 pub struct AppearanceSettings {
@@ -26,16 +40,19 @@ pub struct AppearanceSettings {
 }
 
 #[derive(Clone)]
-pub struct JournalReaderSettings{
+pub struct JournalReaderSettings {
     pub journal_directory: String,
-    pub action_at_shutdown_signal: ActionAtShutdownSignal
-}
-#[derive(Clone)]
-pub enum ActionAtShutdownSignal {
-    Exit,Nothing,Continue
+    pub action_at_shutdown_signal: ActionAtShutdownSignal,
 }
 
-impl FromStr for ActionAtShutdownSignal{
+#[derive(Clone)]
+pub enum ActionAtShutdownSignal {
+    Exit,
+    Nothing,
+    Continue,
+}
+
+impl FromStr for ActionAtShutdownSignal {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -65,20 +82,10 @@ impl PartialEq for ActionAtShutdownSignal {
 }
 
 #[derive(Clone)]
-pub struct ExplorerSettings{
+pub struct ExplorerSettings {
     pub include_system_name: bool,
-    pub show_gravity: bool,
-    pub show_bio: bool,
-    pub show_geo: bool,
-    pub show_human: bool,
-    pub show_xeno: bool,
-    pub show_unknown: bool,
-    pub show_ls: bool,
-    pub show_sphere: bool,
-    pub show_landable: bool,
-    pub show_discovered: bool,
-    pub show_mapped: bool,
 }
+
 #[derive(Clone)]
 pub struct IotaSettings {
     pub node: Option<Client>,
@@ -91,8 +98,9 @@ pub struct IotaSettings {
     pub password: String,
     pub allow_share_data: bool,
 }
+
 #[derive(Clone)]
-pub struct GraphicEditorSettings{
+pub struct GraphicEditorSettings {
     pub graphics_directory: String,
     pub graphic_override_content: String,
     pub show_editor: bool,
@@ -105,6 +113,7 @@ pub struct Settings {
     pub explorer_settings: ExplorerSettings,
     pub iota_settings: IotaSettings,
     pub graphic_editor_settings: GraphicEditorSettings,
+    pub icons: HashMap<String, Icon>,
     pub log_level: String,
 }
 
@@ -122,6 +131,10 @@ impl Default for Settings {
         let mut json_string: String = String::from("");
         settings_file.read_to_string(&mut json_string).unwrap();
         let json = json::parse(&json_string).unwrap();
+
+        //---------------------------
+        // Journal reader
+        //---------------------------
 
         let mut journal_directory = json["journal-reader"]["directory"].to_string();
         let journal_path = Path::new(&journal_directory);
@@ -141,6 +154,9 @@ impl Default for Settings {
             println!("Journal logs: {}", &journal_directory);
         }
 
+        //---------------------------
+        // Graphics directory
+        //---------------------------
         let mut graphics_directory = json["journal-reader"]["graphics-directory"].to_string();
         let graphics_path = Path::new(&graphics_directory);
         let mut graphics_override_file = graphics_directory.clone();
@@ -161,6 +177,11 @@ impl Default for Settings {
             }
             println!("Graphics path: {}", &graphics_directory);
         }
+
+        //---------------------------
+        // IOTA
+        //---------------------------
+
         let mut some_client = None;
         if json["iota"]["allow-share-data"].as_bool().unwrap_or(false) {
             let mut node_url = json["iota"]["base-url"].as_str().unwrap_or("https://tangle.paesserver.de").to_string();
@@ -170,8 +191,11 @@ impl Default for Settings {
                 .with_node(node_url.as_str()).unwrap()
                 .with_local_pow(json["iota"]["local-pow"].as_bool().unwrap_or(false))
                 .finish().unwrap());
-
         }
+
+        //---------------------------
+        // Appearance
+        //---------------------------
 
         let font_size = json["appearance"]["font-size"].as_f32().unwrap_or(24.0);
         let mut font_id = egui::FontId::default();
@@ -187,30 +211,36 @@ impl Default for Settings {
             }
         }
 
+        //---------------------------
+        // Icons
+        //---------------------------
+        let mut icons: HashMap<String, Icon> = HashMap::default();
+        for i in 0..json["icons"].len() {
+            let icon_json = &json["icons"][i];
+            icons.insert(
+                icon_json["name"].to_string(),
+                Icon {
+                    name: icon_json["name"].to_string(),
+                    char: icon_json["char"].as_str().unwrap_or("⁉").to_string(),
+                    color: Color32::from_rgb(icon_json["r"].as_u8().unwrap_or(255), icon_json["g"].as_u8().unwrap_or(255), icon_json["b"].as_u8().unwrap_or(255)),
+                    enabled: icon_json["enabled"].as_bool().unwrap_or(true),
+                },
+            );
+        }
+
         Self {
-            appearance_settings: AppearanceSettings{
+            appearance_settings: AppearanceSettings {
                 font_size: json["appearance"]["font-size"].as_f32().unwrap_or(24.0),
                 font_style: json["appearance"]["font_style"].as_str().unwrap_or("Proportional").to_string(),
                 font_id,
-                applied: false
+                applied: false,
             },
-            journal_reader_settings: JournalReaderSettings{
+            journal_reader_settings: JournalReaderSettings {
                 journal_directory,
                 action_at_shutdown_signal: ActionAtShutdownSignal::from_str(json["journal-reader"]["action-at-shutdown-signal"].as_str().unwrap_or("Nothing")).unwrap_or(Nothing),
             },
             explorer_settings: ExplorerSettings {
                 include_system_name: json["explorer"]["include_system_name"].as_bool().unwrap_or(true),
-                show_gravity: json["explorer"]["show_gravity"].as_bool().unwrap_or(false),
-                show_bio: json["explorer"]["show_bio"].as_bool().unwrap_or(true),
-                show_geo: json["explorer"]["show_geo"].as_bool().unwrap_or(true),
-                show_human: json["explorer"]["show_human"].as_bool().unwrap_or(true),
-                show_xeno: json["explorer"]["show_xeno"].as_bool().unwrap_or(true),
-                show_unknown: json["explorer"]["show_unknown"].as_bool().unwrap_or(true),
-                show_ls: json["explorer"]["show_ls"].as_bool().unwrap_or(true),
-                show_sphere: json["explorer"]["show_sphere"].as_bool().unwrap_or(true),
-                show_landable: json["explorer"]["show_landable"].as_bool().unwrap_or(false),
-                show_discovered: json["explorer"]["show_discovered"].as_bool().unwrap_or(true),
-                show_mapped: json["explorer"]["show_mapped"].as_bool().unwrap_or(true),
             },
             iota_settings: IotaSettings {
                 node: some_client,
@@ -223,11 +253,12 @@ impl Default for Settings {
                 password: json["iota"]["password"].as_str().unwrap_or("CoUBZ9W6eRVpTKEYrgj3").to_string(),
                 allow_share_data: json["allow-share-data"].as_bool().unwrap_or(false),
             },
-            graphic_editor_settings: GraphicEditorSettings{
+            graphic_editor_settings: GraphicEditorSettings {
                 graphics_directory: graphics_directory.clone(),
                 graphic_override_content: fs::read_to_string(graphics_override_file).unwrap_or_default(),
                 show_editor: false,
             },
+            icons,
             log_level: json["log-level"].to_string(),
         }
     }
@@ -240,136 +271,88 @@ impl App for Settings {
         } = self;
 
         egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical().show(ui,|ui|{
-                egui::Grid::new("my_grid")
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                ui.heading("Appearance");
+                egui::Grid::new("appearance_grid")
                     .num_columns(2)
                     .spacing([60.0, 5.0])
                     .min_col_width(300.0)
                     .striped(true)
                     .show(ui, |ui| {
-                        ui.heading("Settings");
-                        ui.end_row();
-                        ui.heading("Appearance");
-                        ui.end_row();
-                        ui.end_row();
                         ui.label("Font-style:");
                         egui::introspection::font_id_ui(ui, &mut self.appearance_settings.font_id);
                         ui.end_row();
                         if ui.button("Apply").clicked() {
                             self.appearance_settings.applied = false;
                         }
-                        ui.end_row();
-                        ui.separator();
-                        ui.end_row();
+                    });
+                ui.separator();
 
-                        ui.label("Journal File Settings");
-                        ui.end_row();
-
+                ui.heading("Journal File Settings");
+                egui::Grid::new("journal_grid")
+                    .num_columns(2)
+                    .spacing([60.0, 5.0])
+                    .min_col_width(300.0)
+                    .striped(true)
+                    .show(ui, |ui| {
                         if Path::new(&self.journal_reader_settings.journal_directory).exists() {
                             ui.label("Journal Directory:");
                         } else {
                             ui.label("Journal Directory: ⚠ Path invalid");
                         }
                         ui.text_edit_singleline(&mut self.journal_reader_settings.journal_directory);
-                        if ui.button("Open").clicked(){
+                        if ui.button("Open").clicked() {
                             opener::open(&self.journal_reader_settings.journal_directory).unwrap();
                         }
                         ui.end_row();
                         ui.label("Action after reaching shutdown:");
                         egui::ComboBox::from_label("")
                             .selected_text(self.journal_reader_settings.action_at_shutdown_signal.to_string())
-                            .show_ui(ui,|ui|{
+                            .show_ui(ui, |ui| {
                                 ui.style_mut().wrap = Some(false);
                                 ui.set_min_width(60.0);
-                                ui.selectable_value(&mut self.journal_reader_settings.action_at_shutdown_signal,Exit,"exit");
-                                ui.selectable_value(&mut self.journal_reader_settings.action_at_shutdown_signal,Continue,"continue");
-                                ui.selectable_value(&mut self.journal_reader_settings.action_at_shutdown_signal,Nothing,"nothing");
+                                ui.selectable_value(&mut self.journal_reader_settings.action_at_shutdown_signal, Exit, "exit");
+                                ui.selectable_value(&mut self.journal_reader_settings.action_at_shutdown_signal, Continue, "continue");
+                                ui.selectable_value(&mut self.journal_reader_settings.action_at_shutdown_signal, Nothing, "nothing");
                             });
-                        ui.end_row();
-                        ui.separator();
-                        ui.end_row();
-                        ui.heading("Explorer");
-                        ui.end_row();
-                        ui.label("Include system in body name:");
-                        ui.checkbox(&mut self.explorer_settings.include_system_name,"");
-                        let multiplikator = 24.0;
-                        ui.end_row();
-                        ui.horizontal(|ui|{
-                            ui.label("⬇");
-                            ui.checkbox(&mut self.explorer_settings.show_gravity,"Gravity");
-                        });
-                        ui.horizontal(|ui|{
-                            ui.label("🌱");
-                            ui.checkbox(&mut self.explorer_settings.show_bio,"Bio");
-                        });
-                        ui.end_row();
-                        ui.horizontal(|ui|{
-                            ui.label("🌋");
-                            ui.checkbox(&mut self.explorer_settings.show_geo,"Geo");
-                        });
-                        ui.horizontal(|ui|{
-                            ui.label("✋");
-                            ui.checkbox(&mut self.explorer_settings.show_human,"Human");
-                        });
-                        ui.end_row();
-                        ui.horizontal(|ui|{
-                            ui.label("👽");
-                            ui.checkbox(&mut self.explorer_settings.show_xeno,"Xeno");
-                        });
-                        ui.horizontal(|ui|{
-                            ui.label("？");
-                            ui.checkbox(&mut self.explorer_settings.show_unknown,"Unknown");
-                        });
-                        ui.end_row();
-                        ui.horizontal(|ui|{
-                            ui.label("➡");
-                            ui.checkbox(&mut self.explorer_settings.show_ls,"Distance from Main Star");
-                        });
+                    });
+                ui.separator();
 
-                        ui.end_row();
-                        ui.horizontal(|ui|{
-                            let texture: TextureHandle = ui.ctx().load_texture(
-                                "tree-view-landable-sphere_icon",
-                                ICON_SYMBOL.lock().unwrap().landable_sphere.clone(),
-                                egui::TextureOptions::LINEAR,
-                            );
-                            let img_size = multiplikator * texture.size_vec2() / texture.size_vec2().y;
-                            ui.image(&texture,img_size);
-                            ui.checkbox(&mut self.explorer_settings.show_sphere,"Sphere (Landable)");
-                        });
-                        ui.horizontal(|ui|{
-                            let texture: TextureHandle = ui.ctx().load_texture(
-                                "tree-view-landable-landable_icon",
-                                ICON_SYMBOL.lock().unwrap().landable.clone(),
-                                egui::TextureOptions::LINEAR,
-                            );
-                            let img_size = multiplikator * texture.size_vec2() / texture.size_vec2().y;
-                            ui.image(&texture,img_size);
-                            let texture: TextureHandle = ui.ctx().load_texture(
-                                "tree-view-landable-not-landable_icon",
-                                ICON_SYMBOL.lock().unwrap().not_landable.clone(),
-                                egui::TextureOptions::LINEAR,
-                            );
-                            ui.image(&texture,img_size);
-                            ui.checkbox(&mut self.explorer_settings.show_landable,"Icon (Landable)");
-                        });
+                egui::CollapsingHeader::new("Explorer").show(ui, |ui| {
+                    egui::Grid::new("explorer_icon_grid")
+                        .num_columns(2)
+                        .spacing([60.0, 5.0])
+                        .min_col_width(300.0)
+                        .striped(true)
+                        .show(ui, |ui| {
+                            ui.label("Include system in body name:");
+                            ui.checkbox(&mut self.explorer_settings.include_system_name, "");
+                            ui.end_row();
 
-
-                        ui.end_row();
-                        ui.horizontal(|ui|{
-                            ui.label("🚩 ");
-                            ui.checkbox(&mut self.explorer_settings.show_discovered,"Discovered");
+                            for icon in &mut self.icons {
+                                ui.horizontal(|ui| {
+                                    ui.text_edit_singleline(&mut icon.1.char);
+                                    ui.label(icon.0);
+                                });
+                                ui.horizontal(|ui| {
+                                    ui.checkbox(&mut icon.1.enabled, "Enabled");
+                                    ui.color_edit_button_srgba(&mut icon.1.color);
+                                    ui.label("Color");
+                                });
+                                ui.end_row();
+                            }
                         });
-                        ui.horizontal(|ui|{
-                            ui.label("🗺");
-                            ui.checkbox(&mut self.explorer_settings.show_mapped,"Mapped");
-                        });
-
-                        ui.end_row();
-                        ui.separator();
-                        ui.end_row();
-                        ui.heading("Graphics Override");
-                        if ui.button("Open Editor").clicked(){
+                    ui.end_row();
+                });
+                ui.separator();
+                ui.heading("Graphics Override");
+                egui::Grid::new("graphics_grid")
+                    .num_columns(2)
+                    .spacing([60.0, 5.0])
+                    .min_col_width(300.0)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        if ui.button("Open Editor").clicked() {
                             self.graphic_editor_settings.show_editor = !self.graphic_editor_settings.show_editor;
                         }
                         ui.end_row();
@@ -379,37 +362,35 @@ impl App for Settings {
                             ui.label("Graphics Directory: ⚠ Path invalid");
                         }
                         ui.text_edit_singleline(&mut self.graphic_editor_settings.graphics_directory);
-                        if ui.button("Open").clicked(){
+                        if ui.button("Open").clicked() {
                             opener::open(&self.graphic_editor_settings.graphics_directory).unwrap();
                         }
                         ui.end_row();
-                        ui.separator();
-                        ui.end_row();
                         if self.graphic_editor_settings.show_editor {
                             Window::new("Editor")
-                                .fixed_size(vec2(800f32,600f32))
+                                .fixed_size(vec2(800f32, 600f32))
                                 .show(&ctx, |ui| {
                                     egui::Grid::new("preset_buttons")
                                         .show(ui, |ui| {
                                             ui.hyperlink_to(
                                                 "Fandom Article",
-                                                "https://elite-dangerous.fandom.com/wiki/Graphics_Mods"
+                                                "https://elite-dangerous.fandom.com/wiki/Graphics_Mods",
                                             );
                                             egui::ComboBox::from_id_source("Presets_Combo_Box")
                                                 .selected_text("Presets")
-                                                .show_ui(ui, |ui|{
+                                                .show_ui(ui, |ui| {
                                                     ui.style_mut().wrap = Some(false);
                                                     ui.set_min_width(60.0);
-                                                    ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content,presets::get_increase_texture_resolution_preset(),"Increased Textures");
-                                                    ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content,presets::get_increased_star_count_preset(),"Increased Star Count");
-                                                    ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content,presets::get_better_skybox_preset(),"Better Skybox");
-                                                    ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content,presets::get_8gb_plus_preset(),"8Gb+ VRAM");
+                                                    ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content, presets::get_increase_texture_resolution_preset(), "Increased Textures");
+                                                    ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content, presets::get_increased_star_count_preset(), "Increased Star Count");
+                                                    ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content, presets::get_better_skybox_preset(), "Better Skybox");
+                                                    ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content, presets::get_8gb_plus_preset(), "8Gb+ VRAM");
                                                 });
-                                            if ui.button("Load custom preset").clicked(){
+                                            if ui.button("Load custom preset").clicked() {
                                                 self.graphic_editor_settings.graphic_override_content = fs::read_to_string("custom_graphics_override.xml").unwrap();
                                             }
-                                            if ui.button("Save as custom preset").clicked(){
-                                                fs::write("custom_graphics_override.xml",self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
+                                            if ui.button("Save as custom preset").clicked() {
+                                                fs::write("custom_graphics_override.xml", self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
                                             }
                                         });
                                     ui.end_row();
@@ -421,7 +402,7 @@ impl App for Settings {
                                                     .font(egui::TextStyle::Monospace) // for cursor height
                                                     .code_editor()
                                                     .desired_rows(10)
-                                                    .text_color(Color32::from_rgb(255,165,0))
+                                                    .text_color(Color32::from_rgb(255, 165, 0))
                                                     .font(egui::FontId::monospace(10.0))
                                                     .lock_focus(true)
                                                     .desired_width(f32::INFINITY)
@@ -430,7 +411,7 @@ impl App for Settings {
                                     egui::Grid::new("editor_buttons")
                                         .show(ui, |ui| {
                                             if ui.button("Save").clicked() {
-                                                fs::write(format!("{}/GraphicsConfigurationOverride.xml", self.graphic_editor_settings.graphics_directory.clone()),self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
+                                                fs::write(format!("{}/GraphicsConfigurationOverride.xml", self.graphic_editor_settings.graphics_directory.clone()), self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
                                             }
                                             if ui.button("Exit").clicked() {
                                                 self.graphic_editor_settings.show_editor = false;
@@ -444,11 +425,16 @@ impl App for Settings {
                                         });
                                 });
                         }
+                    });
 
-                        ui.end_row();
-
-                        ui.heading("EDCAS Network");
-                        ui.end_row();
+                ui.separator();
+                ui.heading("EDCAS Network");
+                egui::Grid::new("network_grid")
+                    .num_columns(2)
+                    .spacing([60.0, 5.0])
+                    .min_col_width(300.0)
+                    .striped(true)
+                    .show(ui, |ui| {
                         ui.label("Allow to share journal log data:");
                         ui.checkbox(&mut self.iota_settings.allow_share_data, "");
                         ui.end_row();
@@ -466,19 +452,32 @@ impl App for Settings {
                         ui.end_row();
                         ui.label("Nft Adapter Attempts:");
                         ui.add(egui::Slider::new(&mut self.iota_settings.n_attempts, 0..=20).suffix(" Attempts"));
-                        ui.end_row();
-                        ui.separator();
-                        ui.end_row();
-                        ui.label("Requires restart to apply settings");
-                        ui.end_row();
-                        ui.separator();
-                        ui.end_row();
                     });
             });
+            ui.separator();
+            ui.end_row();
+            ui.label("Requires restart to apply settings");
+            ui.end_row();
+            ui.separator();
 
             //Apply Button
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                 if ui.button("Save 💾").clicked() {
+                    let icon_array: serde_json::Value = self.icons
+                        .iter()
+                        .map(|(_, icon)| json!(
+                            {
+                                "name": icon.name,
+                                "char": icon.char,
+                                "r": icon.color.r(),
+                                "g": icon.color.g(),
+                                "b": icon.color.b(),
+                                "enabled": icon.enabled
+                            }
+                        ))
+
+                        .collect();
+
                     let json = json!(
                         {
                             "log-level": "Debug",
@@ -491,18 +490,7 @@ impl App for Settings {
                                 "action-at-shutdown-signal": self.journal_reader_settings.action_at_shutdown_signal.to_string()
                             },
                             "explorer": {
-                                "include_system_name": self.explorer_settings.include_system_name,
-                                "show_gravity": self.explorer_settings.show_gravity,
-                                "show_bio": self.explorer_settings.show_bio,
-                                "show_geo": self.explorer_settings.show_geo,
-                                "show_human": self.explorer_settings.show_human,
-                                "show_xeno": self.explorer_settings.show_xeno,
-                                "show_unknown": self.explorer_settings.show_unknown,
-                                "show_landable": self.explorer_settings.show_landable,
-                                "show_ls": self.explorer_settings.show_ls,
-                                "show_sphere": self.explorer_settings.show_sphere,
-                                "show_discovered": self.explorer_settings.show_discovered,
-                                "show_mapped": self.explorer_settings.show_mapped
+                                "include_system_name": self.explorer_settings.include_system_name
                             },
                             "iota": {
                                 "base-url": self.iota_settings.base_url,
@@ -513,6 +501,7 @@ impl App for Settings {
                                 "password": self.iota_settings.password,
                                 "allow-share-data": self.iota_settings.allow_share_data
                             },
+                            "icons": icon_array,
                             "graphics-editor": {
                                 "graphics-directory": self.graphic_editor_settings.graphics_directory
                             }

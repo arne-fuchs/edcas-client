@@ -52,7 +52,10 @@ impl BodyImplementation for Ring{
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(),"");
         }
-        body_name.push_str(" ");
+        if ui.selectable_label(false, &body_name).clicked() {
+            *system_index = body_index;
+        };
+        ui.label(" ");
 
         if !self.ring_signals.is_empty(){
             for signal in &self.ring_signals{
@@ -68,18 +71,21 @@ impl BodyImplementation for Ring{
                 body_name.push_str(signal_name.as_str());
             }
         }
-        if self.settings.explorer_settings.show_ls{
-            body_name.push_str(format!("| {} LS➡",(self.distance_from_arrival_ls as u64).to_formatted_string(&Locale::en)).as_str());
+        if self.settings.icons.get("distance").unwrap().enabled{
+            ui.label("|");
+            ui.label((self.distance_from_arrival_ls as u64).to_formatted_string(&Locale::en));
+            ui.label(" LS");
+            ui.label(self.settings.icons.get("distance").unwrap().get_richtext());
         }
-        if self.was_discovered && self.settings.explorer_settings.show_discovered{
-            body_name.push_str("|🚩");
+        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("discovered").unwrap().get_richtext());
         }
-        if self.was_mapped && self.settings.explorer_settings.show_mapped{
-            body_name.push_str("|🗺");
+        if self.was_discovered && self.settings.icons.get("mapped").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
         }
-        if ui.selectable_label(false, &body_name).clicked() {
-            *system_index = body_index;
-        };
+
     }
 
     fn get_name(&self) -> &str {
