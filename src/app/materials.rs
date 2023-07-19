@@ -1,7 +1,6 @@
 use eframe::{App, egui, Frame};
-use eframe::egui::{Align, Color32, Context, Label, Layout, TextStyle, Ui, vec2, Widget, Window};
+use eframe::egui::{Color32, Context, Ui, vec2, Widget, Window};
 use eframe::epaint::ahash::HashMap;
-use num_format::Locale::tr;
 
 pub struct MaterialState {
     pub raw: HashMap<String, Material>,

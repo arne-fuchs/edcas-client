@@ -1,7 +1,7 @@
 use eframe::{egui};
 use log::error;
 use select::document::Document;
-use select::predicate::{Attr, Class, Name, Predicate};
+use select::predicate::{Attr, Name, Predicate};
 
 pub struct News {
     articles: Vec<Article>,

@@ -1,14 +1,9 @@
-use std::char::ToUppercase;
 use std::collections::VecDeque;
-use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 use eframe::{App, egui, Frame};
 use eframe::egui::Context;
-use eframe::egui::WidgetType::CollapsingHeader;
-use log::{debug, error};
 use num_format::{Locale, ToFormattedString};
-use serde_json::Value;
-use crate::app::cargo_reader::{Cargo, CargoReader};
+use crate::app::cargo_reader::CargoReader;
 
 pub struct Mining {
     pub prospectors: VecDeque<Prospector>,

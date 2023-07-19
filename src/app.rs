@@ -1,5 +1,4 @@
 use std::{env, fs, thread};
-use std::ops::Deref;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};

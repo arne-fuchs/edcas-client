@@ -98,7 +98,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
 
                 info!("Body {} number of signals: {}",json["BodyName"].to_string(),signals.len().clone());
 
-                let id = json["BodyID"].as_i64().unwrap_or(-1);
                 let len = explorer.systems.len()-1;
 
                 let mut found = false;
