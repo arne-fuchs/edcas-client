@@ -1,9 +1,10 @@
 use std::ops::Add;
+use std::sync::Arc;
 use eframe::egui;
-use eframe::egui::TextureHandle;
 use eframe::emath::Numeric;
+use log::warn;
 use crate::app::explorer::structs::{BodyImplementation, Signal};
-use crate::ICON_BODY_SIGNAL;
+use crate::app::settings::Settings;
 
 pub struct System {
     pub name: String,
@@ -19,6 +20,7 @@ pub struct System {
     pub body_list: Vec<Box<dyn BodyImplementation>>,
     pub planet_signals: Vec<PlanetSignals>,
     pub index: usize,
+    pub settings: Arc<Settings>,
 }
 
 pub struct PlanetSignals{
@@ -60,15 +62,39 @@ impl System{
                             .num_columns(2)
                             .striped(true)
                             .show(ui, |ui| {
-                                ui.label(signal.count.to_string());
-                                let texture: TextureHandle = ui.ctx().load_texture(
-                                    "body-signal-icon",
-                                    ICON_BODY_SIGNAL.lock().unwrap().get_planet_signal_icon_from_string(signal.r#type.clone()).clone(),
-                                    egui::TextureOptions::LINEAR,
-                                );
-
-                                let img_size = 32.0 * texture.size_vec2() / texture.size_vec2().y;
-                                ui.image(&texture, img_size);
+                                match signal.r#type.as_str() {
+                                    "$SAA_SignalType_Biological;" => {
+                                        if self.settings.icons.get("bio_signal").unwrap().enabled {
+                                            ui.label(&signal.count.to_string());
+                                            ui.label(self.settings.icons.get("bio_signal").unwrap().get_richtext());
+                                        }
+                                    }
+                                    "$SAA_SignalType_Geological;" => {
+                                        if self.settings.icons.get("geo_signal").unwrap().enabled {
+                                            ui.label(&signal.count.to_string());
+                                            ui.label(self.settings.icons.get("geo_signal").unwrap().get_richtext());
+                                        }
+                                    }
+                                    "$SAA_SignalType_Xenological;" => {
+                                        if self.settings.icons.get("xeno_signal").unwrap().enabled {
+                                            ui.label(&signal.count.to_string());
+                                            ui.label(self.settings.icons.get("xeno_signal").unwrap().get_richtext());
+                                        }
+                                    }
+                                    "$SAA_SignalType_Human;" => {
+                                        if self.settings.icons.get("human_signal").unwrap().enabled {
+                                            ui.label(&signal.count.to_string());
+                                            ui.label(self.settings.icons.get("human_signal").unwrap().get_richtext());
+                                        }
+                                    }
+                                    _ => {
+                                        warn!("Icon for string not found: {}", signal.r#type.as_str());
+                                        if self.settings.icons.get("unknown_signal").unwrap().enabled {
+                                            ui.label(&signal.count.to_string());
+                                            ui.label(self.settings.icons.get("unknown_signal").unwrap().get_richtext());
+                                        }
+                                    }
+                                }
                             });
                         ui.end_row();
                     }

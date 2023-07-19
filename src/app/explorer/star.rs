@@ -1,11 +1,9 @@
 use std::sync::Arc;
-use eframe::egui;
-use eframe::egui::{TextureHandle, Ui};
+use eframe::egui::Ui;
 use num_format::{Locale, ToFormattedString};
 use crate::app::explorer::planet::AsteroidRing;
 use crate::app::explorer::structs::{BodyImplementation, Parent};
 use crate::app::settings::Settings;
-use crate::ICON_BODY;
 
 pub struct Star {
     pub timestamp: String,
@@ -74,14 +72,9 @@ impl BodyImplementation for Star {
     }
 
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize){
-        let texture: TextureHandle = ui.ctx().load_texture(
-            "parentless-body-icon",
-            ICON_BODY.lock().unwrap().star.clone(),
-            egui::TextureOptions::LINEAR,
-        );
-
-        let img_size = 32.0 * texture.size_vec2() / texture.size_vec2().y;
-        ui.image(&texture, img_size);
+        if self.settings.stars.get(self.star_type.as_str()).unwrap().enabled{
+            ui.label(self.settings.stars.get(self.star_type.as_str()).unwrap().get_richtext().size(self.radius.log(1.7) as f32));
+        }
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name{
             body_name.replace_range(0..self.star_system.len(),"");

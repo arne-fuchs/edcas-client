@@ -1,12 +1,10 @@
 use std::sync::Arc;
-use eframe::egui;
-use eframe::egui::{ColorImage, TextureHandle, Ui};
+use eframe::egui::{ColorImage, Ui};
 use log::warn;
 use num_format::{Locale, ToFormattedString};
 
 use crate::app::explorer::planet::BodyClass::{AmmoniaWorld, BeltCluster, ClassIGasGiant, ClassIIGasGiant, ClassIIIGasGiant, ClassIVGasGiant, ClassVGasGiant, EarthlikeWorld, GasGiantwithAmmoniabasedLife, GasGiantwithWaterbasedLife, HeliumRichGasGiant, HighMetalContentPlanet, HighMetalContentTerraformablePlanet, IcyBody, MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown, WaterGiant, WaterWorld, WaterWorldTerraformable};
 use crate::app::explorer::structs::{BodyImplementation, Parent, Signal};
-use crate::ICON_BODY;
 use crate::app::settings::Settings;
 
 //{ "timestamp":"2023-07-19T17:19:51Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Phaa Chroa YL-B b5-4 A 9",
@@ -21,7 +19,6 @@ use crate::app::settings::Settings;
 // "AscendingNode":-4.262981, "MeanAnomaly":78.392818, "RotationPeriod":101857.106605, "AxialTilt":-0.011263,
 // "Rings":[ { "Name":"Phaa Chroa YL-B b5-4 A 9 A Ring", "RingClass":"eRingClass_Rocky", "MassMT":2.501e+09, "InnerRad":2.166e+07, "OuterRad":2.3866e+07 }, { "Name":"Phaa Chroa YL-B b5-4 A 9 B Ring", "RingClass":"eRingClass_Icy", "MassMT":9.0988e+10, "InnerRad":2.3966e+07, "OuterRad":6.2742e+07 } ],
 // "ReserveLevel":"PristineResources", "WasDiscovered":false, "WasMapped":false }
-
 
 pub struct AsteroidRing {
     pub name: String,
@@ -133,14 +130,9 @@ impl BodyImplementation for Planet {
     }
 
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
-        let texture: TextureHandle = ui.ctx().load_texture(
-            "parentless-body-icon",
-            get_color_image_from_planet_class(get_body_class_from_body(&self)).clone(),
-            egui::TextureOptions::LINEAR,
-        );
-
-        let img_size = 32.0 * texture.size_vec2() / texture.size_vec2().y;
-        ui.image(&texture, img_size);
+        if self.settings.planets.get(self.planet_class.as_str()).unwrap().enabled{
+            ui.label(self.settings.planets.get(self.planet_class.as_str()).unwrap().get_richtext().size(self.radius.log(1.5) as f32));
+        }
 
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name{
@@ -366,36 +358,5 @@ pub fn get_profit_from_body(class: BodyClass, discovered: bool) -> (i32, i32){
         Ring => { if discovered { (0, 0) } else { (0, 0) } }
         Star => { if discovered { (0, 0) } else { (0, 0) } }
         Unknown => { if discovered { (0, 0) } else { (0, 0) } }
-    }
-}
-
-//TODO Change struct so it doesnt clone
-pub fn get_color_image_from_planet_class(planet_class: BodyClass) -> ColorImage {
-    let icons = &ICON_BODY.lock().unwrap();
-    match planet_class {
-        AmmoniaWorld => { icons.ammonia_world.clone() }
-        EarthlikeWorld => { icons.earthlike_world.clone() }
-        WaterWorld => { icons.water_world.clone() }
-        WaterWorldTerraformable => { icons.water_word_terraformable.clone() }
-        HighMetalContentPlanet => { icons.high_metal_content_planet.clone() }
-        HighMetalContentTerraformablePlanet => { icons.rocky_terraformable_body.clone() }
-        IcyBody => { icons.icy_body.clone() }
-        MetalRichBody => { icons.metal_rich_body.clone() }
-        RockyBody => { icons.rocky_body.clone() }
-        RockyBodyTerraformable => { icons.rocky_terraformable_body.clone() }
-        RockyIceBody => { icons.rocky_ice_body.clone() }
-        ClassIGasGiant => { icons.class_i_gas_giant.clone() }
-        ClassIIGasGiant => { icons.class_ii_gas_giant.clone() }
-        ClassIIIGasGiant => { icons.class_iii_gas_giant.clone() }
-        ClassIVGasGiant => { icons.class_iv_gas_giant.clone() }
-        ClassVGasGiant => { icons.class_v_gas_giant.clone() }
-        GasGiantwithAmmoniabasedLife => { icons.gas_giant_with_ammoniabased_life.clone() }
-        GasGiantwithWaterbasedLife => { icons.gas_giant_with_waterbased_life.clone() }
-        HeliumRichGasGiant => { icons.helium_rich_gas_giant.clone() }
-        WaterGiant => { icons.water_giant.clone() }
-        BeltCluster => { icons.belt_cluster.clone() }
-        Ring => { icons.ring.clone() }
-        Star => { icons.star.clone() }
-        Unknown => { icons.unknown.clone() }
     }
 }

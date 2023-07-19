@@ -32,6 +32,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                 body_list: vec![],
                 planet_signals: vec![],
                 index: 0,
+                settings: settings.clone(),
             };
 
 

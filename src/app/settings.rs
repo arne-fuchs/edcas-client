@@ -114,6 +114,8 @@ pub struct Settings {
     pub iota_settings: IotaSettings,
     pub graphic_editor_settings: GraphicEditorSettings,
     pub icons: HashMap<String, Icon>,
+    pub stars: HashMap<String, Icon>,
+    pub planets: HashMap<String, Icon>,
     pub log_level: String,
 }
 
@@ -228,6 +230,41 @@ impl Default for Settings {
             );
         }
 
+        //---------------------------
+        // Stars
+        //---------------------------
+        let mut stars: HashMap<String, Icon> = HashMap::default();
+        for i in 0..json["stars"].len() {
+            let stars_json = &json["stars"][i];
+            stars.insert(
+                stars_json["class"].to_string(),
+                Icon {
+                    name: stars_json["class"].to_string(),
+                    char: stars_json["char"].as_str().unwrap_or("⁉").to_string(),
+                    color: Color32::from_rgb(stars_json["r"].as_u8().unwrap_or(255), stars_json["g"].as_u8().unwrap_or(255), stars_json["b"].as_u8().unwrap_or(255)),
+                    enabled: stars_json["enabled"].as_bool().unwrap_or(true),
+                },
+            );
+        }
+
+        //---------------------------
+        // Planets
+        //---------------------------
+        let mut planets: HashMap<String, Icon> = HashMap::default();
+        for i in 0..json["planets"].len() {
+            let stars_json = &json["planets"][i];
+            planets.insert(
+                stars_json["class"].to_string(),
+                Icon {
+                    name: stars_json["class"].to_string(),
+                    char: stars_json["char"].as_str().unwrap_or("⁉").to_string(),
+                    color: Color32::from_rgb(stars_json["r"].as_u8().unwrap_or(255), stars_json["g"].as_u8().unwrap_or(255), stars_json["b"].as_u8().unwrap_or(255)),
+                    enabled: stars_json["enabled"].as_bool().unwrap_or(true),
+                },
+            );
+        }
+
+
         Self {
             appearance_settings: AppearanceSettings {
                 font_size: json["appearance"]["font-size"].as_f32().unwrap_or(24.0),
@@ -259,6 +296,8 @@ impl Default for Settings {
                 show_editor: false,
             },
             icons,
+            stars,
+            planets,
             log_level: json["log-level"].to_string(),
         }
     }
@@ -319,30 +358,75 @@ impl App for Settings {
                 ui.separator();
 
                 egui::CollapsingHeader::new("Explorer").show(ui, |ui| {
-                    egui::Grid::new("explorer_icon_grid")
-                        .num_columns(2)
-                        .spacing([60.0, 5.0])
-                        .min_col_width(300.0)
-                        .striped(true)
-                        .show(ui, |ui| {
-                            ui.label("Include system in body name:");
-                            ui.checkbox(&mut self.explorer_settings.include_system_name, "");
-                            ui.end_row();
+                    ui.checkbox(&mut self.explorer_settings.include_system_name, "Include system in body name");
+                    egui::CollapsingHeader::new("Icons").show(ui, |ui| {
+                        egui::Grid::new("explorer_icon_grid")
+                            .num_columns(2)
+                            .spacing([60.0, 5.0])
+                            .min_col_width(300.0)
+                            .striped(true)
+                            .show(ui, |ui| {
 
-                            for icon in &mut self.icons {
-                                ui.horizontal(|ui| {
-                                    ui.text_edit_singleline(&mut icon.1.char);
-                                    ui.label(icon.0);
-                                });
-                                ui.horizontal(|ui| {
-                                    ui.checkbox(&mut icon.1.enabled, "Enabled");
-                                    ui.color_edit_button_srgba(&mut icon.1.color);
-                                    ui.label("Color");
-                                });
-                                ui.end_row();
-                            }
-                        });
+                                for icon in &mut self.icons {
+                                    ui.horizontal(|ui| {
+                                        ui.text_edit_singleline(&mut icon.1.char);
+                                        ui.label(icon.0);
+                                    });
+                                    ui.horizontal(|ui| {
+                                        ui.checkbox(&mut icon.1.enabled, "Enabled");
+                                        ui.color_edit_button_srgba(&mut icon.1.color);
+                                        ui.label("Color");
+                                    });
+                                    ui.end_row();
+                                }
+                            });
+                    });
                     ui.end_row();
+                    egui::CollapsingHeader::new("Stars").show(ui, |ui| {
+                        egui::Grid::new("explorer_star_icon_grid")
+                            .num_columns(2)
+                            .spacing([60.0, 5.0])
+                            .min_col_width(300.0)
+                            .striped(true)
+                            .show(ui, |ui| {
+                                for star in &mut self.stars {
+                                    ui.horizontal(|ui| {
+                                        ui.text_edit_singleline(&mut star.1.char);
+                                        ui.label(star.0);
+                                    });
+                                    ui.horizontal(|ui| {
+                                        ui.checkbox(&mut star.1.enabled, "Enabled");
+                                        ui.color_edit_button_srgba(&mut star.1.color);
+                                        ui.label("Color");
+                                    });
+                                    ui.end_row();
+                                }
+                            });
+                    });
+                    ui.end_row();
+                    egui::CollapsingHeader::new("Planets").show(ui, |ui| {
+                        egui::Grid::new("explorer_planet_icon_grid")
+                            .num_columns(2)
+                            .spacing([60.0, 5.0])
+                            .min_col_width(300.0)
+                            .striped(true)
+                            .show(ui, |ui| {
+                                for planet in &mut self.planets {
+                                    ui.horizontal(|ui| {
+                                        ui.text_edit_singleline(&mut planet.1.char);
+                                        ui.label(planet.0);
+                                    });
+                                    ui.horizontal(|ui| {
+                                        ui.checkbox(&mut planet.1.enabled, "Enabled");
+                                        ui.color_edit_button_srgba(&mut planet.1.color);
+                                        ui.label("Color");
+                                    });
+                                    ui.end_row();
+                                }
+                            });
+                    });
+                    ui.end_row();
+
                 });
                 ui.separator();
                 ui.heading("Graphics Override");
@@ -474,9 +558,31 @@ impl App for Settings {
                                 "b": icon.color.b(),
                                 "enabled": icon.enabled
                             }
-                        ))
-
-                        .collect();
+                        )).collect();
+                    let star_array: serde_json::Value = self.stars
+                        .iter()
+                        .map(|(_, star)| json!(
+                            {
+                                "class": star.name,
+                                "char": star.char,
+                                "r": star.color.r(),
+                                "g": star.color.g(),
+                                "b": star.color.b(),
+                                "enabled": star.enabled
+                            }
+                        )).collect();
+                    let planet_array: serde_json::Value = self.planets
+                        .iter()
+                        .map(|(_, planet)| json!(
+                            {
+                                "class": planet.name,
+                                "char": planet.char,
+                                "r": planet.color.r(),
+                                "g": planet.color.g(),
+                                "b": planet.color.b(),
+                                "enabled": planet.enabled
+                            }
+                        )).collect();
 
                     let json = json!(
                         {
@@ -502,6 +608,8 @@ impl App for Settings {
                                 "allow-share-data": self.iota_settings.allow_share_data
                             },
                             "icons": icon_array,
+                            "stars": star_array,
+                            "planets": planet_array,
                             "graphics-editor": {
                                 "graphics-directory": self.graphic_editor_settings.graphics_directory
                             }

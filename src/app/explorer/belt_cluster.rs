@@ -1,9 +1,7 @@
 use std::sync::Arc;
-use eframe::egui;
-use eframe::egui::{TextureHandle, Ui};
+use eframe::egui::Ui;
 use crate::app::explorer::structs::{BodyImplementation, Parent};
 use crate::app::settings::Settings;
-use crate::ICON_BODY;
 
 pub struct BeltCluster {
     pub timestamp: String,
@@ -32,14 +30,9 @@ impl BodyImplementation for BeltCluster {
     }
 
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize){
-        let texture: TextureHandle = ui.ctx().load_texture(
-            "parentless-body-icon",
-            ICON_BODY.lock().unwrap().belt_cluster.clone(),
-            egui::TextureOptions::LINEAR,
-        );
-
-        let img_size = 32.0 * texture.size_vec2() / texture.size_vec2().y;
-        ui.image(&texture, img_size);
+        if self.settings.icons.get("belt_cluster").unwrap().enabled {
+            ui.label(self.settings.icons.get("belt_cluster").unwrap().get_richtext());
+        }
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name{
             let system_name = self.star_system.clone();

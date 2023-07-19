@@ -1,21 +1,11 @@
 extern crate core;
 
 use eframe::{egui, HardwareAcceleration};
-use std::sync::Mutex;
 
-use crate::app::explorer::icons::{BodyIcons, PlanetSignalIcons, Symbols};
 use crate::app::EliteRustClient;
 use crate::egui::Vec2;
 
 mod app;
-
-#[macro_use]
-extern crate lazy_static;
-lazy_static! {
-    static ref ICON_BODY_SIGNAL: Mutex<PlanetSignalIcons> = Mutex::new(PlanetSignalIcons::default());
-    static ref ICON_BODY: Mutex<BodyIcons> = Mutex::new(BodyIcons::default());
-    static ref ICON_SYMBOL: Mutex<Symbols> = Mutex::new(Symbols::default());
-}
 
 fn main() {
     let mut native_options = eframe::NativeOptions::default();

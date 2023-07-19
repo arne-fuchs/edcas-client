@@ -9,7 +9,6 @@ use crate::app::settings::Settings;
 use crate::egui::Context;
 
 pub mod planet;
-pub mod icons;
 pub mod star;
 pub mod structs;
 pub mod belt_cluster;
