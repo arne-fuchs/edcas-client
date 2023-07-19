@@ -6,9 +6,30 @@ use num_format::{Locale, ToFormattedString};
 
 use crate::app::explorer::planet::BodyClass::{AmmoniaWorld, BeltCluster, ClassIGasGiant, ClassIIGasGiant, ClassIIIGasGiant, ClassIVGasGiant, ClassVGasGiant, EarthlikeWorld, GasGiantwithAmmoniabasedLife, GasGiantwithWaterbasedLife, HeliumRichGasGiant, HighMetalContentPlanet, HighMetalContentTerraformablePlanet, IcyBody, MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown, WaterGiant, WaterWorld, WaterWorldTerraformable};
 use crate::app::explorer::structs::{BodyImplementation, Parent, Signal};
-use crate::{ICON_BODY, ICON_SYMBOL};
+use crate::ICON_BODY;
 use crate::app::settings::Settings;
 
+//{ "timestamp":"2023-07-19T17:19:51Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Phaa Chroa YL-B b5-4 A 9",
+// "BodyID":36, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Phaa Chroa YL-B b5-4", "SystemAddress":9544091982377,
+// "DistanceFromArrivalLS":1916.882666, "TidalLock":false, "TerraformState":"", "PlanetClass":"Icy body",
+// "Atmosphere":"helium atmosphere", "AtmosphereType":"Helium",
+// "AtmosphereComposition":[ { "Name":"Helium", "Percent":89.334976 }, { "Name":"Hydrogen", "Percent":8.427828 }, { "Name":"Neon", "Percent":2.237205 } ],
+// "Volcanism":"major water geysers volcanism", "MassEM":4.940075, "Radius":13127075.000000, "SurfaceGravity":11.426337,
+// "SurfaceTemperature":53.316639, "SurfacePressure":68322.453125, "Landable":false,
+// "Composition":{ "Ice":0.657375, "Rock":0.202757, "Metal":0.099446 }, "SemiMajorAxis":575420260429.382324,
+// "Eccentricity":0.006722, "OrbitalInclination":0.013744, "Periapsis":170.971110, "OrbitalPeriod":368017596.006393,
+// "AscendingNode":-4.262981, "MeanAnomaly":78.392818, "RotationPeriod":101857.106605, "AxialTilt":-0.011263,
+// "Rings":[ { "Name":"Phaa Chroa YL-B b5-4 A 9 A Ring", "RingClass":"eRingClass_Rocky", "MassMT":2.501e+09, "InnerRad":2.166e+07, "OuterRad":2.3866e+07 }, { "Name":"Phaa Chroa YL-B b5-4 A 9 B Ring", "RingClass":"eRingClass_Icy", "MassMT":9.0988e+10, "InnerRad":2.3966e+07, "OuterRad":6.2742e+07 } ],
+// "ReserveLevel":"PristineResources", "WasDiscovered":false, "WasMapped":false }
+
+
+pub struct AsteroidRing {
+    pub name: String,
+    pub ring_class: String,
+    pub mass_mt: f64,
+    pub inner_rad: f64,
+    pub outer_rad: f64,
+}
 
 pub struct Composition {
     pub name: String,
@@ -56,6 +77,8 @@ pub struct Planet {
     pub axial_tilt: f64,
     pub was_discovered: bool,
     pub was_mapped: bool,
+    pub reserve_level: String,
+    pub asteroid_rings: Vec<AsteroidRing>,
     pub planet_signals: Vec<Signal>,
     pub settings: Arc<Settings>,
 }
@@ -121,15 +144,16 @@ impl BodyImplementation for Planet {
 
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name{
-            let system_name = self.star_system.clone();
-            body_name.replace_range(0..system_name.len(),"");
+            body_name.replace_range(0..self.star_system.len(),"");
         }
-        ui.label(" ");
-
         if ui.selectable_label(false, &body_name).clicked() {
             *system_index = body_index;
         };
 
+        if !self.asteroid_rings.is_empty() && self.settings.icons.get("ring").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("ring").unwrap().get_richtext());
+        }
 
         if self.landable && self.settings.icons.get("landable").unwrap().enabled{
             ui.label("|");

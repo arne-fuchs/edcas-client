@@ -3,7 +3,7 @@ use eframe::egui;
 use json::JsonValue;
 use log::debug;
 use crate::app::explorer::belt_cluster::BeltCluster;
-use crate::app::explorer::planet::Planet;
+use crate::app::explorer::planet::{AsteroidRing, Planet};
 use crate::app::explorer::ring::Ring;
 use crate::app::explorer::star::Star;
 use crate::app::settings::Settings;
@@ -23,6 +23,22 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
                 name: entry.0.to_string(),
                 id: entry.1.as_i64().unwrap(),
             })
+        }
+    }
+
+    let mut asteroid_rings = vec![];
+    if !json["Rings"].is_null(){
+        for i in 0..json["Rings"].len(){
+            let asteroid_ring = &json["Rings"][i];
+            asteroid_rings.push(
+                AsteroidRing{
+                    name: asteroid_ring["Name"].to_string(),
+                    ring_class: asteroid_ring["RingClass"].to_string(),
+                    mass_mt: asteroid_ring["MassMT"].as_f64().unwrap(),
+                    inner_rad: asteroid_ring["InnerRad"].as_f64().unwrap(),
+                    outer_rad: asteroid_ring["OuterRad"].as_f64().unwrap(),
+                }
+            );
         }
     }
 
@@ -73,6 +89,19 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
             }
             else {
                 //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435, "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant", "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ], "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730, "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734, "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320, "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
+
+                //{ "timestamp":"2023-07-19T17:19:51Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Phaa Chroa YL-B b5-4 A 9",
+                // "BodyID":36, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Phaa Chroa YL-B b5-4", "SystemAddress":9544091982377,
+                // "DistanceFromArrivalLS":1916.882666, "TidalLock":false, "TerraformState":"", "PlanetClass":"Icy body",
+                // "Atmosphere":"helium atmosphere", "AtmosphereType":"Helium",
+                // "AtmosphereComposition":[ { "Name":"Helium", "Percent":89.334976 }, { "Name":"Hydrogen", "Percent":8.427828 }, { "Name":"Neon", "Percent":2.237205 } ],
+                // "Volcanism":"major water geysers volcanism", "MassEM":4.940075, "Radius":13127075.000000, "SurfaceGravity":11.426337,
+                // "SurfaceTemperature":53.316639, "SurfacePressure":68322.453125, "Landable":false,
+                // "Composition":{ "Ice":0.657375, "Rock":0.202757, "Metal":0.099446 }, "SemiMajorAxis":575420260429.382324,
+                // "Eccentricity":0.006722, "OrbitalInclination":0.013744, "Periapsis":170.971110, "OrbitalPeriod":368017596.006393,
+                // "AscendingNode":-4.262981, "MeanAnomaly":78.392818, "RotationPeriod":101857.106605, "AxialTilt":-0.011263,
+                // "Rings":[ { "Name":"Phaa Chroa YL-B b5-4 A 9 A Ring", "RingClass":"eRingClass_Rocky", "MassMT":2.501e+09, "InnerRad":2.166e+07, "OuterRad":2.3866e+07 }, { "Name":"Phaa Chroa YL-B b5-4 A 9 B Ring", "RingClass":"eRingClass_Icy", "MassMT":9.0988e+10, "InnerRad":2.3966e+07, "OuterRad":6.2742e+07 } ],
+                // "ReserveLevel":"PristineResources", "WasDiscovered":false, "WasMapped":false }
                 Box::new(Planet {
                     timestamp: json["Timestamp"].to_string(),
                     event: json["event"].to_string(),
@@ -109,6 +138,8 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
                     axial_tilt: json["AxialTilt"].as_f64().unwrap(),
                     was_discovered: json["WasDiscovered"].to_string().parse().unwrap(),
                     was_mapped: json["WasMapped"].to_string().parse().unwrap(),
+                    reserve_level: json["PristineResources"].to_string(),
+                    asteroid_rings,
                     planet_signals: vec![],
                     settings: settings.clone(),
                 })
@@ -146,6 +177,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
                 axial_tilt: json["AxialTilt"].as_f64().unwrap(),
                 was_discovered: json["WasDiscovered"].as_bool().unwrap(),
                 was_mapped: json["WasMapped"].as_bool().unwrap(),
+                asteroid_rings,
                 settings: settings.clone(),
             }
         )

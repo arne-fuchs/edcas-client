@@ -2,6 +2,7 @@ use std::sync::Arc;
 use eframe::egui;
 use eframe::egui::{TextureHandle, Ui};
 use num_format::{Locale, ToFormattedString};
+use crate::app::explorer::planet::AsteroidRing;
 use crate::app::explorer::structs::{BodyImplementation, Parent};
 use crate::app::settings::Settings;
 use crate::ICON_BODY;
@@ -35,6 +36,7 @@ pub struct Star {
     pub axial_tilt: f64,
     pub was_discovered: bool,
     pub was_mapped: bool,
+    pub asteroid_rings: Vec<AsteroidRing>,
     pub settings: Arc<Settings>,
 }
 
@@ -82,14 +84,16 @@ impl BodyImplementation for Star {
         ui.image(&texture, img_size);
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name{
-            let system_name = self.star_system.clone();
-            body_name.replace_range(0..system_name.len(),"");
+            body_name.replace_range(0..self.star_system.len(),"");
         }
         if ui.selectable_label(false, &body_name).clicked() {
             *system_index = body_index;
         };
 
-        ui.label(" ");
+        if !self.asteroid_rings.is_empty() && self.settings.icons.get("ring").unwrap().enabled{
+            ui.label("|");
+            ui.label(self.settings.icons.get("ring").unwrap().get_richtext());
+        }
 
         if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled{
             ui.label("|");

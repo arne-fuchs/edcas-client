@@ -45,7 +45,7 @@ impl BodyImplementation for Ring{
     }
 
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
-        ui.label("○");
+        ui.label(self.settings.icons.get("ring").unwrap().get_richtext());
 
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name{
@@ -55,7 +55,6 @@ impl BodyImplementation for Ring{
         if ui.selectable_label(false, &body_name).clicked() {
             *system_index = body_index;
         };
-        ui.label(" ");
 
         if !self.ring_signals.is_empty(){
             for signal in &self.ring_signals{

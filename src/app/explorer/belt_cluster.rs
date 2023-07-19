@@ -49,7 +49,6 @@ impl BodyImplementation for BeltCluster {
         if ui.selectable_label(false, &body_name).clicked() {
             *system_index = body_index;
         };
-        ui.label(" ");
 
         if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled{
             ui.label("|");

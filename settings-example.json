@@ -102,6 +102,14 @@
       "g": 255,
       "b": 255,
       "enabled": true
+    },
+    {
+      "b": 175,
+      "char": "○",
+      "enabled": true,
+      "g": 175,
+      "name": "ring",
+      "r": 175
     }
   ],
   "log-level": "Debug"
