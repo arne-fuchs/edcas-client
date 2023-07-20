@@ -547,9 +547,22 @@ impl App for Settings {
             //Apply Button
             ui.with_layout(egui::Layout::bottom_up(egui::Align::Center), |ui| {
                 if ui.button("Save 💾").clicked() {
-                    let icon_array: serde_json::Value = self.icons
-                        .iter()
-                        .map(|(_, icon)| json!(
+                    self.save_settings_to_file();
+                }
+            });
+
+            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
+                global_dark_light_mode_switch(ui);
+            });
+        });
+    }
+}
+
+impl Settings {
+    pub fn save_settings_to_file(&mut self) {
+        let icon_array: serde_json::Value = self.icons
+            .iter()
+            .map(|(_, icon)| json!(
                             {
                                 "name": icon.name,
                                 "char": icon.char,
@@ -559,9 +572,9 @@ impl App for Settings {
                                 "enabled": icon.enabled
                             }
                         )).collect();
-                    let star_array: serde_json::Value = self.stars
-                        .iter()
-                        .map(|(_, star)| json!(
+        let star_array: serde_json::Value = self.stars
+            .iter()
+            .map(|(_, star)| json!(
                             {
                                 "class": star.name,
                                 "char": star.char,
@@ -571,9 +584,9 @@ impl App for Settings {
                                 "enabled": star.enabled
                             }
                         )).collect();
-                    let planet_array: serde_json::Value = self.planets
-                        .iter()
-                        .map(|(_, planet)| json!(
+        let planet_array: serde_json::Value = self.planets
+            .iter()
+            .map(|(_, planet)| json!(
                             {
                                 "class": planet.name,
                                 "char": planet.char,
@@ -584,7 +597,7 @@ impl App for Settings {
                             }
                         )).collect();
 
-                    let json = json!(
+        let json = json!(
                         {
                             "log-level": "Debug",
                             "appearance": {
@@ -615,14 +628,7 @@ impl App for Settings {
                             }
                         }
                     );
-                    let mut settings_file: File = File::create("settings.json").unwrap();
-                    settings_file.write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
-                }
-            });
-
-            ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
-                global_dark_light_mode_switch(ui);
-            });
-        });
+        let mut settings_file: File = File::create("settings.json").unwrap();
+        settings_file.write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
     }
 }
