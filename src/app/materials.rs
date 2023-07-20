@@ -93,7 +93,7 @@ fn draw_materials(showing: &mut Option<Material>, ui: &mut Ui, materials: &HashM
         while !option_material.is_none() {
             let material = option_material.unwrap().1;
             if material.name_localised.to_lowercase().contains(&search.to_lowercase()) || material.name.to_lowercase().contains(&search.to_lowercase()){
-                ui.vertical(|mut ui| {
+                ui.vertical(|ui| {
                     ui.vertical_centered(|mut ui| {
                         if ui.button(material.get_name()).clicked() {
                             let _ = showing.replace(material.clone());
@@ -132,7 +132,7 @@ fn convert_color(value: f32) -> (u8, u8, u8) {
     (red, green, 0) // Assuming a fixed blue value of 0
 }
 
-pub fn print_material_info_window_if_available(mut showing: &mut Option<Material>, ctx: &Context){
+pub fn print_material_info_window_if_available(showing: &mut Option<Material>, ctx: &Context){
     match showing.clone() {
         None => {}
         Some(material) => {

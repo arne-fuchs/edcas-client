@@ -27,7 +27,7 @@ pub struct Prospector {
 }
 
 impl App for Mining {
-    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
+    fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         let Self {
             prospectors,cargo
         } = self;
