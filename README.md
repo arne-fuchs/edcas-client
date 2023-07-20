@@ -83,6 +83,6 @@ and add this to your processes:
 
 
 ## Suggestions, Ideas & Bug Reports
-Feel free to contact me for feature requests on Discord: Frank_The_Fish#3375 or use the issue feature.
+Feel free to contact me for feature requests on Discord: frank_the_fish or use the issue feature.
 
 For bugs, you can use the issue feature on GitHub.
