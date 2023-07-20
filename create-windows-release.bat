@@ -26,7 +26,6 @@ mkdir "%folder_name%"
 mkdir "%folder_name%\logs"
 
 rem Copy files and directories
-xcopy /E graphics "%folder_name%\graphics"
 copy settings-example.json "%folder_name%\settings-example.json"
 copy settings-example.json "%folder_name%\settings.json"
 copy materials.json "%folder_name%\materials.json"

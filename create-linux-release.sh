@@ -18,7 +18,6 @@ mkdir "$folder_name"
 mkdir "$folder_name"/logs
 
 echo "Copying files"
-cp -r graphics "$folder_name"/graphics
 cp settings-example.json "$folder_name"/settings-example.json
 cp settings-example.json "$folder_name"/settings.json
 cp materials.json "$folder_name"/materials.json
