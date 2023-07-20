@@ -23,10 +23,10 @@ pub struct System {
     pub settings: Arc<Settings>,
 }
 
-pub struct PlanetSignals{
+pub struct PlanetSignals {
     pub body_name: String,
     pub body_id: i64,
-    pub signals: Vec<Signal>
+    pub signals: Vec<Signal>,
 }
 
 impl PartialEq for PlanetSignals {
@@ -35,7 +35,7 @@ impl PartialEq for PlanetSignals {
     }
 }
 
-impl System{
+impl System {
     pub fn draw_body_signal_list(&self, ui: &mut egui::Ui) {
         egui::Grid::new("body_signal_grid")
             .num_columns(3)
@@ -47,12 +47,12 @@ impl System{
                 ui.label("Count");
                 ui.end_row();
 
-                for body_signal in &self.planet_signals{
-                    for signal in &body_signal.signals{
+                for body_signal in &self.planet_signals {
+                    for signal in &body_signal.signals {
                         ui.label(body_signal.body_name.trim_start_matches(&self.name));
-                        if &signal.type_localised == "null"{
+                        if &signal.type_localised == "null" {
                             ui.label(&signal.r#type);
-                        }else {
+                        } else {
                             ui.label(&signal.type_localised);
                         }
 
@@ -64,35 +64,25 @@ impl System{
                             .show(ui, |ui| {
                                 match signal.r#type.as_str() {
                                     "$SAA_SignalType_Biological;" => {
-                                        if self.settings.icons.get("bio_signal").unwrap().enabled {
-                                            ui.label(&signal.count.to_string());
-                                            ui.label(self.settings.icons.get("bio_signal").unwrap().get_richtext());
-                                        }
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("bio_signal").unwrap().get_richtext());
                                     }
                                     "$SAA_SignalType_Geological;" => {
-                                        if self.settings.icons.get("geo_signal").unwrap().enabled {
-                                            ui.label(&signal.count.to_string());
-                                            ui.label(self.settings.icons.get("geo_signal").unwrap().get_richtext());
-                                        }
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("geo_signal").unwrap().get_richtext());
                                     }
                                     "$SAA_SignalType_Xenological;" => {
-                                        if self.settings.icons.get("xeno_signal").unwrap().enabled {
-                                            ui.label(&signal.count.to_string());
-                                            ui.label(self.settings.icons.get("xeno_signal").unwrap().get_richtext());
-                                        }
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("xeno_signal").unwrap().get_richtext());
                                     }
                                     "$SAA_SignalType_Human;" => {
-                                        if self.settings.icons.get("human_signal").unwrap().enabled {
-                                            ui.label(&signal.count.to_string());
-                                            ui.label(self.settings.icons.get("human_signal").unwrap().get_richtext());
-                                        }
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("human_signal").unwrap().get_richtext());
                                     }
                                     _ => {
                                         warn!("Icon for string not found: {}", signal.r#type.as_str());
-                                        if self.settings.icons.get("unknown_signal").unwrap().enabled {
-                                            ui.label(&signal.count.to_string());
-                                            ui.label(self.settings.icons.get("unknown_signal").unwrap().get_richtext());
-                                        }
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("unknown_signal").unwrap().get_richtext());
                                     }
                                 }
                             });
@@ -154,7 +144,7 @@ impl System{
 
         if !self.body_count.eq("N/A") {
             ui.add(egui::ProgressBar::new((&self.body_list.len().to_f64() / (&self.body_count.parse::<f64>().unwrap() + &self.non_body_count.parse::<f64>().unwrap())) as f32)
-                .text(&self.body_list.len().to_string().add("/").add((&self.body_count.parse::<f64>().unwrap()+&self.non_body_count.parse::<f64>().unwrap()).to_string().as_str()))
+                .text(&self.body_list.len().to_string().add("/").add((&self.body_count.parse::<f64>().unwrap() + &self.non_body_count.parse::<f64>().unwrap()).to_string().as_str()))
             );
         }
         ui.end_row();
@@ -168,7 +158,6 @@ impl System{
 
 
     fn draw_system_signal_list(&self, ui: &mut egui::Ui) {
-
         egui::Grid::new("system_signal_grid")
             .num_columns(2)
             .striped(true)
@@ -177,7 +166,7 @@ impl System{
                 ui.label("Name");
                 ui.label("Thread");
                 ui.end_row();
-                for system_signal in &self.signal_list{
+                for system_signal in &self.signal_list {
                     ui.label(&system_signal.name);
                     ui.label(&system_signal.thread);
 
@@ -186,7 +175,7 @@ impl System{
             });
     }
 
-    pub fn insert_body(&mut self, body: Box<dyn BodyImplementation>) -> usize{
+    pub fn insert_body(&mut self, body: Box<dyn BodyImplementation>) -> usize {
         let id = body.get_id().clone();
         self.body_list.push(body);
 
@@ -194,8 +183,8 @@ impl System{
             body_a.get_id().cmp(&body_b.get_id())
         });
 
-        for i in 0..self.body_list.len(){
-            if id == self.body_list.get(i).unwrap().get_id(){
+        for i in 0..self.body_list.len() {
+            if id == self.body_list.get(i).unwrap().get_id() {
                 return i;
             }
         }
@@ -205,9 +194,9 @@ impl System{
 
 
 #[derive(Clone)]
-pub struct SystemSignal{
+pub struct SystemSignal {
     pub timestamp: String,
     pub event: String,
     pub name: String,
-    pub thread: String
+    pub thread: String,
 }
