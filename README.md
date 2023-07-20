@@ -3,19 +3,19 @@
 
 Shows system information compact for explorer.
 
-<div style="text-align: center;"><h2>Gotta see all those planets!</h2></div>
+<h2>Gotta see all those planets!</h2>
 
 ![Screenshot of explorer panel](graphics/screenshots/explorer-screenshot.jpg "Explorer Panel")
 
-<div style="text-align: center;"><h2>Track your materials!</h2></div>
+<h2>Track your materials!</h2>
 
 ![Screenshot of materials panel](graphics/screenshots/materials-screenshot.jpg "Materials Panel")
 
-<div style="text-align: center;"><h2>Customize your panel!</h2></div>
+<h2>Make it truly yours!</h2>
 
 ![Screenshot of settings panel](graphics/screenshots/settings-screenshot.jpg "Settings Panel")
 
-<div style="text-align: center;"><h2>And much more!</h2></div>
+<h2>And much more!</h2>
 
 ## Features
 
