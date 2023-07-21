@@ -226,12 +226,12 @@ impl App for EliteRustClient {
 
 fn initialize_logger(settings: Arc<settings::Settings>) {
     let mut log_directory = env::current_dir().unwrap().join("logs");
-    if std::path::Path::new("/var/log/edcas-client").exists() {
-        log_directory = std::path::Path::new("/var/log/edcas-client").to_path_buf();
-    }else {
-        if let Err(err) = fs::create_dir_all(&log_directory) {
-            println!("Error while creating directory: {:?}", err);
-        }
+    if std::path::Path::new("/tmp/").exists() {
+        log_directory = std::path::Path::new("/tmp/edcas-client/").to_path_buf();
+    }
+
+    if let Err(err) = fs::create_dir_all(&log_directory) {
+        println!("Error while creating log directory: {:?}", err);
     }
 
     let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H-%M"));

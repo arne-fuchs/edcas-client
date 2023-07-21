@@ -132,7 +132,7 @@ impl Default for Settings {
                         warn!("{}",err);
                         match fs::create_dir_all(format!("{}/.config/edcas-client",home)) {
                             Ok(_) => {
-                                fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
+                                fs::copy("/etc/edcas-client/settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).unwrap_or(fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/"));
                                 File::open(format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't open settings file in $HOME/.config/edcas-client/")
                             }
                             Err(err) => {
@@ -160,7 +160,7 @@ impl Default for Settings {
                     }
                     Err(err) => {
                         warn!("{}",err);
-                        fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings-exmaple.json");
+                        fs::copy("/etc/edcas-client/settings-example.json", "settings.json").unwrap_or(fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings file to $HOME/.config/edcas-client/"));
                         File::open("settings.json").unwrap()
                     }
                 }
