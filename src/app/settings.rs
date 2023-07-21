@@ -118,14 +118,17 @@ pub struct Settings {
     pub stars: HashMap<String, Icon>,
     pub planets: HashMap<String, Icon>,
     pub log_level: String,
+    pub settings_path: String,
 }
 
 impl Default for Settings {
     fn default() -> Self {
+        let mut settings_path = "settings.json".to_string();
         let mut settings_file = match env::var("HOME") {
             Ok(home) => {
                 match File::open(format!("{}/.config/edcas-client/settings.json",home)) {
                     Ok(file) => {
+                        settings_path = format!("{}/.config/edcas-client/settings.json",home);
                         file
                     }
                     Err(err) => {
@@ -140,6 +143,7 @@ impl Default for Settings {
                                     });
 
                                 println!("Accessing settings file at $HOME/.config/edcas-client/settings.json");
+                                settings_path = format!("{}/.config/edcas-client/settings.json",home);
                                 File::open(format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't open settings file in $HOME/.config/edcas-client/")
                             }
                             Err(err) => {
@@ -351,6 +355,7 @@ impl Default for Settings {
             stars,
             planets,
             log_level: json["log-level"].to_string(),
+            settings_path,
         }
     }
 }
@@ -680,7 +685,7 @@ impl Settings {
                             }
                         }
                     );
-        let mut settings_file: File = File::create("settings.json").unwrap();
+        let mut settings_file: File = File::create(&self.settings_path).unwrap();
         settings_file.write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
     }
 }
