@@ -57,6 +57,18 @@ cd into it and build it
 cd edcas-client && cargo build
 ```
 
+## Standard directories
+
+Edcas will first look into some standard directories before falling back into the current directory.
+
+| File                      | Look-up                                  | Fallback                |
+|---------------------------|------------------------------------------|-------------------------|
+| settings-example.json     | /etc/edcas-client/settigns-example.json  | ./settings-example.json |
+| settings.json             | $HOME/.config/edcas-client/settings.json | ./settings.json         |
+| Assets like material.json | /usr/share/edcas-client/                 | ./                      |
+| logs                      | /tmp/edcas-client/                       | ./logs/                 |
+
+
 ## Using it with <a href=https://github.com/rfvgyhn/min-ed-launcher>min-ed-launcher</a>
 
 Go and first build the project with
@@ -81,6 +93,7 @@ and add this to your processes:
     ],
 ```
 
+If you installed edcas-client over a package, you can find the binary in /usr/bin/edcas-client.
 
 ## Suggestions, Ideas & Bug Reports
 Feel free to contact me for feature requests on Discord: frank_the_fish or use the issue feature.
