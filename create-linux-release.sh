@@ -26,3 +26,23 @@ cp target/release/edcas-client "$folder_name"/
 
 echo "Compressing files"
 tar czf edcas-client.tar.gz "$folder_name"
+
+rm -rf "$folder_name"
+mkdir "$folder_name"
+mkdir "$folder_name"/etc
+mkdir "$folder_name"/etc/"$folder_name"
+cp settings-example.json "$folder_name"/etc/"$folder_name"/settings-example.json
+
+mkdir "$folder_name"/usr
+
+mkdir "$folder_name"/usr/bin
+cp target/release/edcas-client "$folder_name"/usr/bin
+
+mkdir "$folder_name"/usr/share
+mkdir "$folder_name"/usr/share/"$folder_name"
+cp materials.json "$folder_name"/usr/share/"$folder_name"/materials.json
+
+mkdir "$folder_name"/DEBIAN
+cp control "$folder_name"/DEBIAN/
+
+dpkg-deb --build edcas-client

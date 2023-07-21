@@ -2,7 +2,7 @@
 
 setlocal
 
-set "folder_name=edcas-client"
+set "folder_name=edcas-client-windows"
 
 rem Clean build artifacts
 cargo clean

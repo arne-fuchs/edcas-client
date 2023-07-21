@@ -21,7 +21,10 @@ impl Default for MaterialState {
             showing: None,
             search: "".to_string(),
         };
-        let materials_content = fs::read_to_string("materials.json").unwrap();
+        let materials_content = match fs::read_to_string("/usr/share/edcas-client/materials.json"){
+            Ok(content) => content,
+            Err(_) => fs::read_to_string("materials.json").unwrap()
+        };
         let materials_json = json::parse(materials_content.as_str()).unwrap();
 
         let encoded_array = &materials_json["encoded"];

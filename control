@@ -1,0 +1,8 @@
+Package: edcas-client
+Version: 0.2.2
+Section: util
+Priority: optional
+Maintainer: Frank_The_Fish
+Homepage: https://github.com/arne-fuchs/edcas-client
+Architecture: all
+Description: EDCAS-Client for Elite Dangerous

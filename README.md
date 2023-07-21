@@ -62,12 +62,12 @@ cd edcas-client && cargo build
 Edcas will first look into some standard directories before falling back into the current directory.
 It might try to copy the files to the desired places.
 
-| File                      | Look-up                                  | Fallback                |
-|---------------------------|------------------------------------------|-------------------------|
-| settings-example.json     | /etc/edcas-client/settigns-example.json  | ./settings-example.json |
-| settings.json             | $HOME/.config/edcas-client/settings.json | ./settings.json         |
-| Assets like material.json | /usr/share/edcas-client/                 | ./                      |
-| logs                      | /tmp/edcas-client/                       | ./logs/                 |
+| File                       | Look-up                                  | Fallback                |
+|----------------------------|------------------------------------------|-------------------------|
+| settings-example.json      | /etc/edcas-client/settigns-example.json  | ./settings-example.json |
+| settings.json              | $HOME/.config/edcas-client/settings.json | ./settings.json         |
+| Assets like materials.json | /usr/share/edcas-client/                 | ./                      |
+| logs                       | /tmp/edcas-client/                       | ./logs/                 |
 
 
 ## Using it with <a href=https://github.com/rfvgyhn/min-ed-launcher>min-ed-launcher</a>
