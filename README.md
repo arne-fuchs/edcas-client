@@ -60,6 +60,7 @@ cd edcas-client && cargo build
 ## Standard directories
 
 Edcas will first look into some standard directories before falling back into the current directory.
+It might try to copy the files to the desired places.
 
 | File                      | Look-up                                  | Fallback                |
 |---------------------------|------------------------------------------|-------------------------|

@@ -122,7 +122,7 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        let mut settings_file = match env::var("$HOME") {
+        let mut settings_file = match env::var("HOME") {
             Ok(home) => {
                 match File::open(format!("{}/.config/edcas-client/settings.json",home)) {
                     Ok(file) => {
@@ -132,18 +132,29 @@ impl Default for Settings {
                         warn!("{}",err);
                         match fs::create_dir_all(format!("{}/.config/edcas-client",home)) {
                             Ok(_) => {
-                                fs::copy("/etc/edcas-client/settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).unwrap_or(fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/"));
+                                println!("Copying from /etc/edcas-client/settings-example.json to $HOME/.config/edcas-client/settings.json");
+                                fs::copy("/etc/edcas-client/settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).unwrap_or(
+                                    {
+                                        println!("Failed copying from /etc/edcas-client/settings-example.json\n Trying to copy from settings-example.json to $HOME/.config/edcas-client/settings.json");
+                                        fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/")
+                                    });
+
+                                println!("Accessing settings file at $HOME/.config/edcas-client/settings.json");
                                 File::open(format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't open settings file in $HOME/.config/edcas-client/")
                             }
                             Err(err) => {
                                 warn!("{}",err);
+                                println!("Couldn't create directories in $HOME/.config/edcas-client/");
                                 match File::open("settings.json"){
                                     Ok(file) => {
+                                        println!("Accessing settings file at settings.json");
                                         file
                                     }
                                     Err(err) => {
                                         warn!("{}",err);
+                                        println!("Copying from settings-example.json to settings.json");
                                         fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings-exmaple.json");
+                                        println!("Accessing settings file at settings.json");
                                         File::open("settings.json").unwrap()
                                     }
                                 }
@@ -153,14 +164,20 @@ impl Default for Settings {
                     }
                 }
             }
-            Err(_) => {
+            Err(err) => {
+                warn!("{}",err);
+                println!("{}",err);
+                println!("Couldn't find $HOME");
                 match File::open("settings.json"){
                     Ok(file) => {
+                        println!("Accessing settings file at settings.json");
                         file
                     }
                     Err(err) => {
                         warn!("{}",err);
+                        println!("Copying from /etc/edcas-client/settings-example.json to settings.json");
                         fs::copy("/etc/edcas-client/settings-example.json", "settings.json").unwrap_or(fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings file to $HOME/.config/edcas-client/"));
+                        println!("Accessing settings file at settings.json");
                         File::open("settings.json").unwrap()
                     }
                 }
