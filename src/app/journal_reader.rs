@@ -2,6 +2,8 @@ use std::{fs, process};
 use std::fs::{DirEntry, File};
 use std::io::{BufRead, BufReader};
 use std::sync::Arc;
+use std::thread::sleep;
+use std::time::Duration;
 use bus::{Bus};
 use chrono::NaiveDateTime;
 use json::JsonValue;
@@ -31,6 +33,7 @@ pub fn initialize(settings: Arc<Settings>) -> JournalReader{
                             let event = json["event"].as_str().unwrap();
                             if event == "Shutdown" {
                                 debug!("\n\nReached Shutdown -> looking for newer journals\n");
+                                sleep(Duration::from_secs(1));
                                 reader = get_journal_log_by_index(settings.journal_reader_settings.journal_directory.clone(),0)
                             }
                         }
