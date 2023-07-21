@@ -31,7 +31,11 @@ Shows system information compact for explorer.
 
 ### Debian Based
 
+Simply download the .deb file from the <a href="https://github.com/arne-fuchs/edcas-client/releases">release</a> tab and installit via dpkg:
 
+```bash
+sudo dpkg -i edcas-client.deb
+```
 
 ### Arch
 
