@@ -27,22 +27,57 @@ Shows system information compact for explorer.
 * Always keep track of what the feds are doing in the news tab
 * Written in rust so you know its good
 
-## Build Requirements
+## Installation
 
+### Debian Based
 
-### Debian based
+Simply download the .deb file from the <a href="https://github.com/arne-fuchs/edcas-client/releases">release</a> tab and installit via dpkg:
+
 ```bash
-sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev libssl git
+sudo dpkg -i edcas-client.deb
 ```
-### Arch based
-``` 
-cargo alsa-lib fontconfig clang rocksdb
+
+### Arch
+
+#### Aur:
+
 ```
+paru -S edcas-client-bin
+```
+#### makepkg:
+
+Download the PKGBUILD file.
+
+In the same folder run:
+```
+makepkg -i
+```
+## Build Requirements
 
 * gcc 12 required
 * <a href=https://www.rust-lang.org/tools/install >Rust with cargo</a>
 
+### Debian based
 
+```bash
+sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev libssl git
+```
+### Arch
+
+```bash 
+cargo alsa-lib fontconfig clang rocksdb
+sudo pacman -S cargo alsa-lib fontconfig git
+```
+From AUR: `gcc12 gcc12-libs`
+
+At the moment (22.07.2023) rocksdb does not like to compile with c++ > 12.
+This results in build failing.
+
+You can solve this problem by changing the gefault c++ version to 12:
+```
+sudo rm /sbin/c++
+sudo ln -s /sbin/c++-12 /sbin/c++ 
+```
 ## Building
 
 Clone the repo
