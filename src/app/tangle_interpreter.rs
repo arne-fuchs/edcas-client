@@ -38,8 +38,8 @@ impl TangleInterpreter {
         let Self {
             queue,
             bus,
-            settings,
-            account,
+            settings: _,
+            account: _,
             bech32_hrp,
             address,
             issuer_nft_id,
@@ -100,14 +100,14 @@ impl TangleInterpreter {
                                     }
                                 }
 
-                                return None;
+                                None
                             });
                         self.issuer_nft_id = issuer_nft_id_option;
 
                         match issuer_nft_id_option {
                             Some(nftid) => {
                                 info!("Issuer set: {:?}",nftid.to_string());
-                                info!("NFT Address: {:?}",Address::Nft(NftAddress::new(nftid.clone())).to_bech32(lcoal_bech32_hrp));
+                                info!("NFT Address: {:?}",Address::Nft(NftAddress::new(nftid)).to_bech32(lcoal_bech32_hrp));
                             }
                             None => {
                                 warn!("No system found!");
@@ -117,7 +117,7 @@ impl TangleInterpreter {
                     "Scan" => {
                         //Check if system is known as nft id so additional nft's can be added as collection -> otherwise the nft will be lost at fist
                         //TODO What to do if the system is not known? Throw the data away?
-                        match issuer_nft_id.clone() {
+                        match *issuer_nft_id {
                             None => {
                                 error!("No issuer for body nft found: {}", json["BodyName"].to_string());
                             }
@@ -133,12 +133,12 @@ impl TangleInterpreter {
                                     sender: Some(address.clone()),
                                     metadata: None,
                                     tag: Some(json["BodyName"].to_string().as_bytes().to_vec()),
-                                    issuer: Some(Address::Nft(NftAddress::new(issuer_nft_id.unwrap().clone())).to_bech32(bech32_hrp.clone())),
+                                    issuer: Some(Address::Nft(NftAddress::new(issuer_nft_id.unwrap())).to_bech32(bech32_hrp.clone())),
                                     immutable_metadata: Some(json.to_string().as_bytes().to_vec()),
                                 };
 
                                 let _nft_option = NftOptions {
-                                    address: Some(Address::Nft(NftAddress::new(issuer_nft_id.unwrap().clone())).to_bech32(bech32_hrp.clone())),
+                                    address: Some(Address::Nft(NftAddress::new(issuer_nft_id.unwrap())).to_bech32(bech32_hrp.clone())),
                                     sender: Some(address.clone()),
                                     metadata: None,
                                     tag: Some(json["BodyName"].to_string().as_bytes().to_vec()),
@@ -182,7 +182,7 @@ impl TangleInterpreter {
                 .unwrap()
                 .block_on(async move {
                     self.remove_already_existing(&mut local_queue).await;
-                    if self.queue.len() > 0 {
+                    if !self.queue.is_empty() {
                         debug!("Queue not empty -> attaching");
                         self.attach_nft(local_queue).await;
                     }
@@ -217,7 +217,7 @@ impl TangleInterpreter {
         if initial_queue_len != queue.len() {
             info!("Already existing found -> Before pruning: {} After pruning: {}",initial_queue_len,queue.len());
         }
-        return duplicates;
+        duplicates
     }
 
     //TODO Maybe change it to vec<Transaction> sp the multiple transactions can be processed
@@ -227,7 +227,7 @@ impl TangleInterpreter {
         for nfts in nft_options.chunks(30) {
             last_transaction = self.attach_nft_recursive(nfts.to_vec(), 0).await
         }
-        return last_transaction;
+        last_transaction
     }
 
     #[async_recursion]
@@ -295,7 +295,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
     let mut node_url = settings.iota_settings.base_url.clone();
     let port = settings.iota_settings.port.to_string();
 
-    node_url.push_str(":");
+    node_url.push(':');
     node_url.push_str(port.as_str());
 
     info!("Using URL:{}", &node_url);
@@ -337,7 +337,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                     info!("[NFTS Count: {}]",balance.nfts.len());
                     info!("[Req. storage deposit (basic): {}]",balance.required_storage_deposit.basic());
 
-                    return account;
+                    account
                 })
         }
         Err(err) => {
@@ -377,12 +377,12 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         }
     };
 
-    let account_balance: AccountBalance = tokio::runtime::Builder::new_current_thread()
+    let _account_balance: AccountBalance = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .unwrap()
         .block_on(async {
-            return account.sync(None).await.unwrap();
+            account.sync(None).await.unwrap()
         });
 
     //get address one time so it doesn't have to be created each time
@@ -394,7 +394,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
             let address = account.addresses().await.unwrap()[0].address().to_bech32();
             debug!("{}", &address);
             info!("Address: {}",&address);
-            return address;
+            address
         });
 
     let bech32_hrp = tokio::runtime::Builder::new_current_thread()
@@ -402,7 +402,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .build()
         .expect("Failed creating addresses")
         .block_on(async {
-            return account.client().get_bech32_hrp().await.unwrap();
+            account.client().get_bech32_hrp().await.unwrap()
         });
 
     info!("Bech32: {}",&bech32_hrp);

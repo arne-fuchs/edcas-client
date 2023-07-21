@@ -24,20 +24,18 @@ pub fn initialize(settings: Arc<Settings>) -> JournalReader{
             Ok(flag) => {
                 if flag == 0 {
                     break;
-                }else {
-                    if !line.eq("") {
-                        let json_result = json::parse(&line);
-                        match json_result {
-                            Ok(json) => {
-                                let event = json["event"].as_str().unwrap();
-                                if event == "Shutdown" {
-                                    debug!("\n\nReached Shutdown -> looking for newer journals\n");
-                                    reader = get_journal_log_by_index(settings.journal_reader_settings.journal_directory.clone(),0)
-                                }
+                }else if !line.eq("") {
+                    let json_result = json::parse(&line);
+                    match json_result {
+                        Ok(json) => {
+                            let event = json["event"].as_str().unwrap();
+                            if event == "Shutdown" {
+                                debug!("\n\nReached Shutdown -> looking for newer journals\n");
+                                reader = get_journal_log_by_index(settings.journal_reader_settings.journal_directory.clone(),0)
                             }
-                            Err(err) => {
-                                error!("Couldn't parse json: {}",err)
-                            }
+                        }
+                        Err(err) => {
+                            error!("Couldn't parse json: {}",err)
                         }
                     }
                 }
@@ -69,28 +67,26 @@ impl JournalReader {
                     //debug!("\n\nReached EOF -> increasing index and reading older journals\n");
                     //self.index = self.index + 1;
                     //self.reader = get_journal_log_by_index(self.directory_path.clone(),self.index.clone())
-                }else {
-                    if !line.eq("") {
-                        let json_result = json::parse(&line);
-                        match json_result {
-                            Ok(json) => {
-                                let event = json["event"].as_str().unwrap();
-                                if event == "Shutdown" {
-                                    match self.settings.journal_reader_settings.action_at_shutdown_signal {
-                                        ActionAtShutdownSignal::Exit => {process::exit(0);}
-                                        ActionAtShutdownSignal::Nothing => {}
-                                        ActionAtShutdownSignal::Continue => {
-                                            debug!("\n\nReached Shutdown -> increasing index and reading older journals\n");
-                                            self.index = self.index + 1;
-                                            self.reader = get_journal_log_by_index(self.settings.journal_reader_settings.journal_directory.clone(),self.index.clone())
-                                        }
+                }else if !line.eq("") {
+                    let json_result = json::parse(&line);
+                    match json_result {
+                        Ok(json) => {
+                            let event = json["event"].as_str().unwrap();
+                            if event == "Shutdown" {
+                                match self.settings.journal_reader_settings.action_at_shutdown_signal {
+                                    ActionAtShutdownSignal::Exit => {process::exit(0);}
+                                    ActionAtShutdownSignal::Nothing => {}
+                                    ActionAtShutdownSignal::Continue => {
+                                        debug!("\n\nReached Shutdown -> increasing index and reading older journals\n");
+                                        self.index += 1;
+                                        self.reader = get_journal_log_by_index(self.settings.journal_reader_settings.journal_directory.clone(),self.index)
                                     }
                                 }
-                                journal_bus.broadcast(json);
                             }
-                            Err(err) => {
-                                error!("Couldn't parse json: {}",err)
-                            }
+                            journal_bus.broadcast(json);
+                        }
+                        Err(err) => {
+                            error!("Couldn't parse json: {}",err)
                         }
                     }
                 }
@@ -113,7 +109,7 @@ fn get_journal_log_by_index(mut directory_path: String, index: usize) -> BufRead
     for file in directory {
         let dir_entry: DirEntry = file.unwrap();
         let file_name: String = dir_entry.file_name().into_string().unwrap().to_owned();
-        let split_file_name = file_name.split(".");
+        let split_file_name = file_name.split('.');
         let name_parts: Vec<&str> = split_file_name.collect::<Vec<&str>>();
 
         if name_parts[&name_parts.len()-1] == "log" {

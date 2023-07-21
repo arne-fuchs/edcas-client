@@ -144,7 +144,7 @@ impl System {
 
         if !self.body_count.eq("N/A") {
             ui.add(egui::ProgressBar::new((&self.body_list.len().to_f64() / (&self.body_count.parse::<f64>().unwrap() + &self.non_body_count.parse::<f64>().unwrap())) as f32)
-                .text(&self.body_list.len().to_string().add("/").add((&self.body_count.parse::<f64>().unwrap() + &self.non_body_count.parse::<f64>().unwrap()).to_string().as_str()))
+                .text(self.body_list.len().to_string().add("/").add((&self.body_count.parse::<f64>().unwrap() + &self.non_body_count.parse::<f64>().unwrap()).to_string().as_str()))
             );
         }
         ui.end_row();
@@ -176,7 +176,7 @@ impl System {
     }
 
     pub fn insert_body(&mut self, body: Box<dyn BodyImplementation>) -> usize {
-        let id = body.get_id().clone();
+        let id = body.get_id();
         self.body_list.push(body);
 
         self.body_list.sort_by(|body_a, body_b| {
@@ -188,7 +188,7 @@ impl System {
                 return i;
             }
         }
-        return 0;
+        0
     }
 }
 

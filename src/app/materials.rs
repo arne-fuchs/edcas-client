@@ -51,16 +51,16 @@ pub struct Material {
 }
 
 impl App for MaterialState {
-    fn update(&mut self, ctx: &Context, frame: &mut Frame) {
+    fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         let Self {
-            raw, manufactured, encoded, showing,search
+            raw, manufactured, encoded, showing: _,search: _
         } = self;
 
-        print_material_info_window_if_available(&mut self.showing, &ctx);
+        print_material_info_window_if_available(&mut self.showing, ctx);
 
 
         egui::CentralPanel::default()
-            .show(&ctx, |ui| {
+            .show(ctx, |ui| {
                 ui.horizontal_top(|ui|{
                     ui.label("Search: ");
                     ui.text_edit_singleline(&mut self.search);
@@ -68,17 +68,17 @@ impl App for MaterialState {
                 egui::ScrollArea::vertical().show(ui, |ui| {
                     egui::Grid::new("inventory_grid")
                         .num_columns(3)
-                        .min_col_width(ui.available_width() / 3 as f32)
-                        .max_col_width(ui.available_width() / 3 as f32)
+                        .min_col_width(ui.available_width() / 3_f32)
+                        .max_col_width(ui.available_width() / 3_f32)
                         .striped(true)
                         .show(ui, |ui| {
                             ui.label("Encoded");
                             ui.label("Manufactured");
                             ui.label("Raw");
                             ui.end_row();
-                            draw_materials(&mut self.showing, ui, &encoded,&self.search);
-                            draw_materials(&mut self.showing, ui, &manufactured,&self.search);
-                            draw_materials(&mut self.showing, ui, &raw,&self.search);
+                            draw_materials(&mut self.showing, ui, encoded,&self.search);
+                            draw_materials(&mut self.showing, ui, manufactured,&self.search);
+                            draw_materials(&mut self.showing, ui, raw,&self.search);
                             ui.end_row();
                         });
                 });
@@ -90,24 +90,24 @@ fn draw_materials(showing: &mut Option<Material>, ui: &mut Ui, materials: &HashM
     ui.vertical(|ui| {
         let mut en_iter = materials.iter();
         let mut option_material = en_iter.next();
-        while !option_material.is_none() {
+        while option_material.is_some() {
             let material = option_material.unwrap().1;
             if material.name_localised.to_lowercase().contains(&search.to_lowercase()) || material.name.to_lowercase().contains(&search.to_lowercase()){
                 ui.vertical(|ui| {
-                    ui.vertical_centered(|mut ui| {
+                    ui.vertical_centered(|ui| {
                         if ui.button(material.get_name()).clicked() {
                             let _ = showing.replace(material.clone());
                         }
                         let mut percentage = 0f32;
                         if material.maximum != 0 {
-                            percentage = (material.count as f32 / material.maximum as f32) as f32;
+                            percentage = material.count as f32 / material.maximum as f32;
                         }
                         let color = convert_color(percentage);
                         let _ = egui::ProgressBar::new(percentage)
                             .text(format!("{}/{}", material.count, material.maximum))
                             .fill(Color32::from_rgb(color.0, color.1, color.2))
                             .desired_width(ui.available_width() / 1.2)
-                            .ui(&mut ui);
+                            .ui(ui);
                     });
                 });
                 ui.separator();
@@ -140,25 +140,25 @@ pub fn print_material_info_window_if_available(showing: &mut Option<Material>, c
                 .collapsible(false)
                 .resizable(true)
                 .default_size(vec2(ctx.available_rect().width()/1.1, 600f32))
-                .show(&ctx, |ui| {
+                .show(ctx, |ui| {
                     egui::Grid::new("materials_description")
                         .num_columns(2)
                         .max_col_width(ui.available_width() / 1.3)
                         .show(ui, |ui| {
                             ui.label(&material.description);
-                            ui.vertical(|mut ui| {
+                            ui.vertical(|ui| {
                                 ui.label(format!("Grade: {}", &material.grade));
                                 ui.label(format!("Category: {}", &material.category));
                                 let mut percentage = 0f32;
                                 if material.maximum != 0 {
-                                    percentage = (material.count as f32 / material.maximum as f32) as f32;
+                                    percentage = material.count as f32 / material.maximum as f32;
                                 }
                                 let color = convert_color(percentage);
                                 let _ = egui::ProgressBar::new(percentage)
                                     .text(format!("{}/{}", material.count, material.maximum))
                                     .fill(Color32::from_rgb(color.0, color.1, color.2))
                                     .desired_width(ui.available_width() / 1.2)
-                                    .ui(&mut ui);
+                                    .ui(ui);
                             });
                         });
 

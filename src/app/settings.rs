@@ -187,7 +187,7 @@ impl Default for Settings {
         let mut some_client = None;
         if json["iota"]["allow-share-data"].as_bool().unwrap_or(false) {
             let mut node_url = json["iota"]["base-url"].as_str().unwrap_or("https://tangle.paesserver.de").to_string();
-            node_url.push_str(":");
+            node_url.push(':');
             node_url.push_str(json["iota"]["port"].as_str().unwrap_or("443"));
             some_client = Some(Client::builder()
                 .with_node(node_url.as_str()).unwrap()
@@ -453,7 +453,7 @@ impl App for Settings {
                         if self.graphic_editor_settings.show_editor {
                             Window::new("Editor")
                                 .fixed_size(vec2(800f32, 600f32))
-                                .show(&ctx, |ui| {
+                                .show(ctx, |ui| {
                                     egui::Grid::new("preset_buttons")
                                         .show(ui, |ui| {
                                             ui.hyperlink_to(

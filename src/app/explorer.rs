@@ -37,10 +37,8 @@ impl Explorer {
                     .max_col_width(200.0)
                     .show(ui, |ui| {
                         ui.with_layout(Layout::left_to_right(Align::RIGHT), |ui| {
-                            if ui.button("<-").clicked() {
-                                if self.index != 0 {
-                                    self.index = self.index - 1;
-                                }
+                            if ui.button("<-").clicked() && self.index != 0 {
+                                self.index -= 1;
                             }
                         });
 
@@ -49,10 +47,8 @@ impl Explorer {
                         });
 
                         ui.with_layout(Layout::left_to_right(Align::LEFT), |ui| {
-                            if ui.button("->").clicked() {
-                                if self.index + 1 < self.systems.len() {
-                                    self.index = self.index + 1;
-                                }
+                            if ui.button("->").clicked() && self.index + 1 < self.systems.len() {
+                                self.index += 1;
                             }
                         });
                         ui.add_space(ui.available_size_before_wrap().x);
@@ -82,7 +78,7 @@ impl Explorer {
                                 }
                                 if !found {
                                     warn!("Planet couldn't be sorted in in body tree: {}",body.get_name());
-                                    let id = ui.make_persistent_id(&body.get_name());
+                                    let id = ui.make_persistent_id(body.get_name());
                                     let entry: CollapsingState =
                                         CollapsingState::
                                         load_with_default_open(ui.ctx(), id, true);
@@ -103,7 +99,7 @@ impl Explorer {
                     .min_col_width(200.0)
                     .max_col_width(200.0)
                     .show(ui, |ui| {
-                        match self.systems.get(self.systems.len() - 1) {
+                        match self.systems.last() {
                             None => {}
                             Some(system) => {
                                 match system.body_list.get(system.index) {
@@ -139,7 +135,7 @@ fn build_tree(body_list: &mut Vec<Box<dyn BodyImplementation>>,system_index: &mu
 
         //If it is in the parents list, this body has already been drawn
         if largest_parent_id == current_parent.id && !parent_ids.contains(&largest_parent_id){
-            let id = ui.make_persistent_id(&body_list[i].get_name());
+            let id = ui.make_persistent_id(body_list[i].get_name());
             let entry: CollapsingState =
                 CollapsingState::
                 load_with_default_open(ui.ctx(), id, true);
@@ -168,5 +164,5 @@ fn build_tree(body_list: &mut Vec<Box<dyn BodyImplementation>>,system_index: &mu
             }
         }
     }
-    return finished_bodies;
+    finished_bodies
 }

@@ -82,7 +82,7 @@ pub struct Planet {
 
 impl BodyImplementation for Planet {
     fn print_side_panel_information(&self, ui: &mut Ui) {
-        let profit = get_profit_from_body(get_body_class_from_body(&self), self.was_discovered);
+        let profit = get_profit_from_body(get_body_class_from_body(self), self.was_discovered);
         ui.heading(&self.body_name);
         ui.end_row();
         ui.label("Class");
@@ -281,7 +281,6 @@ pub fn get_body_class_from_body(planet: &Planet) -> BodyClass {
     match planet.planet_class.as_str() {
         "Ammonia world" => AmmoniaWorld,
         "Earthlike body" => EarthlikeWorld,
-        //TODO Create water world terraformable icon
         "Water world" => {
             if planet.terraform_state == "Terraformable"{
                 return WaterWorldTerraformable;
@@ -333,7 +332,7 @@ Returns tupel of profit
 **/
 //TODO Put this in a configurable file
 pub fn get_profit_from_body(class: BodyClass, discovered: bool) -> (i32, i32){
-    return match class {
+    match class {
         AmmoniaWorld => { if discovered { (143463, 1724965) } else { (373004, 597762) } }
         EarthlikeWorld => { if discovered { (270290, 1126206) } else { (702753, 3249900) } }
         WaterWorld => { if discovered { (99747, 415613) } else { (259343, 1199337) } }

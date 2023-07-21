@@ -29,7 +29,7 @@ pub struct Prospector {
 impl App for Mining {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         let Self {
-            prospectors,cargo
+            prospectors,cargo: _
         } = self;
 
         egui::SidePanel::left("prospect_data")
@@ -61,7 +61,7 @@ impl App for Mining {
                                             ui.end_row();
                                         });
 
-                                    let len = prospector.materials.len().clone();
+                                    let len = prospector.materials.len();
                                     egui::Grid::new(&prospector.timestamp)
                                         .num_columns(len)
                                         .striped(true)
@@ -75,9 +75,9 @@ impl App for Mining {
                                                 } else {
                                                     label.push_str(&material.name_localised);
                                                 }
-                                                label.push_str("\n");
+                                                label.push('\n');
                                                 label.push_str(format!("{}%",material.proportion as u64).as_str());
-                                                label.push_str("\n");
+                                                label.push('\n');
                                                 label.push_str(format!("{} Credits/Unit",(material.buy_price as u64).to_formatted_string(&Locale::en)).as_str());
                                                 ui.label(label);
                                             }

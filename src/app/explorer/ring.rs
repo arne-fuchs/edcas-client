@@ -57,15 +57,15 @@ impl BodyImplementation for Ring{
 
         if !self.ring_signals.is_empty(){
             for signal in &self.ring_signals{
-                body_name.push_str("|");
+                body_name.push('|');
                 body_name.push_str(&signal.count.to_string());
-                body_name.push_str(" ");
+                body_name.push(' ');
                 let mut signal_name = signal.type_localised.clone();
                 if &signal.type_localised.to_lowercase() == "null"{
                     signal_name = signal.r#type.clone();
                 }
                 signal_name.replace_range(signal_name.len()/2..signal_name.len(),"");
-                signal_name.push_str(".");
+                signal_name.push('.');
                 body_name.push_str(signal_name.as_str());
             }
         }
