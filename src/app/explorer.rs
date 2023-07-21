@@ -1,5 +1,5 @@
 use std::sync::Arc;
-use eframe::{egui, Frame};
+use eframe::{App, egui, Frame};
 use eframe::egui::{Align, Layout};
 use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
 use log::warn;
@@ -22,8 +22,8 @@ pub struct Explorer {
     pub settings: Arc<Settings>,
 }
 
-impl Explorer {
-    pub fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
+impl App for Explorer {
+    fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         if self.systems.len() > self.index {
             egui::SidePanel::left("system_data").show(ctx, |ui| {
                 self.systems[self.index].draw_system_info(ui);
@@ -77,7 +77,6 @@ impl Explorer {
                                     }
                                 }
                                 if !found {
-                                    warn!("Planet couldn't be sorted in in body tree: {}",body.get_name());
                                     let id = ui.make_persistent_id(body.get_name());
                                     let entry: CollapsingState =
                                         CollapsingState::

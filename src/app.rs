@@ -44,208 +44,32 @@ pub struct EliteRustClient {
     pub timestamp: String,
 }
 
+impl EliteRustClient {
+    pub fn update_values(&mut self) {
+        match self.journal_log_bus_reader.try_recv() {
+            Ok(json) => {
+                self.timestamp = json["timestamp"].to_string();
+                journal_interpreter::interpret_json(json.clone(), &mut self.explorer, &mut self.materials, &mut self.mining, Arc::new(self.settings.clone()));
+            }
+            Err(_) => {}
+        }
+        {
+            self.cargo_reader.lock().unwrap().run();
+        }
+    }
+}
+
 impl Default for EliteRustClient {
     fn default() -> Self {
         let settings = settings::Settings::default();
         let settings_pointer = Arc::new(settings.clone());
-        let current_dir = env::current_dir().unwrap();
-        let logs_dir = current_dir.join("logs");
-        let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H-%M"));
-
-        if let Err(err) = fs::create_dir_all(&logs_dir) {
-            println!("Error while creating directory: {:?}", err);
-        }
-
-        let log_path = logs_dir.join(&log_filename);
-        let path = log_path.strip_prefix(&current_dir).unwrap_or(&log_path);
-
-        if let Ok(entries) = fs::read_dir(&logs_dir) {
-            let mut log_files: Vec<PathBuf> = entries
-                .filter_map(|entry| entry.ok().map(|e| e.path()))
-                .collect();
-
-            log_files.sort_by(|a, b| b.metadata().unwrap().modified().unwrap().cmp(&a.metadata().unwrap().modified().unwrap()));
-
-            let logs_to_keep = 5;
-            if log_files.len() > logs_to_keep {
-                for log_file in log_files.into_iter().skip(logs_to_keep) {
-                    if let Err(err) = fs::remove_file(log_file) {
-                        println!("Error deleting log file: {:?}", err);
-                    }
-                }
-            }
-        }
-
-        println!("Log file: {:?}",path.clone());
-
-        let level = log::LevelFilter::from_str(settings_pointer.log_level.as_str()).unwrap();
-
-        println!("Log Level: {:?}",level);
-
-        let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
-            .name(path.to_str().unwrap())
-            .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest","tree_builder"])
-            .level_filter(level);
-
-        let _logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
-            .name(path.to_str().unwrap())
-            .target_exclusions(&["h2", "hyper", "rustls"])
-            .level_filter(level);
-
-        let config = fern_logger::LoggerConfig::build()
-            .with_output(logger_output_config)
-            .finish();
-        fern_logger::logger_init(config).unwrap();
+        initialize_logger(settings_pointer.clone());
 
         info!("Starting...");
         info!("Current directory: {:?}", env::current_dir().unwrap());
         info!("Reading materials");
 
-        let mut materials = MaterialState::default();
-        let materials_content = fs::read_to_string("materials.json").unwrap();
-        let materials_json = json::parse(materials_content.as_str()).unwrap();
-
-        let encoded_array = &materials_json["encoded"];
-        for i in 0..encoded_array.len(){
-            let encoded = &encoded_array[i];
-
-            let mut locations: Vec<String> = vec![];
-            let locations_array = &encoded["locations"];
-            for j in 0..locations_array.len(){
-                locations.push(locations_array[j].to_string())
-            }
-
-            let mut sources: Vec<String> = vec![];
-            let sources_array = &encoded["sources"];
-            for j in 0..sources_array.len(){
-                sources.push(sources_array[j].to_string())
-            }
-
-            let mut engineering: Vec<String> = vec![];
-            let engineering_array = &encoded["engineering"];
-            for j in 0..engineering_array.len(){
-                engineering.push(engineering_array[j].to_string())
-            }
-
-            let mut synthesis: Vec<String> = vec![];
-            let synthesis_array = &encoded["synthesis"];
-            for j in 0..synthesis_array.len(){
-                synthesis.push(synthesis_array[j].to_string())
-            }
-
-
-            materials.encoded.insert(
-                encoded["name"].to_string(),
-                Material{
-                    name: encoded["name"].to_string(),
-                    name_localised: encoded["name_localised"].to_string(),
-                    grade: encoded["grade"].as_u64().unwrap(),
-                    count: 0,
-                    maximum: encoded["maximum"].as_u64().unwrap(),
-                    category: encoded["category"].to_string(),
-                    locations,
-                    sources,
-                    engineering,
-                    synthesis,
-                    description: encoded["description"].to_string(),
-                }
-            );
-        }
-
-        let manufactured_array = &materials_json["manufactured"];
-        for i in 0..manufactured_array.len(){
-            let manufactured = &manufactured_array[i];
-
-            let mut locations: Vec<String> = vec![];
-            let locations_array = &manufactured["locations"];
-            for j in 0..locations_array.len(){
-                locations.push(locations_array[j].to_string())
-            }
-
-            let mut sources: Vec<String> = vec![];
-            let sources_array = &manufactured["sources"];
-            for j in 0..sources_array.len(){
-                sources.push(sources_array[j].to_string())
-            }
-
-            let mut engineering: Vec<String> = vec![];
-            let engineering_array = &manufactured["engineering"];
-            for j in 0..engineering_array.len(){
-                engineering.push(engineering_array[j].to_string())
-            }
-
-            let mut synthesis: Vec<String> = vec![];
-            let synthesis_array = &manufactured["synthesis"];
-            for j in 0..synthesis_array.len(){
-                synthesis.push(synthesis_array[j].to_string())
-            }
-
-
-            materials.manufactured.insert(
-                manufactured["name"].to_string(),
-                Material{
-                    name: manufactured["name"].to_string(),
-                    name_localised: manufactured["name_localised"].to_string(),
-                    grade: manufactured["grade"].as_u64().unwrap(),
-                    count: 0,
-                    maximum: manufactured["maximum"].as_u64().unwrap(),
-                    category: manufactured["category"].to_string(),
-                    locations,
-                    sources,
-                    engineering,
-                    synthesis,
-                    description: manufactured["description"].to_string(),
-                }
-            );
-        }
-
-        let raw_array = &materials_json["raw"];
-        for i in 0..raw_array.len(){
-            let raw = &raw_array[i];
-
-            let mut locations: Vec<String> = vec![];
-            let locations_array = &raw["locations"];
-            for j in 0..locations_array.len(){
-                locations.push(locations_array[j].to_string())
-            }
-
-            let mut sources: Vec<String> = vec![];
-            let sources_array = &raw["sources"];
-            for j in 0..sources_array.len(){
-                sources.push(sources_array[j].to_string())
-            }
-
-            let mut engineering: Vec<String> = vec![];
-            let engineering_array = &raw["engineering"];
-            for j in 0..engineering_array.len(){
-                engineering.push(engineering_array[j].to_string())
-            }
-
-            let mut synthesis: Vec<String> = vec![];
-            let synthesis_array = &raw["synthesis"];
-            for j in 0..synthesis_array.len(){
-                synthesis.push(synthesis_array[j].to_string())
-            }
-
-
-            materials.raw.insert(
-                raw["name"].to_string(),
-                Material{
-                    name: raw["name"].to_string(),
-                    name_localised: raw["name_localised"].to_string(),
-                    grade: raw["grade"].as_u64().unwrap(),
-                    count: 0,
-                    maximum: raw["maximum"].as_u64().unwrap(),
-                    category: raw["category"].to_string(),
-                    locations,
-                    sources,
-                    engineering,
-                    synthesis,
-                    description: raw["description"].to_string(),
-                }
-            );
-        }
-
+        let materials = MaterialState::default();
 
         info!("Starting threads");
         info!("Starting Journal reader");
@@ -312,36 +136,32 @@ pub enum State {
 
 impl App for EliteRustClient {
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
-        let Self {
-            news, about, explorer, state, journal_log_bus_reader, materials: inventory,settings,mining,cargo_reader,timestamp
-        } = self;
-
-        if !settings.appearance_settings.applied {
+        if !self.settings.appearance_settings.applied {
 
             let mut style: egui::Style = (*ctx.style()).clone();
             for (text_style, font_id) in style.text_styles.iter_mut() {
                 match text_style {
                     TextStyle::Small => {
-                        if  settings.appearance_settings.font_id.size > 4.0 {
-                            font_id.size = settings.appearance_settings.font_id.size - 4.0;
+                        if  self.settings.appearance_settings.font_id.size > 4.0 {
+                            font_id.size = self.settings.appearance_settings.font_id.size - 4.0;
                         }else {
-                            font_id.size = settings.appearance_settings.font_id.size;
+                            font_id.size = self.settings.appearance_settings.font_id.size;
                         }
 
                     }
                     TextStyle::Heading => {
-                        font_id.size = settings.appearance_settings.font_id.size + 4.0;
+                        font_id.size = self.settings.appearance_settings.font_id.size + 4.0;
                     }
                     _ => {
-                        font_id.size = settings.appearance_settings.font_id.size;
-                        font_id.family = settings.appearance_settings.font_id.family.clone();
+                        font_id.size = self.settings.appearance_settings.font_id.size;
+                        font_id.family = self.settings.appearance_settings.font_id.family.clone();
                     }
                 }
             }
             ctx.set_style(style);
-            settings.appearance_settings.font_size = settings.appearance_settings.font_id.size;
-            settings.appearance_settings.font_style = settings.appearance_settings.font_id.family.to_string();
-            settings.appearance_settings.applied = true;
+            self.settings.appearance_settings.font_size = self.settings.appearance_settings.font_id.size;
+            self.settings.appearance_settings.font_style = self.settings.appearance_settings.font_id.family.to_string();
+            self.settings.appearance_settings.applied = true;
         }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -349,33 +169,33 @@ impl App for EliteRustClient {
             egui::menu::bar(ui, |menu_bar| {
                 let news_button = menu_bar.button("News");
                 if news_button.clicked() {
-                    *state = News;
+                    self.state = News;
                 }
                 let explorer_button =  menu_bar.button("Explorer");
                 if explorer_button.clicked() {
-                    *state = Explorer;
+                    self.state = Explorer;
                 }
                 let mining_button = menu_bar.button("Mining");
                 if mining_button.clicked() {
-                    *state = Mining;
+                    self.state = Mining;
                 }
                 let materials_button = menu_bar.button("Materials");
                 if materials_button.clicked() {
-                    *state = MaterialInventory;
+                    self.state = MaterialInventory;
                 }
                 let settings_button = menu_bar.button("Settings");
                 if settings_button.clicked() {
-                    *state = Settings;
+                    self.state = Settings;
                 }
                 let about_button = menu_bar.button("About");
                 if about_button.clicked() {
-                    *state = About;
+                    self.state = About;
                 }
 
                 menu_bar.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
-                    ui.label(timestamp.as_str());
+                    ui.label(self.timestamp.as_str());
                 });
-                match state{
+                match self.state{
                     News => {news_button.highlight();}
                     About => {about_button.highlight();}
                     Settings => {settings_button.highlight();}
@@ -386,30 +206,76 @@ impl App for EliteRustClient {
             });
         });
 
-        match journal_log_bus_reader.try_recv() {
-            Ok(json) => {
-                self.timestamp = json["timestamp"].to_string();
-                journal_interpreter::interpret_json(json.clone(), explorer,  inventory, mining,Arc::new(settings.clone()));
-            }
-            Err(_) => {}
-        }
-        {
-            cargo_reader.lock().unwrap().run();
-        }
-
+        self.update_values();
 
         egui::CentralPanel::default().show(ctx, |_ui| {
             match self.state {
-                News => { news.update(ctx,frame) }
-                About => { about.update(ctx, frame) }
-                Settings => { settings.update(ctx,frame) }
-                Explorer => { explorer.update(ctx,frame) }
-                MaterialInventory => { inventory.update(ctx, frame) }
-                Mining => { mining.update(ctx,frame) }
+                News => { self.news.update(ctx,frame) }
+                About => { self.about.update(ctx, frame) }
+                Settings => { self.settings.update(ctx,frame) }
+                Explorer => { self.explorer.update(ctx,frame) }
+                MaterialInventory => { self.materials.update(ctx, frame) }
+                Mining => { self.mining.update(ctx,frame) }
             }
         });
         //TODO more efficient way to send updates -> render only if new data comes in?
         //Low prio because performance is okay
         ctx.request_repaint();
     }
+}
+
+fn initialize_logger(settings: Arc<settings::Settings>) {
+    let mut log_directory = env::current_dir().unwrap().join("logs");
+    if std::path::Path::new("/var/log/edcas-client").exists() {
+        log_directory = std::path::Path::new("/var/log/edcas-client").to_path_buf();
+    }else {
+        if let Err(err) = fs::create_dir_all(&log_directory) {
+            println!("Error while creating directory: {:?}", err);
+        }
+    }
+
+    let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H-%M"));
+
+
+    let log_path = log_directory.join(&log_filename);
+    //let log_path = log_file_path_buf.strip_prefix(&log_directory).unwrap_or(&log_file_path_buf);
+
+    if let Ok(entries) = fs::read_dir(&log_directory) {
+        let mut log_files: Vec<PathBuf> = entries
+            .filter_map(|entry| entry.ok().map(|e| e.path()))
+            .collect();
+
+        log_files.sort_by(|a, b| b.metadata().unwrap().modified().unwrap().cmp(&a.metadata().unwrap().modified().unwrap()));
+
+        let logs_to_keep = 5;
+        if log_files.len() > logs_to_keep {
+            for log_file in log_files.into_iter().skip(logs_to_keep) {
+                //println!("Removing old log file: {:?}",&log_file);
+                if let Err(err) = fs::remove_file(log_file) {
+                    println!("Error deleting old log file: {:?}", err);
+                }
+            }
+        }
+    }
+
+    println!("Log file: {:?}", log_path.clone());
+
+    let level = log::LevelFilter::from_str(settings.log_level.as_str()).unwrap();
+
+    println!("New log Level: {:?}",level);
+
+    let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
+        .name(log_path.to_str().unwrap())
+        .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest","tree_builder"])
+        .level_filter(level);
+
+    let _logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
+        .name(log_path.to_str().unwrap())
+        .target_exclusions(&["h2", "hyper", "rustls"])
+        .level_filter(level);
+
+    let config = fern_logger::LoggerConfig::build()
+        .with_output(logger_output_config)
+        .finish();
+    fern_logger::logger_init(config).unwrap();
 }

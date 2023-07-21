@@ -191,7 +191,6 @@ impl BodyImplementation for Planet {
                         }
                     }
                     _ => {
-                        warn!("Icon for string not found: {}", signal.r#type.as_str());
                         if self.settings.icons.get("unknown_signal").unwrap().enabled {
                             ui.label("|");
                             ui.label(&signal.count.to_string());

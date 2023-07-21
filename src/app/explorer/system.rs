@@ -80,7 +80,6 @@ impl System {
                                         ui.label(self.settings.icons.get("human_signal").unwrap().get_richtext());
                                     }
                                     _ => {
-                                        warn!("Icon for string not found: {}", signal.r#type.as_str());
                                         ui.label(&signal.count.to_string());
                                         ui.label(self.settings.icons.get("unknown_signal").unwrap().get_richtext());
                                     }

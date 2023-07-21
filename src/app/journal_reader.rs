@@ -100,8 +100,6 @@ impl JournalReader {
 }
 
 fn get_journal_log_by_index(mut directory_path: String, index: usize) -> BufReader<File> {
-    //TODO Choose path dynamically
-    debug!("{}", &directory_path);
     let directory = fs::read_dir(directory_path.clone()).unwrap();
 
     let mut log_name_date_list: Vec<String> = Vec::new();
@@ -129,8 +127,6 @@ fn get_journal_log_by_index(mut directory_path: String, index: usize) -> BufRead
     directory_path.push_str("/Journal.");
     directory_path.push_str(log_name_date_list[index].to_owned().as_str());
     directory_path.push_str(".01.log");
-
-    debug!("{}", &directory_path);
 
     let journal_log_file = File::open(&directory_path).expect("file not found!");
 

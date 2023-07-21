@@ -11,6 +11,7 @@ use eframe::egui::{Color32, Context, RichText, vec2, Window};
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::epaint::ahash::HashMap;
 use iota_wallet::iota_client::Client;
+use log::warn;
 use serde_json::json;
 
 use crate::app::settings::ActionAtShutdownSignal::{Exit, Continue, Nothing};
@@ -121,15 +122,51 @@ pub struct Settings {
 
 impl Default for Settings {
     fn default() -> Self {
-        let settings_file_result = File::open("settings.json");
-        let mut settings_file = match settings_file_result {
-            Ok(settings_file) => { settings_file }
-            Err(err) => {
-                println!("Couldn't find settings file: {}\n Trying to copy example file...", err);
-                fs::copy("settings-example.json", "settings.json").unwrap();
-                File::open("settings.json").unwrap()
+        let mut settings_file = match env::var("$HOME") {
+            Ok(home) => {
+                match File::open(format!("{}/.config/edcas-client/settings.json",home)) {
+                    Ok(file) => {
+                        file
+                    }
+                    Err(err) => {
+                        warn!("{}",err);
+                        match fs::create_dir_all(format!("{}/.config/edcas-client",home)) {
+                            Ok(_) => {
+                                fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
+                                File::open(format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't open settings file in $HOME/.config/edcas-client/")
+                            }
+                            Err(err) => {
+                                warn!("{}",err);
+                                match File::open("settings.json"){
+                                    Ok(file) => {
+                                        file
+                                    }
+                                    Err(err) => {
+                                        warn!("{}",err);
+                                        fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings-exmaple.json");
+                                        File::open("settings.json").unwrap()
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                }
+            }
+            Err(_) => {
+                match File::open("settings.json"){
+                    Ok(file) => {
+                        file
+                    }
+                    Err(err) => {
+                        warn!("{}",err);
+                        fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings-exmaple.json");
+                        File::open("settings.json").unwrap()
+                    }
+                }
             }
         };
+
         let mut json_string: String = String::from("");
         settings_file.read_to_string(&mut json_string).unwrap();
         let json = json::parse(&json_string).unwrap();
@@ -204,11 +241,9 @@ impl Default for Settings {
 
         match json["appearance"]["font-family"].as_str().unwrap_or("Proportional") {
             "Monospace" => {
-                println!("Mono");
                 font_id = egui::FontId::monospace(font_size);
             }
             "Proportional" | _ => {
-                println!("Prop");
                 font_id = egui::FontId::proportional(font_size);
             }
         }
