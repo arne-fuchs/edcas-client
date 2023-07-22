@@ -54,6 +54,7 @@ makepkg -i
 ```
 ## Build Requirements
 
+* Around 10 GB of disk space required
 * gcc 12 required
 * <a href=https://www.rust-lang.org/tools/install >Rust with cargo</a>
 
