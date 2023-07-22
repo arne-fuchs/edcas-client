@@ -110,7 +110,7 @@
   "iota": {
     "allow-share-data": false,
     "attempts": 4,
-    "base-url": "https://tangle.paesserver.de",
+    "base-url": "https://api.paesserver.de",
     "local-pow": false,
     "password": "CoUBZ9W6eRVpTKEYrgj3",
     "port": 443,

@@ -308,20 +308,25 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .with_node(node_url.as_str()).unwrap();
 
     //create stronghold account
-    let wallet_file_result = match env::var("HOME") {
+    let mut wallet_path = PathBuf::from("wallet.stronghold");
+    let mut storage_path = "walletdb".to_string();
+    match env::var("HOME") {
         Ok(home) => {
-            let mut result = File::open(format!("{}/.local/share/edcas-client/wallet.stronghold",home));
-
-            if result.is_err() {
-                result = File::open("wallet.stronghold");
+            match fs::create_dir_all(format!("{}/.local/share/edcas-client/walletdb",home)) {
+                Ok(_) => {
+                    storage_path = format!("{}/.local/share/edcas-client/walletdb",home);
+                    wallet_path = PathBuf::from(format!("{}/.local/share/edcas-client/wallet.stronghold",home));
+                }
+                Err(_) => {}
             }
+        }
+        Err(_) => {}
+    }
 
-            result
-        }
-        Err(_) => {
-            File::open("wallet.stronghold")
-        }
-    };
+    let wallet_file_result = File::open(&wallet_path);
+
+    info!("Wallet path: {:?}", &wallet_path);
+    info!("Wallet storage path: {}", &storage_path);
 
     info!("Existing wallet found?: {}",wallet_file_result.is_ok());
 
@@ -334,9 +339,15 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                 .build()
                 .unwrap()
                 .block_on(async {
+                    let secret_manager = StrongholdSecretManager::builder()
+                        .password(settings.iota_settings.password.as_str())
+                        .build(&wallet_path).unwrap();
+
                     // Create the account manager
                     let manager = AccountManager::builder()
                         .with_client_options(client_options)
+                        .with_secret_manager(iota_wallet::secret::SecretManager::Stronghold(secret_manager))
+                        .with_storage_path(storage_path.as_str())
                         .with_coin_type(SHIMMER_COIN_TYPE)
                         .finish().await.unwrap();
 
@@ -361,24 +372,6 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
             debug!("{}", &err);
             warn!("{}",err);
             info!("Stronghold file not found -> creating");
-
-            let mut wallet_path = PathBuf::from("wallet.stronghold");
-            let mut storage_path = "".to_string();
-            match env::var("HOME") {
-                Ok(home) => {
-                    match fs::create_dir_all(format!("{}/.local/share/edcas-client",home)) {
-                        Ok(_) => {
-                            storage_path = format!("{}/.local/share/edcas-client",home);
-                            wallet_path = PathBuf::from(format!("{}/.local/share/edcas-client/wallet.stronghold",home));
-                        }
-                        Err(_) => {}
-                    }
-                }
-                Err(_) => {}
-            }
-
-            info!("Wallet storage path: {:?}", &wallet_path);
-            info!("Wallet storage path: {}", &storage_path);
 
             tokio::runtime::Builder::new_current_thread()
                 .enable_all()
