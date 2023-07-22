@@ -596,14 +596,22 @@ impl App for Settings {
                     });
 
                 ui.separator();
-                ui.heading("EDCAS Network");
+                let info_ui = |ui: &mut egui::Ui| {
+                    ui.heading("What data is being shared?");
+                    ui.label("Because of the early development, many things can change between releases.\n\
+                    So currently you have to assume that potentially everything will be shared over the EDCAS network and therefore is being available in the internet \n\
+                    what is being written in the journal log.\n\
+                    If you do not want that, please leave this function disabled.\n\
+                    Keep in mind, that your experience might decrease if you leave this disabled.");
+                };
+                ui.heading("EDCAS Network").on_hover_ui(info_ui);
                 egui::Grid::new("network_grid")
                     .num_columns(2)
                     .spacing([60.0, 5.0])
                     .min_col_width(300.0)
                     .striped(true)
                     .show(ui, |ui| {
-                        ui.label("Allow to share journal log data:");
+                        ui.label("Allow to share journal log data:").on_hover_ui(info_ui);
                         ui.checkbox(&mut self.iota_settings.allow_share_data, "");
                         ui.end_row();
                         ui.label("Node Url:");
