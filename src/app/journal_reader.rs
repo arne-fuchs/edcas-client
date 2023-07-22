@@ -7,7 +7,7 @@ use std::time::Duration;
 use bus::{Bus};
 use chrono::NaiveDateTime;
 use json::JsonValue;
-use log::{debug, error};
+use log::{debug, error, info};
 use crate::app::settings::{ActionAtShutdownSignal, Settings};
 
 pub struct JournalReader{
@@ -32,7 +32,7 @@ pub fn initialize(settings: Arc<Settings>) -> JournalReader{
                         Ok(json) => {
                             let event = json["event"].as_str().unwrap();
                             if event == "Shutdown" {
-                                debug!("\n\nReached Shutdown -> looking for newer journals\n");
+                                //debug!("\n\nReached Shutdown -> looking for newer journals\n");
                                 sleep(Duration::from_secs(1));
                                 reader = get_journal_log_by_index(settings.journal_reader_settings.journal_directory.clone(),0)
                             }
@@ -49,6 +49,8 @@ pub fn initialize(settings: Arc<Settings>) -> JournalReader{
             }
         };
     }
+
+    info!("Journal reader found new journal -> initializing");
 
     JournalReader{
         reader: get_journal_log_by_index(settings.journal_reader_settings.journal_directory.clone(),0),

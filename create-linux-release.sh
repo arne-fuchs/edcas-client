@@ -46,3 +46,5 @@ mkdir "$folder_name"/DEBIAN
 cp control "$folder_name"/DEBIAN/
 
 dpkg-deb --build edcas-client
+
+rm -rf "$folder_name"

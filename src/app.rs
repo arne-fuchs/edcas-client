@@ -15,7 +15,7 @@ use json::JsonValue;
 use log::info;
 use crate::app::cargo_reader::CargoReader;
 
-use crate::app::materials::{Material, MaterialState};
+use crate::app::materials::MaterialState;
 use crate::app::State::{About, Explorer, MaterialInventory, Mining, News, Settings};
 use crate::egui::Context;
 
@@ -86,6 +86,7 @@ impl Default for EliteRustClient {
             }
         });
         let settings_pointer_clone = settings_pointer.clone();
+        info!("Allow to share data over edcas: {}", settings_pointer.iota_settings.allow_share_data);
         if settings_pointer.iota_settings.allow_share_data {
             info!("Starting Tangle Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
@@ -266,7 +267,7 @@ fn initialize_logger(settings: Arc<settings::Settings>) {
 
     let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
         .name(log_path.to_str().unwrap())
-        .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest","tree_builder"])
+        .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest","tree_builder","html5ever"])
         .level_filter(level);
 
     let _logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()

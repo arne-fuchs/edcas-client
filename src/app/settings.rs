@@ -2,6 +2,7 @@ mod presets;
 
 use std::default::Default;
 use std::{env, fs};
+use std::env::VarError;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
@@ -344,7 +345,7 @@ impl Default for Settings {
                 faucet_url: json["iota"]["faucet-url"].as_str().unwrap_or("https://faucet.paesserver.de").to_string(),
                 local_pow: json["iota"]["local-pow"].as_bool().unwrap_or(false),
                 password: json["iota"]["password"].as_str().unwrap_or("CoUBZ9W6eRVpTKEYrgj3").to_string(),
-                allow_share_data: json["allow-share-data"].as_bool().unwrap_or(false),
+                allow_share_data: json["iota"]["allow-share-data"].as_bool().unwrap_or(false),
             },
             graphic_editor_settings: GraphicEditorSettings {
                 graphics_directory: graphics_directory.clone(),
@@ -528,10 +529,36 @@ impl App for Settings {
                                                     ui.selectable_value(&mut self.graphic_editor_settings.graphic_override_content, presets::get_8gb_plus_preset(), "8Gb+ VRAM");
                                                 });
                                             if ui.button("Load custom preset").clicked() {
-                                                self.graphic_editor_settings.graphic_override_content = fs::read_to_string("custom_graphics_override.xml").unwrap();
+                                                self.graphic_editor_settings.graphic_override_content = match env::var("HOME") {
+                                                    Ok(home) => {
+                                                        match  fs::read_to_string(format!("{}/.local/share/edcas-client/custom_graphics_override.xml",home)) {
+                                                            Ok(file) => {
+                                                                file
+                                                            }
+                                                            Err(_) => {
+                                                                fs::read_to_string("custom_graphics_override.xml").unwrap()
+                                                            }
+                                                        }
+                                                    }
+                                                    Err(_) => {
+                                                        fs::read_to_string("custom_graphics_override.xml").unwrap()
+                                                    }
+                                                }
                                             }
                                             if ui.button("Save as custom preset").clicked() {
-                                                fs::write("custom_graphics_override.xml", self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
+                                                match env::var("HOME") {
+                                                    Ok(home) => {
+                                                        match  fs::write(format!("{}/.local/share/edcas-client/custom_graphics_override.xml",home),self.graphic_editor_settings.graphic_override_content.clone()) {
+                                                            Ok(_) => {}
+                                                            Err(_) => {
+                                                                fs::write("custom_graphics_override.xml", self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
+                                                            }
+                                                        }
+                                                    }
+                                                    Err(_) => {
+                                                        fs::write("custom_graphics_override.xml", self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
+                                                    }
+                                                };
                                             }
                                         });
                                     ui.end_row();
