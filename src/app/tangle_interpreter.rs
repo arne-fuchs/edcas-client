@@ -1,10 +1,10 @@
 use std::{env, fs};
-use std::env::VarError;
 use std::fs::File;
 use std::ops::Add;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
+use std::thread::sleep;
 use std::time::Duration;
 use bus::BusReader;
 use iota_wallet::account::{AccountHandle, SyncOptions};
@@ -21,7 +21,11 @@ use json::JsonValue;
 use log::{debug, error, info, warn};
 use rustc_hex::ToHex;
 use async_recursion::async_recursion;
+use flate2::Compression;
+use flate2::write::ZlibEncoder;
 use iota_wallet::iota_client::block::output::NftId;
+use iota_wallet::iota_client::block::payload::{Payload, TaggedDataPayload};
+use iota_wallet::iota_client::block::payload::Payload::TaggedData;
 use serde_json::{json, Value};
 use crate::app::settings::Settings;
 
@@ -50,11 +54,34 @@ impl TangleInterpreter {
         match bus.recv() {
             Err(_) => {}
             Ok(json) => {
+                let json_clone = json.clone();
                 let event = json["event"].as_str().unwrap();
 
                 info!("Tangle event received: {}", event);
 
                 match event {
+                    _ => {
+                        tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap()
+                            .block_on(async move {
+                                let result = self.account.client().block()
+                                    .with_tag(event.to_uppercase().as_bytes().to_vec())
+                                    .with_data(ZlibEncoder::new(json_clone.to_string().as_bytes().to_vec(),Compression::fast()).finish().unwrap())
+                                    .finish()
+                                    .await;
+
+                                match result {
+                                    Ok(block) => {
+                                        debug!("Block send: {}",block.id());
+                                    }
+                                    Err(err) => {
+                                        error!("Couldn't send block: {:?}", err);
+                                    }
+                                }
+                            });
+                    }
                     "FSDJump" | "Location" => {
                         let irc = generate_irc27_from_json(json.clone());
 
@@ -304,6 +331,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
     info!("Local POW:{}", settings.iota_settings.local_pow);
 
     let client_options = ClientOptions::new()
+        .with_pow_worker_count(1)
         .with_local_pow(settings.iota_settings.local_pow)
         .with_node(node_url.as_str()).unwrap();
 
@@ -434,6 +462,8 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .block_on(async {
             account.client().get_bech32_hrp().await.unwrap()
         });
+
+    assert_eq!(&bech32_hrp, "edcas");
 
     info!("Bech32: {}",&bech32_hrp);
     info!("Done loading wallet");

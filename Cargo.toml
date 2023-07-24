@@ -32,6 +32,7 @@ num-format = "0.4.4"
 enum-map = { version = "2", features = ["serde"] }
 opener = "0.6.1"
 lazy_static = "1.4.0"
+flate2 = { version = "1.0.25", features = ["zlib-ng"], default-features = false }
 
 fern-logger = "0.5.0"
 log = "0.4.17"

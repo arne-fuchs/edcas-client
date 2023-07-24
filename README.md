@@ -61,7 +61,7 @@ makepkg -i
 ### Debian based
 
 ```bash
-sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev libssl git
+sudo apt install cmake cargo pkg-config libasound2-dev libfontconfig1-dev libclang-dev openssl clang build-essential git libudev-dev
 ```
 ### Arch
 

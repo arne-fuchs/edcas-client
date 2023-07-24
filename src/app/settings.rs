@@ -2,7 +2,6 @@ mod presets;
 
 use std::default::Default;
 use std::{env, fs};
-use std::env::VarError;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
