@@ -15,6 +15,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
     //TODO Rings
     debug!("Generate from json: {}",json);
 
+    //"Parents":[{"Planet":5},{"Star":0}]
     let mut parents: Vec<Parent> = vec![];
     for i in 0..json["Parents"].len() {
         let parent = &json["Parents"][i];

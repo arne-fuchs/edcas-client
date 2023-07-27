@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "Running cargo commands"
-cargo clean
+#cargo clean
 cargo update
 cargo build --release
 

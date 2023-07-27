@@ -2,7 +2,6 @@ use std::sync::Arc;
 use eframe::{App, egui, Frame};
 use eframe::egui::{Align, Layout};
 use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
-use log::warn;
 use crate::app::explorer::structs::{BodyImplementation, Parent};
 use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
@@ -126,7 +125,9 @@ fn build_tree(body_list: &mut Vec<Box<dyn BodyImplementation>>,system_index: &mu
     for i in 0..body_list.len() {
         //look what the largest body id in parents is. If is the current parent, print the header
         let mut largest_parent_id = 0;
-        for parent in body_list[i].get_parents() {
+        let parents = body_list[i].get_parents();
+        for parent in parents {
+            println!("{}: {}",parent.name, parent.id);
             if parent.id > largest_parent_id && (parent.id > 0 && parent.name.as_str() != "Null") {
                 largest_parent_id = parent.id;
             }

@@ -2,12 +2,12 @@ use std::ops::Add;
 use std::sync::Arc;
 use eframe::egui;
 use eframe::emath::Numeric;
-use log::warn;
 use crate::app::explorer::structs::{BodyImplementation, Signal};
 use crate::app::settings::Settings;
 
 pub struct System {
     pub name: String,
+    pub address : String,
     pub allegiance: String,
     pub economy_localised: String,
     pub second_economy_localised: String,

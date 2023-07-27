@@ -21,7 +21,6 @@ use crate::egui::Context;
 
 mod about;
 mod settings;
-mod simple_transaction;
 pub mod explorer;
 mod journal_reader;
 mod journal_interpreter;

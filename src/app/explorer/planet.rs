@@ -3,7 +3,7 @@ use eframe::egui::Ui;
 use log::warn;
 use num_format::{Locale, ToFormattedString};
 
-use crate::app::explorer::planet::BodyClass::{AmmoniaWorld, BeltCluster, ClassIGasGiant, ClassIIGasGiant, ClassIIIGasGiant, ClassIVGasGiant, ClassVGasGiant, EarthlikeWorld, GasGiantwithAmmoniabasedLife, GasGiantwithWaterbasedLife, HeliumRichGasGiant, HighMetalContentPlanet, HighMetalContentTerraformablePlanet, IcyBody, MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown, WaterGiant, WaterWorld, WaterWorldTerraformable};
+use crate::app::explorer::planet::BodyClass::{AmmoniaWorld, ClassIGasGiant, ClassIIGasGiant, ClassIIIGasGiant, ClassIVGasGiant, ClassVGasGiant, EarthlikeWorld, GasGiantwithAmmoniabasedLife, GasGiantwithWaterbasedLife, HeliumRichGasGiant, HighMetalContentPlanet, HighMetalContentTerraformablePlanet, IcyBody, MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown, WaterGiant, WaterWorld, WaterWorldTerraformable};
 use crate::app::explorer::structs::{BodyImplementation, Parent, Signal};
 use crate::app::settings::Settings;
 
@@ -266,7 +266,6 @@ pub enum BodyClass {
     GasGiantwithWaterbasedLife,
     HeliumRichGasGiant,
     WaterGiant,
-    BeltCluster,
     Ring,
     Star,
     Unknown,
@@ -352,7 +351,6 @@ pub fn get_profit_from_body(class: BodyClass, discovered: bool) -> (i32, i32){
         GasGiantwithWaterbasedLife => { if discovered { (883, 3679) } else { (2295, 10616) } }
         HeliumRichGasGiant => { if discovered { (900, 3749) } else { (2339, 10818) } }
         WaterGiant => { if discovered { (667, 2779) } else { (1734, 8019) } }
-        BeltCluster => { if discovered { (0, 0) } else { (0, 0) } }
         Ring => { if discovered { (0, 0) } else { (0, 0) } }
         Star => { if discovered { (0, 0) } else { (0, 0) } }
         Unknown => { if discovered { (0, 0) } else { (0, 0) } }

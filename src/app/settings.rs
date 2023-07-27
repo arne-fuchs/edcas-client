@@ -107,6 +107,7 @@ pub struct GraphicEditorSettings {
     pub show_editor: bool,
 }
 
+//TODO Add odyssey? option and make api calls depend on it
 #[derive(Clone)]
 pub struct Settings {
     pub appearance_settings: AppearanceSettings,
@@ -258,14 +259,14 @@ impl Default for Settings {
         //---------------------------
 
         let font_size = json["appearance"]["font-size"].as_f32().unwrap_or(24.0);
-        let mut font_id = egui::FontId::default();
+        let mut _font_id = egui::FontId::default();
 
         match json["appearance"]["font-family"].as_str().unwrap_or("Proportional") {
             "Monospace" => {
-                font_id = egui::FontId::monospace(font_size);
+                _font_id = egui::FontId::monospace(font_size);
             }
             "Proportional" | _ => {
-                font_id = egui::FontId::proportional(font_size);
+                _font_id = egui::FontId::proportional(font_size);
             }
         }
 
@@ -325,7 +326,7 @@ impl Default for Settings {
             appearance_settings: AppearanceSettings {
                 font_size: json["appearance"]["font-size"].as_f32().unwrap_or(24.0),
                 font_style: json["appearance"]["font_style"].as_str().unwrap_or("Proportional").to_string(),
-                font_id,
+                font_id: _font_id,
                 applied: false,
             },
             journal_reader_settings: JournalReaderSettings {

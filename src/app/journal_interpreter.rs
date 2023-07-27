@@ -1,9 +1,13 @@
+use std::str::FromStr;
 use std::sync::Arc;
 use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
 
 use crate::app::explorer::{Explorer, structs};
-use crate::app::explorer::structs::Signal;
+use crate::app::explorer::belt_cluster::BeltCluster;
+use crate::app::explorer::planet::Planet;
+use crate::app::explorer::star::Star;
+use crate::app::explorer::structs::{Parent, Signal};
 use crate::app::materials::{MaterialState, Material};
 use crate::app::mining::{Mining, Prospector, MiningMaterial};
 use crate::app::explorer::system::{PlanetSignals, System, SystemSignal};
@@ -18,8 +22,9 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         //{ "timestamp":"2022-10-16T20:54:45Z", "event":"Location", "DistFromStarLS":1007.705243, "Docked":true, "StationName":"Q2K-BHB", "StationType":"FleetCarrier", "MarketID":3704402432, "StationFaction":{ "Name":"FleetCarrier" }, "StationGovernment":"$government_Carrier;", "StationGovernment_Localised":"Privateigentum", "StationServices":[ "dock", "autodock", "commodities", "contacts", "exploration", "outfitting", "crewlounge", "rearm", "refuel", "repair", "shipyard", "engineer", "flightcontroller", "stationoperations", "stationMenu", "carriermanagement", "carrierfuel", "livery", "voucherredemption", "socialspace", "bartender", "vistagenomics" ], "StationEconomy":"$economy_Carrier;", "StationEconomy_Localised":"Privatunternehmen", "StationEconomies":[ { "Name":"$economy_Carrier;", "Name_Localised":"Privatunternehmen", "Proportion":1.000000 } ], "Taxi":false, "Multicrew":false, "StarSystem":"Colonia", "SystemAddress":3238296097059, "StarPos":[-9530.50000,-910.28125,19808.12500], "SystemAllegiance":"Independent", "SystemEconomy":"$economy_Tourism;", "SystemEconomy_Localised":"Tourismus", "SystemSecondEconomy":"$economy_HighTech;", "SystemSecondEconomy_Localised":"Hightech", "SystemGovernment":"$government_Cooperative;", "SystemGovernment_Localised":"Kooperative", "SystemSecurity":"$SYSTEM_SECURITY_low;", "SystemSecurity_Localised":"Geringe Sicherheit", "Population":583869, "Body":"Colonia 2 c", "BodyID":18, "BodyType":"Planet", "Factions":[ { "Name":"Jaques", "FactionState":"Investment", "Government":"Cooperative", "Influence":0.454092, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand1;", "Happiness_Localised":"In Hochstimmung", "MyReputation":100.000000, "RecoveringStates":[ { "State":"PublicHoliday", "Trend":0 } ], "ActiveStates":[ { "State":"Investment" }, { "State":"CivilLiberty" } ] }, { "Name":"Colonia Council", "FactionState":"Boom", "Government":"Cooperative", "Influence":0.331337, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":100.000000, "ActiveStates":[ { "State":"Boom" } ] }, { "Name":"People of Colonia", "FactionState":"None", "Government":"Cooperative", "Influence":0.090818, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":27.956400 }, { "Name":"Holloway Bioscience Institute", "FactionState":"None", "Government":"Corporate", "Influence":0.123752, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":-9.420000, "RecoveringStates":[ { "State":"PirateAttack", "Trend":0 } ] } ], "SystemFaction":{ "Name":"Jaques", "FactionState":"Investment" } }
         //{ "timestamp":"2022-10-16T23:25:31Z", "event":"FSDJump", "Taxi":false, "Multicrew":false, "StarSystem":"Ogmar", "SystemAddress":84180519395914, "StarPos":[-9534.00000,-905.28125,19802.03125], "SystemAllegiance":"Independent", "SystemEconomy":"$economy_HighTech;", "SystemEconomy_Localised":"Hightech", "SystemSecondEconomy":"$economy_Military;", "SystemSecondEconomy_Localised":"Militär", "SystemGovernment":"$government_Confederacy;", "SystemGovernment_Localised":"Konföderation", "SystemSecurity":"$SYSTEM_SECURITY_medium;", "SystemSecurity_Localised":"Mittlere Sicherheit", "Population":151752, "Body":"Ogmar A", "BodyID":1, "BodyType":"Star", "JumpDist":8.625, "FuelUsed":0.024493, "FuelLevel":31.975506, "Factions":[ { "Name":"Jaques", "FactionState":"Election", "Government":"Cooperative", "Influence":0.138384, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand1;", "Happiness_Localised":"In Hochstimmung", "MyReputation":100.000000, "PendingStates":[ { "State":"Outbreak", "Trend":0 } ], "ActiveStates":[ { "State":"Election" } ] }, { "Name":"ICU Colonial Corps", "FactionState":"War", "Government":"Communism", "Influence":0.119192, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":96.402496, "PendingStates":[ { "State":"Expansion", "Trend":0 } ], "ActiveStates":[ { "State":"War" } ] }, { "Name":"Societas Eruditorum de Civitas Dei", "FactionState":"War", "Government":"Dictatorship", "Influence":0.119192, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":46.414799, "ActiveStates":[ { "State":"War" } ] }, { "Name":"GalCop Colonial Defence Commission", "FactionState":"Boom", "Government":"Confederacy", "Influence":0.406061, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":-75.000000, "ActiveStates":[ { "State":"Boom" } ] }, { "Name":"Likedeeler of Colonia", "FactionState":"None", "Government":"Democracy", "Influence":0.068687, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":4.002500 }, { "Name":"Colonia Tech Combine", "FactionState":"Election", "Government":"Cooperative", "Influence":0.138384, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":4.850000, "ActiveStates":[ { "State":"Election" } ] }, { "Name":"Milanov's Reavers", "FactionState":"Bust", "Government":"Anarchy", "Influence":0.010101, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":0.000000, "RecoveringStates":[ { "State":"Terrorism", "Trend":0 } ], "ActiveStates":[ { "State":"Bust" } ] } ], "SystemFaction":{ "Name":"GalCop Colonial Defence Commission", "FactionState":"Boom" }, "Conflicts":[ { "WarType":"election", "Status":"active", "Faction1":{ "Name":"Jaques", "Stake":"Guerrero Military Base", "WonDays":1 }, "Faction2":{ "Name":"Colonia Tech Combine", "Stake":"", "WonDays":0 } }, { "WarType":"war", "Status":"active", "Faction1":{ "Name":"ICU Colonial Corps", "Stake":"Boulaid Command Facility", "WonDays":1 }, "Faction2":{ "Name":"Societas Eruditorum de Civitas Dei", "Stake":"Chatterjee's Respite", "WonDays":0 } } ] }
         "FSDJump" | "Location" | "CarrierJump" => {
-            let system = System{
+            let mut system = System{
                 name: json["StarSystem"].to_string(),
+                address: json["SystemAddress"].to_string(),
                 allegiance: json["SystemAllegiance"].to_string(),
                 economy_localised: json["SystemEconomy_Localised"].to_string(),
                 second_economy_localised: json["SystemSecondEconomy_Localised"].to_string(),
@@ -35,6 +40,164 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                 settings: settings.clone(),
             };
 
+            let address = system.address.clone();
+            let answer: Option<JsonValue> = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap()
+                .block_on(async {
+                    let url = format!("https://api.edcas.de/data/odyssey/system/{}",address.clone());
+                    debug!("Api call to edcas: {}", url.clone());
+                    let result = reqwest::get(url.clone()).await;
+                    return match result {
+                        Ok(response) => {
+                            let text = response.text().await.unwrap();
+                            let result = json::parse(text.as_str());
+                            return match result {
+                                Ok(json) => {
+                                    Some(json)
+                                }
+                                Err(err) => {
+                                    error!("Couldn't parse answer to json: {}",err);
+                                    error!("Value: {}", text);
+                                    None
+                                }
+                            }
+                        }
+                        Err(err) => {
+                            error!("Couldn't reach edcas api under {} Reason: {}", url.clone(),err);
+                            None
+                        }
+                    }
+                });
+
+            match answer {
+                None => {}
+                Some(json) => {
+                    for i in 0..json["stars"].len() {
+                        let star_json = &json["stars"][i];
+
+                        let mut parents: Vec<Parent> = vec![];
+                        for j in 0..star_json["parents"].len(){
+                            let parent = &star_json["parents"][j];
+                            for entry in parent.entries(){
+                                parents.push(Parent{
+                                    name: entry.0.to_string(),
+                                    id: entry.1.as_i64().unwrap(),
+                                });
+                            }
+                        }
+
+                        system.body_list.push(Box::new(Star{
+                            timestamp: "".to_string(),
+                            event: "API".to_string(),
+                            scan_type: "API".to_string(),
+                            body_name: star_json["body_name"].to_string(),
+                            body_id: star_json["body_id"].as_i64().unwrap(),
+                            parents,
+                            star_system: system.name.clone(),
+                            system_address: i64::from_str(address.as_str()).unwrap(),
+                            distance_from_arrival_ls: f64::from_str(star_json["distance_from_arrival_ls"].to_string().as_str()).unwrap(),
+                            star_type: star_json["star_type"].to_string(),
+                            subclass: i64::from_str(star_json["subclass"].to_string().as_str()).unwrap(),
+                            stellar_mass: f64::from_str(star_json["stellar_mass"].to_string().as_str()).unwrap(),
+                            radius: f64::from_str(star_json["radius"].to_string().as_str()).unwrap(),
+                            absolute_magnitude: f64::from_str(star_json["absolute_magnitude"].to_string().as_str()).unwrap(),
+                            age_my: i64::from_str(star_json["age_my"].to_string().as_str()).unwrap(),
+                            surface_temperature: f64::from_str(star_json["surface_temperature"].to_string().as_str()).unwrap(),
+                            luminosity: star_json["luminosity"].to_string(),
+                            semi_major_axis: f64::from_str(star_json["semi_major_axis"].to_string().as_str()).ok(),
+                            eccentricity: f64::from_str(star_json["eccentricity"].to_string().as_str()).ok(),
+                            orbital_inclination: f64::from_str(star_json["orbital_inclination"].to_string().as_str()).ok(),
+                            periapsis: f64::from_str(star_json["periapsis"].to_string().as_str()).ok(),
+                            orbital_period: f64::from_str(star_json["orbital_period"].to_string().as_str()).ok(),
+                            ascending_node: f64::from_str(star_json["ascending_node"].to_string().as_str()).ok(),
+                            mean_anomaly: f64::from_str(star_json["mean_anomaly"].to_string().as_str()).ok(),
+                            rotation_period: f64::from_str(star_json["rotation_period"].to_string().as_str()).unwrap(),
+                            axial_tilt: f64::from_str(star_json["axial_tilt"].to_string().as_str()).unwrap(),
+                            was_discovered: star_json["was_discovered"].as_bool().unwrap(),
+                            was_mapped: star_json["was_mapped"].as_bool().unwrap(),
+                            asteroid_rings: vec![],
+                            settings: settings.clone(),
+                        }));
+                    }
+                    for i in 0..json["planets"].len() {
+                        let planet_json = &json["planets"][i];
+
+                        let mut parents: Vec<Parent> = vec![];
+                        //"parents": [{"Star": 0 },{"Planet": 47 },{"Null": 51 }]
+                        for j in 0..planet_json["parents"].len(){
+                            let parent = &planet_json["parents"][j];
+                            for entry in parent.entries(){
+                                parents.push(Parent{
+                                    name: entry.0.to_string(),
+                                    id: entry.1.as_i64().unwrap(),
+                                });
+                            }
+                        }
+
+                        if planet_json["body_name"].as_str().unwrap().contains("Belt Cluster"){
+                            system.body_list.push(Box::new(BeltCluster{
+                                timestamp: "".to_string(),
+                                event: "API".to_string(),
+                                scan_type: "API".to_string(),
+                                body_name: planet_json["body_name"].to_string(),
+                                body_id: planet_json["body_id"].as_i64().unwrap(),
+                                parents,
+                                star_system: system.name.clone(),
+                                system_address: i64::from_str(address.as_str()).unwrap(),
+                                distance_from_arrival_ls: f64::from_str(planet_json["distance_from_arrival_ls"].to_string().as_str()).unwrap(),
+                                was_discovered: planet_json["was_discovered"].as_bool().unwrap(),
+                                was_mapped: planet_json["was_mapped"].as_bool().unwrap(),
+                                settings: settings.clone(),
+                            }));
+                        }else {
+                            system.body_list.push(Box::new(Planet{
+                                timestamp: "".to_string(),
+                                event: "API".to_string(),
+                                scan_type: "API".to_string(),
+                                body_name: planet_json["body_name"].to_string(),
+                                body_id: planet_json["body_id"].as_i64().unwrap(),
+                                parents: vec![],
+                                star_system: system.name.clone(),
+                                system_address: i64::from_str(address.as_str()).unwrap(),
+                                distance_from_arrival_ls: f64::from_str(planet_json["distance_from_arrival_ls"].to_string().as_str()).unwrap(),
+                                tidal_lock: planet_json["was_discovered"].as_bool().unwrap(),
+                                terraform_state: planet_json["terraform_state"].to_string(),
+                                planet_class: planet_json["planet_class"].to_string(),
+                                atmosphere: planet_json["atmosphere"].to_string(),
+                                atmosphere_type: planet_json["atmosphere_type"].to_string(),
+                                atmosphere_composition: vec![],
+                                volcanism: planet_json["volcanism"].to_string(),
+                                mass_em: f64::from_str(planet_json["mass_em"].to_string().as_str()).unwrap(),
+                                radius: f64::from_str(planet_json["radius"].to_string().as_str()).unwrap(),
+                                surface_gravity: f64::from_str(planet_json["surface_gravity"].to_string().as_str()).unwrap(),
+                                surface_temperature: f64::from_str(planet_json["surface_temperature"].to_string().as_str()).unwrap(),
+                                surface_pressure: f64::from_str(planet_json["surface_pressure"].to_string().as_str()).unwrap(),
+                                landable: planet_json["landable"].as_bool().unwrap(),
+                                materials: vec![],
+                                composition: vec![],
+                                semi_major_axis: f64::from_str(planet_json["semi_major_axis"].to_string().as_str()).unwrap(),
+                                eccentricity: f64::from_str(planet_json["eccentricity"].to_string().as_str()).unwrap(),
+                                orbital_inclination: f64::from_str(planet_json["orbital_inclination"].to_string().as_str()).unwrap(),
+                                periapsis: f64::from_str(planet_json["periapsis"].to_string().as_str()).unwrap(),
+                                orbital_period: f64::from_str(planet_json["orbital_period"].to_string().as_str()).unwrap(),
+                                ascending_node: f64::from_str(planet_json["ascending_node"].to_string().as_str()).unwrap(),
+                                mean_anomaly: f64::from_str(planet_json["mean_anomaly"].to_string().as_str()).unwrap(),
+                                rotation_period: f64::from_str(planet_json["rotation_period"].to_string().as_str()).unwrap(),
+                                axial_tilt: f64::from_str(planet_json["axial_tilt"].to_string().as_str()).unwrap(),
+                                was_discovered: planet_json["was_discovered"].as_bool().unwrap(),
+                                was_mapped: planet_json["was_mapped"].as_bool().unwrap(),
+                                reserve_level: planet_json["reserve_level"].to_string(),
+                                asteroid_rings: vec![],
+                                planet_signals: vec![],
+                                settings: settings.clone(),
+                            }));
+                        }
+                    }
+                }
+            }
+
 
             explorer.systems.push(system);
 
@@ -44,7 +207,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             //    explorer.index = explorer.pages.len();
             //}
 
-            info!("Found system: {}",explorer.systems[explorer.systems.len()-1].name.clone());
+            info!("Found system: {}",explorer.systems.last().unwrap().name.clone());
         }
         "SupercruiseEntry" => {}
         "SupercruiseExit" => {}
@@ -406,7 +569,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     .build()
                     .unwrap()
                     .block_on(async {
-                        let url = format!("https://api.edcas.de/data/commodity/{}",material_json["Name"].to_string().to_lowercase());
+                        let url = format!("https://api.edcas.de/data/odyssey/commodity/{}",material_json["Name"].to_string().to_lowercase());
                         debug!("Api call to edcas: {}", url.clone());
                         let result = reqwest::get(url.clone()).await;
                         return match result {

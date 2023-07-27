@@ -89,7 +89,7 @@ impl CargoReader {
                                                 .build()
                                                 .unwrap()
                                                 .block_on(async {
-                                                    let url = format!("https://api.edcas.de/data/commodity/{}",name.clone());
+                                                    let url = format!("https://api.edcas.de/data/odyssey/commodity/{}",name.clone());
                                                     debug!("Api call to edcas: {}", url.clone());
                                                     let result = reqwest::get(url.clone()).await;
                                                     return match result {

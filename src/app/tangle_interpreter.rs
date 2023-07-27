@@ -1,10 +1,10 @@
 use std::{env, fs};
 use std::fs::File;
+use std::io::Write;
 use std::ops::Add;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::Arc;
-use std::thread::sleep;
 use std::time::Duration;
 use bus::BusReader;
 use iota_wallet::account::{AccountHandle, SyncOptions};
@@ -24,8 +24,6 @@ use async_recursion::async_recursion;
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
 use iota_wallet::iota_client::block::output::NftId;
-use iota_wallet::iota_client::block::payload::{Payload, TaggedDataPayload};
-use iota_wallet::iota_client::block::payload::Payload::TaggedData;
 use serde_json::{json, Value};
 use crate::app::settings::Settings;
 
@@ -59,6 +57,10 @@ impl TangleInterpreter {
 
                 info!("Tangle event received: {}", event);
 
+                let mut encoder = ZlibEncoder::new(Vec::new(),Compression::fast());
+                encoder.write_all(json_clone.to_string().as_bytes()).unwrap();
+                let compressed_data = encoder.finish().unwrap();
+
                 match event {
                     _ => {
                         tokio::runtime::Builder::new_multi_thread()
@@ -68,7 +70,7 @@ impl TangleInterpreter {
                             .block_on(async move {
                                 let result = self.account.client().block()
                                     .with_tag(event.to_uppercase().as_bytes().to_vec())
-                                    .with_data(ZlibEncoder::new(json_clone.to_string().as_bytes().to_vec(),Compression::fast()).finish().unwrap())
+                                    .with_data(compressed_data)
                                     .finish()
                                     .await;
 
