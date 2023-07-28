@@ -127,7 +127,7 @@ fn build_tree(body_list: &mut Vec<Box<dyn BodyImplementation>>,system_index: &mu
         let mut largest_parent_id = 0;
         let parents = body_list[i].get_parents();
         for parent in parents {
-            println!("{}: {}",parent.name, parent.id);
+            //println!("{}: {}",parent.name, parent.id);
             if parent.id > largest_parent_id && (parent.id > 0 && parent.name.as_str() != "Null") {
                 largest_parent_id = parent.id;
             }

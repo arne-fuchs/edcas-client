@@ -61,7 +61,7 @@ pub struct Planet {
     pub surface_temperature: f64,
     pub surface_pressure: f64,
     pub landable: bool,
-    pub materials: Vec<AtmosphereComposition>,
+    pub materials: Vec<Composition>,
     pub composition: Vec<Composition>,
     pub semi_major_axis: f64,
     pub eccentricity: f64,
@@ -121,12 +121,54 @@ impl BodyImplementation for Planet {
         ui.label("Gravity");
         ui.label(&self.surface_gravity.to_string());
         ui.end_row();
+        ui.label("Radius");
+        ui.label(&self.radius.to_string());
+        ui.end_row();
         ui.label("Temperature K");
         ui.label(&self.surface_temperature.to_string());
         ui.end_row();
         ui.label("Atmosphere");
         ui.label(&self.atmosphere);
         ui.end_row();
+        for atmosphere_composition in &self.atmosphere_composition{
+            ui.label(&atmosphere_composition.name);
+            ui.label(format!("{}%",&atmosphere_composition.percent));
+            ui.end_row();
+        }
+        ui.label("Reserve level");
+        ui.label(&self.reserve_level);
+        ui.end_row();
+        ui.heading("Material");
+        ui.end_row();
+        for material in &self.materials{
+            ui.label(&material.name);
+            ui.label(format!("{}%",&material.percentage.to_string()));
+            ui.end_row();
+        }
+        ui.heading("Composition");
+        ui.end_row();
+        for composition in &self.composition{
+            ui.label(&composition.name);
+            ui.label(format!("{}%",&composition.percentage.to_string()));
+            ui.end_row();
+        }
+        ui.heading("Rings");
+        ui.end_row();
+        for ring in &self.asteroid_rings {
+            ui.label(&ring.ring_class);
+            ui.vertical(|ui|{
+                ui.label(&ring.outer_rad.to_string());
+                ui.label(&ring.inner_rad.to_string());
+            });
+            ui.end_row();
+        }
+        ui.heading("Parents");
+        ui.end_row();
+        for parent in &self.parents {
+            ui.label(&parent.name);
+            ui.label(&parent.id.to_string());
+            ui.end_row();
+        }
     }
 
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {

@@ -69,6 +69,23 @@ impl BodyImplementation for Star {
         ui.label("Temperature K");
         ui.label(&self.surface_temperature.to_string());
         ui.end_row();
+        ui.heading("Rings");
+        ui.end_row();
+        for ring in &self.asteroid_rings {
+            ui.label(&ring.ring_class);
+            ui.vertical(|ui|{
+                ui.label(&ring.outer_rad.to_string());
+                ui.label(&ring.inner_rad.to_string());
+            });
+            ui.end_row();
+        }
+        ui.heading("Parents");
+        ui.end_row();
+        for parent in &self.parents {
+            ui.label(&parent.name);
+            ui.label(&parent.id.to_string());
+            ui.end_row();
+        }
     }
 
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize){

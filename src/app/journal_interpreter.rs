@@ -88,7 +88,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             }
                         }
 
-                        system.body_list.push(Box::new(Star{
+                        system.insert_body(Box::new(Star{
                             timestamp: "".to_string(),
                             event: "API".to_string(),
                             scan_type: "API".to_string(),
@@ -137,7 +137,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                         }
 
                         if planet_json["body_name"].as_str().unwrap().contains("Belt Cluster"){
-                            system.body_list.push(Box::new(BeltCluster{
+                            system.insert_body(Box::new(BeltCluster{
                                 timestamp: "".to_string(),
                                 event: "API".to_string(),
                                 scan_type: "API".to_string(),
@@ -152,13 +152,13 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 settings: settings.clone(),
                             }));
                         }else {
-                            system.body_list.push(Box::new(Planet{
+                            system.insert_body(Box::new(Planet{
                                 timestamp: "".to_string(),
                                 event: "API".to_string(),
                                 scan_type: "API".to_string(),
                                 body_name: planet_json["body_name"].to_string(),
                                 body_id: planet_json["body_id"].as_i64().unwrap(),
-                                parents: vec![],
+                                parents,
                                 star_system: system.name.clone(),
                                 system_address: i64::from_str(address.as_str()).unwrap(),
                                 distance_from_arrival_ls: f64::from_str(planet_json["distance_from_arrival_ls"].to_string().as_str()).unwrap(),
@@ -197,7 +197,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     }
                 }
             }
-
 
             explorer.systems.push(system);
 
@@ -333,8 +332,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
 
                 let len = explorer.systems.len()-1;
                 if !explorer.systems[len].body_list.contains(&body) {
-                    //explorer.pages[len].system.body_list.push(body);
-
                     let index = explorer.systems[len].insert_body(body);
                     explorer.systems[len].index = index;
                 }
