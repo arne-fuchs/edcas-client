@@ -26,6 +26,12 @@ impl App for Explorer {
         if self.systems.len() > self.index {
             egui::SidePanel::left("system_data").show(ctx, |ui| {
                 self.systems[self.index].draw_system_info(ui);
+                ui.separator();
+                ui.heading("Body Signals");
+                egui::ScrollArea::vertical()
+                    .show(ui, |ui| {
+                        self.systems[self.index].draw_body_signal_list(ui);
+                    });
             });
 
             egui::CentralPanel::default().show(ctx, |ui| {
@@ -91,30 +97,26 @@ impl App for Explorer {
             });
 
             egui::SidePanel::right("body_data").show(ctx, |ui| {
-                egui::Grid::new("system_data_grid")
-                    .num_columns(2)
-                    .striped(true)
-                    .min_col_width(200.0)
-                    .max_col_width(200.0)
-                    .show(ui, |ui| {
-                        match self.systems.last() {
-                            None => {}
-                            Some(system) => {
-                                match system.body_list.get(system.index) {
-                                    None => {}
-                                    Some(body) => {
-                                        body.print_side_panel_information(ui);
+                egui::ScrollArea::vertical().show(ui,|ui|{
+                    egui::Grid::new("system_data_grid")
+                        .num_columns(2)
+                        .striped(true)
+                        .min_col_width(200.0)
+                        .max_col_width(200.0)
+                        .show(ui, |ui| {
+                            match self.systems.last() {
+                                None => {}
+                                Some(system) => {
+                                    match system.body_list.get(system.index) {
+                                        None => {}
+                                        Some(body) => {
+                                            body.print_side_panel_information(ui);
+                                        }
                                     }
                                 }
                             }
-                        }
-                    });
-                ui.separator();
-                ui.heading("Body Signals");
-                egui::ScrollArea::vertical()
-                    .show(ui, |ui| {
-                        self.systems[self.index].draw_body_signal_list(ui);
-                    });
+                        });
+                });
             });
         }
     }

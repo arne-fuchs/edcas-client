@@ -162,13 +162,6 @@ impl BodyImplementation for Planet {
             });
             ui.end_row();
         }
-        ui.heading("Parents");
-        ui.end_row();
-        for parent in &self.parents {
-            ui.label(&parent.name);
-            ui.label(&parent.id.to_string());
-            ui.end_row();
-        }
     }
 
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
