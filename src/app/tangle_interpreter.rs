@@ -15,7 +15,6 @@ use json::JsonValue;
 use log::{debug, error, info, warn};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
-use iota_wallet::iota_client::block::output::NftId;
 use crate::app::settings::Settings;
 
 pub struct TangleInterpreter {
