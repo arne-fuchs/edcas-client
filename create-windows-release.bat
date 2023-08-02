@@ -33,6 +33,6 @@ copy start.bat "%folder_name%\"
 copy target\release\edcas-client.exe "%folder_name%\"
 
 rem Create ZIP archive
-"%ProgramFiles%\7-Zip\7z.exe" a -tzip "%folder_name%_windows.zip" "%folder_name%\*"
+"%ProgramFiles%\7-Zip\7z.exe" a -tzip "%folder_name%.zip" "%folder_name%\*"
 
 endlocal

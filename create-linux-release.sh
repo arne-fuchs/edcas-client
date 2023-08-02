@@ -25,7 +25,7 @@ cp start.sh "$folder_name"/
 cp target/release/edcas-client "$folder_name"/
 
 echo "Compressing files"
-tar czf edcas-client_linux.tar.gz "$folder_name"
+tar czf edcas-client-linux.tar.gz "$folder_name"
 
 rm -rf "$folder_name"
 mkdir "$folder_name"
