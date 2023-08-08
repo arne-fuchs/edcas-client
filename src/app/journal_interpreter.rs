@@ -152,7 +152,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 settings: settings.clone(),
                             }));
                         }else {
-                            system.insert_body(Box::new(Planet{
+                            let planet = Planet{
                                 timestamp: "".to_string(),
                                 event: "API".to_string(),
                                 scan_type: "API".to_string(),
@@ -169,11 +169,11 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 atmosphere_type: planet_json["atmosphere_type"].to_string(),
                                 atmosphere_composition: vec![],
                                 volcanism: planet_json["volcanism"].to_string(),
-                                mass_em: f64::from_str(planet_json["mass_em"].to_string().as_str()).unwrap(),
-                                radius: f64::from_str(planet_json["radius"].to_string().as_str()).unwrap(),
-                                surface_gravity: f64::from_str(planet_json["surface_gravity"].to_string().as_str()).unwrap(),
-                                surface_temperature: f64::from_str(planet_json["surface_temperature"].to_string().as_str()).unwrap(),
-                                surface_pressure: f64::from_str(planet_json["surface_pressure"].to_string().as_str()).unwrap(),
+                                mass_em: f64::from_str(planet_json["mass_em"].to_string().as_str()).unwrap_or(-1.0),
+                                radius: f64::from_str(planet_json["radius"].to_string().as_str()).unwrap_or(-1.0),
+                                surface_gravity: f64::from_str(planet_json["surface_gravity"].to_string().as_str()).unwrap_or(-1.0),
+                                surface_temperature: f64::from_str(planet_json["surface_temperature"].to_string().as_str()).unwrap_or(-1.0),
+                                surface_pressure: f64::from_str(planet_json["surface_pressure"].to_string().as_str()).unwrap_or(-1.0),
                                 landable: planet_json["landable"].as_bool().unwrap(),
                                 materials: vec![],
                                 composition: vec![],
@@ -184,15 +184,19 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 orbital_period: f64::from_str(planet_json["orbital_period"].to_string().as_str()).unwrap(),
                                 ascending_node: f64::from_str(planet_json["ascending_node"].to_string().as_str()).unwrap(),
                                 mean_anomaly: f64::from_str(planet_json["mean_anomaly"].to_string().as_str()).unwrap(),
-                                rotation_period: f64::from_str(planet_json["rotation_period"].to_string().as_str()).unwrap(),
-                                axial_tilt: f64::from_str(planet_json["axial_tilt"].to_string().as_str()).unwrap(),
+                                rotation_period: f64::from_str(planet_json["rotation_period"].to_string().as_str()).unwrap_or(-1.0),
+                                axial_tilt: f64::from_str(planet_json["axial_tilt"].to_string().as_str()).unwrap_or(-1.0),
                                 was_discovered: planet_json["was_discovered"].as_bool().unwrap(),
                                 was_mapped: planet_json["was_mapped"].as_bool().unwrap(),
                                 reserve_level: planet_json["reserve_level"].to_string(),
                                 asteroid_rings: vec![],
                                 planet_signals: vec![],
                                 settings: settings.clone(),
-                            }));
+                            };
+                            if planet.surface_gravity != -1.0 {
+                                system.insert_body(Box::new(planet));
+                            }
+
                         }
                     }
                 }
