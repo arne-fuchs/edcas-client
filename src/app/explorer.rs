@@ -29,6 +29,7 @@ impl App for Explorer {
                 ui.separator();
                 ui.heading("Body Signals");
                 egui::ScrollArea::vertical()
+                    .id_source("body_signal_scroll_area")
                     .show(ui, |ui| {
                         self.systems[self.index].draw_body_signal_list(ui);
                     });
@@ -60,6 +61,7 @@ impl App for Explorer {
                     });
 
                 egui::ScrollArea::vertical()
+                    .id_source("body_scroll_area")
                     .stick_to_right(true)
                     .show(ui, |ui| {
                         //Fixme Without separator scrollbar is in the middle of field. With it, it doesnt show at all
@@ -97,7 +99,9 @@ impl App for Explorer {
             });
 
             egui::SidePanel::right("body_data").show(ctx, |ui| {
-                egui::ScrollArea::vertical().show(ui,|ui|{
+                egui::ScrollArea::vertical()
+                    .id_source("body_data_scroll_area")
+                    .show(ui,|ui|{
                     egui::Grid::new("system_data_grid")
                         .num_columns(2)
                         .striped(true)
