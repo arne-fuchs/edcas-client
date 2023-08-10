@@ -74,8 +74,8 @@ impl BodyImplementation for Star {
         for ring in &self.asteroid_rings {
             ui.label(&ring.ring_class);
             ui.vertical(|ui|{
-                ui.label(&ring.outer_rad.to_string());
-                ui.label(&ring.inner_rad.to_string());
+                ui.label(format!("{}km",&ring.outer_rad));
+                ui.label(format!("{}km",&ring.inner_rad));
             });
             ui.end_row();
         }
