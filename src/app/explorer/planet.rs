@@ -251,7 +251,7 @@ impl BodyImplementation for Planet {
             ui.label("|");
             ui.label(self.settings.icons.get("discovered").unwrap().get_richtext());
         }
-        if self.was_discovered && self.settings.icons.get("mapped").unwrap().enabled{
+        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled{
             ui.label("|");
             ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
         }
