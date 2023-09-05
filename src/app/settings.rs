@@ -171,8 +171,6 @@ impl Default for Settings {
             }
             Err(err) => {
                 warn!("{}",err);
-                println!("{}",err);
-                println!("Couldn't find $HOME");
                 match File::open("settings.json"){
                     Ok(file) => {
                         println!("Accessing settings file at settings.json");
