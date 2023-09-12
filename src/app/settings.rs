@@ -10,7 +10,9 @@ use eframe::{App, egui, Frame};
 use eframe::egui::{Color32, Context, RichText, vec2, Window};
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::epaint::ahash::HashMap;
-use iota_wallet::iota_client::Client;
+
+use iota_sdk::client::Client;
+
 use log::warn;
 use serde_json::json;
 
@@ -246,10 +248,16 @@ impl Default for Settings {
             let mut node_url = json["iota"]["base-url"].as_str().unwrap_or("https://tangle.paesserver.de").to_string();
             node_url.push(':');
             node_url.push_str(json["iota"]["port"].as_str().unwrap_or("443"));
-            some_client = Some(Client::builder()
-                .with_node(node_url.as_str()).unwrap()
-                .with_local_pow(json["iota"]["local-pow"].as_bool().unwrap_or(false))
-                .finish().unwrap());
+            some_client = tokio::runtime::Builder::new_current_thread()
+                .enable_all()
+                .build()
+                .unwrap()
+                .block_on(async {
+                    Some(Client::builder()
+                        .with_node(node_url.as_str()).unwrap()
+                        .with_local_pow(json["iota"]["local-pow"].as_bool().unwrap_or(false))
+                        .finish().await.unwrap())
+                });
         }
 
         //---------------------------

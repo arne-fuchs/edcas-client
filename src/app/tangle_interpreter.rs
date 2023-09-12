@@ -4,23 +4,27 @@ use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
 use bus::BusReader;
-use iota_wallet::account::AccountHandle;
-use iota_wallet::{ClientOptions};
-use iota_wallet::account::types::AccountBalance;
-use iota_wallet::account_manager::AccountManager;
-use iota_wallet::iota_client::generate_mnemonic;
-use iota_wallet::iota_client::constants::SHIMMER_COIN_TYPE;
-use iota_wallet::secret::stronghold::StrongholdSecretManager;
 use json::JsonValue;
 use log::{debug, error, info, warn};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
+use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
+use serde_json::json;
+
+use iota_sdk::wallet::{Account, ClientOptions};
+use iota_sdk::client::secret::SecretManager;
+use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
+use iota_sdk::client::stronghold::StrongholdAdapter;
+use iota_sdk::types::block::address::Bech32Address;
+use iota_sdk::Wallet;
+use iota_sdk::wallet::account::types::Balance;
+
 use crate::app::settings::Settings;
 
 pub struct TangleInterpreter {
     bus: BusReader<JsonValue>,
     settings: Arc<Settings>,
-    account: AccountHandle,
+    account: Account,
     bech32_hrp: String,
     address: String,
 }
@@ -54,7 +58,7 @@ impl TangleInterpreter {
                             .build()
                             .unwrap()
                             .block_on(async move {
-                                let result = self.account.client().block()
+                                let result = self.account.client().build_block()
                                     .with_tag(event.to_uppercase().as_bytes().to_vec())
                                     .with_data(compressed_data)
                                     .finish()
@@ -126,30 +130,38 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                 .unwrap()
                 .block_on(async {
                     let secret_manager = StrongholdSecretManager::builder()
-                        .password(settings.iota_settings.password.as_str())
-                        .build(&wallet_path).unwrap();
+                        .password(settings.iota_settings.password.to_string())
+                        .build(&wallet_path).unwrap_or({
+                        StrongholdAdapter::migrate_snapshot_v2_to_v3(
+                            &wallet_path,
+                            settings.iota_settings.password.to_owned().into(),
+                            "wallet.rs",
+                            100,
+                            Some(&wallet_path),
+                            Some(settings.iota_settings.password.to_owned().into()),
+                        ).unwrap();
+                    StrongholdSecretManager::builder()
+                        .password(settings.iota_settings.password.to_string())
+                        .build(&wallet_path).unwrap()
+                    }
+                    );
 
-                    // Create the account manager
-                    let manager = AccountManager::builder()
+                    let wallet = Wallet::builder()
+                        .with_secret_manager(SecretManager::Stronghold(secret_manager))
                         .with_client_options(client_options)
-                        .with_secret_manager(iota_wallet::secret::SecretManager::Stronghold(secret_manager))
-                        .with_storage_path(storage_path.as_str())
                         .with_coin_type(SHIMMER_COIN_TYPE)
                         .finish().await.unwrap();
 
-                    // Set the stronghold password
-                    manager
-                        .set_stronghold_password(settings.iota_settings.password.as_str())
-                        .await.unwrap();
+                    //wallet.set_stronghold_password(settings.iota_settings.password.as_str());
 
-                    // Get the account we generated with `01_create_wallet`
-                    let account = manager.get_account("User").await.unwrap();
+                    let account = wallet
+                        .get_account("User").await.unwrap();
 
                     let balance = account.sync(None).await.unwrap();
 
-                    info!("[Total: {} : Available: {}]",balance.base_coin.total,balance.base_coin.available);
-                    info!("[NFTS Count: {}]",balance.nfts.len());
-                    info!("[Req. storage deposit (basic): {}]",balance.required_storage_deposit.basic());
+                    //info!("[Total: {} : Available: {}]",balance.base_coin.total,balance.base_coin.available);
+                    //info!("[NFTS Count: {}]",balance.nfts.len());
+                    //info!("[Req. storage deposit (basic): {}]",balance.required_storage_deposit.basic());
 
                     account
                 })
@@ -166,25 +178,22 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                 .block_on(async {
                     // Setup Stronghold secret_manager
                     let mut secret_manager = StrongholdSecretManager::builder()
-                        .password(settings.iota_settings.password.as_str())
+                        .password(settings.iota_settings.password.to_string())
                         .build(wallet_path).unwrap();
 
                     // Only required the first time, can also be generated with `manager.generate_mnemonic()?`
-                    let mnemonic = generate_mnemonic().unwrap();
-
-                    // The mnemonic only needs to be stored the first time
-                    secret_manager.store_mnemonic(mnemonic).await.unwrap();
-
-                    let manager = AccountManager::builder()
-                        .with_secret_manager(iota_wallet::secret::SecretManager::Stronghold(secret_manager))
+                    let wallet = Wallet::builder()
+                        .with_secret_manager(SecretManager::Stronghold(secret_manager))
                         .with_client_options(client_options)
                         .with_coin_type(SHIMMER_COIN_TYPE)
-                        .with_storage_path(storage_path.as_str())
-                        .finish()
-                        .await.unwrap();
+                        .finish().await.unwrap();
+
+                    // The mnemonic only needs to be stored the first time
+                    let mnemonic = wallet.generate_mnemonic().unwrap();
+                    wallet.store_mnemonic(mnemonic).await.unwrap();
 
                     // Create a new account
-                    manager
+                    wallet
                         .create_account()
                         .with_alias("User".to_string())
                         .finish()
@@ -193,7 +202,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         }
     };
 
-    let _account_balance: AccountBalance = tokio::runtime::Builder::new_current_thread()
+    let _account_balance: Balance = tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .unwrap()
@@ -207,7 +216,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .build()
         .expect("Failed creating addresses")
         .block_on(async {
-            let address = account.addresses().await.unwrap()[0].address().to_bech32();
+            let address = account.addresses().await.unwrap()[0].address().to_string();
             debug!("{}", &address);
             info!("Address: {}",&address);
             address
@@ -218,7 +227,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .build()
         .expect("Failed creating addresses")
         .block_on(async {
-            account.client().get_bech32_hrp().await.unwrap()
+            account.client().get_bech32_hrp().await.unwrap().to_string()
         });
 
     assert_eq!(&bech32_hrp, "edcas");

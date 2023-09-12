@@ -278,7 +278,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                 if !found {
                     explorer.systems[len].planet_signals.push(planet_signals);
                     explorer.systems[len].planet_signals.sort_by(|a, b|{
-                        a.signals.len().cmp(&b.signals.len())
+                        a.body_id.cmp(&b.body_id)
                     });
                 }
             }
@@ -360,8 +360,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         //Docking
         "DockingRequested" => {}
         "DockingGranted" => {}
-        "Docked" => {}
-        "Undocked" => {}
+        "Docked" => {
+            //{ "timestamp":"2023-09-09T23:59:09Z", "event":"CarrierJump", "Docked":true, "StationName":"Q2K-BHB", "StationType":"FleetCarrier", "MarketID":3704402432, "StationFaction":{ "Name":"FleetCarrier" }, "StationGovernment":"$government_Carrier;", "StationGovernment_Localised":"Privateigentum", "StationServices":[ "dock", "autodock", "commodities", "contacts", "exploration", "outfitting", "crewlounge", "rearm", "refuel", "repair", "shipyard", "engineer", "flightcontroller", "stationoperations", "stationMenu", "carriermanagement", "carrierfuel", "livery", "voucherredemption", "socialspace", "bartender", "vistagenomics" ], "StationEconomy":"$economy_Carrier;", "StationEconomy_Localised":"Privatunternehmen", "StationEconomies":[ { "Name":"$economy_Carrier;", "Name_Localised":"Privatunternehmen", "Proportion":1.000000 } ], "Taxi":false, "Multicrew":false, "StarSystem":"Plio Broae ML-D c2", "SystemAddress":637165713922, "StarPos":[2112.75000,719.12500,50162.93750], "SystemAllegiance":"", "SystemEconomy":"$economy_None;", "SystemEconomy_Localised":"n/v", "SystemSecondEconomy":"$economy_None;", "SystemSecondEconomy_Localised":"n/v", "SystemGovernment":"$government_None;", "SystemGovernment_Localised":"n/v", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;", "SystemSecurity_Localised":"Anarchie", "Population":0, "Body":"Plio Broae ML-D c2", "BodyID":0, "BodyType":"Star" }
+        }
+        "Undocked" => {
+            //{ "timestamp":"2023-09-09T18:29:17Z", "event":"Undocked", "StationName":"Q2K-BHB", "StationType":"FleetCarrier", "MarketID":3704402432, "Taxi":false, "Multicrew":false }
+        }
 
         //Engineer
         "EngineerProgress" => {}

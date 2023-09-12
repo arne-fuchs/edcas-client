@@ -14,7 +14,8 @@ image = { version = "0.24.5", features = ["png"] }
 #iota-client = { git = "https://github.com/iotaledger/iota.rs", rev = "df302750701667ad28f4830d8bfbb214291036b1" }
 #iota-client = { git = "https://github.com/arne-fuchs/iota.rs" }
 #iota-wallet = { git = "https://github.com/iotaledger/wallet.rs" }
-iota-wallet = "1.0.0-rc.6"
+#iota-wallet = "1.0.0-rc.6"
+iota-sdk = { version = "1.0.3", features = ["stronghold","rocksdb"]}
 #Stay above 1.22.1 because of security reasons
 tokio = { version = "1.26.0", features = ["full"] }
 derive = "1.0.0"
