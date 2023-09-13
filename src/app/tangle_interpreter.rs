@@ -131,20 +131,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                 .block_on(async {
                     let secret_manager = StrongholdSecretManager::builder()
                         .password(settings.iota_settings.password.to_string())
-                        .build(&wallet_path).unwrap_or({
-                        StrongholdAdapter::migrate_snapshot_v2_to_v3(
-                            &wallet_path,
-                            settings.iota_settings.password.to_owned().into(),
-                            "wallet.rs",
-                            100,
-                            Some(&wallet_path),
-                            Some(settings.iota_settings.password.to_owned().into()),
-                        ).unwrap();
-                    StrongholdSecretManager::builder()
-                        .password(settings.iota_settings.password.to_string())
-                        .build(&wallet_path).unwrap()
-                    }
-                    );
+                        .build(&wallet_path).unwrap();
 
                     let wallet = Wallet::builder()
                         .with_secret_manager(SecretManager::Stronghold(secret_manager))
@@ -159,9 +146,9 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
 
                     let balance = account.sync(None).await.unwrap();
 
-                    //info!("[Total: {} : Available: {}]",balance.base_coin.total,balance.base_coin.available);
-                    //info!("[NFTS Count: {}]",balance.nfts.len());
-                    //info!("[Req. storage deposit (basic): {}]",balance.required_storage_deposit.basic());
+                    info!("[Total: {} : Available: {}]",balance.base_coin().total(),balance.base_coin().available());
+                    info!("[NFTS Count: {}]",balance.nfts().len());
+                    info!("[Req. storage deposit (basic): {}]",balance.required_storage_deposit().basic());
 
                     account
                 })
