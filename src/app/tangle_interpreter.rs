@@ -5,7 +5,6 @@ use std::path::PathBuf;
 use std::sync::Arc;
 use base64::Engine;
 use base64::engine::general_purpose;
-use base64::prelude::BASE64_STANDARD;
 use bus::BusReader;
 use json::JsonValue;
 use log::{debug, error, info, warn};
@@ -17,17 +16,12 @@ use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
 use iota_sdk::wallet::{Account, ClientOptions};
 use iota_sdk::client::secret::SecretManager;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::crypto::ciphers::traits::consts::UInt;
-use iota_sdk::crypto::hashes::blake2b::Blake2b256;
-use iota_sdk::crypto::hashes::{Digest, Output};
 use iota_sdk::Wallet;
 use iota_sdk::wallet::account::types::Balance;
 use iota_sdk::client::secret::SecretManage;
-use iota_sdk::types::block::signature::Ed25519Signature;
 use rustc_hex::ToHex;
 
 use serde_json::json;
-use serde::Serialize;
 
 use crate::app::settings::Settings;
 
