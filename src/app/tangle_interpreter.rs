@@ -3,21 +3,31 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use base64::Engine;
+use base64::engine::general_purpose;
+use base64::prelude::BASE64_STANDARD;
 use bus::BusReader;
 use json::JsonValue;
 use log::{debug, error, info, warn};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
-use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
-use serde_json::json;
 
+use iota_sdk::crypto::keys::bip44::Bip44;
+use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
 use iota_sdk::wallet::{Account, ClientOptions};
 use iota_sdk::client::secret::SecretManager;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::client::stronghold::StrongholdAdapter;
-use iota_sdk::types::block::address::Bech32Address;
+use iota_sdk::crypto::ciphers::traits::consts::UInt;
+use iota_sdk::crypto::hashes::blake2b::Blake2b256;
+use iota_sdk::crypto::hashes::{Digest, Output};
 use iota_sdk::Wallet;
 use iota_sdk::wallet::account::types::Balance;
+use iota_sdk::client::secret::SecretManage;
+use iota_sdk::types::block::signature::Ed25519Signature;
+use rustc_hex::ToHex;
+
+use serde_json::json;
+use serde::Serialize;
 
 use crate::app::settings::Settings;
 
@@ -25,6 +35,7 @@ pub struct TangleInterpreter {
     bus: BusReader<JsonValue>,
     settings: Arc<Settings>,
     account: Account,
+    stronghold: StrongholdSecretManager,
     bech32_hrp: String,
     address: String,
 }
@@ -35,6 +46,7 @@ impl TangleInterpreter {
             bus,
             settings: _,
             account: _,
+            stronghold: _,
             bech32_hrp,
             address,
         } = self;
@@ -58,9 +70,45 @@ impl TangleInterpreter {
                             .build()
                             .unwrap()
                             .block_on(async move {
+                                //Hash the input
+                                //let mut hasher = Blake2b256::new();
+                                //hasher.update(compressed_data.clone());
+                                //let hash = hasher.finalize();
+
+                                //let bkake2b256: [u8; 32] = hash.as_slice().try_into().expect("Invalid length");
+
+
+                                let bip44_chain = Bip44::new(SHIMMER_COIN_TYPE)
+                                    .with_account(0)
+                                    .with_change(false as _)
+                                    .with_address_index(0);
+
+                                let ed255195_signature = self.stronghold
+                                    .sign_ed25519(&compressed_data, bip44_chain)
+                                    .await.unwrap();
+
+                                let mut signature: String = "0x".to_string();
+                                let tmp_sig: String = ed255195_signature.signature().to_bytes().to_hex();
+                                signature.push_str(tmp_sig.as_str());
+
+                                let mut public_key: String = "0x".to_string();
+                                let tmp_pk: String = ed255195_signature.public_key().to_bytes().to_hex();
+                                public_key.push_str(tmp_pk.as_str());
+
+                                let message_data = general_purpose::STANDARD.encode(compressed_data);
+
+
+                                let message = json!(
+                                    {
+                                        "message": message_data,
+                                        "signature": signature,
+                                        "public_key": public_key
+                                    }
+                                );
+
                                 let result = self.account.client().build_block()
                                     .with_tag(event.to_uppercase().as_bytes().to_vec())
-                                    .with_data(compressed_data)
+                                    .with_data(message.to_string().as_bytes().to_vec())
                                     .finish()
                                     .await;
 
@@ -133,13 +181,13 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                         .password(settings.iota_settings.password.to_string())
                         .build(&wallet_path).unwrap();
 
+                    let stronghold = SecretManager::Stronghold(secret_manager);
+
                     let wallet = Wallet::builder()
-                        .with_secret_manager(SecretManager::Stronghold(secret_manager))
+                        .with_secret_manager(stronghold)
                         .with_client_options(client_options)
                         .with_coin_type(SHIMMER_COIN_TYPE)
                         .finish().await.unwrap();
-
-                    //wallet.set_stronghold_password(settings.iota_settings.password.as_str());
 
                     let account = wallet
                         .get_account("User").await.unwrap();
@@ -166,7 +214,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                     // Setup Stronghold secret_manager
                     let mut secret_manager = StrongholdSecretManager::builder()
                         .password(settings.iota_settings.password.to_string())
-                        .build(wallet_path).unwrap();
+                        .build(&wallet_path).unwrap();
 
                     // Only required the first time, can also be generated with `manager.generate_mnemonic()?`
                     let wallet = Wallet::builder()
@@ -223,6 +271,9 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
     info!("Done loading wallet");
 
     TangleInterpreter {
+        stronghold: StrongholdSecretManager::builder()
+            .password(settings.iota_settings.password.to_string())
+            .build(&wallet_path).unwrap(),
         bus: tangle_bus_reader,
         settings,
         account,
