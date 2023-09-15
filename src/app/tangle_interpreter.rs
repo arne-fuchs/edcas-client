@@ -3,24 +3,23 @@ use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+
 use base64::Engine;
 use base64::engine::general_purpose;
 use bus::BusReader;
-use json::JsonValue;
-use log::{debug, error, info, warn};
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
-
-use iota_sdk::crypto::keys::bip44::Bip44;
 use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
-use iota_sdk::wallet::{Account, ClientOptions};
+use iota_sdk::client::secret::SecretManage;
 use iota_sdk::client::secret::SecretManager;
 use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
+use iota_sdk::crypto::keys::bip44::Bip44;
+use iota_sdk::wallet::{Account, ClientOptions};
 use iota_sdk::Wallet;
 use iota_sdk::wallet::account::types::Balance;
-use iota_sdk::client::secret::SecretManage;
+use json::JsonValue;
+use log::{debug, error, info, warn};
 use rustc_hex::ToHex;
-
 use serde_json::json;
 
 use crate::app::settings::Settings;
@@ -30,8 +29,6 @@ pub struct TangleInterpreter {
     settings: Arc<Settings>,
     account: Account,
     stronghold: StrongholdSecretManager,
-    bech32_hrp: String,
-    address: String,
 }
 
 impl TangleInterpreter {
@@ -41,8 +38,6 @@ impl TangleInterpreter {
             settings: _,
             account: _,
             stronghold: _,
-            bech32_hrp,
-            address,
         } = self;
 
         match bus.recv() {
@@ -206,7 +201,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                 .unwrap()
                 .block_on(async {
                     // Setup Stronghold secret_manager
-                    let mut secret_manager = StrongholdSecretManager::builder()
+                    let secret_manager = StrongholdSecretManager::builder()
                         .password(settings.iota_settings.password.to_string())
                         .build(&wallet_path).unwrap();
 
@@ -240,7 +235,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         });
 
     //get address one time so it doesn't have to be created each time
-    let address = tokio::runtime::Builder::new_current_thread()
+    tokio::runtime::Builder::new_current_thread()
         .enable_all()
         .build()
         .expect("Failed creating addresses")
@@ -271,7 +266,5 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         bus: tangle_bus_reader,
         settings,
         account,
-        bech32_hrp,
-        address,
     }
 }
