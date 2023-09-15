@@ -4,10 +4,12 @@ use std::io::{BufRead, BufReader};
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
-use bus::{Bus};
+
+use bus::Bus;
 use chrono::NaiveDateTime;
 use json::JsonValue;
 use log::{debug, error, info};
+
 use crate::app::settings::{ActionAtShutdownSignal, Settings};
 
 pub struct JournalReader{

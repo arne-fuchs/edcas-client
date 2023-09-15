@@ -1,4 +1,4 @@
-use eframe::{egui};
+use eframe::egui;
 use log::error;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};

@@ -1,7 +1,9 @@
 use std::ops::Add;
 use std::sync::Arc;
+
 use eframe::egui;
 use eframe::emath::Numeric;
+
 use crate::app::explorer::structs::{BodyImplementation, Signal};
 use crate::app::settings::Settings;
 

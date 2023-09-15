@@ -1,7 +1,9 @@
 use std::sync::Arc;
+
 use eframe::{App, egui, Frame};
 use eframe::egui::{Align, Layout};
 use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
+
 use crate::app::explorer::structs::{BodyImplementation, Parent};
 use crate::app::explorer::system::System;
 use crate::app::settings::Settings;

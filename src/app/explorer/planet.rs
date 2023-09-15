@@ -1,4 +1,5 @@
 use std::sync::Arc;
+
 use eframe::egui::Ui;
 use log::warn;
 use num_format::{Locale, ToFormattedString};

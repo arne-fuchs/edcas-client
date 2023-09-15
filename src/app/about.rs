@@ -1,4 +1,4 @@
-use eframe::{egui};
+use eframe::egui;
 
 pub struct About {
     github_url: String,

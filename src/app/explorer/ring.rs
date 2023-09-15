@@ -1,9 +1,10 @@
 use std::sync::Arc;
+
 use eframe::egui::Ui;
 use num_format::{Locale, ToFormattedString};
+
 use crate::app::explorer::structs::{BodyImplementation, Parent, Signal};
 use crate::app::settings::Settings;
-
 
 pub struct Ring {
     pub timestamp: String,

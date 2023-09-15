@@ -1,6 +1,8 @@
 use std::sync::Arc;
+
 use eframe::egui::Ui;
 use num_format::{Locale, ToFormattedString};
+
 use crate::app::explorer::planet::AsteroidRing;
 use crate::app::explorer::structs::{BodyImplementation, Parent};
 use crate::app::settings::Settings;

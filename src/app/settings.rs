@@ -1,24 +1,22 @@
-mod presets;
-
-use std::default::Default;
 use std::{env, fs};
+use std::default::Default;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::path::Path;
 use std::str::FromStr;
+
 use eframe::{App, egui, Frame};
 use eframe::egui::{Color32, Context, RichText, vec2, Window};
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::epaint::ahash::HashMap;
-
 use iota_sdk::client::Client;
-
 use log::warn;
 use serde_json::json;
 
-use crate::app::settings::ActionAtShutdownSignal::{Exit, Continue, Nothing};
-
+use crate::app::settings::ActionAtShutdownSignal::{Continue, Exit, Nothing};
 use crate::egui::global_dark_light_mode_switch;
+
+mod presets;
 
 #[derive(Clone)]
 pub struct Icon {

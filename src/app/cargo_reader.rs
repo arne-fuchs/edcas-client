@@ -1,6 +1,8 @@
 use std::sync::Arc;
+
 use json::{JsonValue, Null};
 use log::{debug, error};
+
 use crate::app::settings::Settings;
 
 pub struct CargoReader {

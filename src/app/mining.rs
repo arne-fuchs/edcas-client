@@ -1,8 +1,10 @@
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
+
 use eframe::{App, egui, Frame};
 use eframe::egui::Context;
 use num_format::{Locale, ToFormattedString};
+
 use crate::app::cargo_reader::CargoReader;
 
 pub struct Mining {
