@@ -123,44 +123,36 @@
   "log-level": "Debug",
   "planets": [
     {
-      "b": 219,
+      "b": 85,
       "char": "⏺",
-      "class": "Gas giant with water based life",
+      "class": "Sudarsky class I gas giant",
       "enabled": true,
-      "g": 217,
-      "r": 50
-    },
-    {
-      "b": 49,
-      "char": "⏺",
-      "class": "Helium rich gas giant",
-      "enabled": true,
-      "g": 118,
-      "r": 0
-    },
-    {
-      "b": 30,
-      "char": "⏺",
-      "class": "Icy body",
-      "enabled": true,
-      "g": 62,
-      "r": 64
-    },
-    {
-      "b": 26,
-      "char": "⏺",
-      "class": "Sudarsky class IV gas giant",
-      "enabled": true,
-      "g": 132,
-      "r": 111
-    },
-    {
-      "b": 207,
-      "char": "⏺",
-      "class": "Gas giant with ammonia based life",
-      "enabled": true,
-      "g": 67,
+      "g": 61,
       "r": 137
+    },
+    {
+      "b": 34,
+      "char": "⏺",
+      "class": "Rocky ice body",
+      "enabled": true,
+      "g": 63,
+      "r": 66
+    },
+    {
+      "b": 146,
+      "char": "⏺",
+      "class": "Water giant",
+      "enabled": true,
+      "g": 23,
+      "r": 18
+    },
+    {
+      "b": 113,
+      "char": "⏺",
+      "class": "Metal rich body",
+      "enabled": true,
+      "g": 113,
+      "r": 113
     },
     {
       "b": 0,
@@ -172,27 +164,19 @@
     },
     {
       "b": 0,
-      "char": "⏺",
-      "class": "Sudarsky class III gas giant",
-      "enabled": true,
-      "g": 202,
-      "r": 216
-    },
-    {
-      "b": 85,
-      "char": "⏺",
-      "class": "Sudarsky class I gas giant",
-      "enabled": true,
-      "g": 61,
-      "r": 137
-    },
-    {
-      "b": 0,
       "char": "○",
       "class": "Water world",
       "enabled": true,
       "g": 0,
       "r": 255
+    },
+    {
+      "b": 219,
+      "char": "⏺",
+      "class": "Gas giant with water based life",
+      "enabled": true,
+      "g": 217,
+      "r": 50
     },
     {
       "b": 169,
@@ -203,6 +187,22 @@
       "r": 0
     },
     {
+      "b": 0,
+      "char": "🌎",
+      "class": "Ammonia world",
+      "enabled": true,
+      "g": 255,
+      "r": 252
+    },
+    {
+      "b": 0,
+      "char": "⏺",
+      "class": "Sudarsky class III gas giant",
+      "enabled": true,
+      "g": 202,
+      "r": 216
+    },
+    {
       "b": 115,
       "char": "⏺",
       "class": "Rocky body",
@@ -211,44 +211,12 @@
       "r": 115
     },
     {
-      "b": 113,
+      "b": 207,
       "char": "⏺",
-      "class": "Metal rich body",
+      "class": "Gas giant with ammonia based life",
       "enabled": true,
-      "g": 113,
-      "r": 113
-    },
-    {
-      "b": 14,
-      "char": "⏺",
-      "class": "Sudarsky class V gas giant",
-      "enabled": true,
-      "g": 86,
-      "r": 0
-    },
-    {
-      "b": 34,
-      "char": "⏺",
-      "class": "Rocky ice body",
-      "enabled": true,
-      "g": 63,
-      "r": 66
-    },
-    {
-      "b": 0,
-      "char": "⏺",
-      "class": "Sudarsky class II gas giant",
-      "enabled": true,
-      "g": 128,
-      "r": 200
-    },
-    {
-      "b": 0,
-      "char": "⏺",
-      "class": "Ammonia world",
-      "enabled": true,
-      "g": 255,
-      "r": 252
+      "g": 67,
+      "r": 137
     },
     {
       "b": 90,
@@ -259,22 +227,318 @@
       "r": 90
     },
     {
-      "b": 146,
+      "b": 26,
       "char": "⏺",
-      "class": "Water giant",
+      "class": "Sudarsky class IV gas giant",
       "enabled": true,
-      "g": 23,
-      "r": 18
+      "g": 132,
+      "r": 111
+    },
+    {
+      "b": 0,
+      "char": "⏺",
+      "class": "Sudarsky class II gas giant",
+      "enabled": true,
+      "g": 128,
+      "r": 200
+    },
+    {
+      "b": 49,
+      "char": "⏺",
+      "class": "Helium rich gas giant",
+      "enabled": true,
+      "g": 118,
+      "r": 0
+    },
+    {
+      "b": 14,
+      "char": "⏺",
+      "class": "Sudarsky class V gas giant",
+      "enabled": true,
+      "g": 86,
+      "r": 0
+    },
+    {
+      "b": 30,
+      "char": "⏺",
+      "class": "Icy body",
+      "enabled": true,
+      "g": 62,
+      "r": 64
     }
   ],
   "stars": [
     {
+      "b": 109,
+      "char": "✴",
+      "class": "L",
+      "enabled": true,
+      "g": 0,
+      "r": 223
+    },
+    {
+      "b": 81,
+      "char": "✴",
+      "class": "RoguePlanet",
+      "enabled": true,
+      "g": 255,
+      "r": 0
+    },
+    {
+      "b": 134,
+      "char": "✴",
+      "class": "T",
+      "enabled": true,
+      "g": 0,
+      "r": 187
+    },
+    {
+      "b": 82,
+      "char": "✴",
+      "class": "Y",
+      "enabled": true,
+      "g": 13,
+      "r": 105
+    },
+    {
+      "b": 217,
+      "char": "✴",
+      "class": "F",
+      "enabled": true,
+      "g": 242,
+      "r": 255
+    },
+    {
       "b": 255,
       "char": "✴",
-      "class": "DX",
+      "class": "F_WhiteSuperGiant",
+      "enabled": true,
+      "g": 238,
+      "r": 214
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "N",
+      "enabled": true,
+      "g": 152,
+      "r": 128
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "CS",
       "enabled": true,
       "g": 255,
       "r": 255
+    },
+    {
+      "b": 136,
+      "char": "✴",
+      "class": "CN",
+      "enabled": true,
+      "g": 210,
+      "r": 253
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "WN",
+      "enabled": true,
+      "g": 235,
+      "r": 219
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "W",
+      "enabled": true,
+      "g": 255,
+      "r": 255
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "DAB",
+      "enabled": true,
+      "g": 225,
+      "r": 201
+    },
+    {
+      "b": 253,
+      "char": "✴",
+      "class": "WC",
+      "enabled": true,
+      "g": 245,
+      "r": 217
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "D",
+      "enabled": true,
+      "g": 241,
+      "r": 208
+    },
+    {
+      "b": 247,
+      "char": "✴",
+      "class": "DAZ",
+      "enabled": true,
+      "g": 234,
+      "r": 191
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "A",
+      "enabled": true,
+      "g": 255,
+      "r": 255
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "DC",
+      "enabled": true,
+      "g": 241,
+      "r": 208
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "O",
+      "enabled": true,
+      "g": 246,
+      "r": 236
+    },
+    {
+      "b": 78,
+      "char": "✴",
+      "class": "M_RedSuperGiant",
+      "enabled": true,
+      "g": 109,
+      "r": 226
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "DQ",
+      "enabled": true,
+      "g": 231,
+      "r": 208
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "DBV",
+      "enabled": true,
+      "g": 230,
+      "r": 227
+    },
+    {
+      "b": 195,
+      "char": "✴",
+      "class": "B",
+      "enabled": true,
+      "g": 201,
+      "r": 201
+    },
+    {
+      "b": 250,
+      "char": "✴",
+      "class": "MS S",
+      "enabled": true,
+      "g": 250,
+      "r": 250
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "CH",
+      "enabled": true,
+      "g": 255,
+      "r": 255
+    },
+    {
+      "b": 250,
+      "char": "✴",
+      "class": "A_BlueWhiteSuperGiant",
+      "enabled": true,
+      "g": 230,
+      "r": 230
+    },
+    {
+      "b": 180,
+      "char": "✴",
+      "class": "G",
+      "enabled": true,
+      "g": 238,
+      "r": 255
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "DAV",
+      "enabled": true,
+      "g": 223,
+      "r": 204
+    },
+    {
+      "b": 20,
+      "char": "✴",
+      "class": "X",
+      "enabled": true,
+      "g": 250,
+      "r": 20
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "WO",
+      "enabled": true,
+      "g": 238,
+      "r": 219
+    },
+    {
+      "b": 250,
+      "char": "✴",
+      "class": "AeBe",
+      "enabled": true,
+      "g": 250,
+      "r": 250
+    },
+    {
+      "b": 120,
+      "char": "✴",
+      "class": "K",
+      "enabled": true,
+      "g": 179,
+      "r": 255
+    },
+    {
+      "b": 108,
+      "char": "✴",
+      "class": "TTS",
+      "enabled": true,
+      "g": 0,
+      "r": 206
+    },
+    {
+      "b": 255,
+      "char": "✴",
+      "class": "DB",
+      "enabled": true,
+      "g": 233,
+      "r": 175
+    },
+    {
+      "b": 0,
+      "char": "✴",
+      "class": "M_RedGiant",
+      "enabled": true,
+      "g": 167,
+      "r": 248
     },
     {
       "b": 0,
@@ -293,60 +557,36 @@
       "r": 210
     },
     {
-      "b": 20,
+      "b": 252,
       "char": "✴",
-      "class": "X",
+      "class": "DCV",
       "enabled": true,
-      "g": 250,
-      "r": 20
-    },
-    {
-      "b": 253,
-      "char": "✴",
-      "class": "WC",
-      "enabled": true,
-      "g": 245,
-      "r": 217
+      "g": 222,
+      "r": 218
     },
     {
       "b": 255,
       "char": "✴",
-      "class": "A",
+      "class": "CHd",
       "enabled": true,
       "g": 255,
       "r": 255
     },
     {
-      "b": 255,
+      "b": 94,
       "char": "✴",
-      "class": "DOV",
+      "class": "S",
       "enabled": true,
-      "g": 255,
-      "r": 255
+      "g": 50,
+      "r": 181
     },
     {
-      "b": 255,
+      "b": 218,
       "char": "✴",
-      "class": "F_WhiteSuperGiant",
+      "class": "WNC",
       "enabled": true,
-      "g": 238,
-      "r": 214
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "DBZ",
-      "enabled": true,
-      "g": 233,
-      "r": 215
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "DAV",
-      "enabled": true,
-      "g": 223,
-      "r": 204
+      "g": 210,
+      "r": 207
     },
     {
       "b": 255,
@@ -357,76 +597,36 @@
       "r": 208
     },
     {
-      "b": 250,
-      "char": "✴",
-      "class": "AeBe",
-      "enabled": true,
-      "g": 250,
-      "r": 250
-    },
-    {
       "b": 255,
       "char": "✴",
-      "class": "DAB",
-      "enabled": true,
-      "g": 225,
-      "r": 201
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "CS",
+      "class": "DO",
       "enabled": true,
       "g": 255,
       "r": 255
     },
     {
-      "b": 217,
+      "b": 185,
       "char": "✴",
-      "class": "F",
+      "class": "MS",
       "enabled": true,
-      "g": 242,
+      "g": 207,
       "r": 255
     },
     {
-      "b": 72,
-      "char": "☁",
-      "class": "StellarRemnantNebula",
+      "b": 86,
+      "char": "✴",
+      "class": "C",
       "enabled": true,
-      "g": 255,
-      "r": 0
+      "g": 94,
+      "r": 222
     },
     {
-      "b": 78,
+      "b": 105,
       "char": "✴",
-      "class": "M_RedSuperGiant",
+      "class": "CJ",
       "enabled": true,
-      "g": 109,
-      "r": 226
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "O",
-      "enabled": true,
-      "g": 246,
-      "r": 236
-    },
-    {
-      "b": 0,
-      "char": "✴",
-      "class": "M_RedGiant",
-      "enabled": true,
-      "g": 167,
-      "r": 248
-    },
-    {
-      "b": 250,
-      "char": "✴",
-      "class": "A_BlueWhiteSuperGiant",
-      "enabled": true,
-      "g": 230,
-      "r": 230
+      "g": 158,
+      "r": 212
     },
     {
       "b": 255,
@@ -439,106 +639,26 @@
     {
       "b": 255,
       "char": "✴",
-      "class": "DQ",
+      "class": "DBZ",
       "enabled": true,
-      "g": 231,
-      "r": 208
-    },
-    {
-      "b": 185,
-      "char": "✴",
-      "class": "MS",
-      "enabled": true,
-      "g": 207,
-      "r": 255
+      "g": 233,
+      "r": 215
     },
     {
       "b": 255,
       "char": "✴",
-      "class": "N",
-      "enabled": true,
-      "g": 152,
-      "r": 128
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "DC",
-      "enabled": true,
-      "g": 241,
-      "r": 208
-    },
-    {
-      "b": 252,
-      "char": "✴",
-      "class": "DCV",
-      "enabled": true,
-      "g": 222,
-      "r": 218
-    },
-    {
-      "b": 0,
-      "char": "✴",
-      "class": "B",
-      "enabled": true,
-      "g": 25,
-      "r": 25
-    },
-    {
-      "b": 105,
-      "char": "✴",
-      "class": "CJ",
-      "enabled": true,
-      "g": 158,
-      "r": 212
-    },
-    {
-      "b": 136,
-      "char": "✴",
-      "class": "CN",
-      "enabled": true,
-      "g": 210,
-      "r": 253
-    },
-    {
-      "b": 94,
-      "char": "✴",
-      "class": "S",
-      "enabled": true,
-      "g": 50,
-      "r": 181
-    },
-    {
-      "b": 120,
-      "char": "✴",
-      "class": "K",
-      "enabled": true,
-      "g": 179,
-      "r": 255
-    },
-    {
-      "b": 86,
-      "char": "✴",
-      "class": "C",
-      "enabled": true,
-      "g": 94,
-      "r": 222
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "CH",
+      "class": "DOV",
       "enabled": true,
       "g": 255,
       "r": 255
     },
     {
-      "b": 218,
-      "char": "✴",
-      "class": "WNC",
+      "b": 72,
+      "char": "☁",
+      "class": "StellarRemnantNebula",
       "enabled": true,
-      "g": 210,
-      "r": 207
+      "g": 255,
+      "r": 0
     },
     {
       "b": 106,
@@ -549,140 +669,20 @@
       "r": 196
     },
     {
-      "b": 0,
+      "b": 255,
+      "char": "✴",
+      "class": "DX",
+      "enabled": true,
+      "g": 255,
+      "r": 255
+    },
+    {
+      "b": 39,
       "char": "✴",
       "class": "SupermassiveBlackHole",
       "enabled": true,
-      "g": 18,
-      "r": 27
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "WN",
-      "enabled": true,
-      "g": 235,
-      "r": 219
-    },
-    {
-      "b": 109,
-      "char": "✴",
-      "class": "L",
-      "enabled": true,
       "g": 0,
-      "r": 223
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "D",
-      "enabled": true,
-      "g": 241,
-      "r": 208
-    },
-    {
-      "b": 180,
-      "char": "✴",
-      "class": "G",
-      "enabled": true,
-      "g": 238,
-      "r": 255
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "W",
-      "enabled": true,
-      "g": 255,
-      "r": 255
-    },
-    {
-      "b": 247,
-      "char": "✴",
-      "class": "DAZ",
-      "enabled": true,
-      "g": 234,
-      "r": 191
-    },
-    {
-      "b": 134,
-      "char": "✴",
-      "class": "T",
-      "enabled": true,
-      "g": 0,
-      "r": 187
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "WO",
-      "enabled": true,
-      "g": 238,
-      "r": 219
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "DO",
-      "enabled": true,
-      "g": 255,
-      "r": 255
-    },
-    {
-      "b": 250,
-      "char": "✴",
-      "class": "MS S",
-      "enabled": true,
-      "g": 250,
-      "r": 250
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "DB",
-      "enabled": true,
-      "g": 233,
-      "r": 175
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "DBV",
-      "enabled": true,
-      "g": 230,
-      "r": 227
-    },
-    {
-      "b": 255,
-      "char": "✴",
-      "class": "CHd",
-      "enabled": true,
-      "g": 255,
-      "r": 255
-    },
-    {
-      "b": 108,
-      "char": "✴",
-      "class": "TTS",
-      "enabled": true,
-      "g": 0,
-      "r": 206
-    },
-    {
-      "b": 82,
-      "char": "✴",
-      "class": "Y",
-      "enabled": true,
-      "g": 13,
-      "r": 105
-    },
-    {
-      "b": 81,
-      "char": "✴",
-      "class": "RoguePlanet",
-      "enabled": true,
-      "g": 255,
-      "r": 0
+      "r": 115
     }
   ]
 }
