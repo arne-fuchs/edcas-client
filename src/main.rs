@@ -79,7 +79,6 @@ fn main() {
     let mut native_options = eframe::NativeOptions::default();
     native_options.app_id = Some("edcas-client".to_string());
     native_options.icon_data = Some(icon);
-    native_options.vsync = true;
     native_options.hardware_acceleration = HardwareAcceleration::Preferred;
     native_options.initial_window_size = Option::from(Vec2::new(width, height));
     eframe::run_native("ED: Commander Assistant System", native_options, Box::new(|_cc| client)).expect("Program panicked");
