@@ -12,9 +12,9 @@ impl Default for About {
         let mut logo_path = image::io::Reader::open("graphics\\logo\\edcas.png");
         match env::var("HOME") {
             Ok(home) => {
-                match image::io::Reader::open(format!("{}/.local/share/graphics/logo/edcas.png", home)) {
+                match image::io::Reader::open(format!("{}/.local/share/edcas-client/graphics/logo/edcas.png", home)) {
                     Ok(_) => {
-                        logo_path = image::io::Reader::open(format!("{}/.local/share/graphics/logo/edcas.png", home));
+                        logo_path = image::io::Reader::open(format!("{}/.local/share/edcas-client/graphics/logo/edcas.png", home));
                     }
                     Err(_) => {
                         logo_path = image::io::Reader::open("graphics/logo/edcas.png");

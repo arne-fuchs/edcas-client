@@ -53,9 +53,9 @@ fn main() {
     let mut image = image::open("graphics\\logo\\edcas_128.png");
     match env::var("HOME") {
         Ok(home) => {
-            match image::io::Reader::open(format!("{}/.local/share/graphics/logo/edcas_128.png", home)) {
+            match image::io::Reader::open(format!("{}/.local/share/edcas-client/graphics/logo/edcas_128.png", home)) {
                 Ok(_) => {
-                    image = image::open(format!("{}/.local/share/graphics/logo/edcas_128.png", home));
+                    image = image::open(format!("{}/.local/share/edcas-client/graphics/logo/edcas_128.png", home));
                 }
                 Err(_) => {
                     image = image::open("graphics/logo/edcas_128.png");
