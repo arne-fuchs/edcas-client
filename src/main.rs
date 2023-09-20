@@ -3,7 +3,6 @@ extern crate core;
 use std::env;
 use std::str::FromStr;
 use eframe::{egui, HardwareAcceleration, IconData};
-use eframe::egui::ColorImage;
 
 use crate::app::EliteRustClient;
 use crate::egui::Vec2;
