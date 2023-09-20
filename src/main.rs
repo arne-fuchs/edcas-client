@@ -2,7 +2,8 @@ extern crate core;
 
 use std::env;
 use std::str::FromStr;
-use eframe::{egui, HardwareAcceleration};
+use eframe::{egui, HardwareAcceleration, IconData};
+use eframe::egui::ColorImage;
 
 use crate::app::EliteRustClient;
 use crate::egui::Vec2;
@@ -49,7 +50,39 @@ fn main() {
 
     let client = Box::<EliteRustClient>::default();
 
+    //App icon
+    let mut image = image::open("graphics\\logo\\edcas_128.png");
+    match env::var("HOME") {
+        Ok(home) => {
+            match image::io::Reader::open(format!("{}/.local/share/graphics/logo/edcas_128.png", home)) {
+                Ok(_) => {
+                    image = image::open(format!("{}/.local/share/graphics/logo/edcas_128.png", home));
+                }
+                Err(_) => {
+                    image = image::open("graphics/logo/edcas_128.png");
+                }
+            }
+        }
+        Err(_) => {}
+    }
+
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image.unwrap()
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+
+    let icon = IconData{
+        rgba: icon_rgba,
+        width: icon_width,
+        height: icon_height
+    };
+
     let mut native_options = eframe::NativeOptions::default();
+    native_options.app_id = Some("edcas-client".to_string());
+    native_options.icon_data = Some(icon);
     native_options.vsync = true;
     native_options.hardware_acceleration = HardwareAcceleration::Preferred;
     native_options.initial_window_size = Option::from(Vec2::new(width, height));
