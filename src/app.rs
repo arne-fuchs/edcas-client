@@ -1,18 +1,23 @@
 use std::{env, fs, thread};
+use std::fs::File;
+use std::io::Read;
 use std::path::PathBuf;
 use std::str::FromStr;
 use std::sync::{Arc, Mutex};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread::sleep;
 use std::time::Duration;
 
 use bus::{Bus, BusReader};
 use chrono::Local;
-use eframe::App;
+use eframe::{App, Frame};
 use eframe::egui;
-use eframe::egui::TextStyle;
+use eframe::egui::{ColorImage, Image, TextStyle, TextureHandle, Vec2};
+use eframe::glow::Texture;
 
 use json::JsonValue;
 use log::info;
+use num_format::Locale::lo;
 use crate::app::cargo_reader::CargoReader;
 
 use crate::app::materials::MaterialState;
@@ -57,7 +62,6 @@ impl EliteRustClient {
         }
     }
 }
-
 impl Default for EliteRustClient {
     fn default() -> Self {
         let settings = settings::Settings::default();

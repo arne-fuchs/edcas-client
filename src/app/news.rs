@@ -1,14 +1,40 @@
+use std::env;
 use eframe::egui;
+use eframe::egui::{ColorImage, TextureHandle};
 use log::error;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
 
 pub struct News {
     articles: Vec<Article>,
+    pub logo: ColorImage,
 }
 
 impl Default for News {
     fn default() -> Self {
+        let mut logo_path = image::io::Reader::open("graphics\\logo\\edcas.png");
+        match env::var("HOME") {
+            Ok(home) => {
+                match image::io::Reader::open(format!("{}/.local/share/graphics/logo/edcas.png", home)) {
+                    Ok(_) => {
+                        logo_path = image::io::Reader::open(format!("{}/.local/share/graphics/logo/edcas.png", home));
+                    }
+                    Err(_) => {
+                        logo_path = image::io::Reader::open("graphics/logo/edcas.png");
+                    }
+                }
+            }
+            Err(_) => {}
+        }
+        let image = logo_path.unwrap().decode().unwrap();
+        let size = [image.width() as _, image.height() as _];
+        let image_buffer = image.to_rgba8();
+        let pixels = image_buffer.as_flat_samples();
+        let color_image = ColorImage::from_rgba_unmultiplied(
+            size,
+            pixels.as_slice(),
+        );
+
         let articles = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -53,6 +79,7 @@ impl Default for News {
 
         Self {
             articles,
+            logo: color_image,
         }
     }
 }
@@ -66,7 +93,17 @@ pub struct Article {
 impl News {
     pub fn update(&self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            ui.heading("Galnet News");
+            let texture: TextureHandle = ui.ctx().load_texture(
+                "logo",
+                self.logo.clone(),
+                egui::TextureOptions::LINEAR,
+            );
+            let img_size = 256.0 * texture.size_vec2() / texture.size_vec2().y;
+            ui.vertical_centered(|ui|{
+                ui.image(&texture, img_size);
+                ui.heading("Galnet News");
+            });
+
             ui.separator();
             ui.end_row();
 
