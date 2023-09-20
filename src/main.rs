@@ -51,18 +51,15 @@ fn main() {
 
     //App icon
     let mut image = image::open("graphics\\logo\\edcas_128.png");
-    match env::var("HOME") {
-        Ok(home) => {
-            match image::io::Reader::open(format!("{}/.local/share/edcas-client/graphics/logo/edcas_128.png", home)) {
-                Ok(_) => {
-                    image = image::open(format!("{}/.local/share/edcas-client/graphics/logo/edcas_128.png", home));
-                }
-                Err(_) => {
-                    image = image::open("graphics/logo/edcas_128.png");
-                }
+    if cfg!(target_os = "linux") {
+        match image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas_128.png") {
+            Ok(_) => {
+                image = image::open("/usr/share/edcas-client/graphics/logo/edcas_128.png");
+            }
+            Err(_) => {
+                image = image::open("graphics/logo/edcas.png");
             }
         }
-        Err(_) => {}
     }
 
     let (icon_rgba, icon_width, icon_height) = {

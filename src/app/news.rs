@@ -13,18 +13,15 @@ pub struct News {
 impl Default for News {
     fn default() -> Self {
         let mut logo_path = image::io::Reader::open("graphics\\logo\\edcas.png");
-        match env::var("HOME") {
-            Ok(home) => {
-                match image::io::Reader::open(format!("{}/.local/share/edcas-client/graphics/logo/edcas.png", home)) {
-                    Ok(_) => {
-                        logo_path = image::io::Reader::open(format!("{}/.local/share/edcas-client/graphics/logo/edcas.png", home));
-                    }
-                    Err(_) => {
-                        logo_path = image::io::Reader::open("graphics/logo/edcas.png");
-                    }
+        if cfg!(target_os = "linux") {
+            match image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas.png") {
+                Ok(_) => {
+                    logo_path = image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas.png");
+                }
+                Err(_) => {
+                    logo_path = image::io::Reader::open("graphics/logo/edcas.png");
                 }
             }
-            Err(_) => {}
         }
         let image = logo_path.unwrap().decode().unwrap();
         let size = [image.width() as _, image.height() as _];
