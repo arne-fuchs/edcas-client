@@ -93,21 +93,20 @@ pub struct Article {
 impl News {
     pub fn update(&self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
-            let texture: TextureHandle = ui.ctx().load_texture(
-                "logo",
-                self.logo.clone(),
-                egui::TextureOptions::LINEAR,
-            );
-            let img_size = 256.0 * texture.size_vec2() / texture.size_vec2().y;
-            ui.vertical_centered(|ui|{
-                ui.image(&texture, img_size);
-                ui.heading("Galnet News");
-            });
-
-            ui.separator();
-            ui.end_row();
-
             egui::ScrollArea::vertical().show(ui, |ui| {
+                let texture: TextureHandle = ui.ctx().load_texture(
+                    "logo",
+                    self.logo.clone(),
+                    egui::TextureOptions::LINEAR,
+                );
+                let img_size = 256.0 * texture.size_vec2() / texture.size_vec2().y;
+                ui.vertical_centered(|ui|{
+                    ui.image(&texture, img_size);
+                    ui.heading("Galnet News");
+                });
+
+                ui.separator();
+                ui.end_row();
                 for news in &self.articles {
                     ui.vertical_centered(|ui| {
                         ui.end_row();
