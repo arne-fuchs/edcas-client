@@ -118,7 +118,7 @@ impl App for Mining {
                                             ui.label("Avg. buy price:");
                                             ui.label(format!("{} Credits", (cargo.buy_price as u64).to_formatted_string(&Locale::en)));
                                             ui.end_row();
-                                            ui.label("Highest bid:");
+                                            ui.label("Highest sell price:");
                                             ui.label(format!("{} Credits",cargo.highest_sell_price.to_formatted_string(&Locale::en)));
                                             ui.end_row();
                                             if ui.button(format!("{} 🗐", &cargo.highest_sell_station)).clicked() {
