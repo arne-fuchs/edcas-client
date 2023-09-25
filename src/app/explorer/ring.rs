@@ -45,8 +45,6 @@ impl BodyImplementation for Ring{
     }
 
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
-        ui.label(self.settings.icons.get("ring").unwrap().get_richtext());
-
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name{
             let system_name = self.star_system.clone();

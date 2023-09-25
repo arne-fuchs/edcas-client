@@ -35,12 +35,36 @@
       "r": 41
     },
     {
-      "b": 175,
+      "b": 255,
       "char": "○",
       "enabled": true,
-      "g": 175,
-      "name": "ring",
-      "r": 175
+      "g": 255,
+      "name": "eRingClass_Icy",
+      "r": 255
+    },
+    {
+      "b": 126,
+      "char": "○",
+      "enabled": true,
+      "g": 126,
+      "name": "eRingClass_MetalRich",
+      "r": 126
+    },
+    {
+      "b": 131,
+      "char": "○",
+      "enabled": true,
+      "g": 131,
+      "name": "eRingClass_Metalic",
+      "r": 131
+    },
+    {
+      "b": 52,
+      "char": "○",
+      "enabled": true,
+      "g": 52,
+      "name": "eRingClass_Rocky",
+      "r": 113
     },
     {
       "b": 255,

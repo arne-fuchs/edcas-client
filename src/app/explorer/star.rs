@@ -95,9 +95,11 @@ impl BodyImplementation for Star {
             *system_index = body_index;
         };
 
-        if !self.asteroid_rings.is_empty() && self.settings.icons.get("ring").unwrap().enabled{
-            ui.label("|");
-            ui.label(self.settings.icons.get("ring").unwrap().get_richtext());
+        for ring in &self.asteroid_rings{
+            if self.settings.icons.get(ring.ring_class.as_str()).unwrap().enabled{
+                ui.label("|");
+                ui.label(self.settings.icons.get(ring.ring_class.as_str()).unwrap().get_richtext());
+            }
         }
 
         if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled{
