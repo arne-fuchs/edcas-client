@@ -269,6 +269,14 @@
   ],
   "stars": [
     {
+      "b": 156,
+      "char": "○",
+      "class": "H",
+      "enabled": true,
+      "g": 156,
+      "r": 156
+    },
+    {
       "b": 109,
       "char": "✴",
       "class": "L",
