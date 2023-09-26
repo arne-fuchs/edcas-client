@@ -17,7 +17,7 @@ use crate::app::settings::Settings;
 pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut MaterialState, mining: &mut Mining, settings: Arc<Settings>) {
     let event = json["event"].as_str().unwrap();
     info!("Interpreter event received: {}", event);
-    println!("{}",&json);
+    //println!("{}",&json);
 
     match event {
         //Navigation
