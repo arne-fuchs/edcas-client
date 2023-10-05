@@ -10,6 +10,7 @@ repository = "https://github.com/arne-fuchs/edcas-client"
 [dependencies]
 eframe = { version = "0.22.0"}
 egui_extras = { version = "0.22.0", features = ["image"] }
+egui_plot = "0.23.0"
 image = { version = "0.24.5", features = ["png"] }
 #iota-client = { git = "https://github.com/iotaledger/iota.rs", rev = "df302750701667ad28f4830d8bfbb214291036b1" }
 #iota-client = { git = "https://github.com/arne-fuchs/iota.rs" }

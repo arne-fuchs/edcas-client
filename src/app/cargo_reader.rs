@@ -25,11 +25,24 @@ pub struct Cargo {
     pub lowest_buy_price: u64,
     pub lowest_buy_station: String,
     pub lowest_buy_system: String,
+    pub price_history: Vec<PricePoint>
+}
+
+pub struct PricePoint {
+    pub buy_price: f64,
+    pub sell_price: f64,
+    pub mean_price: f64,
+    pub timestamp: u64,
 }
 
 pub fn initialize(settings: Arc<Settings>) -> CargoReader {
     let mut directory_path= settings.journal_reader_settings.journal_directory.clone();
-    directory_path.push_str("/Cargo.json");
+    if cfg!(target_os = "windows") {
+        directory_path.push_str("\\Cargo.json");
+    } else if cfg!(target_os = "linux") {
+        directory_path.push_str("/Cargo.json");
+    }
+
 
     CargoReader {
         directory_path,
@@ -69,6 +82,7 @@ impl CargoReader {
                                         let mut lowest_buy_price = 0u64;
                                         let mut lowest_buy_station = String::from("N/A");
                                         let mut lowest_buy_system = String::from("N/A");
+                                        let mut price_history:Vec<PricePoint> = vec![];
 
                                         for old_cargo in &self.inventory{
                                             if old_cargo.name == name {
@@ -133,6 +147,51 @@ impl CargoReader {
 
                                         }
 
+                                        let history_answer: Option<JsonValue> = tokio::runtime::Builder::new_current_thread()
+                                            .enable_all()
+                                            .build()
+                                            .unwrap()
+                                            .block_on(async {
+                                                let url = format!("https://api.edcas.de/data/odyssey/commodity_history/{}",name.clone());
+                                                debug!("Api call to edcas: {}", url.clone());
+                                                let result = reqwest::get(url.clone()).await;
+                                                return match result {
+                                                    Ok(response) => {
+                                                        let text = response.text().await.unwrap();
+                                                        let result = json::parse(text.as_str());
+                                                        return match result {
+                                                            Ok(json) => {
+                                                                Some(json)
+                                                            }
+                                                            Err(err) => {
+                                                                error!("Couldn't parse answer to json: {}",err);
+                                                                error!("Value: {}", text);
+                                                                None
+                                                            }
+                                                        }
+                                                    }
+                                                    Err(err) => {
+                                                        error!("Couldn't reach edcas api under {} Reason: {}", url.clone(),err);
+                                                        None
+                                                    }
+                                                }
+                                            });
+
+                                        match history_answer {
+                                            None => {}
+                                            Some(history) => {
+                                                for i in 0..history["prices"].len(){
+                                                    let price = &history["prices"][i];
+                                                    price_history.push(PricePoint{
+                                                        buy_price: price["buy_price"].as_f64().unwrap(),
+                                                        sell_price: price["sell_price"].as_f64().unwrap(),
+                                                        mean_price: price["mean_price"].as_f64().unwrap(),
+                                                        timestamp: price["timestamp"].as_u64().unwrap(),
+                                                    })
+                                                }
+                                            }
+                                        }
+
                                         new_inventory.push(Cargo {
                                             name: cargo_json["Name"].to_string(),
                                             name_localised: cargo_json["Name_Localised"].to_string(),
@@ -147,6 +206,7 @@ impl CargoReader {
                                             lowest_buy_price,
                                             lowest_buy_station,
                                             lowest_buy_system,
+                                            price_history,
                                         });
                                         cargo_json = json["Inventory"].pop();
                                     }
