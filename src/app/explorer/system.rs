@@ -152,6 +152,7 @@ impl System {
         ui.separator();
         ui.heading("System Signals");
         egui::ScrollArea::vertical()
+            .max_height(200.0)
             .show(ui, |ui| {
                 self.draw_system_signal_list(ui);
             });
