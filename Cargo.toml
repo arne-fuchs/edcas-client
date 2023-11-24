@@ -16,7 +16,7 @@ image = { version = "0.24.5", features = ["png"] }
 #iota-client = { git = "https://github.com/arne-fuchs/iota.rs" }
 #iota-wallet = { git = "https://github.com/iotaledger/wallet.rs" }
 #iota-wallet = "1.0.0-rc.6"
-iota-sdk = { version = "1.0.3", features = ["stronghold","rocksdb"]}
+iota-sdk = { version = "1.0.3", features = ["stronghold","rocksdb"], optional = true}
 #Stay above 1.22.1 because of security reasons
 tokio = { version = "1.26.0", features = ["full"] }
 derive = "1.0.0"
@@ -42,3 +42,7 @@ fern-logger = "0.5.0"
 log = "0.4.17"
 #Text to speech
 #tts_rust = "0.3.3"
+
+[features]
+default = ["iota"]
+iota = ["dep:iota-sdk"]

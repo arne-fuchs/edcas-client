@@ -9,21 +9,33 @@ use base64::engine::general_purpose;
 use bus::BusReader;
 use flate2::Compression;
 use flate2::write::ZlibEncoder;
-use iota_sdk::client::constants::SHIMMER_COIN_TYPE;
-use iota_sdk::client::secret::SecretManage;
-use iota_sdk::client::secret::SecretManager;
-use iota_sdk::client::secret::stronghold::StrongholdSecretManager;
-use iota_sdk::crypto::keys::bip44::Bip44;
-use iota_sdk::wallet::{Account, ClientOptions};
-use iota_sdk::Wallet;
-use iota_sdk::wallet::account::types::Balance;
+#[cfg(feature = "iota")]
+use iota_sdk::{
+    client::{
+        constants::SHIMMER_COIN_TYPE,
+    },
+    client::{
+        secret::{
+            SecretManage,
+            SecretManager,
+            stronghold::StrongholdSecretManager
+        }
+    },
+    wallet::{
+        Account,
+        ClientOptions,
+        account::types::Balance
+    },
+    crypto::keys::bip44::Bip44,
+    Wallet
+};
 use json::JsonValue;
 use log::{debug, error, info, warn};
 use rustc_hex::ToHex;
 use serde_json::json;
 
 use crate::app::settings::Settings;
-
+#[cfg(feature = "iota")]
 pub struct TangleInterpreter {
     bus: BusReader<JsonValue>,
     settings: Arc<Settings>,
@@ -31,6 +43,7 @@ pub struct TangleInterpreter {
     stronghold: StrongholdSecretManager,
 }
 
+#[cfg(feature = "iota")]
 impl TangleInterpreter {
     pub fn run(&mut self) {
         let Self {
@@ -116,7 +129,7 @@ impl TangleInterpreter {
         }
     }
 }
-
+#[cfg(feature = "iota")]
 pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Settings>) -> TangleInterpreter {
     info!("Loading wallet");
 

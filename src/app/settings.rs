@@ -9,9 +9,9 @@ use eframe::{App, egui, Frame};
 use eframe::egui::{Color32, Context, RichText, vec2, Window};
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::epaint::ahash::HashMap;
+#[cfg(feature = "iota")]
 use iota_sdk::client::Client;
-use log::{error, warn};
-use num_format::Locale::pa;
+use log::warn;
 use serde_json::json;
 
 use crate::app::settings::ActionAtShutdownSignal::{Continue, Exit, Nothing};
@@ -90,6 +90,7 @@ pub struct ExplorerSettings {
 
 #[derive(Clone)]
 pub struct IotaSettings {
+    #[cfg(feature = "iota")]
     pub node: Option<Client>,
     pub base_url: String,
     pub port: u64,
@@ -248,22 +249,27 @@ impl Default for Settings {
         // IOTA
         //---------------------------
 
-        let mut some_client = None;
-        if json["iota"]["allow-share-data"].as_bool().unwrap_or(false) {
-            let mut node_url = json["iota"]["base-url"].as_str().unwrap_or("https://tangle.paesserver.de").to_string();
-            node_url.push(':');
-            node_url.push_str(json["iota"]["port"].as_str().unwrap_or("443"));
-            some_client = tokio::runtime::Builder::new_current_thread()
-                .enable_all()
-                .build()
-                .unwrap()
-                .block_on(async {
-                    Some(Client::builder()
-                        .with_node(node_url.as_str()).unwrap()
-                        .with_local_pow(json["iota"]["local-pow"].as_bool().unwrap_or(false))
-                        .finish().await.unwrap())
-                });
-        }
+        #[cfg(feature = "iota")]
+        let some_client = {
+            if json["iota"]["allow-share-data"].as_bool().unwrap_or(false) {
+                let mut node_url = json["iota"]["base-url"].as_str().unwrap_or("https://tangle.paesserver.de").to_string();
+                node_url.push(':');
+                node_url.push_str(json["iota"]["port"].as_str().unwrap_or("443"));
+                tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap()
+                    .block_on(async {
+                        Some(Client::builder()
+                            .with_node(node_url.as_str()).unwrap()
+                            .with_local_pow(json["iota"]["local-pow"].as_bool().unwrap_or(false))
+                            .finish().await.unwrap())
+                    })
+            }else {
+                None
+            }
+        };
+
 
         //---------------------------
         // Appearance
@@ -348,6 +354,7 @@ impl Default for Settings {
                 include_system_name: json["explorer"]["include_system_name"].as_bool().unwrap_or(true),
             },
             iota_settings: IotaSettings {
+                #[cfg(feature = "iota")]
                 node: some_client,
                 base_url: json["iota"]["base-url"].as_str().unwrap_or("https://tangle.paesserver.de").to_string(),
                 port: json["iota"]["port"].as_u64().unwrap_or(443),
@@ -615,31 +622,33 @@ impl App for Settings {
                     If you do not want that, please leave this function disabled.\n\
                     Keep in mind, that your experience might decrease if you leave this disabled.");
                 };
-                ui.heading("EDCAS Network").on_hover_ui(info_ui);
-                egui::Grid::new("network_grid")
-                    .num_columns(2)
-                    .spacing([60.0, 5.0])
-                    .min_col_width(300.0)
-                    .striped(true)
-                    .show(ui, |ui| {
-                        ui.label("Allow to share journal log data:").on_hover_ui(info_ui);
-                        ui.checkbox(&mut self.iota_settings.allow_share_data, "");
-                        ui.end_row();
-                        ui.label("Node Url:");
-                        ui.text_edit_singleline(&mut self.iota_settings.base_url);
-                        ui.end_row();
-                        ui.label("Port:");
-                        ui.text_edit_singleline(&mut self.iota_settings.port.to_string());
-                        ui.end_row();
-                        ui.label("Faucet Url:");
-                        ui.text_edit_singleline(&mut self.iota_settings.faucet_url);
-                        ui.end_row();
-                        ui.label("Nft Adapter Timeout:");
-                        ui.add(egui::Slider::new(&mut self.iota_settings.n_timeout, 0..=20).suffix(" Seconds"));
-                        ui.end_row();
-                        ui.label("Nft Adapter Attempts:");
-                        ui.add(egui::Slider::new(&mut self.iota_settings.n_attempts, 0..=20).suffix(" Attempts"));
-                    });
+                #[cfg(feature = "iota")]{
+                    ui.heading("EDCAS Network").on_hover_ui(info_ui);
+                    egui::Grid::new("network_grid")
+                        .num_columns(2)
+                        .spacing([60.0, 5.0])
+                        .min_col_width(300.0)
+                        .striped(true)
+                        .show(ui, |ui| {
+                            ui.label("Allow to share journal log data:").on_hover_ui(info_ui);
+                            ui.checkbox(&mut self.iota_settings.allow_share_data, "");
+                            ui.end_row();
+                            ui.label("Node Url:");
+                            ui.text_edit_singleline(&mut self.iota_settings.base_url);
+                            ui.end_row();
+                            ui.label("Port:");
+                            ui.text_edit_singleline(&mut self.iota_settings.port.to_string());
+                            ui.end_row();
+                            ui.label("Faucet Url:");
+                            ui.text_edit_singleline(&mut self.iota_settings.faucet_url);
+                            ui.end_row();
+                            ui.label("Nft Adapter Timeout:");
+                            ui.add(egui::Slider::new(&mut self.iota_settings.n_timeout, 0..=20).suffix(" Seconds"));
+                            ui.end_row();
+                            ui.label("Nft Adapter Attempts:");
+                            ui.add(egui::Slider::new(&mut self.iota_settings.n_attempts, 0..=20).suffix(" Attempts"));
+                        });
+                }
             });
             ui.separator();
             ui.end_row();
