@@ -121,7 +121,6 @@ pub struct Settings {
     pub icons: HashMap<String, Icon>,
     pub stars: HashMap<String, Icon>,
     pub planets: HashMap<String, Icon>,
-    pub log_level: String,
     pub settings_path: String,
 }
 
@@ -261,7 +260,7 @@ impl Default for Settings {
             if !Path::new(&graphics_directory).exists() {
                 graphics_directory = String::from("");
             }
-            println!("Graphics path: {}", &graphics_directory);
+            info!("Graphics path: {}", &graphics_directory);
         }
 
         //---------------------------
@@ -392,7 +391,6 @@ impl Default for Settings {
             icons,
             stars,
             planets,
-            log_level: json["log-level"].to_string(),
             settings_path,
         }
     }
@@ -736,7 +734,6 @@ impl Settings {
 
         let json = json!(
                         {
-                            "log-level": "Debug",
                             "appearance": {
                                 "font-size": self.appearance_settings.font_size,
                                 "font-family": self.appearance_settings.font_id.family.to_string(),

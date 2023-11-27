@@ -265,8 +265,6 @@ fn initialize_logger() {
 
     let level = log::LevelFilter::Debug;
 
-    println!("New log Level: {:?}",level);
-
     let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
         .name(log_path.to_str().unwrap())
         .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest","tree_builder","html5ever"])

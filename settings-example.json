@@ -144,7 +144,6 @@
     "action-at-shutdown-signal": "nothing",
     "directory": ""
   },
-  "log-level": "Debug",
   "planets": [
     {
       "b": 85,
