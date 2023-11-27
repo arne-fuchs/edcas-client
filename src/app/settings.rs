@@ -11,7 +11,7 @@ use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::epaint::ahash::HashMap;
 #[cfg(feature = "iota")]
 use iota_sdk::client::Client;
-use log::{info, warn};
+use log::{error, info, warn};
 use serde_json::json;
 
 use crate::app::settings::ActionAtShutdownSignal::{Continue, Exit, Nothing};
@@ -597,7 +597,16 @@ impl App for Settings {
                                     egui::Grid::new("editor_buttons")
                                         .show(ui, |ui| {
                                             if ui.button("Save").clicked() {
-                                                fs::write(format!("{}/GraphicsConfigurationOverride.xml", self.graphic_editor_settings.graphics_directory.clone()), self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
+                                                match fs::write(format!("{}/GraphicsConfigurationOverride.xml", self.graphic_editor_settings.graphics_directory.clone()), self.graphic_editor_settings.graphic_override_content.clone()) {
+                                                    Ok(_) => {}
+                                                    Err(err) => {
+                                                        error!("Failed to save settings: {}",err);
+                                                        Window::new("Error").show(ctx, |ui| {
+                                                            ui.heading("Failed to save settings!");
+                                                            ui.label(err.to_string());
+                                                        });
+                                                    }
+                                                }
                                             }
                                             if ui.button("Exit").clicked() {
                                                 self.graphic_editor_settings.show_editor = false;
