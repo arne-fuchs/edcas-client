@@ -2,6 +2,7 @@ use std::{env, fs};
 use std::default::Default;
 use std::fs::File;
 use std::io::{Read, Write};
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::str::FromStr;
 
@@ -150,6 +151,10 @@ impl Default for Settings {
                                         fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
                                     }
                                 }
+                                #[cfg(unix)]
+                                {
+                                    info!("Setting permissions: {:?}",fs::set_permissions(format!("{}/.config/edcas-client/settings.json",home),fs::Permissions::from_mode(0o644)));
+                                }
 
                                 info!("Accessing settings file at $HOME/.config/edcas-client/settings.json");
                                 settings_path = format!("{}/.config/edcas-client/settings.json",home);
@@ -166,7 +171,17 @@ impl Default for Settings {
                                     Err(err) => {
                                         warn!("{}",err);
                                         info!("Copying from settings-example.json to settings.json");
-                                        fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings-exmaple.json");
+                                        match fs::copy("settings-example.json", "settings.json") {
+                                            Ok(_) => {}
+                                            Err(err) => {
+                                                error!("Error copying settings file: {}", err);
+                                                panic!("Error copying settings file: {}", err);
+                                            }
+                                        }
+                                        #[cfg(windows)]
+                                        {
+                                            fs::metadata("settings.json").unwrap().permissions().set_readonly(false);
+                                        }
                                         info!("Accessing settings file at settings.json");
                                         File::open("settings.json").unwrap()
                                     }
