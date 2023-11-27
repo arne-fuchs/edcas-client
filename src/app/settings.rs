@@ -178,6 +178,10 @@ impl Default for Settings {
                                                 panic!("Error copying settings file: {}", err);
                                             }
                                         }
+                                        #[cfg(unix)]
+                                        {
+                                            info!("Setting permissions: {:?}",fs::set_permissions("settings.json",fs::Permissions::from_mode(0o644)));
+                                        }
                                         #[cfg(windows)]
                                         {
                                             fs::metadata("settings.json").unwrap().permissions().set_readonly(false);

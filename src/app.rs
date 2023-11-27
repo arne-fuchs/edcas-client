@@ -61,9 +61,10 @@ impl EliteRustClient {
 }
 impl Default for EliteRustClient {
     fn default() -> Self {
+        initialize_logger();
         let settings = settings::Settings::default();
         let settings_pointer = Arc::new(settings.clone());
-        initialize_logger(settings_pointer.clone());
+
 
         info!("Starting...");
         info!("Current directory: {:?}", env::current_dir().unwrap());
@@ -226,7 +227,7 @@ impl App for EliteRustClient {
     }
 }
 
-fn initialize_logger(settings: Arc<settings::Settings>) {
+fn initialize_logger() {
     let mut log_directory = env::current_dir().unwrap().join("logs");
     if std::path::Path::new("/tmp/").exists() {
         log_directory = std::path::Path::new("/tmp/edcas-client/").to_path_buf();
@@ -262,7 +263,7 @@ fn initialize_logger(settings: Arc<settings::Settings>) {
 
     println!("Log file: {:?}", log_path.clone());
 
-    let level = log::LevelFilter::from_str(settings.log_level.as_str()).unwrap();
+    let level = log::LevelFilter::Debug;
 
     println!("New log Level: {:?}",level);
 
