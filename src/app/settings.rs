@@ -746,6 +746,7 @@ impl Settings {
                             }
                         }
                     );
+        info!("Trying to write settings file to {}", &self.settings_path);
         match File::create(&self.settings_path) {
             Ok(mut settings_file) => {
                 match settings_file.write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()) {
@@ -761,6 +762,7 @@ impl Settings {
                 panic!("Failed to create settings: {}",err);
             }
         };
+        info!("Done writing to settings file");
 
     }
 }
