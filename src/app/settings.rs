@@ -601,10 +601,7 @@ impl App for Settings {
                                                     Ok(_) => {}
                                                     Err(err) => {
                                                         error!("Failed to save settings: {}",err);
-                                                        Window::new("Error").show(ctx, |ui| {
-                                                            ui.heading("Failed to save settings!");
-                                                            ui.label(err.to_string());
-                                                        });
+                                                        panic!("Failed to save settings: {}",err);
                                                     }
                                                 }
                                             }
@@ -749,7 +746,21 @@ impl Settings {
                             }
                         }
                     );
-        let mut settings_file: File = File::create(&self.settings_path).unwrap();
-        settings_file.write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()).unwrap();
+        match File::create(&self.settings_path) {
+            Ok(mut settings_file) => {
+                match settings_file.write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()) {
+                    Ok(_) => {}
+                    Err(err) => {
+                        error!("Failed to save settings: {}",err);
+                        panic!("Failed to save settings: {}",err);
+                    }
+                };
+            }
+            Err(err) => {
+                error!("Failed to create settings: {}",err);
+                panic!("Failed to create settings: {}",err);
+            }
+        };
+
     }
 }
