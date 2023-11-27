@@ -4,6 +4,7 @@ use eframe::{App, egui, Frame};
 use eframe::egui::{Color32, Context, Ui, vec2, Widget, Window};
 use eframe::epaint::ahash::HashMap;
 use json::JsonValue;
+use log::info;
 
 pub struct MaterialState {
     pub raw: HashMap<String, Material>,
@@ -22,9 +23,16 @@ impl Default for MaterialState {
             showing: None,
             search: "".to_string(),
         };
+        info!("Looking for material file in /usr/share/edcas-client/materials.json");
         let materials_content = match fs::read_to_string("/usr/share/edcas-client/materials.json"){
-            Ok(content) => content,
-            Err(_) => fs::read_to_string("materials.json").unwrap()
+            Ok(content) => {
+                info!("Material file found");
+                content
+            },
+            Err(_) => {
+                info!("Material file not found -> looking in the local folder");
+                fs::read_to_string("materials.json").unwrap()
+            }
         };
         let materials_json = json::parse(materials_content.as_str()).unwrap();
 

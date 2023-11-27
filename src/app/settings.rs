@@ -11,7 +11,7 @@ use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::epaint::ahash::HashMap;
 #[cfg(feature = "iota")]
 use iota_sdk::client::Client;
-use log::warn;
+use log::{info, warn};
 use serde_json::json;
 
 use crate::app::settings::ActionAtShutdownSignal::{Continue, Exit, Nothing};
@@ -136,38 +136,38 @@ impl Default for Settings {
                     }
                     Err(err) => {
                         warn!("{}",err);
-                        println!("Couldn't find config file in {} -> trying to create file structure and copy to desired config folder",format!("{}/.config/edcas-client/settings.json",home));
+                        info!("Couldn't find config file in {} -> trying to create file structure and copy to desired config folder",format!("{}/.config/edcas-client/settings.json",home));
                         match fs::create_dir_all(format!("{}/.config/edcas-client",home)) {
                             Ok(_) => {
-                                println!("Created $HOME/.config/edcas-client/");
-                                println!("Copying from /etc/edcas-client/settings-example.json to $HOME/.config/edcas-client/settings.json");
+                                info!("Created $HOME/.config/edcas-client/");
+                                info!("Copying from /etc/edcas-client/settings-example.json to $HOME/.config/edcas-client/settings.json");
                                 match fs::copy("/etc/edcas-client/settings-example.json", format!("{}/.config/edcas-client/settings.json",home)) {
                                     Ok(_) => {
-                                        println!("Copied /etc/edcas-client/settings-example.json to {}",format!("{}/.config/edcas-client/settings.json",home));
+                                        info!("Copied /etc/edcas-client/settings-example.json to {}",format!("{}/.config/edcas-client/settings.json",home));
                                     }
                                     Err(err) => {
-                                        println!("Failed copying from /etc/edcas-client/settings-example.json\n Trying to copy from settings-example.json to $HOME/.config/edcas-client/settings.json: {}",err);
+                                        info!("Failed copying from /etc/edcas-client/settings-example.json\n Trying to copy from settings-example.json to $HOME/.config/edcas-client/settings.json: {}",err);
                                         fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
                                     }
                                 }
 
-                                println!("Accessing settings file at $HOME/.config/edcas-client/settings.json");
+                                info!("Accessing settings file at $HOME/.config/edcas-client/settings.json");
                                 settings_path = format!("{}/.config/edcas-client/settings.json",home);
                                 File::open(format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't open settings file in $HOME/.config/edcas-client/")
                             }
                             Err(err) => {
                                 warn!("{}",err);
-                                println!("Couldn't create directories in $HOME/.config/edcas-client/");
+                                info!("Couldn't create directories in $HOME/.config/edcas-client/");
                                 match File::open("settings.json"){
                                     Ok(file) => {
-                                        println!("Accessing settings file at settings.json");
+                                        info!("Accessing settings file at settings.json");
                                         file
                                     }
                                     Err(err) => {
                                         warn!("{}",err);
-                                        println!("Copying from settings-example.json to settings.json");
+                                        info!("Copying from settings-example.json to settings.json");
                                         fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings-exmaple.json");
-                                        println!("Accessing settings file at settings.json");
+                                        info!("Accessing settings file at settings.json");
                                         File::open("settings.json").unwrap()
                                     }
                                 }
@@ -181,14 +181,14 @@ impl Default for Settings {
                 warn!("{}",err);
                 match File::open("settings.json"){
                     Ok(file) => {
-                        println!("Accessing settings file at settings.json");
+                        info!("Accessing settings file at settings.json");
                         file
                     }
                     Err(err) => {
                         warn!("{}",err);
-                        println!("Copying from /etc/edcas-client/settings-example.json to settings.json");
+                        info!("Copying from /etc/edcas-client/settings-example.json to settings.json");
                         fs::copy("/etc/edcas-client/settings-example.json", "settings.json").unwrap_or(fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings file to $HOME/.config/edcas-client/"));
-                        println!("Accessing settings file at settings.json");
+                        info!("Accessing settings file at settings.json");
                         File::open("settings.json").unwrap()
                     }
                 }
