@@ -1,5 +1,6 @@
 use std::str::FromStr;
 use std::sync::Arc;
+use std::time::Instant;
 
 use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
@@ -17,6 +18,7 @@ use crate::app::settings::Settings;
 pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut MaterialState, mining: &mut Mining, settings: Arc<Settings>) {
     let event = json["event"].as_str().unwrap();
     info!("Interpreter event received: {}", event);
+    let now = Instant::now();
     //println!("{}",&json);
 
     match event {
@@ -326,7 +328,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435, "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant", "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ], "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730, "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734, "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320, "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
             info!("Body found: {}",json["BodyName"].to_string());
             if !explorer.systems.is_empty(){
-                let mut body = structs::generate_from_json(json,settings.clone());
+                let mut body = structs::generate_from_json(json.clone(),settings.clone());
 
                 let len = explorer.systems.len()-1;
 
@@ -924,5 +926,8 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             warn!("Unknown event: {}", &event);
             println!("UNKNOWN EVENT:{}", event);
         }
+    }
+    if now.elapsed().as_secs() >= 1 {
+        warn!("Event took over a second ({}): {}",now.elapsed().as_secs(),&json);
     }
 }
