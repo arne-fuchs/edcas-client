@@ -371,7 +371,83 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
 
         //Engineer
         "EngineerProgress" => {}
-        "EngineerCraft" => {}
+        "EngineerCraft" => {
+            //{ "timestamp":"2023-12-05T20:54:13Z", "event":"EngineerCraft", "Slot":"PowerDistributor",
+            // "Module":"int_powerdistributor_size7_class5",
+            // "Ingredients":[
+            // { "Name":"hybridcapacitors", "Name_Localised":"Hybridkondensatoren", "Count":1 },
+            // { "Name":"industrialfirmware", "Name_Localised":"Gecrackte Industrie-Firmware", "Count":1 },
+            // { "Name":"chemicalmanipulators", "Name_Localised":"Chemische Manipulatoren", "Count":1 } ],
+            // "Engineer":"The Dweller", "EngineerID":300180, "BlueprintID":128673738, "BlueprintName":"PowerDistributor_HighFrequency",
+            // "Level":4, "Quality":0.267800, "ExperimentalEffect":"special_powerdistributor_fast",
+            // "ExperimentalEffect_Localised":"Superleiter",
+            // "Modifiers":[
+            // { "Label":"WeaponsCapacity", "Value":56.217598, "OriginalValue":61.000000, "LessIsGood":0 }, { "Label":"WeaponsRecharge", "Value":8.209770, "OriginalValue":6.100000, "LessIsGood":0 }, { "Label":"EnginesCapacity", "Value":37.785599, "OriginalValue":41.000000, "LessIsGood":0 }, { "Label":"EnginesRecharge", "Value":5.383456, "OriginalValue":4.000000, "LessIsGood":0 }, { "Label":"SystemsCapacity", "Value":37.785599, "OriginalValue":41.000000, "LessIsGood":0 }, { "Label":"SystemsRecharge", "Value":5.383456, "OriginalValue":4.000000, "LessIsGood":0 } ] }
+            let ingrediants = &json["Ingredients"];
+            let count = ingrediants.len();
+            for i in 0..count {
+                let ingrediant = &ingrediants[i];
+                let name = &ingrediant["Name"].to_string();
+                let (material,category) = match materials.raw.get(name){
+                    None => {
+                        match materials.encoded.get(name){
+                            None => {
+                                match materials.manufactured.get(name){
+                                    None => {
+                                        error!("Didn't found material: {}",&ingrediant);
+                                        (None,"")
+                                    }
+                                    Some(material) => {
+                                        (Some(material.clone()),"Manufactured")
+                                    }
+                                }
+                            }
+                            Some(material) => {
+                                (Some(material.clone()),"Encoded")
+                            }
+                        }
+                    }
+                    Some(material) => {
+                        (Some(material.clone()),"Raw")
+                    }
+                };
+                match category {
+                    "Manufactured" => {
+                        if let Some(material) = material {
+                            let mut cloned_material = material.clone();
+                            materials.manufactured.remove(name);
+                            cloned_material.count -= ingrediant["Count"].as_u64().unwrap();
+                            materials.manufactured.insert(name.clone(),cloned_material);
+                        } else {
+                            error!("Didn't found manufactured material in material list: {}", &ingrediant);
+                        }
+                    }
+                    "Encoded" => {
+                        if let Some(material) = material {
+                            let mut cloned_material = material.clone();
+                            materials.encoded.remove(name);
+                            cloned_material.count -= ingrediant["Count"].as_u64().unwrap();
+                            materials.encoded.insert(name.clone(),cloned_material);
+                        } else {
+                            error!("Didn't found encoded material in material list: {}", &ingrediant);
+                        }
+                    }
+                    "Raw" => {
+                        if let Some(material) = material {
+                            let mut cloned_material = material.clone();
+                            materials.raw.remove(name);
+                            cloned_material.count -= ingrediant["Count"].as_u64().unwrap();
+                            materials.raw.insert(name.clone(),cloned_material);
+                        } else {
+                            error!("Didn't found raw material in material list: {}", &ingrediant);
+                        }
+                    }
+                    _ => {
+                        error!("Unknown material: {}", &ingrediant);
+                    }
+                }
+            }
+        }
         "EngineerContribution" => {}
 
         //Ship management
