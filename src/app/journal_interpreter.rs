@@ -557,7 +557,46 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             }
         }
         "Cargo" => {}
-        "MaterialCollected" => {}
+        "MaterialCollected" => {
+            //{ "timestamp":"2023-12-05T19:44:43Z", "event":"MaterialCollected", "Category":"Manufactured", "Name":"shieldemitters", "Name_Localised":"Schildemitter", "Count":3 }            let material_category = json["Category"].to_string();
+            let name = &json["Name"].to_string();
+            let material_category = json["Category"].to_string();
+            match material_category.as_str() {
+                "Manufactured" => {
+                    if let Some(material) = materials.manufactured.get(name) {
+                        let mut cloned_material = material.clone();
+                        materials.manufactured.remove(name);
+                        cloned_material.count += json["Count"].as_u64().unwrap();
+                        materials.manufactured.insert(name.clone(),cloned_material);
+                    } else {
+                        error!("Didn't found manufactured material in material list: {}", &json);
+                    }
+                }
+                "Encoded" => {
+                    if let Some(material) = materials.encoded.get(name) {
+                        let mut cloned_material = material.clone();
+                        materials.encoded.remove(name);
+                        cloned_material.count += json["Count"].as_u64().unwrap();
+                        materials.encoded.insert(name.clone(),cloned_material);
+                    } else {
+                        error!("Didn't found encoded material in material list: {}", &json);
+                    }
+                }
+                "Raw" => {
+                    if let Some(material) = materials.raw.get(name) {
+                        let mut cloned_material = material.clone();
+                        materials.raw.remove(name);
+                        cloned_material.count += json["Count"].as_u64().unwrap();
+                        materials.raw.insert(name.clone(),cloned_material);
+                    } else {
+                        error!("Didn't found raw material in material list: {}", &json);
+                    }
+                }
+                _ => {
+                    error!("Unknown material: {}", &json);
+                }
+            }
+        }
         "Synthesis" => {}
         "EjectCargo" => {}
         "DropItems" => {}
@@ -695,7 +734,72 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "FactionKillBond" => {}
         "MultiSellExplorationData" => {}
         "SwitchSuitLoadout" => {}
-        "MaterialTrade" => {}
+        "MaterialTrade" => {
+            //{ "timestamp":"2023-12-05T19:23:23Z", "event":"MaterialTrade", "MarketID":3223208960, "TraderType":"manufactured",
+            // "Paid":{ "Material":"fedcorecomposites", "Material_Localised":"Core Dynamics Kompositwerkstoffe", "Category":"Manufactured", "Quantity":6 },
+            // "Received":{ "Material":"protoradiolicalloys", "Material_Localised":"Radiologische Legierungen (Proto)", "Category":"Manufactured", "Quantity":1 } }
+            let paid = &json["Paid"];
+            let received = &json["Received"];
+            match json["TraderType"].to_string().as_str() {
+                "manufactured" => {
+                    if let Some(paid_material) = materials.manufactured.get(&paid["Material"].to_string()) {
+                        let mut cloned_paid_material = paid_material.clone();
+                        if let Some(received_material) = materials.manufactured.get(&received["Material"].to_string()) {
+                            let mut cloned_received_material = received_material.clone();
+                            materials.manufactured.remove(&paid["Material"].to_string());
+                            materials.manufactured.remove(&received["Material"].to_string());
+                            cloned_paid_material.count -= paid["Quantity"].as_u64().unwrap();
+                            cloned_received_material.count += received["Quantity"].as_u64().unwrap();
+                            materials.manufactured.insert(paid["Material"].to_string(),cloned_paid_material);
+                            materials.manufactured.insert(received["Material"].to_string(),cloned_received_material);
+                        } else {
+                            error!("Didn't found manufactured material in material list: {}", &json);
+                        }
+                    } else {
+                        error!("Didn't found manufactured material in material list: {}", &json);
+                    }
+                }
+                "raw" => {
+                    if let Some(paid_material) = materials.raw.get(&paid["Material"].to_string()) {
+                        let mut cloned_paid_material = paid_material.clone();
+                        if let Some(received_material) = materials.raw.get(&received["Material"].to_string()) {
+                            let mut cloned_received_material = received_material.clone();
+                            materials.raw.remove(&paid["Material"].to_string());
+                            materials.raw.remove(&received["Material"].to_string());
+                            cloned_paid_material.count -= paid["Quantity"].as_u64().unwrap();
+                            cloned_received_material.count += received["Quantity"].as_u64().unwrap();
+                            materials.raw.insert(paid["Material"].to_string(),cloned_paid_material);
+                            materials.raw.insert(received["Material"].to_string(),cloned_received_material);
+                        } else {
+                            error!("Didn't found manufactured material in material list: {}", &json);
+                        }
+                    } else {
+                        error!("Didn't found manufactured material in material list: {}", &json);
+                    }
+                }
+                "encoded" => {
+                    if let Some(paid_material) = materials.encoded.get(&paid["Material"].to_string()) {
+                        let mut cloned_paid_material = paid_material.clone();
+                        if let Some(received_material) = materials.encoded.get(&received["Material"].to_string()) {
+                            let mut cloned_received_material = received_material.clone();
+                            materials.encoded.remove(&paid["Material"].to_string());
+                            materials.encoded.remove(&received["Material"].to_string());
+                            cloned_paid_material.count -= paid["Quantity"].as_u64().unwrap();
+                            cloned_received_material.count += received["Quantity"].as_u64().unwrap();
+                            materials.encoded.insert(paid["Material"].to_string(),cloned_paid_material);
+                            materials.encoded.insert(received["Material"].to_string(),cloned_received_material);
+                        } else {
+                            error!("Didn't found manufactured material in material list: {}", &json);
+                        }
+                    } else {
+                        error!("Didn't found manufactured material in material list: {}", &json);
+                    }
+                }
+                &_ => {
+                    error!("Unknown material trader: {}", &json);
+                }
+            }
+        }
         "CommunityGoal" => {}
         "ModuleRetrieve" => {}
         "FetchRemoteModule" => {}
