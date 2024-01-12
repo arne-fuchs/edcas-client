@@ -4,7 +4,7 @@ settings.json
 wallet.stronghold
 walletdb
 edcas-client.iml
-edcas-client.tar.gz
+edcas-client-linux.tar.gz
 edcas-client.zip
 edcas-client.deb
 custom_graphics_override.xml
