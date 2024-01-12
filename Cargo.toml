@@ -1,6 +1,6 @@
 [package]
 name = "edcas-client"
-version = "0.2.5"
+version = "0.2.6"
 edition = "2021"
 readme = "README.md"
 repository = "https://github.com/arne-fuchs/edcas-client"
