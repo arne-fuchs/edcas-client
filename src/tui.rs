@@ -176,7 +176,7 @@ fn tab_explorer(
 
     let layout_system = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(10), Constraint::Fill(1)])
+        .constraints([Constraint::Length(11), Constraint::Fill(1)])
         .split(layout_explorer[0]);
 
     let mut data_system_info = vec!["no data".to_string()];
@@ -256,6 +256,8 @@ fn tab_explorer(
                         }
                     })
                     .collect::<Vec<_>>();
+            } else {
+                data_body_signals_list = vec!["no signals".to_string()]
             }
         }
     }
