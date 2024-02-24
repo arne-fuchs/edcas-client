@@ -87,7 +87,7 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui(f: &mut Frame, app: &App, client: &Box<EliteRustClient>) {
+fn ui(f: &mut Frame, app: &App, client: &EliteRustClient) {
     let size = f.size();
     //definition of general layout
     let chunks = ratatui::prelude::Layout::default()
@@ -114,8 +114,8 @@ fn ui(f: &mut Frame, app: &App, client: &Box<EliteRustClient>) {
 
     //render tab contents
     match app.index {
-        0 => tab_default(chunks[1], f, &client),
-        1 => tab_explorer(chunks[1], f, &client),
+        0 => tab_default(chunks[1], f, client),
+        1 => tab_explorer(chunks[1], f, client),
         _ => unreachable!(),
     };
     // f.render_widget(inner, chunks[1]);
@@ -123,11 +123,7 @@ fn ui(f: &mut Frame, app: &App, client: &Box<EliteRustClient>) {
 
 // Tabs
 
-fn tab_default(
-    chunk: ratatui::layout::Rect,
-    f: &mut ratatui::Frame,
-    client: &Box<EliteRustClient>,
-) {
+fn tab_default(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
     let widget_default = Paragraph::new("default text here").block(
         Block::default()
             .title("Default")
@@ -139,11 +135,7 @@ fn tab_default(
     f.render_widget(widget_default, chunk);
 }
 
-fn tab_explorer(
-    chunk: ratatui::layout::Rect,
-    f: &mut ratatui::Frame,
-    client: &Box<EliteRustClient>,
-) {
+fn tab_explorer(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
     //general layout
     let layout_explorer = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Vertical)
@@ -209,16 +201,11 @@ fn tab_explorer(
     f.render_widget(widget_body_signals_list, layout_explorer[2]);
 }
 
-fn tab_mining(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: Box<EliteRustClient>) {}
+fn tab_mining(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {}
 
-fn tab_materials(
-    chunk: ratatui::layout::Rect,
-    f: &mut ratatui::Frame,
-    client: Box<EliteRustClient>,
-) {
-}
+fn tab_materials(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {}
 
-fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: Box<EliteRustClient>) {
+fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
     // ob ich den layout überhaupt brauhe?
     let layout_about = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Vertical)
