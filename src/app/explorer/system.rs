@@ -170,7 +170,7 @@ impl System {
                 ui.end_row();
                 for system_signal in &self.signal_list {
                     ui.label(&system_signal.name);
-                    ui.label(&system_signal.thread);
+                    ui.label(&system_signal.threat);
 
                     ui.end_row();
                 }
@@ -200,5 +200,5 @@ pub struct SystemSignal {
     pub timestamp: String,
     pub event: String,
     pub name: String,
-    pub thread: String,
+    pub threat: String,
 }

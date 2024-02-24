@@ -1,4 +1,3 @@
-use std::env;
 use eframe::egui;
 use eframe::egui::{ColorImage, TextureHandle};
 use log::error;

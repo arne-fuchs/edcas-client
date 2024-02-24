@@ -1,6 +1,5 @@
 use std::{env, fs, thread};
 use std::path::PathBuf;
-use std::str::FromStr;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;

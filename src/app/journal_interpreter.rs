@@ -310,13 +310,13 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     timestamp: json["timestamp"].to_string(),
                     event: json["event"].to_string(),
                     name,
-                    thread,
+                    threat: thread,
                 };
                 let len = explorer.systems.len()-1;
                 explorer.systems[len].signal_list.push(system_signal);
                 explorer.systems[len].signal_list.sort_by(|a, b|{
                     if a.name == b.name{
-                        a.thread.cmp(&b.thread)
+                        a.threat.cmp(&b.threat)
                     }else {
                         a.name.cmp(&b.name)
                     }
