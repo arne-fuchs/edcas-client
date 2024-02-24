@@ -3,6 +3,7 @@ extern crate core;
 use std::env;
 use std::str::FromStr;
 use eframe::{egui, HardwareAcceleration, IconData};
+use eframe::egui::Pos2;
 
 use crate::app::EliteRustClient;
 use crate::egui::Vec2;
@@ -13,6 +14,10 @@ fn main() {
     let args: Vec<String> = env::args().collect();
     let mut width :f32 = 1400.0;
     let mut height :f32 = 800.0;
+    let mut wpos:f32 = -1.0;
+    let mut hpos:f32 = -1.0;
+    let mut fullscreen = false;
+    let mut maximized = false;
 
     for i in 0..args.len() {
         match args[i].as_str() {
@@ -25,6 +30,18 @@ fn main() {
             }
             "--height" => {
                 height = f32::from_str(args[i+1].as_str()).expect(format!("Wrong argument for width: {} ", &args[i+1]).as_str());
+            }
+            "--wposition" => {
+                wpos = f32::from_str(args[i+1].as_str()).expect(format!("Wrong argument for width: {} ", &args[i+1]).as_str());
+            }
+            "--hposition" => {
+                hpos = f32::from_str(args[i+1].as_str()).expect(format!("Wrong argument for width: {} ", &args[i+1]).as_str());
+            }
+            "--fullscreen" => {
+                fullscreen = true;
+            }
+            "--maximized" => {
+                maximized = true;
             }
             "--help" => {
                 let ascii_art = r#"
@@ -81,5 +98,15 @@ fn main() {
     native_options.icon_data = Some(icon);
     native_options.hardware_acceleration = HardwareAcceleration::Preferred;
     native_options.initial_window_size = Option::from(Vec2::new(width, height));
+    if wpos > 0.0 && hpos > 0.0 {
+        native_options.initial_window_pos = Option::from(Pos2::new(wpos,hpos));
+    }
+    if fullscreen {
+        native_options.fullscreen = true;
+    }
+    if maximized {
+        native_options.maximized = true;
+    }
+    
     eframe::run_native("ED: Commander Assistant System", native_options, Box::new(|_cc| client)).expect("Program panicked");
 }
