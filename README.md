@@ -53,6 +53,22 @@ In the same folder run:
 ```
 makepkg -i
 ```
+
+## Command Options
+
+| Option       | Description                                     | Example            |
+|--------------|-------------------------------------------------|--------------------|
+| --version    | Prints version into terminal                    |                    |
+| --width      | Sets initial window width size for the gui      | --width 200.0      |
+| --height     | Sets initial window height size for the gui     | --width 800.0      |
+| --wposition  | Sets initial window width position for the gui  | --wposition 3000.0 |
+| --hposition  | Sets initial window height position for the gui | --hposition 100.0  |
+| --fullscreen | Opens the gui in fullscreen                     |                    |
+| --maximized  | Opens the guis maximized                        |                    |
+
+
+# Build it yourself
+
 ## Build Requirements
 
 * Around 10 GB of disk space required
