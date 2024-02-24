@@ -68,55 +68,26 @@ fn main() {
                 return;
             }
             "--tui" => {
-                tui_flag = true;
-                return; //wird nie asugeführt?
+                let client = EliteRustClient::default();
+                tui::draw_tui(client);
+                return;
             }
             _ => {}
         }
     }
 
     let client = Box::<EliteRustClient>::default();
-
-    if tui_flag {
-        tui::draw_tui(client);
-    } else {
-        //App icon
-        let mut image = image::open("graphics\\logo\\edcas_128.png");
-        if cfg!(target_os = "linux") {
-            match image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas_128.png") {
-                Ok(_) => {
-                    image = image::open("/usr/share/edcas-client/graphics/logo/edcas_128.png");
-                }
-                Err(_) => {
-                    image = image::open("graphics/logo/edcas.png");
-                }
+    //App icon
+    let mut image = image::open("graphics\\logo\\edcas_128.png");
+    if cfg!(target_os = "linux") {
+        match image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas_128.png") {
+            Ok(_) => {
+                image = image::open("/usr/share/edcas-client/graphics/logo/edcas_128.png");
+            }
+            Err(_) => {
+                image = image::open("graphics/logo/edcas.png");
             }
         }
-
-        let (icon_rgba, icon_width, icon_height) = {
-            let image = image.unwrap().into_rgba8();
-            let (width, height) = image.dimensions();
-            let rgba = image.into_raw();
-            (rgba, width, height)
-        };
-
-        let icon = IconData {
-            rgba: icon_rgba,
-            width: icon_width,
-            height: icon_height,
-        };
-
-        let mut native_options = eframe::NativeOptions::default();
-        native_options.app_id = Some("edcas-client".to_string());
-        native_options.icon_data = Some(icon);
-        native_options.hardware_acceleration = HardwareAcceleration::Preferred;
-        native_options.initial_window_size = Option::from(Vec2::new(width, height));
-        eframe::run_native(
-            "ED: Commander Assistant System",
-            native_options,
-            Box::new(|_cc| client),
-        )
-        .expect("Program panicked");
     }
 
     let (icon_rgba, icon_width, icon_height) = {
