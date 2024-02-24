@@ -11,28 +11,45 @@ use crate::app::EliteRustClient;
 
 struct App<'a> {
     pub titles: Vec<&'a str>,
-    pub index: usize,
+    pub tab_index: usize,
+    pub systems_index: usize,
+    pub body_index: usize,
 }
 
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
             titles: vec!["Default", "Explorer", "Mining", "Materials", "About"],
-            index: 0,
+            tab_index: 0,
+            systems_index: 0,
+            body_index: 0,
         }
     }
 
-    pub fn next(&mut self) {
-        self.index = (self.index + 1) % self.titles.len();
+    pub fn next_tab(&mut self) {
+        self.tab_index = (self.tab_index + 1) % self.titles.len();
     }
 
-    pub fn previous(&mut self) {
-        if self.index > 0 {
-            self.index -= 1;
+    pub fn previous_tab(&mut self) {
+        if self.tab_index > 0 {
+            self.tab_index -= 1;
         } else {
-            self.index = self.titles.len() - 1;
+            self.tab_index = self.titles.len() - 1;
         }
     }
+    pub fn next_system(&mut self, client: &EliteRustClient) {
+        if self.systems_index + 1 < client.explorer.systems.len() {
+            self.systems_index += 1;
+        }
+    }
+
+    pub fn previous_system(&mut self) {
+        if self.systems_index - 1 > 0 {
+            self.systems_index -= 1;
+        }
+    }
+
+    // TODO: add functions for cursor navigation through signals/bodies lists
 }
 
 pub fn draw_tui(client: Box<EliteRustClient>) -> Result<(), Box<dyn Error>> {
@@ -78,8 +95,11 @@ fn run_app<B: Backend>(
             if key.kind == KeyEventKind::Press {
                 match key.code {
                     KeyCode::Char('Q') => return Ok(()),
-                    KeyCode::Right | KeyCode::Char('e') => app.next(),
-                    KeyCode::Left | KeyCode::Char('q') => app.previous(),
+                    KeyCode::Char('e') => app.next_tab(),
+                    KeyCode::Char('q') => app.previous_tab(),
+                    KeyCode::Right => app.next_system(&client),
+                    KeyCode::Left => app.previous_system(),
+                    // TODO: add keys for cursor navigation through signals/bodies list
                     _ => {}
                 }
             }
@@ -107,15 +127,15 @@ fn ui(f: &mut Frame, app: &App, client: &EliteRustClient) {
     //render tabs
     let tabs = Tabs::new(titles)
         .block(Block::default().borders(Borders::ALL).title("Tabs"))
-        .select(app.index)
+        .select(app.tab_index)
         .style(Style::default().cyan().on_gray())
         .highlight_style(Style::default().bold().on_black());
     f.render_widget(tabs, chunks[0]);
 
     //render tab contents
-    match app.index {
+    match app.tab_index {
         0 => tab_default(chunks[1], f, client),
-        1 => tab_explorer(chunks[1], f, client),
+        1 => tab_explorer(chunks[1], f, client, app),
         _ => unreachable!(),
     };
     // f.render_widget(inner, chunks[1]);
@@ -135,7 +155,12 @@ fn tab_default(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &El
     f.render_widget(widget_default, chunk);
 }
 
-fn tab_explorer(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
+fn tab_explorer(
+    chunk: ratatui::layout::Rect,
+    f: &mut ratatui::Frame,
+    client: &EliteRustClient,
+    app: &App,
+) {
     //general layout
     let layout_explorer = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Vertical)
@@ -148,7 +173,7 @@ fn tab_explorer(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &E
 
     //widget for body list
     let widget_signal_list = List::new(
-        client.explorer.systems[1]
+        client.explorer.systems[app.systems_index]
             .signal_list
             .iter()
             .map(|signal| signal.clone().name)
@@ -164,7 +189,8 @@ fn tab_explorer(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &E
 
     f.render_widget(widget_signal_list, layout_explorer[0]);
 
-    //widget for body info
+    //widget for bodies list
+    // TODO: automatical generation of sub-layouts for body features like rings or planets
     let widget_body_list = List::new(
         client.explorer.systems[0]
             .body_list
@@ -184,7 +210,7 @@ fn tab_explorer(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &E
     f.render_widget(widget_body_list, layout_explorer[1]);
 
     let widget_body_signals_list = List::new(
-        client.explorer.systems[0].body_list[0]
+        client.explorer.systems[app.systems_index].body_list[app.body_index]
             .get_signals()
             .iter()
             .map(|body_signal| body_signal.clone().r#type)
@@ -201,9 +227,13 @@ fn tab_explorer(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &E
     f.render_widget(widget_body_signals_list, layout_explorer[2]);
 }
 
-fn tab_mining(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {}
+fn tab_mining(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
+    //TODO:
+}
 
-fn tab_materials(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {}
+fn tab_materials(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
+    //TODO:
+}
 
 fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
     // ob ich den layout überhaupt brauhe?
