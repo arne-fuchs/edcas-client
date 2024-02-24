@@ -12,7 +12,7 @@ use crate::app::EliteRustClient;
 struct App<'a> {
     pub titles: Vec<&'a str>,
     pub tab_index: usize,
-    pub systems_index: usize,
+    pub system_index: usize,
     pub body_index: usize,
 }
 
@@ -21,7 +21,7 @@ impl<'a> App<'a> {
         App {
             titles: vec!["Default", "Explorer", "Mining", "Materials", "About"],
             tab_index: 0,
-            systems_index: 0,
+            system_index: 0,
             body_index: 0,
         }
     }
@@ -38,14 +38,14 @@ impl<'a> App<'a> {
         }
     }
     pub fn next_system(&mut self, client: &EliteRustClient) {
-        if self.systems_index + 1 < client.explorer.systems.len() {
-            self.systems_index += 1;
+        if self.system_index + 1 < client.explorer.systems.len() {
+            self.system_index += 1;
         }
     }
 
     pub fn previous_system(&mut self) {
-        if self.systems_index - 1 > 0 {
-            self.systems_index -= 1;
+        if self.system_index - 1 > 0 {
+            self.system_index -= 1;
         }
     }
 
@@ -90,6 +90,8 @@ fn run_app<B: Backend>(
         client.update_values();
 
         terminal.draw(|f| ui(f, &app, &client))?;
+
+        // TODO: check if systems is updated, then app.next_system. Not sure if i need it, depends on systems implementation
 
         if let Event::Key(key) = event::read()? {
             if key.kind == KeyEventKind::Press {
@@ -136,6 +138,9 @@ fn ui(f: &mut Frame, app: &App, client: &EliteRustClient) {
     match app.tab_index {
         0 => tab_default(chunks[1], f, client),
         1 => tab_explorer(chunks[1], f, client, app),
+        2 => tab_mining(chunks[1], f, client, app),
+        3 => tab_materials(chunks[1], f, client),
+        4 => tab_about(chunks[1], f),
         _ => unreachable!(),
     };
     // f.render_widget(inner, chunks[1]);
@@ -143,7 +148,7 @@ fn ui(f: &mut Frame, app: &App, client: &EliteRustClient) {
 
 // Tabs
 
-fn tab_default(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
+fn tab_default(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, _client: &EliteRustClient) {
     let widget_default = Paragraph::new("default text here").block(
         Block::default()
             .title("Default")
@@ -173,7 +178,7 @@ fn tab_explorer(
 
     //widget for body list
     let widget_signal_list = List::new(
-        client.explorer.systems[app.systems_index]
+        client.explorer.systems[app.system_index]
             .signal_list
             .iter()
             .map(|signal| signal.clone().name)
@@ -210,7 +215,7 @@ fn tab_explorer(
     f.render_widget(widget_body_list, layout_explorer[1]);
 
     let widget_body_signals_list = List::new(
-        client.explorer.systems[app.systems_index].body_list[app.body_index]
+        client.explorer.systems[app.system_index].body_list[app.body_index]
             .get_signals()
             .iter()
             .map(|body_signal| body_signal.clone().r#type)
@@ -227,7 +232,12 @@ fn tab_explorer(
     f.render_widget(widget_body_signals_list, layout_explorer[2]);
 }
 
-fn tab_mining(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
+fn tab_mining(
+    chunk: ratatui::layout::Rect,
+    f: &mut ratatui::Frame,
+    client: &EliteRustClient,
+    app: &App,
+) {
     //TODO:
 }
 
@@ -235,7 +245,7 @@ fn tab_materials(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &
     //TODO:
 }
 
-fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &EliteRustClient) {
+fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
     // ob ich den layout überhaupt brauhe?
     let layout_about = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Vertical)
