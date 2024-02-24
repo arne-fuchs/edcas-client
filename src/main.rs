@@ -1,5 +1,6 @@
 extern crate core;
 
+use eframe::egui::Pos2;
 use eframe::{egui, HardwareAcceleration, IconData};
 use iota_sdk::client::{self, Client};
 use std::env;
@@ -19,6 +20,7 @@ fn main() {
     let mut hpos: f32 = -1.0;
     let mut fullscreen = false;
     let mut maximized = false;
+    let mut tui_flag: bool = false;
 
     for i in 0..args.len() {
         match args[i].as_str() {
