@@ -18,7 +18,7 @@ struct App<'a> {
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
-            titles: vec!["Default", "Explorer", "Mining", "Materials", "About"],
+            titles: vec!["Explorer", "Mining", "Materials", "About"],
             tab_index: 0,
             body_index: 0,
         }
@@ -116,7 +116,7 @@ fn ui(f: &mut Frame, app: &App, client: &EliteRustClient) {
 
     let tabs_and_timestamp = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Fill(1), Constraint::Length(21)])
+        .constraints([Constraint::Fill(1), Constraint::Length(22)])
         .split(chunks[0]);
 
     let titles: Vec<&str> = app.titles.clone();
@@ -127,7 +127,7 @@ fn ui(f: &mut Frame, app: &App, client: &EliteRustClient) {
         )
         .select(app.tab_index)
         .style(Style::default().white())
-        .highlight_style(Style::default().bold().gray().on_white());
+        .highlight_style(Style::default().bold().white().on_gray());
     f.render_widget(tabs, tabs_and_timestamp[0]);
 
     let timestamp = Paragraph::new(client.timestamp.clone())
@@ -137,11 +137,10 @@ fn ui(f: &mut Frame, app: &App, client: &EliteRustClient) {
 
     //render tab contents
     match app.tab_index {
-        0 => tab_default(chunks[1], f, client),
-        1 => tab_explorer(chunks[1], f, client, app),
-        2 => tab_mining(chunks[1], f, client, app),
-        3 => tab_materials(chunks[1], f, client),
-        4 => tab_about(chunks[1], f),
+        0 => tab_explorer(chunks[1], f, client, app),
+        1 => tab_mining(chunks[1], f, client, app),
+        2 => tab_materials(chunks[1], f, client),
+        3 => tab_about(chunks[1], f),
         _ => unreachable!(),
     };
 }
@@ -177,43 +176,85 @@ fn tab_explorer(
 
     let layout_system = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(20), Constraint::Fill(1)])
+        .constraints([Constraint::Length(10), Constraint::Fill(1)])
         .split(layout_explorer[0]);
 
     let mut data_system_info = vec!["no data".to_string()];
     let mut data_signals_list = vec!["no data".to_string()];
-    let mut data_body_list = vec!["no data"];
+    let mut data_body_list = vec!["no data".to_string()];
     let mut data_body_signals_list = vec!["no data".to_string()];
 
-    if client.explorer.systems.len() > 0 {
-        data_system_info = vec![client.explorer.systems[client.explorer.index].name.clone()];
+    if !client.explorer.systems.is_empty() {
+        data_system_info = vec![
+            client.explorer.systems[client.explorer.index].name.clone(),
+            client.explorer.systems[client.explorer.index]
+                .allegiance
+                .clone(),
+            client.explorer.systems[client.explorer.index]
+                .economy_localised
+                .clone(),
+            client.explorer.systems[client.explorer.index]
+                .second_economy_localised
+                .clone(),
+            client.explorer.systems[client.explorer.index]
+                .government_localised
+                .clone(),
+            client.explorer.systems[client.explorer.index]
+                .security_localised
+                .clone(),
+            client.explorer.systems[client.explorer.index]
+                .population
+                .clone(),
+            client.explorer.systems[client.explorer.index]
+                .body_count
+                .clone(),
+            client.explorer.systems[client.explorer.index]
+                .non_body_count
+                .clone(),
+        ];
         data_signals_list = client.explorer.systems[client.explorer.index]
             .signal_list
             .iter()
             .map(|signal| signal.clone().name)
             .collect::<Vec<_>>();
 
-        if client.explorer.systems[client.explorer.index]
+        if !client.explorer.systems[client.explorer.index]
             .body_list
-            .len()
-            > 0
+            .is_empty()
         {
             data_body_list = client.explorer.systems[client.explorer.index]
                 .body_list
                 .iter()
-                .map(|body| body.get_name())
+                .map(|body| {
+                    let mut space_string = "".to_string();
+                    for i in 0..body.get_parents().len() {
+                        if i < body.get_parents().len() - 1 {
+                            space_string.push_str("| ")
+                        } else {
+                            space_string.push_str("|-");
+                        }
+                    }
+                    space_string.push_str(body.get_name());
+                    space_string
+                })
                 .collect::<Vec<_>>();
 
-            if client.explorer.systems[client.explorer.index].body_list[app.body_index]
+            if !client.explorer.systems[client.explorer.index].body_list
+                [client.explorer.systems[client.explorer.index].index]
                 .get_signals()
-                .len()
-                > 0
+                .is_empty()
             {
                 data_body_signals_list = client.explorer.systems[client.explorer.index].body_list
-                    [app.body_index]
+                    [client.explorer.systems[client.explorer.index].index]
                     .get_signals()
                     .iter()
-                    .map(|body_signal| body_signal.clone().r#type)
+                    .map(|body_signal| {
+                        if body_signal.type_localised != "null" {
+                            body_signal.type_localised.clone()
+                        } else {
+                            body_signal.r#type.clone()
+                        }
+                    })
                     .collect::<Vec<_>>();
             }
         }
@@ -222,7 +263,7 @@ fn tab_explorer(
     let widget_system_info = List::new(data_system_info).block(
         Block::default()
             .title("System Info")
-            .borders(Borders::NONE)
+            .borders(Borders::ALL)
             .white(),
     );
     f.render_widget(widget_system_info, layout_system[0]);
@@ -231,7 +272,7 @@ fn tab_explorer(
     let widget_signal_list = List::new(data_signals_list).block(
         Block::default()
             .title("Signals")
-            .borders(Borders::NONE)
+            .borders(Borders::ALL)
             .white(),
     );
 
@@ -239,19 +280,21 @@ fn tab_explorer(
 
     //widget for bodies list
     // TODO: automatical generation of sub-layouts for body features like rings or planets
-    let widget_body_list = List::new(data_body_list).block(
-        Block::default()
-            .title("Body List")
-            .borders(Borders::NONE)
-            .white(),
-    );
+    let widget_body_list = List::new(data_body_list)
+        .block(
+            Block::default()
+                .title("Body List")
+                .borders(Borders::ALL)
+                .white(),
+        )
+        .highlight_style(Style::default().white().on_gray());
 
     f.render_widget(widget_body_list, layout_explorer[1]);
 
     let widget_body_signals_list = List::new(data_body_signals_list).block(
         Block::default()
             .title("Body Signals")
-            .borders(Borders::NONE)
+            .borders(Borders::ALL)
             .white(),
     );
 
@@ -288,23 +331,23 @@ fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
             .borders(Borders::ALL)
             .white(),
     );
-    f.render_widget(widget_about_github, layout_about[0]);
+    f.render_widget(widget_about_github, layout_about[1]);
 
-    let widget_about_version = Paragraph::new("version").block(
+    let widget_about_version = Paragraph::new(env!("CARGO_PKG_VERSION")).block(
         Block::default()
             .title("edcas version")
             .borders(Borders::ALL)
             .white(),
     );
-    f.render_widget(widget_about_version, layout_about[1]);
+    f.render_widget(widget_about_version, layout_about[2]);
 
     let widget_about_controls =
         Paragraph::new("Quit: Q, Change Tabs: q and e, Change System: Left and Right arrows")
             .block(
                 Block::default()
-                    .title("edcas version")
+                    .title("Controls")
                     .borders(Borders::ALL)
                     .white(),
             );
-    f.render_widget(widget_about_controls, layout_about[2]);
+    f.render_widget(widget_about_controls, layout_about[0]);
 }
