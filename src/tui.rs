@@ -263,4 +263,15 @@ fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame, client: &Elit
             .on_white(),
     );
     f.render_widget(widget_about_version, layout_about[1]);
+
+    let widget_about_controls =
+        Paragraph::new("Quit: Q, Change Tabs: q and e, Change System: Left and Right arrows")
+            .block(
+                Block::default()
+                    .title("edcas version")
+                    .borders(Borders::ALL)
+                    .black()
+                    .on_white(),
+            );
+    f.render_widget(widget_about_controls, layout_about[2]);
 }
