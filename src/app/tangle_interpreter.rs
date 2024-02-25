@@ -189,10 +189,17 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                         .with_secret_manager(stronghold)
                         .with_client_options(client_options)
                         .with_coin_type(SHIMMER_COIN_TYPE)
+                        .with_storage_path(&storage_path)
                         .finish().await.unwrap();
 
-                    let account = wallet
-                        .get_account("User").await.unwrap();
+                    let account = match wallet
+                        .get_account("User").await {
+                        Ok(account) => {account}
+                        Err(err) => {
+                            error!("Couldn't get stronghold account: {}", err);
+                            panic!("Couldn't get stronghold account: {}", err);
+                        }
+                    };
 
                     let balance = account.sync(None).await.unwrap();
 
@@ -213,6 +220,8 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                 .build()
                 .unwrap()
                 .block_on(async {
+                    info!("Creating wallet in {:?}", &wallet_path);
+                    info!("Creating storage in {:?}", &storage_path);
                     // Setup Stronghold secret_manager
                     let secret_manager = StrongholdSecretManager::builder()
                         .password(settings.iota_settings.password.to_string())
@@ -223,6 +232,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                         .with_secret_manager(SecretManager::Stronghold(secret_manager))
                         .with_client_options(client_options)
                         .with_coin_type(SHIMMER_COIN_TYPE)
+                        .with_storage_path(storage_path.as_str())
                         .finish().await.unwrap();
 
                     // The mnemonic only needs to be stored the first time
@@ -244,7 +254,13 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .build()
         .unwrap()
         .block_on(async {
-            account.sync(None).await.unwrap()
+            match account.sync(None).await {
+                Ok(balance) => {balance}
+                Err(err) => {
+                    error!("Couldn't get balance: {}", err);
+                    panic!("Couldn't get balance: {}", err);
+                }
+            }
         });
 
     //get address one time so it doesn't have to be created each time
