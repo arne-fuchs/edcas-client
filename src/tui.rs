@@ -7,12 +7,12 @@ use crossterm::{
 };
 use ratatui::{prelude::*, widgets::*};
 
-use crate::app::EliteRustClient;
+use crate::app::{self, EliteRustClient};
 
 struct App<'a> {
     pub titles: Vec<&'a str>,
     pub tab_index: usize,
-    pub body_index: usize,
+    pub body_list_state: ListState,
 }
 
 impl<'a> App<'a> {
@@ -20,7 +20,7 @@ impl<'a> App<'a> {
         App {
             titles: vec!["Explorer", "Mining", "Materials", "About"],
             tab_index: 0,
-            body_index: 0,
+            body_list_state: ListState::default(),
         }
     }
 
@@ -35,6 +35,7 @@ impl<'a> App<'a> {
             self.tab_index = self.titles.len() - 1;
         }
     }
+
     pub fn next_system(&mut self, client: &mut EliteRustClient) {
         if client.explorer.index + 1 < client.explorer.systems.len() {
             client.explorer.index += 1;
@@ -42,8 +43,28 @@ impl<'a> App<'a> {
     }
 
     pub fn previous_system(&mut self, client: &mut EliteRustClient) {
-        if client.explorer.index - 1 > 0 {
+        if !client.explorer.systems.is_empty() && client.explorer.index > 0 {
             client.explorer.index -= 1;
+        }
+    }
+
+    pub fn next_body(&mut self, client: &mut EliteRustClient) {
+        if client.explorer.systems[client.explorer.index].index + 1
+            < client.explorer.systems[client.explorer.index]
+                .body_list
+                .len()
+        {
+            client.explorer.systems[client.explorer.index].index += 1;
+        }
+    }
+
+    pub fn previous_body(&mut self, client: &mut EliteRustClient) {
+        if !client.explorer.systems[client.explorer.index]
+            .body_list
+            .is_empty()
+            && client.explorer.systems[client.explorer.index].index > 0
+        {
+            client.explorer.systems[client.explorer.index].index -= 1;
         }
     }
 
@@ -86,7 +107,7 @@ fn run_app<B: Backend>(
     loop {
         client.update_values();
 
-        terminal.draw(|f| ui(f, &app, &client))?;
+        terminal.draw(|f| ui(f, &mut app, &client))?;
 
         if event::poll(std::time::Duration::from_millis(33))? {
             if let Key(key) = event::read()? {
@@ -97,7 +118,9 @@ fn run_app<B: Backend>(
                         KeyCode::Char('q') => app.previous_tab(),
                         KeyCode::Right => app.next_system(&mut client),
                         KeyCode::Left => app.previous_system(&mut client),
-                        // TODO: add keys for cursor navigation through signals/bodies list
+                        KeyCode::Down => app.next_body(&mut client),
+                        KeyCode::Up => app.previous_body(&mut client),
+                        // TODO: add keys for cursor navigation through signals list
                         _ => {}
                     }
                 }
@@ -106,7 +129,7 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui(f: &mut Frame, app: &App, client: &EliteRustClient) {
+fn ui(f: &mut Frame, app: &mut App, client: &EliteRustClient) {
     let size = f.size();
     //definition of general layout
     let chunks = ratatui::prelude::Layout::default()
@@ -162,7 +185,7 @@ fn tab_explorer(
     chunk: ratatui::layout::Rect,
     f: &mut ratatui::Frame,
     client: &EliteRustClient,
-    app: &App,
+    app: &mut App,
 ) {
     //general layout
     let layout_explorer = ratatui::prelude::Layout::default()
@@ -239,6 +262,20 @@ fn tab_explorer(
                 })
                 .collect::<Vec<_>>();
 
+            //Selection from body_list
+            app.body_list_state
+                .select(Some(client.explorer.systems[client.explorer.index].index));
+
+            /*
+                        if client.explorer.systems[client.explorer.index].index
+                            > usize::from(layout_explorer[1].height)
+                        {
+                            let needed_offset = client.explorer.systems[client.explorer.index].index
+                                - usize::from(layout_explorer[1].height);
+                            *app.body_list_state.offset_mut() = needed_offset;
+                        }
+            */
+
             if !client.explorer.systems[client.explorer.index].body_list
                 [client.explorer.systems[client.explorer.index].index]
                 .get_signals()
@@ -291,7 +328,11 @@ fn tab_explorer(
         )
         .highlight_style(Style::default().white().on_gray());
 
-    f.render_widget(widget_body_list, layout_explorer[1]);
+    f.render_stateful_widget(
+        widget_body_list,
+        layout_explorer[1],
+        &mut app.body_list_state,
+    );
 
     let widget_body_signals_list = List::new(data_body_signals_list).block(
         Block::default()
