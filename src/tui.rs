@@ -1,10 +1,12 @@
 use std::{error::Error, io};
 
+use base64::write;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event::Key, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use eframe::epaint::{ahash::HashMap, util};
 use ratatui::{prelude::*, widgets::*};
 
 use crate::app::{self, EliteRustClient};
@@ -14,7 +16,9 @@ struct App<'a> {
     pub tab_index: usize,
     pub body_list_state: ListState,
     pub material_index: usize,
+    pub material_selected: String,
     pub material_list_state: ListState,
+    pub material_list_index: usize,
 }
 
 impl<'a> App<'a> {
@@ -24,7 +28,9 @@ impl<'a> App<'a> {
             tab_index: 0,
             body_list_state: ListState::default(),
             material_index: 0,
+            material_selected: "shieldpatternanalysis".to_string(),
             material_list_state: ListState::default(),
+            material_list_index: 0,
         }
     }
 
@@ -76,10 +82,24 @@ impl<'a> App<'a> {
 
     pub fn next_material(&mut self, client: &mut EliteRustClient) {
         // TODO:
+        // index += 1
+        // hashmap.next
     }
 
     pub fn previous_material(&mut self, client: &mut EliteRustClient) {
         // TODO:
+    }
+
+    pub fn next_material_list(&mut self, client: &mut EliteRustClient) {
+        self.material_list_index = (self.material_list_index + 1) % 3;
+    }
+
+    pub fn previous_material_list(&mut self, client: &mut EliteRustClient) {
+        if self.material_list_index > 0 {
+            self.material_list_index -= 1;
+        } else {
+            self.material_list_index = 2;
+        }
     }
 
     // TODO: add functions for cursor navigation through signals lists
@@ -130,8 +150,16 @@ fn run_app<B: Backend>(
                         KeyCode::Char('Q') => return Ok(()),
                         KeyCode::Char('e') => app.next_tab(),
                         KeyCode::Char('q') => app.previous_tab(),
-                        KeyCode::Right => app.next_system(&mut client),
-                        KeyCode::Left => app.previous_system(&mut client),
+                        KeyCode::Right => match app.tab_index {
+                            0 => app.next_system(&mut client),
+                            2 => app.next_material_list(&mut client),
+                            _ => {}
+                        },
+                        KeyCode::Left => match app.tab_index {
+                            0 => app.previous_system(&mut client),
+                            2 => app.previous_material_list(&mut client),
+                            _ => {}
+                        },
                         KeyCode::Down => match app.tab_index {
                             0 => app.next_body(&mut client),
                             2 => app.next_material(&mut client),
@@ -411,11 +439,12 @@ fn tab_materials(
     let layout_materials_info = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Fill(1), // Description
-            Constraint::Fill(1), // Location
-            Constraint::Fill(1), // Sources
-            Constraint::Fill(1), // Engineering
-            Constraint::Fill(1), // Synthesis
+            Constraint::Length(4), // Info
+            Constraint::Fill(3),   // Description
+            Constraint::Fill(2),   // Location
+            Constraint::Fill(2),   // Sources
+            Constraint::Fill(2),   // Engineering
+            Constraint::Fill(2),   // Synthesis
         ])
         .split(layout_materials[1]);
 
@@ -424,9 +453,84 @@ fn tab_materials(
     // Selection from materials list (cursor and scrolling)
     app.material_list_state.select(Some(app.material_index));
 
+    // data
+
+    let data_materials_dataset = match app.material_list_index {
+        0 => client.materials.encoded.clone(),
+        1 => client.materials.manufactured.clone(),
+        2 => client.materials.raw.clone(),
+        _ => todo!(), // TODO:
+    };
+
+    let first_material: Vec<_> = data_materials_dataset
+        .keys()
+        .map(|key| key.to_string())
+        .collect();
+
+    //TODO: remove this hacky way, have 3 different pointers
+    app.material_selected = first_material[0].clone();
+
+    let data_materials_list_names = data_materials_dataset
+        .values()
+        .map(|material| material.name_localised.to_string());
+
+    let data_materials_list_count = data_materials_dataset
+        .values()
+        .map(|material| [material.count.to_string(), material.maximum.to_string()].join("/"));
+
+    let data_materials_info = vec![
+        [
+            "Grade".to_string(),
+            data_materials_dataset
+                .get(app.material_selected.as_str())
+                .unwrap()
+                .grade
+                .to_string(),
+        ]
+        .join(": "),
+        [
+            "Category".to_string(),
+            data_materials_dataset
+                .get(app.material_selected.as_str())
+                .unwrap()
+                .category
+                .to_string(),
+        ]
+        .join(": "),
+    ];
+
+    let data_materials_info_description = data_materials_dataset
+        .get(app.material_selected.as_str())
+        .unwrap()
+        .description
+        .clone();
+
+    let data_materials_info_locations = data_materials_dataset
+        .get(app.material_selected.as_str())
+        .unwrap()
+        .locations
+        .clone();
+
+    let data_materials_info_sources = data_materials_dataset
+        .get(app.material_selected.as_str())
+        .unwrap()
+        .sources
+        .clone();
+
+    let data_materials_info_engineering = data_materials_dataset
+        .get(app.material_selected.as_str())
+        .unwrap()
+        .engineering
+        .clone();
+
+    let data_materials_info_syntesis = data_materials_dataset
+        .get(app.material_selected.as_str())
+        .unwrap()
+        .synthesis
+        .clone();
     // Widget definitions
     // material_list field
-    let widget_materials_list_names = List::new(["material 1", "material 2", "material 3"])
+    let widget_materials_list_names = List::new(data_materials_list_names)
         .block(
             Block::default()
                 .title("Materials")
@@ -435,55 +539,48 @@ fn tab_materials(
         )
         .highlight_style(Style::default().bold().white().on_dark_gray());
 
-    let widget_materials_list_count = List::new(["100/200", "10/250", "0/100"])
+    let widget_materials_list_count = List::new(data_materials_list_count)
         .block(Block::default().borders(Borders::TOP | Borders::RIGHT));
 
     // materials_info
-    let widget_materials_info_description =
-        Paragraph::new("description depending on selected material")
-            .wrap(Wrap { trim: true })
-            .block(
-                Block::default()
-                    .title("Description")
-                    .bold()
-                    .borders(Borders::TOP),
-            );
-    let widget_materials_info_location =
-        Paragraph::new("location info depending on selected material")
-            .wrap(Wrap { trim: true })
-            .block(
-                Block::default()
-                    .title("Location")
-                    .bold()
-                    .borders(Borders::TOP),
-            );
-    let widget_materials_info_source =
-        Paragraph::new("sources info depending on selected material")
-            .wrap(Wrap { trim: true })
-            .block(
-                Block::default()
-                    .title("Sources")
-                    .bold()
-                    .borders(Borders::TOP),
-            );
-    let widget_materials_info_engineering =
-        Paragraph::new("engineering info depending on selected material")
-            .wrap(Wrap { trim: true })
-            .block(
-                Block::default()
-                    .title("Engineering")
-                    .bold()
-                    .borders(Borders::TOP),
-            );
-    let widget_materials_info_synthesis =
-        Paragraph::new("synthesis info depending on selected material")
-            .wrap(Wrap { trim: true })
-            .block(
-                Block::default()
-                    .title("Synthesis")
-                    .bold()
-                    .borders(Borders::TOP),
-            );
+    let widget_material_info = List::new(data_materials_info).block(
+        Block::default()
+            .title("Material Information")
+            .bold()
+            .borders(Borders::TOP),
+    );
+    let widget_materials_info_description = Paragraph::new(data_materials_info_description)
+        .wrap(Wrap { trim: true })
+        .block(
+            Block::default()
+                .title("Description")
+                .bold()
+                .borders(Borders::TOP),
+        );
+    let widget_materials_info_location = List::new(data_materials_info_locations).block(
+        Block::default()
+            .title("Location")
+            .bold()
+            .borders(Borders::TOP),
+    );
+    let widget_materials_info_source = List::new(data_materials_info_sources).block(
+        Block::default()
+            .title("Sources")
+            .bold()
+            .borders(Borders::TOP),
+    );
+    let widget_materials_info_engineering = List::new(data_materials_info_engineering).block(
+        Block::default()
+            .title("Engineering")
+            .bold()
+            .borders(Borders::TOP),
+    );
+    let widget_materials_info_synthesis = List::new(data_materials_info_syntesis).block(
+        Block::default()
+            .title("Synthesis")
+            .bold()
+            .borders(Borders::TOP),
+    );
 
     // Render calls
     f.render_stateful_widget(
@@ -493,11 +590,12 @@ fn tab_materials(
     );
     f.render_widget(widget_materials_list_count, layout_materials_list[1]);
 
-    f.render_widget(widget_materials_info_description, layout_materials_info[0]);
-    f.render_widget(widget_materials_info_location, layout_materials_info[1]);
-    f.render_widget(widget_materials_info_source, layout_materials_info[2]);
-    f.render_widget(widget_materials_info_engineering, layout_materials_info[3]);
-    f.render_widget(widget_materials_info_synthesis, layout_materials_info[4]);
+    f.render_widget(widget_material_info, layout_materials_info[0]);
+    f.render_widget(widget_materials_info_description, layout_materials_info[1]);
+    f.render_widget(widget_materials_info_location, layout_materials_info[2]);
+    f.render_widget(widget_materials_info_source, layout_materials_info[3]);
+    f.render_widget(widget_materials_info_engineering, layout_materials_info[4]);
+    f.render_widget(widget_materials_info_synthesis, layout_materials_info[5]);
 }
 
 // About --------------------------------------------------------------------------------------------------------------------------------------------------------------------
