@@ -247,28 +247,6 @@ fn tab_explorer(
     client: &EliteRustClient,
     app: &mut App,
 ) {
-    // Layout definitions
-    // general layout
-    let layout_explorer = ratatui::prelude::Layout::default()
-        .direction(ratatui::prelude::Direction::Horizontal)
-        .constraints(vec![
-            Constraint::Percentage(25),
-            Constraint::Fill(1),
-            Constraint::Percentage(25),
-        ])
-        .split(chunk);
-
-    // layout of "systems" Panel
-    let layout_system = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Length(11), Constraint::Fill(1)])
-        .split(layout_explorer[0]);
-
-    // layout of "body information" panel
-    let layout_body = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([Constraint::Length(20), Constraint::Fill(1)])
-        .split(layout_explorer[2]);
     // Data
     // Default data to display
     let mut data_system_info = vec!["no data".to_string()];
@@ -367,10 +345,33 @@ fn tab_explorer(
         }
     }
 
+    // Layout definitions
+    // general layout
+    let layout_explorer = ratatui::prelude::Layout::default()
+        .direction(ratatui::prelude::Direction::Horizontal)
+        .constraints(vec![
+            Constraint::Percentage(25),
+            Constraint::Fill(1),
+            Constraint::Percentage(25),
+        ])
+        .split(chunk);
+
+    // layout of "systems" Panel
+    let layout_system = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(11), Constraint::Fill(1)])
+        .split(layout_explorer[0]);
+
+    // layout of "body information" panel
+    let layout_body = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(20), Constraint::Fill(1)])
+        .split(layout_explorer[2]);
+
     // Widget definitions
     let widget_system_info = List::new(data_system_info).block(
         Block::default()
-            .title("System Info")
+            .title(" System Info ")
             .borders(Borders::TOP)
             .bold()
             .white(),
@@ -378,7 +379,7 @@ fn tab_explorer(
 
     let widget_signal_list = List::new(data_signals_list).block(
         Block::default()
-            .title("Signals")
+            .title(" Signals ")
             .borders(Borders::TOP)
             .bold()
             .white(),
@@ -387,8 +388,8 @@ fn tab_explorer(
     let widget_body_list = List::new(data_body_list)
         .block(
             Block::default()
-                .title("Body List")
-                .borders(Borders::LEFT | Borders::TOP | Borders::RIGHT)
+                .title(" Body List ")
+                .borders(Borders::LEFT | Borders::TOP)
                 .bold()
                 .white(),
         )
@@ -396,16 +397,16 @@ fn tab_explorer(
 
     let widget_body_info = List::new(data_body_info).block(
         Block::default()
-            .title("Body Info")
-            .borders(Borders::TOP)
+            .title(" Body Info ")
+            .borders(Borders::TOP | Borders::LEFT)
             .bold()
             .white(),
     );
 
     let widget_body_signals_list = List::new(data_body_signals_list).block(
         Block::default()
-            .title("Body Signals")
-            .borders(Borders::TOP)
+            .title(" Body Signals ")
+            .borders(Borders::TOP | Borders::LEFT)
             .bold()
             .white(),
     );
@@ -552,10 +553,15 @@ fn tab_materials(
         .constraints([Constraint::Length(45), Constraint::Fill(1)])
         .split(chunk);
 
+    let layout_materials_search_list = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2), Constraint::Fill(1)])
+        .split(layout_materials[0]);
+
     let layout_materials_list = Layout::default()
         .direction(Direction::Horizontal)
         .constraints([Constraint::Length(36), Constraint::Fill(1)])
-        .split(layout_materials[0]);
+        .split(layout_materials_search_list[1]);
 
     let layout_materials_info = Layout::default()
         .direction(Direction::Vertical)
@@ -571,59 +577,66 @@ fn tab_materials(
 
     // Widget definitions
     // material_list field
+
+    let widget_materials_search = Block::default()
+        .borders(Borders::TOP)
+        .white()
+        .title(" Search ");
+
     let widget_materials_list_names = List::new(data_materials_list_names)
         .block(
             Block::default()
-                .title(["Materials", data_materials_dataset_name].join(": "))
+                .title([" Materials: ", data_materials_dataset_name, " "].join(""))
                 .borders(Borders::TOP)
                 .white(),
         )
         .highlight_style(Style::default().bold().white().on_dark_gray());
 
-    let widget_materials_list_count = List::new(data_materials_list_count)
-        .block(Block::default().borders(Borders::TOP | Borders::RIGHT));
+    let widget_materials_list_count =
+        List::new(data_materials_list_count).block(Block::default().borders(Borders::TOP));
 
     // materials_info
     let widget_material_info = List::new(data_materials_info).block(
         Block::default()
-            .title("Material Information")
+            .title(" Material Information ")
             .bold()
-            .borders(Borders::TOP),
+            .borders(Borders::TOP | Borders::LEFT),
     );
     let widget_materials_info_description = Paragraph::new(data_materials_info_description)
         .wrap(Wrap { trim: true })
         .block(
             Block::default()
-                .title("Description")
+                .title(" Description ")
                 .bold()
-                .borders(Borders::TOP),
+                .borders(Borders::TOP | Borders::LEFT),
         );
     let widget_materials_info_location = List::new(data_materials_info_locations).block(
         Block::default()
-            .title("Location")
+            .title(" Location ")
             .bold()
-            .borders(Borders::TOP),
+            .borders(Borders::TOP | Borders::LEFT),
     );
     let widget_materials_info_source = List::new(data_materials_info_sources).block(
         Block::default()
-            .title("Sources")
+            .title(" Sources ")
             .bold()
-            .borders(Borders::TOP),
+            .borders(Borders::TOP | Borders::LEFT),
     );
     let widget_materials_info_engineering = List::new(data_materials_info_engineering).block(
         Block::default()
-            .title("Engineering")
+            .title(" Engineering ")
             .bold()
-            .borders(Borders::TOP),
+            .borders(Borders::TOP | Borders::LEFT),
     );
     let widget_materials_info_synthesis = List::new(data_materials_info_syntesis).block(
         Block::default()
-            .title("Synthesis")
+            .title(" Synthesis ")
             .bold()
-            .borders(Borders::TOP),
+            .borders(Borders::TOP | Borders::LEFT),
     );
 
     // Render calls
+    f.render_widget(widget_materials_search, layout_materials_search_list[0]);
     f.render_stateful_widget(
         widget_materials_list_names,
         layout_materials_list[0],
@@ -646,6 +659,8 @@ fn tab_materials(
 // About --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
+    // data here if needed
+
     // Layout definition
     let layout_about = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Vertical)
