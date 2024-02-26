@@ -1,13 +1,12 @@
 use std::{error::Error, io};
 
-use base64::write;
 use crossterm::{
     event::{self, DisableMouseCapture, EnableMouseCapture, Event::Key, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use eframe::epaint::{ahash::HashMap, util};
 use ratatui::{prelude::*, widgets::*};
+use tokio::io::join;
 
 use crate::app::{self, EliteRustClient};
 
@@ -15,9 +14,11 @@ struct App<'a> {
     pub titles: Vec<&'a str>,
     pub tab_index: usize,
     pub body_list_state: ListState,
-    pub material_index: usize,
+    // list functionality of materials tab
     pub material_selected: String,
+    pub material_index: usize,
     pub material_list_state: ListState,
+    // for switching between 3 lists
     pub material_list_index: usize,
 }
 
@@ -81,13 +82,32 @@ impl<'a> App<'a> {
     }
 
     pub fn next_material(&mut self, client: &mut EliteRustClient) {
-        // TODO:
-        // index += 1
-        // hashmap.next
+        self.material_index = (self.material_index + 1) % {
+            match self.material_list_index {
+                0 => client.materials.encoded.clone(),
+                1 => client.materials.manufactured.clone(),
+                2 => client.materials.raw.clone(),
+                _ => client.materials.encoded.clone(),
+            }
+        }
+        .len();
     }
 
     pub fn previous_material(&mut self, client: &mut EliteRustClient) {
-        // TODO:
+        if self.material_index > 0 {
+            self.material_index -= 1
+        } else {
+            self.material_index = {
+                match self.material_list_index {
+                    0 => client.materials.encoded.clone(),
+                    1 => client.materials.manufactured.clone(),
+                    2 => client.materials.raw.clone(),
+                    _ => client.materials.encoded.clone(),
+                }
+            }
+            .len()
+                - 1;
+        }
     }
 
     pub fn next_material_list(&mut self, client: &mut EliteRustClient) {
@@ -423,52 +443,36 @@ fn tab_materials(
     client: &EliteRustClient,
     app: &mut App,
 ) {
-    //TODO:
-
-    // Layout definitions
-    let layout_materials = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(45), Constraint::Fill(1)])
-        .split(chunk);
-
-    let layout_materials_list = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(36), Constraint::Fill(1)])
-        .split(layout_materials[0]);
-
-    let layout_materials_info = Layout::default()
-        .direction(Direction::Vertical)
-        .constraints([
-            Constraint::Length(4), // Info
-            Constraint::Fill(3),   // Description
-            Constraint::Fill(2),   // Location
-            Constraint::Fill(2),   // Sources
-            Constraint::Fill(2),   // Engineering
-            Constraint::Fill(2),   // Synthesis
-        ])
-        .split(layout_materials[1]);
-
-    // TODO: data acquisition
-
     // Selection from materials list (cursor and scrolling)
     app.material_list_state.select(Some(app.material_index));
 
-    // data
-
+    // Data processing
     let data_materials_dataset = match app.material_list_index {
         0 => client.materials.encoded.clone(),
         1 => client.materials.manufactured.clone(),
         2 => client.materials.raw.clone(),
-        _ => todo!(), // TODO:
+        _ => client.materials.encoded.clone(), // A Plug, so that rust wont complain about non-exhaustive match. Normally, any other values other than {0,1,2} would neven be accessible
+    };
+    let data_materials_dataset_name = match app.material_list_index {
+        0 => "encoded",
+        1 => "manufactured",
+        2 => "raw",
+        _ => "encoded fallback", // A Plug, so that rust wont complain about non-exhaustive match. Normally, any other values other than {0,1,2} would neven be accessible
     };
 
-    let first_material: Vec<_> = data_materials_dataset
+    //make a damn array out of that damn hashmap
+    let material_array: Vec<_> = data_materials_dataset
         .keys()
         .map(|key| key.to_string())
         .collect();
 
-    //TODO: remove this hacky way, have 3 different pointers
-    app.material_selected = first_material[0].clone();
+    // check if pointer is out of bounds for list you are switching to. Set to list.len()-1 if it is.
+    if app.material_index >= data_materials_dataset.len() {
+        app.material_index = data_materials_dataset.len() - 1;
+    }
+
+    // bc the map is sorted, i can map index to key directly
+    app.material_selected = material_array[app.material_index].clone();
 
     let data_materials_list_names = data_materials_dataset
         .values()
@@ -528,12 +532,49 @@ fn tab_materials(
         .unwrap()
         .synthesis
         .clone();
+
+    // data on how long to make the layout
+    let data_materials_info_locations_line_count: u16 = (data_materials_info_locations.len() + 2)
+        .try_into()
+        .unwrap();
+
+    let data_materials_info_sources_line_count: u16 =
+        (data_materials_info_sources.len() + 2).try_into().unwrap();
+
+    let data_materials_info_engineering_line_count: u16 = (data_materials_info_engineering.len()
+        + 2)
+    .try_into()
+    .unwrap();
+
+    // Layout definitions
+    let layout_materials = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(45), Constraint::Fill(1)])
+        .split(chunk);
+
+    let layout_materials_list = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(36), Constraint::Fill(1)])
+        .split(layout_materials[0]);
+
+    let layout_materials_info = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(4),                                          // Info
+            Constraint::Length(12),                                         // Description
+            Constraint::Length(data_materials_info_locations_line_count),   // Location
+            Constraint::Length(data_materials_info_sources_line_count),     // Sources
+            Constraint::Length(data_materials_info_engineering_line_count), // Engineering
+            Constraint::Fill(1),                                            // Synthesis
+        ])
+        .split(layout_materials[1]);
+
     // Widget definitions
     // material_list field
     let widget_materials_list_names = List::new(data_materials_list_names)
         .block(
             Block::default()
-                .title("Materials")
+                .title(["Materials", data_materials_dataset_name].join(": "))
                 .borders(Borders::TOP)
                 .white(),
         )
@@ -588,7 +629,11 @@ fn tab_materials(
         layout_materials_list[0],
         &mut app.material_list_state,
     );
-    f.render_widget(widget_materials_list_count, layout_materials_list[1]);
+    f.render_stateful_widget(
+        widget_materials_list_count,
+        layout_materials_list[1],
+        &mut app.material_list_state,
+    );
 
     f.render_widget(widget_material_info, layout_materials_info[0]);
     f.render_widget(widget_materials_info_description, layout_materials_info[1]);
