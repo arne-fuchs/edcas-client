@@ -1,10 +1,11 @@
 use std::{error::Error, io};
 
 use crossterm::{
-    event::{self, Event::Key, KeyCode},
+    event::{self, Event::Key, KeyCode, KeyEvent},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use iota_sdk::client;
 use ratatui::{prelude::*, widgets::*};
 
 use crate::app::{self, EliteRustClient};
@@ -46,8 +47,55 @@ impl<'a> App<'a> {
         }
     }
 
-    //TODO: user input
+    //serach Input
+    fn move_cursor_left(&mut self) {
+        let cursor_moved_left = self.search_cursor_position.saturating_sub(1);
+        self.search_cursor_position = self.clamp_cursor(cursor_moved_left);
+    }
 
+    fn move_cursor_right(&mut self) {
+        let cursor_moved_right = self.search_cursor_position.saturating_add(1);
+        self.search_cursor_position = self.clamp_cursor(cursor_moved_right);
+    }
+
+    fn enter_char(&mut self, new_char: char) {
+        self.search_input
+            .insert(self.search_cursor_position, new_char);
+
+        self.move_cursor_right();
+    }
+
+    fn delete_char(&mut self) {
+        let is_not_cursor_leftmost = self.search_cursor_position != 0;
+        if is_not_cursor_leftmost {
+            // Method "remove" is not used on the saved text for deleting the selected char.
+            // Reason: Using remove on String works on bytes instead of the chars.
+            // Using remove would require special care because of char boundaries.
+
+            let current_index = self.search_cursor_position;
+            let from_left_to_current_index = current_index - 1;
+
+            // Getting all characters before the selected character.
+            let before_char_to_delete = self.search_input.chars().take(from_left_to_current_index);
+            // Getting all characters after selected character.
+            let after_char_to_delete = self.search_input.chars().skip(current_index);
+
+            // Put all characters together except the selected one.
+            // By leaving the selected one out, it is forgotten and therefore deleted.
+            self.search_input = before_char_to_delete.chain(after_char_to_delete).collect();
+            self.move_cursor_left();
+        }
+    }
+
+    fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
+        new_cursor_pos.clamp(0, self.search_input.len())
+    }
+
+    fn reset_cursor(&mut self) {
+        self.search_cursor_position = 0;
+    }
+
+    // functions for navigating scrollable elements
     pub fn next_tab(&mut self) {
         self.tab_index = (self.tab_index + 1) % self.titles.len();
     }
@@ -179,32 +227,47 @@ fn run_app<B: Backend>(
         if event::poll(std::time::Duration::from_millis(33))? {
             if let Key(key) = event::read()? {
                 if key.kind == event::KeyEventKind::Press {
-                    match key.code {
-                        KeyCode::Char('Q') => return Ok(()),
-                        KeyCode::Char('e') => app.next_tab(),
-                        KeyCode::Char('q') => app.previous_tab(),
-                        KeyCode::Right => match app.tab_index {
-                            0 => app.next_system(&mut client),
-                            2 => app.next_material_list(),
-                            _ => {}
-                        },
-                        KeyCode::Left => match app.tab_index {
-                            0 => app.previous_system(&mut client),
-                            2 => app.previous_material_list(),
-                            _ => {}
-                        },
-                        KeyCode::Down => match app.tab_index {
-                            0 => app.next_body(&mut client),
-                            2 => app.next_material(&mut client),
-                            _ => {}
-                        },
-                        KeyCode::Up => match app.tab_index {
-                            0 => app.previous_body(&mut client),
-                            2 => app.previous_material(&mut client),
+                    match app.search_input_mode {
+                        InputMode::Normal => match key.code {
+                            KeyCode::Char('Q') => return Ok(()),
+                            KeyCode::Char('e') => app.next_tab(),
+                            KeyCode::Char('q') => app.previous_tab(),
+                            KeyCode::Right => match app.tab_index {
+                                0 => app.next_system(&mut client),
+                                2 => app.next_material_list(),
+                                _ => {}
+                            },
+                            KeyCode::Left => match app.tab_index {
+                                0 => app.previous_system(&mut client),
+                                2 => app.previous_material_list(),
+                                _ => {}
+                            },
+                            KeyCode::Down => match app.tab_index {
+                                0 => app.next_body(&mut client),
+                                2 => app.next_material(&mut client),
+                                _ => {}
+                            },
+                            KeyCode::Up => match app.tab_index {
+                                0 => app.previous_body(&mut client),
+                                2 => app.previous_material(&mut client),
+                                _ => {}
+                            },
+                            KeyCode::Char('i') => {
+                                if app.tab_index == 2 {
+                                    app.search_input_mode = InputMode::Editing;
+                                }
+                            }
                             _ => {}
                         },
                         // TODO: add keys for cursor navigation through signals list (do i need that?)
-                        _ => {}
+                        InputMode::Editing => match key.code {
+                            KeyCode::Char(to_insert) => app.enter_char(to_insert),
+                            KeyCode::Backspace => app.delete_char(),
+                            KeyCode::Left => app.move_cursor_left(),
+                            KeyCode::Right => app.move_cursor_right(),
+                            KeyCode::Esc => app.search_input_mode = InputMode::Normal,
+                            _ => {}
+                        },
                     }
                 }
             }
@@ -595,10 +658,12 @@ fn tab_materials(
     // Widget definitions
     // material_list field
 
-    let widget_materials_search = Block::default()
-        .borders(Borders::TOP)
-        .white()
-        .title(" Search ");
+    let widget_materials_search = Paragraph::new(app.search_input.clone()).block(
+        Block::default()
+            .borders(Borders::TOP)
+            .white()
+            .title(" Search "),
+    );
 
     let widget_materials_list_names = List::new(data_materials_list_names)
         .block(
@@ -671,8 +736,25 @@ fn tab_materials(
     f.render_widget(widget_materials_info_source, layout_materials_info[3]);
     f.render_widget(widget_materials_info_engineering, layout_materials_info[4]);
     f.render_widget(widget_materials_info_synthesis, layout_materials_info[5]);
-}
+    // make cursor visible for input
+    match app.search_input_mode {
+        InputMode::Normal =>
+            // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
+            {}
 
+        InputMode::Editing => {
+            // Make the cursor visible and ask ratatui to put it at the specified coordinates after
+            // rendering
+            f.set_cursor(
+                // Draw the cursor at the current position in the input field.
+                // This position is can be controlled via the left and right arrow key
+                layout_materials_search_list[0].x + app.search_cursor_position as u16,
+                // Move one line down, from the border to the input line
+                layout_materials_search_list[0].y + 1,
+            )
+        }
+    }
+}
 // About --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
