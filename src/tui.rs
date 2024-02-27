@@ -1,3 +1,4 @@
+use core::f64;
 use std::{error::Error, io};
 
 use crossterm::{
@@ -7,11 +8,7 @@ use crossterm::{
 };
 use ratatui::{prelude::*, widgets::*};
 
-use crate::app::{
-    self,
-    materials::{self, Material},
-    EliteRustClient,
-};
+use crate::app::{materials::Material, EliteRustClient};
 
 enum InputMode {
     Normal,
@@ -93,9 +90,11 @@ impl<'a> App<'a> {
         new_cursor_pos.clamp(0, self.search_input.len())
     }
 
+    /*
     fn reset_cursor(&mut self) {
         self.search_cursor_position = 0;
     }
+    */
 
     // functions for navigating scrollable elements
     pub fn next_tab(&mut self) {
@@ -504,13 +503,71 @@ fn tab_explorer(
 
 // Mining --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
+//TODO: function that constructs a that text thing, map to the .prospectors vector
+
 fn tab_mining(
     chunk: ratatui::layout::Rect,
     f: &mut ratatui::Frame,
     client: &EliteRustClient,
     app: &mut App,
 ) {
-    //TODO:
+    //data
+
+    let mut data_mining_prospectors_event = "no data".to_string();
+    let mut data_mining_prospectors_content = "no data".to_string();
+    let mut data_mining_prospectors_materials_name = vec!["no data".to_string()];
+    let mut data_mining_prospectors_content_localised = "no data".to_string();
+    let mut data_mining_prospectors_remaining: f64 = 0.0;
+    let mut data_mining_prospectors_timestamp = "no data".to_string();
+
+    if !client.mining.prospectors.is_empty() {
+        data_mining_prospectors_event = client.mining.prospectors[0].event.clone();
+        data_mining_prospectors_content = client.mining.prospectors[0].content.clone();
+        data_mining_prospectors_materials_name = client.mining.prospectors[0]
+            .materials
+            .iter()
+            .map(|material| material.name_localised.clone())
+            .collect();
+        data_mining_prospectors_content_localised =
+            client.mining.prospectors[0].content_localised.clone();
+        data_mining_prospectors_remaining = client.mining.prospectors[0].remaining;
+        data_mining_prospectors_timestamp = client.mining.prospectors[0].timestamp.clone();
+    }
+
+    //TODO: remove this atrocity, construct list item manually
+    let data_text = [
+        data_mining_prospectors_timestamp,
+        data_mining_prospectors_event,
+        data_mining_prospectors_content,
+        data_mining_prospectors_materials_name.join(":"),
+        data_mining_prospectors_content_localised,
+        data_mining_prospectors_remaining.to_string(),
+    ]
+    .join("\n");
+
+    //layout
+    let layout_mining = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(30), Constraint::Fill(1)])
+        .split(chunk);
+
+    let layout_mining_cargo = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([
+            Constraint::Fill(1), // name
+            Constraint::Fill(1), // avg buy price
+            Constraint::Fill(1), // highest buy price
+            Constraint::Fill(1), // station (location)
+            Constraint::Fill(1), // system
+        ])
+        .split(layout_mining[1]);
+
+    //widgets
+    let widget_mining_prospector = List::new([data_text.clone(), data_text.clone(), data_text])
+        .block(Block::default().borders(Borders::TOP | Borders::LEFT));
+
+    //rendering
+    f.render_widget(widget_mining_prospector, layout_mining[0]);
 }
 
 // Materials --------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -553,7 +610,6 @@ fn tab_materials(
         }
     }
 
-    // TODO: sort material_vec_selected_sorted (oder nicht?)
     material_vec_selected_sorted.sort_unstable_by_key(|sorting_key| {
         if sorting_key.name_localised != "null" {
             &sorting_key.name_localised
@@ -823,7 +879,7 @@ fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
     );
 
     // Render calls
+    f.render_widget(widget_about_controls, layout_about[0]);
     f.render_widget(widget_about_github, layout_about[1]);
     f.render_widget(widget_about_version, layout_about[2]);
-    f.render_widget(widget_about_controls, layout_about[0]);
 }
