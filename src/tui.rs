@@ -1,14 +1,18 @@
 use std::{error::Error, io};
 
 use crossterm::{
-    event::{self, DisableMouseCapture, EnableMouseCapture, Event::Key, KeyCode},
+    event::{self, Event::Key, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, widgets::*};
-use tokio::io::join;
 
 use crate::app::{self, EliteRustClient};
+
+enum InputMode {
+    Normal,
+    Editing,
+}
 
 struct App<'a> {
     pub titles: Vec<&'a str>,
@@ -20,6 +24,10 @@ struct App<'a> {
     pub material_list_state: ListState,
     // for switching between 3 lists
     pub material_list_index: usize,
+    //user input
+    pub search_input_mode: InputMode,
+    pub search_cursor_position: usize,
+    pub search_input: String,
 }
 
 impl<'a> App<'a> {
@@ -32,8 +40,13 @@ impl<'a> App<'a> {
             material_selected: "shieldpatternanalysis".to_string(),
             material_list_state: ListState::default(),
             material_list_index: 0,
+            search_input_mode: InputMode::Normal,
+            search_cursor_position: 0,
+            search_input: "".to_string(),
         }
     }
+
+    //TODO: user input
 
     pub fn next_tab(&mut self) {
         self.tab_index = (self.tab_index + 1) % self.titles.len();
@@ -110,11 +123,11 @@ impl<'a> App<'a> {
         }
     }
 
-    pub fn next_material_list(&mut self, client: &mut EliteRustClient) {
+    pub fn next_material_list(&mut self) {
         self.material_list_index = (self.material_list_index + 1) % 3;
     }
 
-    pub fn previous_material_list(&mut self, client: &mut EliteRustClient) {
+    pub fn previous_material_list(&mut self) {
         if self.material_list_index > 0 {
             self.material_list_index -= 1;
         } else {
@@ -172,12 +185,12 @@ fn run_app<B: Backend>(
                         KeyCode::Char('q') => app.previous_tab(),
                         KeyCode::Right => match app.tab_index {
                             0 => app.next_system(&mut client),
-                            2 => app.next_material_list(&mut client),
+                            2 => app.next_material_list(),
                             _ => {}
                         },
                         KeyCode::Left => match app.tab_index {
                             0 => app.previous_system(&mut client),
-                            2 => app.previous_material_list(&mut client),
+                            2 => app.previous_material_list(),
                             _ => {}
                         },
                         KeyCode::Down => match app.tab_index {
@@ -190,7 +203,7 @@ fn run_app<B: Backend>(
                             2 => app.previous_material(&mut client),
                             _ => {}
                         },
-                        // TODO: add keys for cursor navigation through signals list
+                        // TODO: add keys for cursor navigation through signals list (do i need that?)
                         _ => {}
                     }
                 }
@@ -475,9 +488,13 @@ fn tab_materials(
     // bc the map is sorted, i can map index to key directly
     app.material_selected = material_array[app.material_index].clone();
 
-    let data_materials_list_names = data_materials_dataset
-        .values()
-        .map(|material| material.name_localised.to_string());
+    let data_materials_list_names = data_materials_dataset.values().map(|material| {
+        if material.name_localised != "null" {
+            material.name_localised.clone()
+        } else {
+            material.name.clone()
+        }
+    });
 
     let data_materials_list_count = data_materials_dataset
         .values()
@@ -660,12 +677,21 @@ fn tab_materials(
 
 fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
     // data here if needed
+    let data_controls_list = vec![
+        "Quit: Q, Change Tabs: q and e",
+        "Change System/Material List: Left and Right arrows",
+        "Change Body/Material selection: Up and Down arrows",
+        "Search: i",
+        "Quit Search: esc",
+    ];
+
+    let data_controls_list_size: u16 = (data_controls_list.len() + 2).try_into().unwrap();
 
     // Layout definition
     let layout_about = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Vertical)
         .constraints(vec![
-            Constraint::Length(3),
+            Constraint::Length(data_controls_list_size), // TODO: hardcode correct value
             Constraint::Length(3),
             Constraint::Length(3),
         ])
@@ -676,27 +702,24 @@ fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
         .wrap(Wrap { trim: true })
         .block(
             Block::default()
-                .title("GitHub")
+                .title(" GitHub ")
                 .borders(Borders::TOP)
                 .white(),
         );
 
     let widget_about_version = Paragraph::new(env!("CARGO_PKG_VERSION")).block(
         Block::default()
-            .title("edcas version")
+            .title(" edcas version ")
             .borders(Borders::TOP)
             .white(),
     );
 
-    let widget_about_controls =
-        Paragraph::new("Quit: Q, Change Tabs: q and e, Change System: Left and Right arrows, Change item selection: Up and Down arrows")
-            .wrap(Wrap { trim: true })
-            .block(
-                Block::default()
-                    .title("Controls")
-                    .borders(Borders::TOP)
-                    .white(),
-            );
+    let widget_about_controls = List::new(data_controls_list).block(
+        Block::default()
+            .title(" Controls ")
+            .borders(Borders::TOP)
+            .white(),
+    );
 
     // Render calls
     f.render_widget(widget_about_github, layout_about[1]);
