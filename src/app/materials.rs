@@ -1,8 +1,8 @@
 use std::fs;
 
-use eframe::{App, egui, Frame};
-use eframe::egui::{Color32, Context, Ui, vec2, Widget, Window};
+use eframe::egui::{vec2, Color32, Context, Ui, Widget, Window};
 use eframe::epaint::ahash::HashMap;
+use eframe::{egui, App, Frame};
 use json::JsonValue;
 use log::info;
 
@@ -24,11 +24,11 @@ impl Default for MaterialState {
             search: "".to_string(),
         };
         info!("Looking for material file in /usr/share/edcas-client/materials.json");
-        let materials_content = match fs::read_to_string("/usr/share/edcas-client/materials.json"){
+        let materials_content = match fs::read_to_string("/usr/share/edcas-client/materials.json") {
             Ok(content) => {
                 info!("Material file found");
                 content
-            },
+            }
             Err(_) => {
                 info!("Material file not found -> looking in the local folder");
                 fs::read_to_string("materials.json").unwrap()
@@ -37,7 +37,7 @@ impl Default for MaterialState {
         let materials_json = json::parse(materials_content.as_str()).unwrap();
 
         let encoded_array = &materials_json["encoded"];
-        for i in 0..encoded_array.len(){
+        for i in 0..encoded_array.len() {
             let encoded = &encoded_array[i];
 
             let locations: Vec<String> = get_array_values(&encoded, "locations");
@@ -50,7 +50,7 @@ impl Default for MaterialState {
 
             materials.encoded.insert(
                 encoded["name"].to_string(),
-                Material{
+                Material {
                     name: encoded["name"].to_string(),
                     name_localised: encoded["name_localised"].to_string(),
                     grade: encoded["grade"].as_u64().unwrap(),
@@ -62,12 +62,12 @@ impl Default for MaterialState {
                     engineering,
                     synthesis,
                     description: encoded["description"].to_string(),
-                }
+                },
             );
         }
 
         let manufactured_array = &materials_json["manufactured"];
-        for i in 0..manufactured_array.len(){
+        for i in 0..manufactured_array.len() {
             let manufactured = &manufactured_array[i];
 
             let locations: Vec<String> = get_array_values(&manufactured, "locations");
@@ -78,10 +78,9 @@ impl Default for MaterialState {
 
             let synthesis: Vec<String> = get_array_values(&manufactured, "synthesis");
 
-
             materials.manufactured.insert(
                 manufactured["name"].to_string(),
-                Material{
+                Material {
                     name: manufactured["name"].to_string(),
                     name_localised: manufactured["name_localised"].to_string(),
                     grade: manufactured["grade"].as_u64().unwrap(),
@@ -93,12 +92,12 @@ impl Default for MaterialState {
                     engineering,
                     synthesis,
                     description: manufactured["description"].to_string(),
-                }
+                },
             );
         }
 
         let raw_array = &materials_json["raw"];
-        for i in 0..raw_array.len(){
+        for i in 0..raw_array.len() {
             let raw = &raw_array[i];
 
             let locations: Vec<String> = get_array_values(&raw, "locations");
@@ -109,10 +108,9 @@ impl Default for MaterialState {
 
             let synthesis: Vec<String> = get_array_values(&raw, "synthesis");
 
-
             materials.raw.insert(
                 raw["name"].to_string(),
-                Material{
+                Material {
                     name: raw["name"].to_string(),
                     name_localised: raw["name_localised"].to_string(),
                     grade: raw["grade"].as_u64().unwrap(),
@@ -124,7 +122,7 @@ impl Default for MaterialState {
                     engineering,
                     synthesis,
                     description: raw["description"].to_string(),
-                }
+                },
             );
         }
 
@@ -138,7 +136,14 @@ impl Material {
             self.name_localised.clone()
         } else {
             let mut name = self.name.clone();
-            let char = self.name.clone().chars().next().unwrap().to_uppercase().to_string();
+            let char = self
+                .name
+                .clone()
+                .chars()
+                .next()
+                .unwrap()
+                .to_uppercase()
+                .to_string();
             name.replace_range(0..1, char.as_str());
             name
         };
@@ -163,46 +168,61 @@ pub struct Material {
 impl App for MaterialState {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         let Self {
-            raw, manufactured, encoded, showing: _,search: _
+            raw,
+            manufactured,
+            encoded,
+            showing: _,
+            search: _,
         } = self;
 
         print_material_info_window_if_available(&mut self.showing, ctx);
 
-
-        egui::CentralPanel::default()
-            .show(ctx, |ui| {
-                ui.horizontal_top(|ui|{
-                    ui.label("Search: ");
-                    ui.text_edit_singleline(&mut self.search);
-                });
-                egui::ScrollArea::vertical().show(ui, |ui| {
-                    egui::Grid::new("inventory_grid")
-                        .num_columns(3)
-                        .min_col_width(ui.available_width() / 3_f32)
-                        .max_col_width(ui.available_width() / 3_f32)
-                        .striped(true)
-                        .show(ui, |ui| {
-                            ui.label("Encoded");
-                            ui.label("Manufactured");
-                            ui.label("Raw");
-                            ui.end_row();
-                            draw_materials(&mut self.showing, ui, encoded,&self.search);
-                            draw_materials(&mut self.showing, ui, manufactured,&self.search);
-                            draw_materials(&mut self.showing, ui, raw,&self.search);
-                            ui.end_row();
-                        });
-                });
+        egui::CentralPanel::default().show(ctx, |ui| {
+            ui.horizontal_top(|ui| {
+                ui.label("Search: ");
+                ui.text_edit_singleline(&mut self.search);
             });
+            egui::ScrollArea::vertical().show(ui, |ui| {
+                egui::Grid::new("inventory_grid")
+                    .num_columns(3)
+                    .min_col_width(ui.available_width() / 3_f32)
+                    .max_col_width(ui.available_width() / 3_f32)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        ui.label("Encoded");
+                        ui.label("Manufactured");
+                        ui.label("Raw");
+                        ui.end_row();
+                        draw_materials(&mut self.showing, ui, encoded, &self.search);
+                        draw_materials(&mut self.showing, ui, manufactured, &self.search);
+                        draw_materials(&mut self.showing, ui, raw, &self.search);
+                        ui.end_row();
+                    });
+            });
+        });
     }
 }
 
-fn draw_materials(showing: &mut Option<Material>, ui: &mut Ui, materials: &HashMap<String, Material>,search: &String) {
+fn draw_materials(
+    showing: &mut Option<Material>,
+    ui: &mut Ui,
+    materials: &HashMap<String, Material>,
+    search: &String,
+) {
     ui.vertical(|ui| {
         let mut en_iter = materials.iter();
         let mut option_material = en_iter.next();
         while option_material.is_some() {
             let material = option_material.unwrap().1;
-            if material.name_localised.to_lowercase().contains(&search.to_lowercase()) || material.name.to_lowercase().contains(&search.to_lowercase()){
+            if material
+                .name_localised
+                .to_lowercase()
+                .contains(&search.to_lowercase())
+                || material
+                    .name
+                    .to_lowercase()
+                    .contains(&search.to_lowercase())
+            {
                 ui.vertical(|ui| {
                     ui.vertical_centered(|ui| {
                         if ui.button(material.get_name()).clicked() {
@@ -242,14 +262,14 @@ fn convert_color(value: f32) -> (u8, u8, u8) {
     (red, green, 0) // Assuming a fixed blue value of 0
 }
 
-pub fn print_material_info_window_if_available(showing: &mut Option<Material>, ctx: &Context){
+pub fn print_material_info_window_if_available(showing: &mut Option<Material>, ctx: &Context) {
     match showing.clone() {
         None => {}
         Some(material) => {
             Window::new(material.get_name())
                 .collapsible(false)
                 .resizable(true)
-                .default_size(vec2(ctx.available_rect().width()/1.1, 600f32))
+                .default_size(vec2(ctx.available_rect().width() / 1.1, 600f32))
                 .show(ctx, |ui| {
                     egui::Grid::new("materials_description")
                         .num_columns(2)
@@ -337,11 +357,12 @@ pub fn print_material_info_window_if_available(showing: &mut Option<Material>, c
     }
 }
 
-fn get_array_values(material_array: &JsonValue, key: &str) -> Vec<String>{
+fn get_array_values(material_array: &JsonValue, key: &str) -> Vec<String> {
     let mut key_values: Vec<String> = vec![];
     let key_array = &material_array[key];
-    for j in 0..key_array.len(){
+    for j in 0..key_array.len() {
         key_values.push(key_array[j].to_string())
     }
     key_values
 }
+

@@ -1,14 +1,17 @@
-use std::{collections::HashMap, error::Error, io};
+use std::{error::Error, io};
 
 use crossterm::{
     event::{self, Event::Key, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use eframe::epaint::ahash::HashMapExt;
-use ratatui::{prelude::*, style::palette::material, widgets::*};
+use ratatui::{prelude::*, widgets::*};
 
-use crate::app::{self, materials::Material, EliteRustClient};
+use crate::app::{
+    self,
+    materials::{self, Material},
+    EliteRustClient,
+};
 
 enum InputMode {
     Normal,
@@ -20,18 +23,15 @@ struct App<'a> {
     pub tab_index: usize,
     pub body_list_state: ListState,
     // list functionality of materials tab
-    pub material_selected: String,
     pub material_index: usize,
     pub material_list_state: ListState,
     // for switching between 3 lists
     pub material_list_index: usize,
-    pub material_list_index_old: usize,
     //user input
     pub search_input_mode: InputMode,
     pub search_cursor_position: usize,
     pub search_input: String,
-    pub search_input_old: String,
-    pub material_hashmap_selected_sorted: HashMap<String, Material>,
+    //shits to store the hashmap in
 }
 
 impl<'a> App<'a> {
@@ -41,15 +41,11 @@ impl<'a> App<'a> {
             tab_index: 0,
             body_list_state: ListState::default(),
             material_index: 0,
-            material_selected: "shieldpatternanalysis".to_string(),
             material_list_state: ListState::default(),
             material_list_index: 0,
-            material_list_index_old: 1,
             search_input_mode: InputMode::Normal,
             search_cursor_position: 0,
             search_input: "".to_string(),
-            search_input_old: "".to_string(),
-            material_hashmap_selected_sorted: HashMap::new(),
         }
     }
 
@@ -134,7 +130,6 @@ impl<'a> App<'a> {
                 < client.explorer.systems[client.explorer.index]
                     .body_list
                     .len()
-        // TODO: fix: crashes the tui if the systems list is empty
         {
             client.explorer.systems[client.explorer.index].index += 1;
         }
@@ -529,48 +524,43 @@ fn tab_materials(
     // Selection from materials list (cursor and scrolling)
     app.material_list_state.select(Some(app.material_index));
 
+    let mut material_vec_selected_sorted: Vec<&Material> = vec![];
     // Data processing
     let data_materials_dataset = match app.material_list_index {
-        0 => client.materials.encoded.clone(),
-        1 => client.materials.manufactured.clone(),
-        2 => client.materials.raw.clone(),
-        _ => client.materials.encoded.clone(), // A Plug, so that rust wont complain about non-exhaustive match. Normally, any other values other than {0,1,2} would neven be accessible
+        0 => client.materials.encoded.values().collect(),
+        1 => client.materials.manufactured.values().collect(),
+        2 => client.materials.raw.values().collect(),
+        _ => vec![], // A Plug, so that rust wont complain about non-exhaustive match. Normally, any other values other than {0,1,2} would neven be accessible
     };
     let data_materials_dataset_name = match app.material_list_index {
         0 => "encoded",
         1 => "manufactured",
         2 => "raw",
-        _ => "encoded fallback", // A Plug, so that rust wont complain about non-exhaustive match. Normally, any other values other than {0,1,2} would neven be accessible
+        _ => "fallback, something went very wrong", // A Plug, so that rust wont complain about non-exhaustive match. Normally, any other values other than {0,1,2} would neven be accessible
     };
 
-    if app.search_input_old != app.search_input
-        || app.material_list_index != app.material_list_index_old
-    {
-        app.material_hashmap_selected_sorted = HashMap::new();
-        for (material_key, material_value) in data_materials_dataset {
-            if material_value
-                .name_localised
+    for material_value in data_materials_dataset {
+        if material_value
+            .name_localised
+            .to_lowercase()
+            .contains(&app.search_input.to_lowercase())
+            || material_value
+                .name
                 .to_lowercase()
                 .contains(&app.search_input.to_lowercase())
-                || material_value
-                    .name
-                    .to_lowercase()
-                    .contains(&app.search_input.to_lowercase())
-            {
-                app.material_hashmap_selected_sorted
-                    .insert(material_key, material_value);
-            }
+        {
+            material_vec_selected_sorted.push(material_value);
         }
-        app.search_input_old = app.search_input.clone();
-        app.material_list_index_old = app.material_list_index;
     }
 
-    //make a damn array out of that damn hashmap
-    let data_material_array: Vec<_> = app
-        .material_hashmap_selected_sorted
-        .keys()
-        .map(|key| key.to_string())
-        .collect();
+    // TODO: sort material_vec_selected_sorted (oder nicht?)
+    material_vec_selected_sorted.sort_unstable_by_key(|sorting_key| {
+        if sorting_key.name_localised != "null" {
+            &sorting_key.name_localised
+        } else {
+            &sorting_key.name
+        }
+    });
 
     let mut data_materials_list_names: Vec<_> = vec![];
     let mut data_materials_list_count: Vec<_> = vec![];
@@ -582,17 +572,15 @@ fn tab_materials(
     let mut data_materials_info_syntesis = vec![];
 
     //for search
-    if !app.material_hashmap_selected_sorted.is_empty() {
+    if !material_vec_selected_sorted.is_empty() {
         // check if pointer is out of bounds for list you are switching to. Set to list.len()-1 if it is.
-        if app.material_index >= app.material_hashmap_selected_sorted.len() {
-            app.material_index = app.material_hashmap_selected_sorted.len() - 1;
+        if app.material_index >= material_vec_selected_sorted.len() {
+            app.material_index = material_vec_selected_sorted.len() - 1;
         }
 
         // bc the map is sorted, i can map index to key directly
-        app.material_selected = data_material_array[app.material_index].clone();
-        data_materials_list_names = app
-            .material_hashmap_selected_sorted
-            .values()
+        data_materials_list_names = material_vec_selected_sorted
+            .iter()
             .map(|material| {
                 if material.name_localised != "null" {
                     material.name_localised.clone()
@@ -602,65 +590,45 @@ fn tab_materials(
             })
             .collect();
 
-        data_materials_list_count = app
-            .material_hashmap_selected_sorted
-            .values()
+        data_materials_list_count = material_vec_selected_sorted
+            .iter()
             .map(|material| [material.count.to_string(), material.maximum.to_string()].join("/"))
             .collect();
 
         data_materials_info = vec![
             [
                 "Grade".to_string(),
-                app.material_hashmap_selected_sorted
-                    .get(app.material_selected.as_str())
-                    .unwrap()
+                material_vec_selected_sorted[app.material_index]
                     .grade
                     .to_string(),
             ]
             .join(": "),
             [
                 "Category".to_string(),
-                app.material_hashmap_selected_sorted
-                    .get(app.material_selected.as_str())
-                    .unwrap()
+                material_vec_selected_sorted[app.material_index]
                     .category
                     .to_string(),
             ]
             .join(": "),
         ];
 
-        data_materials_info_description = app
-            .material_hashmap_selected_sorted
-            .get(app.material_selected.as_str())
-            .unwrap()
+        data_materials_info_description = material_vec_selected_sorted[app.material_index]
             .description
             .clone();
 
-        data_materials_info_locations = app
-            .material_hashmap_selected_sorted
-            .get(app.material_selected.as_str())
-            .unwrap()
+        data_materials_info_locations = material_vec_selected_sorted[app.material_index]
             .locations
             .clone();
 
-        data_materials_info_sources = app
-            .material_hashmap_selected_sorted
-            .get(app.material_selected.as_str())
-            .unwrap()
+        data_materials_info_sources = material_vec_selected_sorted[app.material_index]
             .sources
             .clone();
 
-        data_materials_info_engineering = app
-            .material_hashmap_selected_sorted
-            .get(app.material_selected.as_str())
-            .unwrap()
+        data_materials_info_engineering = material_vec_selected_sorted[app.material_index]
             .engineering
             .clone();
 
-        data_materials_info_syntesis = app
-            .material_hashmap_selected_sorted
-            .get(app.material_selected.as_str())
-            .unwrap()
+        data_materials_info_syntesis = material_vec_selected_sorted[app.material_index]
             .synthesis
             .clone();
     }
