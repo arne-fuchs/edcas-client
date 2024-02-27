@@ -18,10 +18,11 @@ mkdir "$folder_name"
 mkdir "$folder_name"/logs
 
 echo "Copying files"
+cp -r graphics "$folder_name"/
 cp settings-example.json "$folder_name"/settings-example.json
 cp settings-example.json "$folder_name"/settings.json
 cp materials.json "$folder_name"/materials.json
-cp start.sh "$folder_name"/
+cp start.sh "$folder_name"/A
 cp target/release/edcas-client "$folder_name"/
 
 echo "Compressing files"
