@@ -1,21 +1,17 @@
 use core::f64;
-use std::{borrow::BorrowMut, error::Error, io};
+use std::{error::Error, io};
 
 use crossterm::{
     event::{self, Event::Key, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use eframe::glow::LEFT;
 use ratatui::{prelude::*, widgets::*};
 
-use crate::{
-    app::{
-        materials::{self, Material},
-        mining::{MiningMaterial, Prospector},
-        EliteRustClient,
-    },
-    tui,
+use crate::app::{
+    materials::{self, Material},
+    mining::MiningMaterial,
+    EliteRustClient,
 };
 
 enum InputMode {
@@ -24,19 +20,19 @@ enum InputMode {
 }
 
 struct App<'a> {
-    pub titles: Vec<&'a str>,
-    pub tab_index: usize,
-    pub body_list_state: ListState,
-    // list functionality of materials tab
-    pub material_index: usize,
-    pub material_list_state: ListState,
-    // for switching between 3 lists
-    pub material_list_index: usize,
-    //user input
-    pub search_input_mode: InputMode,
-    pub search_cursor_position: usize,
-    pub search_input: String,
-    //shits to store the hashmap in
+    pub titles: Vec<&'a str>,             // tabs
+    pub tab_index: usize,                 //
+    pub body_list_state: ListState,       // explorer
+    pub cargo_table_state: TableState,    // mining
+    pub cargo_index: usize,               //
+    pub prospector_list_state: ListState, //
+    pub prospector_index: usize,          //
+    pub material_index: usize,            // materials
+    pub material_list_state: ListState,   //
+    pub material_list_index: usize,       // materials lists
+    pub search_input_mode: InputMode,     // user input
+    pub search_cursor_position: usize,    //
+    pub search_input: String,             //
 }
 
 impl<'a> App<'a> {
@@ -45,6 +41,10 @@ impl<'a> App<'a> {
             titles: vec!["Explorer", "Mining", "Materials", "About"],
             tab_index: 0,
             body_list_state: ListState::default(),
+            prospector_list_state: ListState::default(),
+            prospector_index: 0,
+            cargo_table_state: TableState::default(),
+            cargo_index: 0,
             material_index: 0,
             material_list_state: ListState::default(),
             material_list_index: 0,
@@ -191,6 +191,38 @@ impl<'a> App<'a> {
         }
     }
 
+    pub fn next_prospector(&mut self, client: &EliteRustClient) {
+        if !client.mining.prospectors.is_empty() {
+            self.prospector_index = (self.prospector_index + 1) % client.mining.prospectors.len();
+        }
+    }
+
+    pub fn previous_prospector(&mut self, client: &EliteRustClient) {
+        if !client.mining.prospectors.is_empty() {
+            if self.prospector_index > 0 {
+                self.prospector_index -= 1;
+            } else {
+                self.prospector_index = client.mining.prospectors.len() - 1;
+            }
+        }
+    }
+    pub fn next_cargo(&mut self, client: &EliteRustClient) {
+        let inventory_temp = &client.mining.cargo.lock().unwrap().inventory;
+        if !inventory_temp.is_empty() {
+            self.cargo_index = (self.cargo_index + 1) % inventory_temp.len();
+        }
+    }
+    pub fn previous_cargo(&mut self, client: &EliteRustClient) {
+        let inventory_temp = &client.mining.cargo.lock().unwrap().inventory;
+        if !inventory_temp.is_empty() {
+            if self.cargo_index > 0 {
+                self.cargo_index -= 1;
+            } else {
+                self.cargo_index = inventory_temp.len() - 1;
+            }
+        }
+    }
+
     // TODO: add functions for cursor navigation through signals lists
 }
 
@@ -242,21 +274,25 @@ fn run_app<B: Backend>(
                             KeyCode::Char('q') => app.previous_tab(),
                             KeyCode::Right => match app.tab_index {
                                 0 => app.next_system(&mut client),
+                                1 => app.next_prospector(&client),
                                 2 => app.next_material_list(),
                                 _ => {}
                             },
                             KeyCode::Left => match app.tab_index {
                                 0 => app.previous_system(&mut client),
+                                1 => app.previous_prospector(&client),
                                 2 => app.previous_material_list(),
                                 _ => {}
                             },
                             KeyCode::Down => match app.tab_index {
                                 0 => app.next_body(&mut client),
+                                1 => app.next_cargo(&client),
                                 2 => app.next_material(&mut client),
                                 _ => {}
                             },
                             KeyCode::Up => match app.tab_index {
                                 0 => app.previous_body(&mut client),
+                                1 => app.previous_cargo(&client),
                                 2 => app.previous_material(&mut client),
                                 _ => {}
                             },
@@ -572,8 +608,7 @@ fn tab_mining(
     app: &mut App,
 ) {
     //data
-    //TODO: remove this atrocity, construct list item manually
-
+    // should i implement a struct in a fucntion that gets called about 30times per second? probably not
     impl MiningMaterial {
         fn default() -> MiningMaterial {
             MiningMaterial {
@@ -601,6 +636,9 @@ fn tab_mining(
                 &prosp.remaining,
             ))
         }
+        //*app.prospector_list_state.offset_mut() = app.prospector_index;
+        app.prospector_list_state.select(Some(app.prospector_index));
+        // would rather update it near cargo_table_state, but dont want to write another if  specifically for it
     }
 
     data_prospector_list = client
@@ -628,6 +666,12 @@ fn tab_mining(
             cargo_element.highest_sell_station.clone(),
         ]));
     }
+
+    // update table state if table is not empty
+    if !data_cargo_rows.is_empty() {
+        app.cargo_table_state.select(Some(app.cargo_index));
+    }
+
     //layout
     let layout_mining = Layout::default()
         .direction(Direction::Horizontal)
@@ -672,8 +716,17 @@ fn tab_mining(
         .highlight_style(Style::default().white().on_dark_gray());
 
     //rendering
-    f.render_widget(widget_mining_prospector, layout_mining[0]);
-    f.render_widget(widget_mining_cargo, layout_mining[1]);
+    f.render_stateful_widget(
+        widget_mining_prospector,
+        layout_mining[0],
+        &mut app.prospector_list_state,
+    ); // prospector
+    f.render_stateful_widget(
+        widget_mining_cargo,
+        layout_mining[1],
+        &mut app.cargo_table_state,
+    );
+    // cargo
 }
 
 // Materials --------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -689,17 +742,17 @@ fn tab_materials(
 
     let mut material_vec_selected_sorted: Vec<&Material> = vec![];
     // Data processing
-    let data_materials_dataset = match app.material_list_index {
+    let data_materials_dataset: Vec<&Material> = match app.material_list_index {
         0 => client.materials.encoded.values().collect(),
         1 => client.materials.manufactured.values().collect(),
         2 => client.materials.raw.values().collect(),
-        _ => vec![], // A Plug, so that rust wont complain about non-exhaustive match. Normally, any other values other than {0,1,2} would neven be accessible
+        _ => unreachable!(),
     };
     let data_materials_dataset_name = match app.material_list_index {
         0 => "encoded",
         1 => "manufactured",
         2 => "raw",
-        _ => "fallback, something went very wrong", // A Plug, so that rust wont complain about non-exhaustive match. Normally, any other values other than {0,1,2} would neven be accessible
+        _ => unreachable!(),
     };
 
     for material_value in data_materials_dataset {
@@ -942,8 +995,8 @@ fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
     // data here if needed
     let data_controls_list = vec![
         "Quit: Q, Change Tabs: q and e",
-        "Change System/Material List: Left and Right arrows",
-        "Change Body/Material selection: Up and Down arrows",
+        "Change System/Material List/Prospector: Left and Right arrows",
+        "Change Body/Material/Cargo Item selection: Up and Down arrows",
         "Search: i",
         "Quit Search: esc",
     ];
@@ -966,21 +1019,21 @@ fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
         .block(
             Block::default()
                 .title(" GitHub ")
-                .borders(Borders::TOP)
+                .borders(Borders::TOP | Borders::LEFT)
                 .white(),
         );
 
     let widget_about_version = Paragraph::new(env!("CARGO_PKG_VERSION")).block(
         Block::default()
             .title(" edcas version ")
-            .borders(Borders::TOP)
+            .borders(Borders::TOP | Borders::LEFT)
             .white(),
     );
 
     let widget_about_controls = List::new(data_controls_list).block(
         Block::default()
             .title(" Controls ")
-            .borders(Borders::TOP)
+            .borders(Borders::TOP | Borders::LEFT)
             .white(),
     );
 
