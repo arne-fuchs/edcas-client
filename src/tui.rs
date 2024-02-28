@@ -1,14 +1,22 @@
 use core::f64;
-use std::{error::Error, io};
+use std::{borrow::BorrowMut, error::Error, io};
 
 use crossterm::{
     event::{self, Event::Key, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use eframe::glow::LEFT;
 use ratatui::{prelude::*, widgets::*};
 
-use crate::app::{materials::Material, EliteRustClient};
+use crate::{
+    app::{
+        materials::{self, Material},
+        mining::{MiningMaterial, Prospector},
+        EliteRustClient,
+    },
+    tui,
+};
 
 enum InputMode {
     Normal,
@@ -448,7 +456,7 @@ fn tab_explorer(
     let widget_system_info = List::new(data_system_info).block(
         Block::default()
             .title(" System Info ")
-            .borders(Borders::TOP)
+            .borders(Borders::TOP | Borders::LEFT)
             .bold()
             .white(),
     );
@@ -456,7 +464,7 @@ fn tab_explorer(
     let widget_signal_list = List::new(data_signals_list).block(
         Block::default()
             .title(" Signals ")
-            .borders(Borders::TOP)
+            .borders(Borders::TOP | Borders::LEFT)
             .bold()
             .white(),
     );
@@ -505,6 +513,58 @@ fn tab_explorer(
 
 //TODO: function that constructs a that text thing, map to the .prospectors vector
 
+fn data_prospector_text(
+    mining_material: &Vec<MiningMaterial>,
+    mining_content: &String,
+    remaining: &f64,
+) -> String {
+    let mat_name: Vec<String> = mining_material
+        .iter()
+        .map(|mat| {
+            if mat.name_localised != "null" {
+                mat.name_localised.clone()
+            } else {
+                mat.name.clone()
+            }
+        })
+        .collect();
+
+    let mat_price: Vec<String> = mining_material
+        .iter()
+        .map(|mat| mat.buy_price.clone().to_string())
+        .collect();
+
+    let mat_content: Vec<String> = mining_material
+        .iter()
+        .map(|mat| mat.proportion.clone().to_string())
+        .collect();
+
+    [
+        [
+            "┌ ".to_string(),
+            mining_content.clone(),
+            " ───────────────────".to_string(),
+        ]
+        .join(""),
+        [
+            "│ ".to_string(),
+            "remaining: ".to_string(),
+            remaining.to_string(),
+        ]
+        .join(""),
+        ["│ ".to_string(), "Name: ".to_string(), mat_name.join(" ")].join(""),
+        [
+            "│ ".to_string(),
+            "Content: ".to_string(),
+            mat_content.join(" "),
+        ]
+        .join(""),
+        ["│ ".to_string(), "Price: ".to_string(), mat_price.join(" ")].join(""),
+        " ".to_string(),
+    ]
+    .join("\n")
+}
+
 fn tab_mining(
     chunk: ratatui::layout::Rect,
     f: &mut ratatui::Frame,
@@ -512,62 +572,108 @@ fn tab_mining(
     app: &mut App,
 ) {
     //data
+    //TODO: remove this atrocity, construct list item manually
 
-    let mut data_mining_prospectors_event = "no data".to_string();
-    let mut data_mining_prospectors_content = "no data".to_string();
-    let mut data_mining_prospectors_materials_name = vec!["no data".to_string()];
-    let mut data_mining_prospectors_content_localised = "no data".to_string();
-    let mut data_mining_prospectors_remaining: f64 = 0.0;
-    let mut data_mining_prospectors_timestamp = "no data".to_string();
-
-    if !client.mining.prospectors.is_empty() {
-        data_mining_prospectors_event = client.mining.prospectors[0].event.clone();
-        data_mining_prospectors_content = client.mining.prospectors[0].content.clone();
-        data_mining_prospectors_materials_name = client.mining.prospectors[0]
-            .materials
-            .iter()
-            .map(|material| material.name_localised.clone())
-            .collect();
-        data_mining_prospectors_content_localised =
-            client.mining.prospectors[0].content_localised.clone();
-        data_mining_prospectors_remaining = client.mining.prospectors[0].remaining;
-        data_mining_prospectors_timestamp = client.mining.prospectors[0].timestamp.clone();
+    impl MiningMaterial {
+        fn default() -> MiningMaterial {
+            MiningMaterial {
+                name: "no data".to_string(),
+                name_localised: "no data".to_string(),
+                buy_price: 0.0,
+                proportion: 0.0,
+            }
+        }
     }
 
-    //TODO: remove this atrocity, construct list item manually
-    let data_text = [
-        data_mining_prospectors_timestamp,
-        data_mining_prospectors_event,
-        data_mining_prospectors_content,
-        data_mining_prospectors_materials_name.join(":"),
-        data_mining_prospectors_content_localised,
-        data_mining_prospectors_remaining.to_string(),
-    ]
-    .join("\n");
+    let default_material: MiningMaterial = MiningMaterial::default();
 
+    let mut data_prospector_list: Vec<_> = vec![data_prospector_text(
+        &vec![default_material],
+        &"no data".to_string(),
+        &0.0,
+    )];
+
+    if !&client.mining.prospectors.is_empty() {
+        for prosp in &client.mining.prospectors {
+            data_prospector_list.push(data_prospector_text(
+                &prosp.materials,
+                &prosp.content_localised,
+                &prosp.remaining,
+            ))
+        }
+    }
+
+    data_prospector_list = client
+        .mining
+        .prospectors
+        .iter()
+        .map(|prosp| {
+            data_prospector_text(&prosp.materials, &prosp.content_localised, &prosp.remaining)
+        })
+        .collect();
+
+    let mut data_cargo_rows: Vec<Row> = vec![];
+
+    for cargo_element in &client.mining.cargo.lock().unwrap().inventory {
+        data_cargo_rows.push(Row::new(vec![
+            if cargo_element.name_localised != "null" {
+                cargo_element.name_localised.clone()
+            } else {
+                cargo_element.name.clone()
+            },
+            cargo_element.count.to_string(),
+            cargo_element.buy_price.to_string(),
+            cargo_element.highest_sell_price.to_string(),
+            cargo_element.highest_sell_system.clone(),
+            cargo_element.highest_sell_station.clone(),
+        ]));
+    }
     //layout
     let layout_mining = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(30), Constraint::Fill(1)])
+        .constraints([Constraint::Length(40), Constraint::Fill(1)])
         .split(chunk);
 
-    let layout_mining_cargo = Layout::default()
-        .direction(Direction::Horizontal)
-        .constraints([
-            Constraint::Fill(1), // name
-            Constraint::Fill(1), // avg buy price
-            Constraint::Fill(1), // highest buy price
-            Constraint::Fill(1), // station (location)
-            Constraint::Fill(1), // system
-        ])
-        .split(layout_mining[1]);
+    //table
+    let cargo_spacing = [
+        Constraint::Length(12), // name
+        Constraint::Length(4),  // name
+        Constraint::Length(10), // avg buy
+        Constraint::Length(10), // highst sel
+        Constraint::Length(14), // avg buy
+        Constraint::Fill(1),    // station
+    ];
 
     //widgets
-    let widget_mining_prospector = List::new([data_text.clone(), data_text.clone(), data_text])
-        .block(Block::default().borders(Borders::TOP | Borders::LEFT));
+    let widget_mining_prospector = List::new(data_prospector_list)
+        .block(
+            Block::default()
+                .title(" Prospector ")
+                .borders(Borders::TOP | Borders::LEFT),
+        )
+        .highlight_style(Style::default().white().on_dark_gray());
+
+    let cargo_header = Row::new(vec![
+        "Name",
+        "Qty",
+        "Avg. buy",
+        "Hig. sell",
+        "System",
+        "Station",
+    ]);
+
+    let widget_mining_cargo = Table::new(data_cargo_rows, cargo_spacing)
+        .header(cargo_header)
+        .block(
+            Block::default()
+                .title(" Cargo ")
+                .borders(Borders::LEFT | Borders::TOP),
+        )
+        .highlight_style(Style::default().white().on_dark_gray());
 
     //rendering
     f.render_widget(widget_mining_prospector, layout_mining[0]);
+    f.render_widget(widget_mining_cargo, layout_mining[1]);
 }
 
 // Materials --------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -735,7 +841,7 @@ fn tab_materials(
 
     let widget_materials_search = Paragraph::new(app.search_input.clone()).block(
         Block::default()
-            .borders(Borders::TOP)
+            .borders(Borders::TOP | Borders::LEFT)
             .white()
             .title(" Search "),
     );
@@ -744,7 +850,7 @@ fn tab_materials(
         .block(
             Block::default()
                 .title([" Materials: ", data_materials_dataset_name, " "].join(""))
-                .borders(Borders::TOP)
+                .borders(Borders::TOP | Borders::LEFT)
                 .white(),
         )
         .highlight_style(Style::default().bold().white().on_dark_gray());
@@ -823,7 +929,7 @@ fn tab_materials(
             f.set_cursor(
                 // Draw the cursor at the current position in the input field.
                 // This position is can be controlled via the left and right arrow key
-                layout_materials_search_list[0].x + app.search_cursor_position as u16,
+                layout_materials_search_list[0].x + 1 + app.search_cursor_position as u16,
                 // Move one line down, from the border to the input line
                 layout_materials_search_list[0].y + 1,
             )

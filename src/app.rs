@@ -25,7 +25,7 @@ pub mod explorer;
 mod journal_interpreter;
 mod journal_reader;
 pub mod materials;
-mod mining;
+pub mod mining;
 mod news;
 mod settings;
 mod tangle_interpreter;
@@ -314,4 +314,3 @@ fn initialize_logger() {
         .finish();
     fern_logger::logger_init(config).unwrap();
 }
-
