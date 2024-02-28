@@ -20,7 +20,6 @@ fn main() {
     let mut hpos: f32 = -1.0;
     let mut fullscreen = false;
     let mut maximized = false;
-    let mut tui_flag: bool = false;
 
     for i in 0..args.len() {
         match args[i].as_str() {
