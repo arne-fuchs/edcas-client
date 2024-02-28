@@ -1,41 +1,46 @@
 extern crate core;
 
+use eframe::{egui, HardwareAcceleration, IconData};
+use iota_sdk::client::{self, Client};
 use std::env;
 use std::str::FromStr;
-use eframe::{egui, HardwareAcceleration, IconData};
-use eframe::egui::Pos2;
 
 use crate::app::EliteRustClient;
 use crate::egui::Vec2;
 
 mod app;
+mod tui;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let mut width :f32 = 1400.0;
-    let mut height :f32 = 800.0;
-    let mut wpos:f32 = -1.0;
-    let mut hpos:f32 = -1.0;
+    let mut width: f32 = 1400.0;
+    let mut height: f32 = 800.0;
+    let mut wpos: f32 = -1.0;
+    let mut hpos: f32 = -1.0;
     let mut fullscreen = false;
     let mut maximized = false;
 
     for i in 0..args.len() {
         match args[i].as_str() {
             "--version" => {
-                println!("{}",env!("CARGO_PKG_VERSION"));
+                println!("{}", env!("CARGO_PKG_VERSION"));
                 return;
             }
             "--width" => {
-                width = f32::from_str(args[i+1].as_str()).expect(format!("Wrong argument for width: {} ", &args[i+1]).as_str());
+                width = f32::from_str(args[i + 1].as_str())
+                    .expect(format!("Wrong argument for width: {} ", &args[i + 1]).as_str());
             }
             "--height" => {
-                height = f32::from_str(args[i+1].as_str()).expect(format!("Wrong argument for width: {} ", &args[i+1]).as_str());
+                height = f32::from_str(args[i + 1].as_str())
+                    .expect(format!("Wrong argument for width: {} ", &args[i + 1]).as_str());
             }
             "--wposition" => {
-                wpos = f32::from_str(args[i+1].as_str()).expect(format!("Wrong argument for width: {} ", &args[i+1]).as_str());
+                wpos = f32::from_str(args[i + 1].as_str())
+                    .expect(format!("Wrong argument for width: {} ", &args[i + 1]).as_str());
             }
             "--hposition" => {
-                hpos = f32::from_str(args[i+1].as_str()).expect(format!("Wrong argument for width: {} ", &args[i+1]).as_str());
+                hpos = f32::from_str(args[i + 1].as_str())
+                    .expect(format!("Wrong argument for width: {} ", &args[i + 1]).as_str());
             }
             "--fullscreen" => {
                 fullscreen = true;
@@ -60,37 +65,69 @@ fn main() {
                 println!("--width <f32>\tSets the width for the edcas gui");
                 return;
             }
+            "--tui" => {
+                tui_flag = true;
+                return; //wird nie asugeführt?
+            }
             _ => {}
         }
     }
 
     let client = Box::<EliteRustClient>::default();
 
-    //App icon
-    let mut image = image::open("graphics\\logo\\edcas_128.png");
-    if cfg!(target_os = "linux") {
-        match image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas_128.png") {
-            Ok(_) => {
-                image = image::open("/usr/share/edcas-client/graphics/logo/edcas_128.png");
-            }
-            Err(_) => {
-                image = image::open("graphics/logo/edcas.png");
+    if tui_flag {
+        tui::draw_tui(client);
+    } else {
+        //App icon
+        let mut image = image::open("graphics\\logo\\edcas_128.png");
+        if cfg!(target_os = "linux") {
+            match image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas_128.png") {
+                Ok(_) => {
+                    image = image::open("/usr/share/edcas-client/graphics/logo/edcas_128.png");
+                }
+                Err(_) => {
+                    image = image::open("graphics/logo/edcas.png");
+                }
             }
         }
+
+        let (icon_rgba, icon_width, icon_height) = {
+            let image = image.unwrap().into_rgba8();
+            let (width, height) = image.dimensions();
+            let rgba = image.into_raw();
+            (rgba, width, height)
+        };
+
+        let icon = IconData {
+            rgba: icon_rgba,
+            width: icon_width,
+            height: icon_height,
+        };
+
+        let mut native_options = eframe::NativeOptions::default();
+        native_options.app_id = Some("edcas-client".to_string());
+        native_options.icon_data = Some(icon);
+        native_options.hardware_acceleration = HardwareAcceleration::Preferred;
+        native_options.initial_window_size = Option::from(Vec2::new(width, height));
+        eframe::run_native(
+            "ED: Commander Assistant System",
+            native_options,
+            Box::new(|_cc| client),
+        )
+        .expect("Program panicked");
     }
 
     let (icon_rgba, icon_width, icon_height) = {
-        let image = image.unwrap()
-            .into_rgba8();
+        let image = image.unwrap().into_rgba8();
         let (width, height) = image.dimensions();
         let rgba = image.into_raw();
         (rgba, width, height)
     };
 
-    let icon = IconData{
+    let icon = IconData {
         rgba: icon_rgba,
         width: icon_width,
-        height: icon_height
+        height: icon_height,
     };
 
     let mut native_options = eframe::NativeOptions::default();
@@ -99,7 +136,7 @@ fn main() {
     native_options.hardware_acceleration = HardwareAcceleration::Preferred;
     native_options.initial_window_size = Option::from(Vec2::new(width, height));
     if wpos > 0.0 && hpos > 0.0 {
-        native_options.initial_window_pos = Option::from(Pos2::new(wpos,hpos));
+        native_options.initial_window_pos = Option::from(Pos2::new(wpos, hpos));
     }
     if fullscreen {
         native_options.fullscreen = true;
@@ -107,6 +144,11 @@ fn main() {
     if maximized {
         native_options.maximized = true;
     }
-    
-    eframe::run_native("ED: Commander Assistant System", native_options, Box::new(|_cc| client)).expect("Program panicked");
+
+    eframe::run_native(
+        "ED: Commander Assistant System",
+        native_options,
+        Box::new(|_cc| client),
+    )
+    .expect("Program panicked");
 }
