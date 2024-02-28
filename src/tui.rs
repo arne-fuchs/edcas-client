@@ -132,21 +132,26 @@ impl<'a> App<'a> {
     }
 
     pub fn next_body(&mut self, client: &mut EliteRustClient) {
-        if !client.explorer.systems.is_empty()
-            && client.explorer.systems[client.explorer.index].index + 1
-                < client.explorer.systems[client.explorer.index]
-                    .body_list
-                    .len()
-        {
-            client.explorer.systems[client.explorer.index].index += 1;
+        if !client.explorer.systems.is_empty() {
+            client.explorer.systems[client.explorer.index].index =
+                (client.explorer.systems[client.explorer.index].index + 1)
+                    % client.explorer.systems[client.explorer.index]
+                        .body_list
+                        .len();
         }
     }
 
     pub fn previous_body(&mut self, client: &mut EliteRustClient) {
-        if !client.explorer.systems.is_empty()
-            && client.explorer.systems[client.explorer.index].index > 0
-        {
-            client.explorer.systems[client.explorer.index].index -= 1;
+        if !client.explorer.systems.is_empty() {
+            if client.explorer.systems[client.explorer.index].index > 0 {
+                client.explorer.systems[client.explorer.index].index -= 1;
+            } else {
+                client.explorer.systems[client.explorer.index].index = client.explorer.systems
+                    [client.explorer.index]
+                    .body_list
+                    .len()
+                    - 1;
+            }
         }
     }
 
@@ -369,7 +374,7 @@ fn tab_explorer(
 ) {
     // Data
     // Default data to display
-    let mut data_system_info = vec!["no data".to_string()];
+    let mut data_system_info = vec![Row::new(vec!["no data".to_string()])];
     let mut data_signals_list = vec!["no data".to_string()];
     let mut data_body_list = vec!["no data".to_string()];
     let mut data_body_signals_list = vec!["no data".to_string()];
@@ -379,31 +384,58 @@ fn tab_explorer(
     // Data acquisition
     if !client.explorer.systems.is_empty() {
         data_system_info = vec![
-            client.explorer.systems[client.explorer.index].name.clone(),
-            client.explorer.systems[client.explorer.index]
-                .allegiance
-                .clone(),
-            client.explorer.systems[client.explorer.index]
-                .economy_localised
-                .clone(),
-            client.explorer.systems[client.explorer.index]
-                .second_economy_localised
-                .clone(),
-            client.explorer.systems[client.explorer.index]
-                .government_localised
-                .clone(),
-            client.explorer.systems[client.explorer.index]
-                .security_localised
-                .clone(),
-            client.explorer.systems[client.explorer.index]
-                .population
-                .clone(),
-            client.explorer.systems[client.explorer.index]
-                .body_count
-                .clone(),
-            client.explorer.systems[client.explorer.index]
-                .non_body_count
-                .clone(),
+            Row::new(vec![
+                "Name".to_string(),
+                client.explorer.systems[client.explorer.index].name.clone(),
+            ]),
+            Row::new(vec![
+                "Allegiance".to_string(),
+                client.explorer.systems[client.explorer.index]
+                    .allegiance
+                    .clone(),
+            ]),
+            Row::new([
+                "Economy".to_string(),
+                client.explorer.systems[client.explorer.index]
+                    .economy_localised
+                    .clone(),
+            ]),
+            Row::new([
+                "2. Economy".to_string(),
+                client.explorer.systems[client.explorer.index]
+                    .second_economy_localised
+                    .clone(),
+            ]),
+            Row::new([
+                "Government".to_string(),
+                client.explorer.systems[client.explorer.index]
+                    .government_localised
+                    .clone(),
+            ]),
+            Row::new([
+                "Security".to_string(),
+                client.explorer.systems[client.explorer.index]
+                    .security_localised
+                    .clone(),
+            ]),
+            Row::new([
+                "Population".to_string(),
+                client.explorer.systems[client.explorer.index]
+                    .population
+                    .clone(),
+            ]),
+            Row::new([
+                "Bodies".to_string(),
+                client.explorer.systems[client.explorer.index]
+                    .body_count
+                    .clone(),
+            ]),
+            Row::new([
+                "Non-bodies".to_string(),
+                client.explorer.systems[client.explorer.index]
+                    .non_body_count
+                    .clone(),
+            ]),
         ];
         data_signals_list = client.explorer.systems[client.explorer.index]
             .signal_list
@@ -489,7 +521,11 @@ fn tab_explorer(
         .split(layout_explorer[2]);
 
     // Widget definitions
-    let widget_system_info = List::new(data_system_info).block(
+    let widget_system_info = Table::new(
+        data_system_info,
+        [Constraint::Length(10), Constraint::Fill(1)],
+    )
+    .block(
         Block::default()
             .title(" System Info ")
             .borders(Borders::TOP | Borders::LEFT)
@@ -550,35 +586,32 @@ fn tab_explorer(
 //TODO: function that constructs a that text thing, map to the .prospectors vector
 
 fn data_prospector_text(
-    mining_material: &Vec<MiningMaterial>,
+    mining_material: &[MiningMaterial],
     mining_content: &String,
     remaining: &f64,
 ) -> String {
-    let mat_name: Vec<String> = mining_material
-        .iter()
-        .map(|mat| {
-            if mat.name_localised != "null" {
-                mat.name_localised.clone()
-            } else {
-                mat.name.clone()
-            }
-        })
-        .collect();
+    let mut return_string: Vec<String> = vec![];
 
-    let mat_price: Vec<String> = mining_material
-        .iter()
-        .map(|mat| mat.buy_price.clone().to_string())
-        .collect();
-
-    let mat_content: Vec<String> = mining_material
-        .iter()
-        .map(|mat| mat.proportion.clone().to_string())
-        .collect();
+    for material in mining_material {
+        return_string.push(
+            [
+                "│".to_string(),
+                if material.name_localised != "null" {
+                    material.name_localised.to_owned()
+                } else {
+                    material.name.to_owned()
+                },
+                material.proportion.to_string(),
+                material.buy_price.to_string(),
+            ]
+            .join(" "),
+        );
+    }
 
     [
         [
             "┌ ".to_string(),
-            mining_content.clone(),
+            mining_content.to_owned(),
             " ───────────────────".to_string(),
         ]
         .join(""),
@@ -588,15 +621,15 @@ fn data_prospector_text(
             remaining.to_string(),
         ]
         .join(""),
-        ["│ ".to_string(), "Name: ".to_string(), mat_name.join(" ")].join(""),
         [
             "│ ".to_string(),
-            "Content: ".to_string(),
-            mat_content.join(" "),
+            "Name ".to_string(),
+            "Content ".to_string(),
+            "Price ".to_string(),
         ]
         .join(""),
-        ["│ ".to_string(), "Price: ".to_string(), mat_price.join(" ")].join(""),
-        " ".to_string(),
+        return_string.join("\n"),
+        "│".to_string(),
     ]
     .join("\n")
 }
@@ -623,7 +656,7 @@ fn tab_mining(
     let default_material: MiningMaterial = MiningMaterial::default();
 
     let mut data_prospector_list: Vec<_> = vec![data_prospector_text(
-        &vec![default_material],
+        &[default_material],
         &"no data".to_string(),
         &0.0,
     )];

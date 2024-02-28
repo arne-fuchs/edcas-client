@@ -69,7 +69,7 @@ fn main() {
             }
             "--tui" => {
                 let client = EliteRustClient::default();
-                tui::draw_tui(client);
+                tui::draw_tui(client).unwrap();
                 return;
             }
             _ => {}
