@@ -8,11 +8,7 @@ use crossterm::{
 };
 use ratatui::{prelude::*, widgets::*};
 
-use crate::app::{
-    materials::{self, Material},
-    mining::MiningMaterial,
-    EliteRustClient,
-};
+use crate::app::{materials::Material, mining::MiningMaterial, EliteRustClient};
 
 //TODO: features:
 // signals_scanned/all_signals (gauge and text)
@@ -139,7 +135,11 @@ impl<'a> App<'a> {
     }
 
     pub fn next_body(&mut self, client: &mut EliteRustClient) {
-        if !client.explorer.systems.is_empty() {
+        if !client.explorer.systems.is_empty()
+            && !client.explorer.systems[client.explorer.index]
+                .body_list
+                .is_empty()
+        {
             client.explorer.systems[client.explorer.index].index =
                 (client.explorer.systems[client.explorer.index].index + 1)
                     % client.explorer.systems[client.explorer.index]
@@ -149,7 +149,11 @@ impl<'a> App<'a> {
     }
 
     pub fn previous_body(&mut self, client: &mut EliteRustClient) {
-        if !client.explorer.systems.is_empty() {
+        if !client.explorer.systems.is_empty()
+            && !client.explorer.systems[client.explorer.index]
+                .body_list
+                .is_empty()
+        {
             if client.explorer.systems[client.explorer.index].index > 0 {
                 client.explorer.systems[client.explorer.index].index -= 1;
             } else {
@@ -382,10 +386,13 @@ fn tab_explorer(
     // Data
     // Default data to display
     let mut data_system_info = vec![Row::new(vec!["no data".to_string()])];
-    let mut data_signals_list = vec!["no data".to_string()];
+    let mut data_signals_list = vec![Row::new(vec!["no data".to_string()])];
     let mut data_body_list = vec!["no data".to_string()];
-    let mut data_body_signals_list = vec!["no data".to_string()];
+    let mut data_body_signals_list = vec![Row::new(vec!["no data".to_string()])];
     let mut data_body_info = vec!["no data".to_string()];
+    let mut data_system_gauge_scanned: i32 = 0;
+    let mut data_system_gauge_all: i32 = 0;
+    let mut data_system_gauge: f64 = 0.0 / 1.0;
 
     // Checks to not crash everything if list is empty
     // Data acquisition
@@ -444,11 +451,42 @@ fn tab_explorer(
                     .clone(),
             ]),
         ];
+
         data_signals_list = client.explorer.systems[client.explorer.index]
             .signal_list
             .iter()
-            .map(|signal| signal.clone().name)
-            .collect::<Vec<_>>();
+            .map(|signal| Row::new(vec![signal.name.to_string(), signal.threat.to_string()]))
+            .collect::<Vec<Row>>();
+
+        if client.explorer.systems[client.explorer.index].non_body_count != "N/A"
+            && client.explorer.systems[client.explorer.index].body_count != "N/A"
+        {
+            data_system_gauge_scanned = client.explorer.systems[client.explorer.index]
+                .body_list
+                .len() as i32;
+
+            data_system_gauge_all = client.explorer.systems[client.explorer.index]
+                .non_body_count
+                .parse::<i32>()
+                .unwrap()
+                + client.explorer.systems[client.explorer.index]
+                    .body_count
+                    .parse::<i32>()
+                    .unwrap();
+
+            if data_system_gauge_scanned > data_system_gauge_all {
+                data_system_gauge_all = data_system_gauge_scanned; //shouldnt be the case but it
+                                                                   //did crash one time i used
+                                                                   //system signals as scanned
+            }
+
+            data_system_gauge = f64::from(data_system_gauge_scanned)
+                / if data_system_gauge_all != 0 {
+                    f64::from(data_system_gauge_all)
+                } else {
+                    1.0 //just to be sure
+                };
+        }
 
         if !client.explorer.systems[client.explorer.index]
             .body_list
@@ -467,7 +505,18 @@ fn tab_explorer(
                         }
                     }
                     space_string.push_str(body.get_name());
-                    space_string
+                    let signals_type_string: Vec<String> = body
+                        .get_signals()
+                        .iter()
+                        .map(|body_signal| {
+                            if body_signal.type_localised != "null" {
+                                body_signal.type_localised.to_string()
+                            } else {
+                                body_signal.r#type.to_string()
+                            }
+                        })
+                        .collect();
+                    [space_string, signals_type_string.join(" ")].join(" ")
                 })
                 .collect::<Vec<_>>();
 
@@ -491,15 +540,19 @@ fn tab_explorer(
                     .get_signals()
                     .iter()
                     .map(|body_signal| {
-                        if body_signal.type_localised != "null" {
-                            body_signal.type_localised.clone()
-                        } else {
-                            body_signal.r#type.clone()
-                        }
+                        Row::new(vec![
+                            if body_signal.type_localised != "null" {
+                                body_signal.type_localised.clone()
+                            } else {
+                                body_signal.r#type.clone()
+                            },
+                            body_signal.count.to_string(),
+                        ])
                     })
-                    .collect::<Vec<_>>();
+                    .collect::<Vec<Row>>();
             } else {
-                data_body_signals_list = vec!["no signals".to_string()]
+                data_body_signals_list =
+                    vec![Row::new(vec!["no signals".to_string(), "".to_string()])];
             }
         }
     }
@@ -509,7 +562,7 @@ fn tab_explorer(
     let layout_explorer = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Horizontal)
         .constraints(vec![
-            Constraint::Percentage(25),
+            Constraint::Percentage(30),
             Constraint::Fill(1),
             Constraint::Percentage(25),
         ])
@@ -518,7 +571,7 @@ fn tab_explorer(
     // layout of "systems" Panel
     let layout_system = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(11), Constraint::Fill(1)])
+        .constraints([Constraint::Length(12), Constraint::Fill(1)])
         .split(layout_explorer[0]);
 
     // layout of "body information" panel
@@ -526,6 +579,12 @@ fn tab_explorer(
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(20), Constraint::Fill(1)])
         .split(layout_explorer[2]);
+
+    // layout of system inforamtion
+    let layout_system_info = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Fill(1), Constraint::Length(1)])
+        .split(layout_system[0]);
 
     // Widget definitions
     let widget_system_info = Table::new(
@@ -540,7 +599,21 @@ fn tab_explorer(
             .white(),
     );
 
-    let widget_signal_list = List::new(data_signals_list).block(
+    let widget_system_gauge = LineGauge::default()
+        .block(Block::default().borders(Borders::LEFT))
+        .line_set(symbols::line::THICK)
+        .gauge_style(Style::default().fg(Color::LightRed).bg(Color::Black))
+        .label(format!(
+            "{data_system_gauge_scanned}/{data_system_gauge_all}"
+        ))
+        .ratio(data_system_gauge);
+
+    let widget_signal_list = Table::new(
+        data_signals_list,
+        [Constraint::Fill(1), Constraint::Length(6)],
+    )
+    .header(Row::new(vec!["Name", "Threat"]))
+    .block(
         Block::default()
             .title(" Signals ")
             .borders(Borders::TOP | Borders::LEFT)
@@ -548,7 +621,7 @@ fn tab_explorer(
             .white(),
     );
 
-    let widget_body_list = List::new(data_body_list)
+    let widget_body_list = List::new(data_body_list) //List::new(data_body_list)
         .block(
             Block::default()
                 .title(" Body List ")
@@ -566,7 +639,12 @@ fn tab_explorer(
             .white(),
     );
 
-    let widget_body_signals_list = List::new(data_body_signals_list).block(
+    let widget_body_signals_list = Table::new(
+        data_body_signals_list,
+        [Constraint::Fill(1), Constraint::Length(6)],
+    )
+    .header(Row::new(vec!["Name", "Count"]))
+    .block(
         Block::default()
             .title(" Body Signals ")
             .borders(Borders::TOP | Borders::LEFT)
@@ -575,7 +653,8 @@ fn tab_explorer(
     );
 
     // render calls
-    f.render_widget(widget_system_info, layout_system[0]);
+    f.render_widget(widget_system_info, layout_system_info[0]);
+    f.render_widget(widget_system_gauge, layout_system_info[1]);
     f.render_widget(widget_signal_list, layout_system[1]);
 
     f.render_stateful_widget(
