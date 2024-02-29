@@ -14,6 +14,13 @@ use crate::app::{
     EliteRustClient,
 };
 
+//TODO: features:
+// signals_scanned/all_signals (gauge and text)
+// signal threat (in system_signals)
+// body signal count (in body_signals)
+// Body signals in system tree
+// body info (the api for that is not ready yet)
+
 enum InputMode {
     Normal,
     Editing,
