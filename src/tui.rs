@@ -6,8 +6,7 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use iota_sdk::client;
-use ratatui::{prelude::*, widgets::*};
+use ratatui::{prelude::*, style::Stylize, widgets::*};
 
 use crate::app::{materials::Material, mining::MiningMaterial, EliteRustClient};
 
@@ -389,7 +388,7 @@ fn tab_explorer(
     let mut data_system_info = vec![Row::new(vec!["no data".to_string()])];
     let mut data_signals_list = vec![Row::new(vec!["no data".to_string()])];
     let mut data_body_list: Vec<Line> = vec![Line::styled("no data", Style::default().light_red())];
-    let mut data_body_signals_list = vec![Row::new(vec!["no data".to_string()])];
+    //let mut data_body_signals_list = vec![Row::new(vec!["no data".to_string()])];
     let mut data_body_info = vec!["no data".to_string()];
     let mut data_system_gauge_scanned: i32 = 0;
     let mut data_system_gauge_all: i32 = 0;
@@ -467,18 +466,30 @@ fn tab_explorer(
             data_planet_signals.clear();
             for planet_signal in &client.explorer.systems[client.explorer.index].planet_signals {
                 for signal in &planet_signal.signals {
+                    let signal_type: &str = if signal.type_localised != "null" {
+                        signal.type_localised.as_str()
+                    } else {
+                        signal.r#type.as_str()
+                    };
+
                     data_planet_signals.push(Row::new(vec![
                         planet_signal
                             .body_name
                             .trim_start_matches(
                                 &client.explorer.systems[client.explorer.index].name,
                             )
-                            .to_string(),
-                        signal.type_localised.to_string(),
-                        signal.count.to_string(),
+                            .into(),
+                        match signal_type {
+                            "Biological" => signal_type.light_green(),
+                            "Geological" => signal_type.magenta(),
+                            _ => signal_type.into(),
+                        },
+                        signal.count.to_string().into(),
                     ]))
                 }
             }
+        } else {
+            data_planet_signals.clear();
         }
 
         if client.explorer.systems[client.explorer.index].non_body_count != "N/A"
@@ -515,38 +526,45 @@ fn tab_explorer(
             .body_list
             .is_empty()
         {
-            data_body_list = client.explorer.systems[client.explorer.index]
+            //preparet to implement fancy tree, too dumb rn to do it.
+            data_body_list.clear();
+            for body in client.explorer.systems[client.explorer.index]
                 .body_list
                 .iter()
-                .map(|body| {
-                    let mut space_string = "".to_string();
-                    for i in 0..body.get_parents().len() {
-                        if i < body.get_parents().len() - 1 {
-                            space_string.push_str("│  ")
-                        } else {
-                            space_string.push_str("│  "); //├─
-                        }
+                .rev()
+            {
+                let mut space_string = "".to_string();
+
+                for i in 0..body.get_parents().len() {
+                    if i < body.get_parents().len() - 1 {
+                        space_string.push_str("│  ")
+                    } else {
+                        space_string.push_str("│  "); //├
                     }
-                    space_string.push_str(body.get_name());
-                    let signals_type_string: Vec<String> = body
-                        .get_signals()
-                        .iter()
-                        .map(|body_signal| {
-                            if body_signal.type_localised != "null" {
-                                body_signal.type_localised.to_string()
-                            } else {
-                                body_signal.r#type.to_string()
-                            }
-                        })
-                        .collect();
+                }
+                space_string.push_str(body.get_name());
+                let signals_type_string: Vec<String> = body
+                    .get_signals()
+                    .iter()
+                    .map(|body_signal| {
+                        if body_signal.type_localised != "null" {
+                            body_signal.type_localised.to_string()
+                        } else {
+                            body_signal.r#type.to_string()
+                        }
+                    })
+                    .collect();
+                data_body_list.push(
                     vec![
                         space_string.fg(Color::White),
                         " ".into(),
                         signals_type_string.join(" ").light_green().italic(),
                     ]
-                    .into()
-                })
-                .collect::<Vec<Line>>();
+                    .into(),
+                )
+            }
+
+            data_body_list.reverse();
 
             //TODO: parse json to Vec and use it here
             data_body_info = vec![client.explorer.systems[client.explorer.index].body_list
@@ -557,7 +575,7 @@ fn tab_explorer(
             // Selection from body_list (cursor and scrolling)
             app.body_list_state
                 .select(Some(client.explorer.systems[client.explorer.index].index));
-
+            /*
             if !client.explorer.systems[client.explorer.index].body_list
                 [client.explorer.systems[client.explorer.index].index]
                 .get_signals()
@@ -581,7 +599,7 @@ fn tab_explorer(
             } else {
                 data_body_signals_list =
                     vec![Row::new(vec!["no signals".to_string(), "".to_string()])];
-            }
+            }*/
         }
     }
 
@@ -666,7 +684,7 @@ fn tab_explorer(
             .bold()
             .white(),
     );
-
+    /*
     let widget_body_signals_list = Table::new(
         data_body_signals_list,
         [Constraint::Fill(1), Constraint::Length(6)],
@@ -678,6 +696,22 @@ fn tab_explorer(
             .borders(Borders::TOP | Borders::LEFT)
             .bold()
             .white(),
+    );*/
+
+    let widget_planet_signals_list = Table::new(
+        data_planet_signals,
+        [
+            Constraint::Length(8),
+            Constraint::Fill(1),
+            Constraint::Length(3),
+        ],
+    )
+    .header(Row::new(vec!["Body", "Signal", "#"]))
+    .block(
+        Block::default()
+            .title(" Body Signals ")
+            .borders(Borders::TOP | Borders::LEFT)
+            .bold(),
     );
 
     // render calls
@@ -692,7 +726,8 @@ fn tab_explorer(
     );
 
     f.render_widget(widget_body_info, layout_body[0]);
-    f.render_widget(widget_body_signals_list, layout_body[1]);
+    f.render_widget(widget_planet_signals_list, layout_body[1])
+    //f.render_widget(widget_body_signals_list, layout_body[1]);
 }
 
 // Mining --------------------------------------------------------------------------------------------------------------------------------------------------------------------
