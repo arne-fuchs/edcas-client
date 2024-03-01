@@ -1,11 +1,12 @@
 use core::f64;
-use std::{error::Error, io};
+use std::{error::Error, io, net::ToSocketAddrs};
 
 use crossterm::{
     event::{self, Event::Key, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
+use iota_sdk::client;
 use ratatui::{prelude::*, widgets::*};
 
 use crate::app::{materials::Material, mining::MiningMaterial, EliteRustClient};
@@ -393,6 +394,7 @@ fn tab_explorer(
     let mut data_system_gauge_scanned: i32 = 0;
     let mut data_system_gauge_all: i32 = 0;
     let mut data_system_gauge: f64 = 0.0 / 1.0;
+    let mut data_planet_signals: Vec<Row> = vec![Row::new(vec!["no data".light_red()])]; //client.explorer.systems[index].planet_signals[index] (body_name, body_id, Vec signals)
 
     // Checks to not crash everything if list is empty
     // Data acquisition
@@ -457,6 +459,27 @@ fn tab_explorer(
             .iter()
             .map(|signal| Row::new(vec![signal.name.to_string(), signal.threat.to_string()]))
             .collect::<Vec<Row>>();
+
+        if !client.explorer.systems[client.explorer.index]
+            .planet_signals
+            .is_empty()
+        {
+            data_planet_signals.clear();
+            for planet_signal in &client.explorer.systems[client.explorer.index].planet_signals {
+                for signal in &planet_signal.signals {
+                    data_planet_signals.push(Row::new(vec![
+                        planet_signal
+                            .body_name
+                            .trim_start_matches(
+                                &client.explorer.systems[client.explorer.index].name,
+                            )
+                            .to_string(),
+                        signal.type_localised.to_string(),
+                        signal.count.to_string(),
+                    ]))
+                }
+            }
+        }
 
         if client.explorer.systems[client.explorer.index].non_body_count != "N/A"
             && client.explorer.systems[client.explorer.index].body_count != "N/A"
