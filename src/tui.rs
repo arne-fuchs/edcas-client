@@ -10,12 +10,12 @@ use ratatui::{prelude::*, widgets::*};
 
 use crate::app::{materials::Material, mining::MiningMaterial, EliteRustClient};
 
-//TODO: features:
-// signals_scanned/all_signals (gauge and text)
-// signal threat (in system_signals)
-// body signal count (in body_signals)
-// Body signals in system tree
-// body info (the api for that is not ready yet)
+// TODO: DONE signals_scanned/all_signals (gauge and text)
+// TODO: DONE signal threat (in system_signals)
+// TODO: DONE body signal count (in body_signals)
+// TODO: DONE Body signals in system tree
+// TODO: styling (probably rewrite everything to use Span, Line and Text)
+// TODO: body info (the api for that is not ready yet)
 
 enum InputMode {
     Normal,
@@ -387,7 +387,7 @@ fn tab_explorer(
     // Default data to display
     let mut data_system_info = vec![Row::new(vec!["no data".to_string()])];
     let mut data_signals_list = vec![Row::new(vec!["no data".to_string()])];
-    let mut data_body_list = vec!["no data".to_string()];
+    let mut data_body_list: Vec<Line> = vec![Line::styled("no data", Style::default().light_red())];
     let mut data_body_signals_list = vec![Row::new(vec!["no data".to_string()])];
     let mut data_body_info = vec!["no data".to_string()];
     let mut data_system_gauge_scanned: i32 = 0;
@@ -475,8 +475,8 @@ fn tab_explorer(
                     .unwrap();
 
             if data_system_gauge_scanned > data_system_gauge_all {
-                data_system_gauge_all = data_system_gauge_scanned; //shouldnt be the case but it
-                                                                   //did crash one time i used
+                data_system_gauge_all = data_system_gauge_scanned; //shouldnt be the case
+                                                                   //but it did crash one time i used
                                                                    //system signals as scanned
             }
 
@@ -516,9 +516,14 @@ fn tab_explorer(
                             }
                         })
                         .collect();
-                    [space_string, signals_type_string.join(" ")].join(" ")
+                    vec![
+                        space_string.fg(Color::White),
+                        " ".into(),
+                        signals_type_string.join(" ").light_green().italic(),
+                    ]
+                    .into()
                 })
-                .collect::<Vec<_>>();
+                .collect::<Vec<Line>>();
 
             //TODO: parse json to Vec and use it here
             data_body_info = vec![client.explorer.systems[client.explorer.index].body_list
@@ -629,7 +634,7 @@ fn tab_explorer(
                 .bold()
                 .white(),
         )
-        .highlight_style(Style::default().bold().white().on_dark_gray());
+        .highlight_style(Style::default().bold().on_dark_gray());
 
     let widget_body_info = List::new(data_body_info).block(
         Block::default()
@@ -832,7 +837,7 @@ fn tab_mining(
                 .title(" Cargo ")
                 .borders(Borders::LEFT | Borders::TOP),
         )
-        .highlight_style(Style::default().white().on_dark_gray());
+        .highlight_style(Style::default().on_dark_gray());
 
     //rendering
     f.render_stateful_widget(
