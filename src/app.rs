@@ -1,34 +1,34 @@
-use std::{env, fs, thread};
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
+use std::{env, fs, thread};
 
 use bus::{Bus, BusReader};
 use chrono::Local;
-use eframe::App;
 use eframe::egui;
 use eframe::egui::TextStyle;
+use eframe::App;
 
+use crate::app::cargo_reader::CargoReader;
 use json::JsonValue;
 use log::info;
-use crate::app::cargo_reader::CargoReader;
 
 use crate::app::materials::MaterialState;
 use crate::app::State::{About, Explorer, MaterialInventory, Mining, News, Settings};
 use crate::egui::Context;
 
 mod about;
-mod settings;
+mod cargo_reader;
 pub mod explorer;
-mod journal_reader;
 #[cfg(feature = "iota")]
 mod journal_interpreter;
+mod journal_reader;
 mod materials;
-mod tangle_interpreter;
-mod news;
 mod mining;
-mod cargo_reader;
+mod news;
+mod settings;
+mod tangle_interpreter;
 
 pub struct EliteRustClient {
     pub about: about::About,
@@ -49,7 +49,13 @@ impl EliteRustClient {
         match self.journal_log_bus_reader.try_recv() {
             Ok(json) => {
                 self.timestamp = json["timestamp"].to_string();
-                journal_interpreter::interpret_json(json.clone(), &mut self.explorer, &mut self.materials, &mut self.mining, Arc::new(self.settings.clone()));
+                journal_interpreter::interpret_json(
+                    json.clone(),
+                    &mut self.explorer,
+                    &mut self.materials,
+                    &mut self.mining,
+                    Arc::new(self.settings.clone()),
+                );
             }
             Err(_) => {}
         }
@@ -63,7 +69,6 @@ impl Default for EliteRustClient {
         initialize_logger();
         let settings = settings::Settings::default();
         let settings_pointer = Arc::new(settings.clone());
-
 
         info!("Starting...");
         info!("Current directory: {:?}", env::current_dir().unwrap());
@@ -86,14 +91,18 @@ impl Default for EliteRustClient {
             }
         });
         let settings_pointer_clone = settings_pointer.clone();
-        info!("Allow to share data over edcas: {}", settings_pointer.iota_settings.allow_share_data);
+        info!(
+            "Allow to share data over edcas: {}",
+            settings_pointer.iota_settings.allow_share_data
+        );
         #[cfg(feature = "iota")]
-        if settings_pointer.iota_settings.allow_share_data{
+        if settings_pointer.iota_settings.allow_share_data {
             info!("Starting Tangle Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
             let settings_pointer = settings_pointer_clone;
             thread::spawn(move || {
-                let mut tangle_interpreter = tangle_interpreter::initialize(tangle_journal_bus_reader, settings_pointer);
+                let mut tangle_interpreter =
+                    tangle_interpreter::initialize(tangle_journal_bus_reader, settings_pointer);
                 loop {
                     tangle_interpreter.run();
                 }
@@ -101,8 +110,10 @@ impl Default for EliteRustClient {
         }
         info!("Done starting threads");
 
-        let cargo_reader = Arc::new(Mutex::new(cargo_reader::initialize(settings_pointer.clone())));
-        let mining = mining::Mining{
+        let cargo_reader = Arc::new(Mutex::new(cargo_reader::initialize(
+            settings_pointer.clone(),
+        )));
+        let mining = mining::Mining {
             prospectors: Default::default(),
             cargo: cargo_reader.clone(),
         };
@@ -110,7 +121,7 @@ impl Default for EliteRustClient {
         Self {
             news: news::News::default(),
             about: about::About::default(),
-            explorer: explorer::Explorer{
+            explorer: explorer::Explorer {
                 systems: vec![],
                 index: 0,
                 body_list_index: None,
@@ -139,17 +150,15 @@ pub enum State {
 impl App for EliteRustClient {
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
         if !self.settings.appearance_settings.applied {
-
             let mut style: egui::Style = (*ctx.style()).clone();
             for (text_style, font_id) in style.text_styles.iter_mut() {
                 match text_style {
                     TextStyle::Small => {
-                        if  self.settings.appearance_settings.font_id.size > 4.0 {
+                        if self.settings.appearance_settings.font_id.size > 4.0 {
                             font_id.size = self.settings.appearance_settings.font_id.size - 4.0;
-                        }else {
+                        } else {
                             font_id.size = self.settings.appearance_settings.font_id.size;
                         }
-
                     }
                     TextStyle::Heading => {
                         font_id.size = self.settings.appearance_settings.font_id.size + 4.0;
@@ -161,8 +170,10 @@ impl App for EliteRustClient {
                 }
             }
             ctx.set_style(style);
-            self.settings.appearance_settings.font_size = self.settings.appearance_settings.font_id.size;
-            self.settings.appearance_settings.font_style = self.settings.appearance_settings.font_id.family.to_string();
+            self.settings.appearance_settings.font_size =
+                self.settings.appearance_settings.font_id.size;
+            self.settings.appearance_settings.font_style =
+                self.settings.appearance_settings.font_id.family.to_string();
             self.settings.appearance_settings.applied = true;
         }
 
@@ -173,7 +184,7 @@ impl App for EliteRustClient {
                 if news_button.clicked() {
                     self.state = News;
                 }
-                let explorer_button =  menu_bar.button("Explorer");
+                let explorer_button = menu_bar.button("Explorer");
                 if explorer_button.clicked() {
                     self.state = Explorer;
                 }
@@ -197,28 +208,38 @@ impl App for EliteRustClient {
                 menu_bar.with_layout(egui::Layout::right_to_left(egui::Align::TOP), |ui| {
                     ui.label(self.timestamp.as_str());
                 });
-                match self.state{
-                    News => {news_button.highlight();}
-                    About => {about_button.highlight();}
-                    Settings => {settings_button.highlight();}
-                    Explorer => {explorer_button.highlight();}
-                    MaterialInventory => {materials_button.highlight();}
-                    Mining => {mining_button.highlight();}
+                match self.state {
+                    News => {
+                        news_button.highlight();
+                    }
+                    About => {
+                        about_button.highlight();
+                    }
+                    Settings => {
+                        settings_button.highlight();
+                    }
+                    Explorer => {
+                        explorer_button.highlight();
+                    }
+                    MaterialInventory => {
+                        materials_button.highlight();
+                    }
+                    Mining => {
+                        mining_button.highlight();
+                    }
                 }
             });
         });
 
         self.update_values();
 
-        egui::CentralPanel::default().show(ctx, |_ui| {
-            match self.state {
-                News => { self.news.update(ctx,frame) }
-                About => { self.about.update(ctx, frame) }
-                Settings => { self.settings.update(ctx,frame) }
-                Explorer => { self.explorer.update(ctx,frame) }
-                MaterialInventory => { self.materials.update(ctx, frame) }
-                Mining => { self.mining.update(ctx,frame) }
-            }
+        egui::CentralPanel::default().show(ctx, |_ui| match self.state {
+            News => self.news.update(ctx, frame),
+            About => self.about.update(ctx, frame),
+            Settings => self.settings.update(ctx, frame),
+            Explorer => self.explorer.update(ctx, frame),
+            MaterialInventory => self.materials.update(ctx, frame),
+            Mining => self.mining.update(ctx, frame),
         });
         //TODO more efficient way to send updates -> render only if new data comes in?
         //Low prio because performance is okay
@@ -238,7 +259,6 @@ fn initialize_logger() {
 
     let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H-%M"));
 
-
     let log_path = log_directory.join(&log_filename);
     //let log_path = log_file_path_buf.strip_prefix(&log_directory).unwrap_or(&log_file_path_buf);
 
@@ -247,7 +267,13 @@ fn initialize_logger() {
             .filter_map(|entry| entry.ok().map(|e| e.path()))
             .collect();
 
-        log_files.sort_by(|a, b| b.metadata().unwrap().modified().unwrap().cmp(&a.metadata().unwrap().modified().unwrap()));
+        log_files.sort_by(|a, b| {
+            b.metadata()
+                .unwrap()
+                .modified()
+                .unwrap()
+                .cmp(&a.metadata().unwrap().modified().unwrap())
+        });
 
         let logs_to_keep = 5;
         if log_files.len() > logs_to_keep {
@@ -266,7 +292,16 @@ fn initialize_logger() {
 
     let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
         .name(log_path.to_str().unwrap())
-        .target_exclusions(&["h2", "hyper", "rustls","iota_wallet","iota_client","reqwest","tree_builder","html5ever"])
+        .target_exclusions(&[
+            "h2",
+            "hyper",
+            "rustls",
+            "iota_wallet",
+            "iota_client",
+            "reqwest",
+            "tree_builder",
+            "html5ever",
+        ])
         .level_filter(level);
 
     let _logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
