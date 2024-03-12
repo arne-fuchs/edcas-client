@@ -5,17 +5,23 @@ use std::time::Instant;
 use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
 
-use crate::app::explorer::{Explorer, structs};
 use crate::app::explorer::belt_cluster::BeltCluster;
 use crate::app::explorer::planet::Planet;
 use crate::app::explorer::star::Star;
 use crate::app::explorer::structs::{Parent, Signal};
 use crate::app::explorer::system::{PlanetSignals, System, SystemSignal};
+use crate::app::explorer::{structs, Explorer};
 use crate::app::materials::{Material, MaterialState};
 use crate::app::mining::{Mining, MiningMaterial, Prospector};
 use crate::app::settings::Settings;
 
-pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut MaterialState, mining: &mut Mining, settings: Arc<Settings>) {
+pub fn interpret_json(
+    json: JsonValue,
+    explorer: &mut Explorer,
+    materials: &mut MaterialState,
+    mining: &mut Mining,
+    settings: Arc<Settings>,
+) {
     let event = json["event"].as_str().unwrap();
     info!("Interpreter event received: {}", event);
     let now = Instant::now();
@@ -26,7 +32,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         //{ "timestamp":"2022-10-16T20:54:45Z", "event":"Location", "DistFromStarLS":1007.705243, "Docked":true, "StationName":"Q2K-BHB", "StationType":"FleetCarrier", "MarketID":3704402432, "StationFaction":{ "Name":"FleetCarrier" }, "StationGovernment":"$government_Carrier;", "StationGovernment_Localised":"Privateigentum", "StationServices":[ "dock", "autodock", "commodities", "contacts", "exploration", "outfitting", "crewlounge", "rearm", "refuel", "repair", "shipyard", "engineer", "flightcontroller", "stationoperations", "stationMenu", "carriermanagement", "carrierfuel", "livery", "voucherredemption", "socialspace", "bartender", "vistagenomics" ], "StationEconomy":"$economy_Carrier;", "StationEconomy_Localised":"Privatunternehmen", "StationEconomies":[ { "Name":"$economy_Carrier;", "Name_Localised":"Privatunternehmen", "Proportion":1.000000 } ], "Taxi":false, "Multicrew":false, "StarSystem":"Colonia", "SystemAddress":3238296097059, "StarPos":[-9530.50000,-910.28125,19808.12500], "SystemAllegiance":"Independent", "SystemEconomy":"$economy_Tourism;", "SystemEconomy_Localised":"Tourismus", "SystemSecondEconomy":"$economy_HighTech;", "SystemSecondEconomy_Localised":"Hightech", "SystemGovernment":"$government_Cooperative;", "SystemGovernment_Localised":"Kooperative", "SystemSecurity":"$SYSTEM_SECURITY_low;", "SystemSecurity_Localised":"Geringe Sicherheit", "Population":583869, "Body":"Colonia 2 c", "BodyID":18, "BodyType":"Planet", "Factions":[ { "Name":"Jaques", "FactionState":"Investment", "Government":"Cooperative", "Influence":0.454092, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand1;", "Happiness_Localised":"In Hochstimmung", "MyReputation":100.000000, "RecoveringStates":[ { "State":"PublicHoliday", "Trend":0 } ], "ActiveStates":[ { "State":"Investment" }, { "State":"CivilLiberty" } ] }, { "Name":"Colonia Council", "FactionState":"Boom", "Government":"Cooperative", "Influence":0.331337, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":100.000000, "ActiveStates":[ { "State":"Boom" } ] }, { "Name":"People of Colonia", "FactionState":"None", "Government":"Cooperative", "Influence":0.090818, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":27.956400 }, { "Name":"Holloway Bioscience Institute", "FactionState":"None", "Government":"Corporate", "Influence":0.123752, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":-9.420000, "RecoveringStates":[ { "State":"PirateAttack", "Trend":0 } ] } ], "SystemFaction":{ "Name":"Jaques", "FactionState":"Investment" } }
         //{ "timestamp":"2022-10-16T23:25:31Z", "event":"FSDJump", "Taxi":false, "Multicrew":false, "StarSystem":"Ogmar", "SystemAddress":84180519395914, "StarPos":[-9534.00000,-905.28125,19802.03125], "SystemAllegiance":"Independent", "SystemEconomy":"$economy_HighTech;", "SystemEconomy_Localised":"Hightech", "SystemSecondEconomy":"$economy_Military;", "SystemSecondEconomy_Localised":"Militär", "SystemGovernment":"$government_Confederacy;", "SystemGovernment_Localised":"Konföderation", "SystemSecurity":"$SYSTEM_SECURITY_medium;", "SystemSecurity_Localised":"Mittlere Sicherheit", "Population":151752, "Body":"Ogmar A", "BodyID":1, "BodyType":"Star", "JumpDist":8.625, "FuelUsed":0.024493, "FuelLevel":31.975506, "Factions":[ { "Name":"Jaques", "FactionState":"Election", "Government":"Cooperative", "Influence":0.138384, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand1;", "Happiness_Localised":"In Hochstimmung", "MyReputation":100.000000, "PendingStates":[ { "State":"Outbreak", "Trend":0 } ], "ActiveStates":[ { "State":"Election" } ] }, { "Name":"ICU Colonial Corps", "FactionState":"War", "Government":"Communism", "Influence":0.119192, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":96.402496, "PendingStates":[ { "State":"Expansion", "Trend":0 } ], "ActiveStates":[ { "State":"War" } ] }, { "Name":"Societas Eruditorum de Civitas Dei", "FactionState":"War", "Government":"Dictatorship", "Influence":0.119192, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":46.414799, "ActiveStates":[ { "State":"War" } ] }, { "Name":"GalCop Colonial Defence Commission", "FactionState":"Boom", "Government":"Confederacy", "Influence":0.406061, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":-75.000000, "ActiveStates":[ { "State":"Boom" } ] }, { "Name":"Likedeeler of Colonia", "FactionState":"None", "Government":"Democracy", "Influence":0.068687, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":4.002500 }, { "Name":"Colonia Tech Combine", "FactionState":"Election", "Government":"Cooperative", "Influence":0.138384, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":4.850000, "ActiveStates":[ { "State":"Election" } ] }, { "Name":"Milanov's Reavers", "FactionState":"Bust", "Government":"Anarchy", "Influence":0.010101, "Allegiance":"Independent", "Happiness":"$Faction_HappinessBand2;", "Happiness_Localised":"Glücklich", "MyReputation":0.000000, "RecoveringStates":[ { "State":"Terrorism", "Trend":0 } ], "ActiveStates":[ { "State":"Bust" } ] } ], "SystemFaction":{ "Name":"GalCop Colonial Defence Commission", "FactionState":"Boom" }, "Conflicts":[ { "WarType":"election", "Status":"active", "Faction1":{ "Name":"Jaques", "Stake":"Guerrero Military Base", "WonDays":1 }, "Faction2":{ "Name":"Colonia Tech Combine", "Stake":"", "WonDays":0 } }, { "WarType":"war", "Status":"active", "Faction1":{ "Name":"ICU Colonial Corps", "Stake":"Boulaid Command Facility", "WonDays":1 }, "Faction2":{ "Name":"Societas Eruditorum de Civitas Dei", "Stake":"Chatterjee's Respite", "WonDays":0 } } ] }
         "FSDJump" | "Location" | "CarrierJump" => {
-            let mut system = System{
+            let mut system = System {
                 name: json["StarSystem"].to_string(),
                 address: json["SystemAddress"].to_string(),
                 allegiance: json["SystemAllegiance"].to_string(),
@@ -50,7 +56,10 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                 .build()
                 .unwrap()
                 .block_on(async {
-                    let url = format!("https://api.edcas.de/data/odyssey/system/{}",address.clone());
+                    let url = format!(
+                        "https://api.edcas.de/data/odyssey/system/{}",
+                        address.clone()
+                    );
                     debug!("Api call to edcas: {}", url.clone());
                     let result = reqwest::get(url.clone()).await;
                     return match result {
@@ -58,21 +67,23 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             let text = response.text().await.unwrap();
                             let result = json::parse(text.as_str());
                             return match result {
-                                Ok(json) => {
-                                    Some(json)
-                                }
+                                Ok(json) => Some(json),
                                 Err(err) => {
-                                    error!("Couldn't parse answer to json: {}",err);
+                                    error!("Couldn't parse answer to json: {}", err);
                                     error!("Value: {}", text);
                                     None
                                 }
-                            }
+                            };
                         }
                         Err(err) => {
-                            error!("Couldn't reach edcas api under {} Reason: {}", url.clone(),err);
+                            error!(
+                                "Couldn't reach edcas api under {} Reason: {}",
+                                url.clone(),
+                                err
+                            );
                             None
                         }
-                    }
+                    };
                 });
 
             match answer {
@@ -82,17 +93,17 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                         let star_json = &json["stars"][i];
 
                         let mut parents: Vec<Parent> = vec![];
-                        for j in 0..star_json["parents"].len(){
+                        for j in 0..star_json["parents"].len() {
                             let parent = &star_json["parents"][j];
-                            for entry in parent.entries(){
-                                parents.push(Parent{
+                            for entry in parent.entries() {
+                                parents.push(Parent {
                                     name: entry.0.to_string(),
                                     id: entry.1.as_i64().unwrap(),
                                 });
                             }
                         }
 
-                        system.insert_body(Box::new(Star{
+                        system.insert_body(Box::new(Star {
                             timestamp: "".to_string(),
                             event: "API".to_string(),
                             scan_type: "API".to_string(),
@@ -101,24 +112,62 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             parents,
                             star_system: system.name.clone(),
                             system_address: i64::from_str(address.as_str()).unwrap(),
-                            distance_from_arrival_ls: f64::from_str(star_json["distance_from_arrival_ls"].to_string().as_str()).unwrap(),
+                            distance_from_arrival_ls: f64::from_str(
+                                star_json["distance_from_arrival_ls"].to_string().as_str(),
+                            )
+                            .unwrap(),
                             star_type: star_json["star_type"].to_string(),
-                            subclass: i64::from_str(star_json["subclass"].to_string().as_str()).unwrap(),
-                            stellar_mass: f64::from_str(star_json["stellar_mass"].to_string().as_str()).unwrap(),
-                            radius: f64::from_str(star_json["radius"].to_string().as_str()).unwrap(),
-                            absolute_magnitude: f64::from_str(star_json["absolute_magnitude"].to_string().as_str()).unwrap(),
-                            age_my: i64::from_str(star_json["age_my"].to_string().as_str()).unwrap(),
-                            surface_temperature: f64::from_str(star_json["surface_temperature"].to_string().as_str()).unwrap(),
+                            subclass: i64::from_str(star_json["subclass"].to_string().as_str())
+                                .unwrap(),
+                            stellar_mass: f64::from_str(
+                                star_json["stellar_mass"].to_string().as_str(),
+                            )
+                            .unwrap(),
+                            radius: f64::from_str(star_json["radius"].to_string().as_str())
+                                .unwrap(),
+                            absolute_magnitude: f64::from_str(
+                                star_json["absolute_magnitude"].to_string().as_str(),
+                            )
+                            .unwrap(),
+                            age_my: i64::from_str(star_json["age_my"].to_string().as_str())
+                                .unwrap(),
+                            surface_temperature: f64::from_str(
+                                star_json["surface_temperature"].to_string().as_str(),
+                            )
+                            .unwrap(),
                             luminosity: star_json["luminosity"].to_string(),
-                            semi_major_axis: f64::from_str(star_json["semi_major_axis"].to_string().as_str()).ok(),
-                            eccentricity: f64::from_str(star_json["eccentricity"].to_string().as_str()).ok(),
-                            orbital_inclination: f64::from_str(star_json["orbital_inclination"].to_string().as_str()).ok(),
-                            periapsis: f64::from_str(star_json["periapsis"].to_string().as_str()).ok(),
-                            orbital_period: f64::from_str(star_json["orbital_period"].to_string().as_str()).ok(),
-                            ascending_node: f64::from_str(star_json["ascending_node"].to_string().as_str()).ok(),
-                            mean_anomaly: f64::from_str(star_json["mean_anomaly"].to_string().as_str()).ok(),
-                            rotation_period: f64::from_str(star_json["rotation_period"].to_string().as_str()).unwrap(),
-                            axial_tilt: f64::from_str(star_json["axial_tilt"].to_string().as_str()).unwrap(),
+                            semi_major_axis: f64::from_str(
+                                star_json["semi_major_axis"].to_string().as_str(),
+                            )
+                            .ok(),
+                            eccentricity: f64::from_str(
+                                star_json["eccentricity"].to_string().as_str(),
+                            )
+                            .ok(),
+                            orbital_inclination: f64::from_str(
+                                star_json["orbital_inclination"].to_string().as_str(),
+                            )
+                            .ok(),
+                            periapsis: f64::from_str(star_json["periapsis"].to_string().as_str())
+                                .ok(),
+                            orbital_period: f64::from_str(
+                                star_json["orbital_period"].to_string().as_str(),
+                            )
+                            .ok(),
+                            ascending_node: f64::from_str(
+                                star_json["ascending_node"].to_string().as_str(),
+                            )
+                            .ok(),
+                            mean_anomaly: f64::from_str(
+                                star_json["mean_anomaly"].to_string().as_str(),
+                            )
+                            .ok(),
+                            rotation_period: f64::from_str(
+                                star_json["rotation_period"].to_string().as_str(),
+                            )
+                            .unwrap(),
+                            axial_tilt: f64::from_str(star_json["axial_tilt"].to_string().as_str())
+                                .unwrap(),
                             was_discovered: star_json["was_discovered"].as_bool().unwrap(),
                             was_mapped: star_json["was_mapped"].as_bool().unwrap(),
                             asteroid_rings: vec![],
@@ -130,18 +179,22 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
 
                         let mut parents: Vec<Parent> = vec![];
                         //"parents": [{"Star": 0 },{"Planet": 47 },{"Null": 51 }]
-                        for j in 0..planet_json["parents"].len(){
+                        for j in 0..planet_json["parents"].len() {
                             let parent = &planet_json["parents"][j];
-                            for entry in parent.entries(){
-                                parents.push(Parent{
+                            for entry in parent.entries() {
+                                parents.push(Parent {
                                     name: entry.0.to_string(),
                                     id: entry.1.as_i64().unwrap(),
                                 });
                             }
                         }
 
-                        if planet_json["body_name"].as_str().unwrap().contains("Belt Cluster"){
-                            system.insert_body(Box::new(BeltCluster{
+                        if planet_json["body_name"]
+                            .as_str()
+                            .unwrap()
+                            .contains("Belt Cluster")
+                        {
+                            system.insert_body(Box::new(BeltCluster {
                                 timestamp: "".to_string(),
                                 event: "API".to_string(),
                                 scan_type: "API".to_string(),
@@ -150,13 +203,16 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 parents,
                                 star_system: system.name.clone(),
                                 system_address: i64::from_str(address.as_str()).unwrap(),
-                                distance_from_arrival_ls: f64::from_str(planet_json["distance_from_arrival_ls"].to_string().as_str()).unwrap(),
+                                distance_from_arrival_ls: f64::from_str(
+                                    planet_json["distance_from_arrival_ls"].to_string().as_str(),
+                                )
+                                .unwrap(),
                                 was_discovered: planet_json["was_discovered"].as_bool().unwrap(),
                                 was_mapped: planet_json["was_mapped"].as_bool().unwrap(),
                                 settings: settings.clone(),
                             }));
-                        }else {
-                            let planet = Planet{
+                        } else {
+                            let planet = Planet {
                                 timestamp: "".to_string(),
                                 event: "API".to_string(),
                                 scan_type: "API".to_string(),
@@ -165,7 +221,10 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 parents,
                                 star_system: system.name.clone(),
                                 system_address: i64::from_str(address.as_str()).unwrap(),
-                                distance_from_arrival_ls: f64::from_str(planet_json["distance_from_arrival_ls"].to_string().as_str()).unwrap(),
+                                distance_from_arrival_ls: f64::from_str(
+                                    planet_json["distance_from_arrival_ls"].to_string().as_str(),
+                                )
+                                .unwrap(),
                                 tidal_lock: planet_json["was_discovered"].as_bool().unwrap(),
                                 terraform_state: planet_json["terraform_state"].to_string(),
                                 planet_class: planet_json["planet_class"].to_string(),
@@ -173,23 +232,61 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 atmosphere_type: planet_json["atmosphere_type"].to_string(),
                                 atmosphere_composition: vec![],
                                 volcanism: planet_json["volcanism"].to_string(),
-                                mass_em: f64::from_str(planet_json["mass_em"].to_string().as_str()).unwrap_or(-1.0),
-                                radius: f64::from_str(planet_json["radius"].to_string().as_str()).unwrap_or(-1.0),
-                                surface_gravity: f64::from_str(planet_json["surface_gravity"].to_string().as_str()).unwrap_or(-1.0),
-                                surface_temperature: f64::from_str(planet_json["surface_temperature"].to_string().as_str()).unwrap_or(-1.0),
-                                surface_pressure: f64::from_str(planet_json["surface_pressure"].to_string().as_str()).unwrap_or(-1.0),
+                                mass_em: f64::from_str(planet_json["mass_em"].to_string().as_str())
+                                    .unwrap_or(-1.0),
+                                radius: f64::from_str(planet_json["radius"].to_string().as_str())
+                                    .unwrap_or(-1.0),
+                                surface_gravity: f64::from_str(
+                                    planet_json["surface_gravity"].to_string().as_str(),
+                                )
+                                .unwrap_or(-1.0),
+                                surface_temperature: f64::from_str(
+                                    planet_json["surface_temperature"].to_string().as_str(),
+                                )
+                                .unwrap_or(-1.0),
+                                surface_pressure: f64::from_str(
+                                    planet_json["surface_pressure"].to_string().as_str(),
+                                )
+                                .unwrap_or(-1.0),
                                 landable: planet_json["landable"].as_bool().unwrap(),
                                 materials: vec![],
                                 composition: vec![],
-                                semi_major_axis: f64::from_str(planet_json["semi_major_axis"].to_string().as_str()).unwrap(),
-                                eccentricity: f64::from_str(planet_json["eccentricity"].to_string().as_str()).unwrap(),
-                                orbital_inclination: f64::from_str(planet_json["orbital_inclination"].to_string().as_str()).unwrap(),
-                                periapsis: f64::from_str(planet_json["periapsis"].to_string().as_str()).unwrap(),
-                                orbital_period: f64::from_str(planet_json["orbital_period"].to_string().as_str()).unwrap(),
-                                ascending_node: f64::from_str(planet_json["ascending_node"].to_string().as_str()).unwrap(),
-                                mean_anomaly: f64::from_str(planet_json["mean_anomaly"].to_string().as_str()).unwrap(),
-                                rotation_period: f64::from_str(planet_json["rotation_period"].to_string().as_str()).unwrap_or(-1.0),
-                                axial_tilt: f64::from_str(planet_json["axial_tilt"].to_string().as_str()).unwrap_or(-1.0),
+                                semi_major_axis: f64::from_str(
+                                    planet_json["semi_major_axis"].to_string().as_str(),
+                                )
+                                .unwrap(),
+                                eccentricity: f64::from_str(
+                                    planet_json["eccentricity"].to_string().as_str(),
+                                )
+                                .unwrap(),
+                                orbital_inclination: f64::from_str(
+                                    planet_json["orbital_inclination"].to_string().as_str(),
+                                )
+                                .unwrap(),
+                                periapsis: f64::from_str(
+                                    planet_json["periapsis"].to_string().as_str(),
+                                )
+                                .unwrap(),
+                                orbital_period: f64::from_str(
+                                    planet_json["orbital_period"].to_string().as_str(),
+                                )
+                                .unwrap(),
+                                ascending_node: f64::from_str(
+                                    planet_json["ascending_node"].to_string().as_str(),
+                                )
+                                .unwrap(),
+                                mean_anomaly: f64::from_str(
+                                    planet_json["mean_anomaly"].to_string().as_str(),
+                                )
+                                .unwrap(),
+                                rotation_period: f64::from_str(
+                                    planet_json["rotation_period"].to_string().as_str(),
+                                )
+                                .unwrap_or(-1.0),
+                                axial_tilt: f64::from_str(
+                                    planet_json["axial_tilt"].to_string().as_str(),
+                                )
+                                .unwrap_or(-1.0),
                                 was_discovered: planet_json["was_discovered"].as_bool().unwrap(),
                                 was_mapped: planet_json["was_mapped"].as_bool().unwrap(),
                                 reserve_level: planet_json["reserve_level"].to_string(),
@@ -200,7 +297,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             if planet.surface_gravity != -1.0 {
                                 system.insert_body(Box::new(planet));
                             }
-
                         }
                     }
                 }
@@ -208,21 +304,24 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
 
             explorer.systems.push(system);
 
-            explorer.index = explorer.systems.len()-1;
+            explorer.index = explorer.systems.len() - 1;
 
             //if explorer.index == explorer.pages.len()-1{
             //    explorer.index = explorer.pages.len();
             //}
 
-            info!("Found system: {}",explorer.systems.last().unwrap().name.clone());
+            info!(
+                "Found system: {}",
+                explorer.systems.last().unwrap().name.clone()
+            );
         }
         "SupercruiseEntry" => {}
         "SupercruiseExit" => {}
         //{ "timestamp":"2022-10-16T23:25:05Z", "event":"StartJump", "JumpType":"Hyperspace", "StarSystem":"Ogmar", "SystemAddress":84180519395914, "StarClass":"K" }
         "StartJump" => {} //If jump has been initialised
         //{ "timestamp":"2022-10-16T23:24:46Z", "event":"FSDTarget", "Name":"Ogmar", "SystemAddress":84180519395914, "StarClass":"K", "RemainingJumpsInRoute":1 }
-        "FSDTarget" => {} //If system has been targeted
-        "NavRoute" => {} //If route has been set -> check json for further information
+        "FSDTarget" => {}     //If system has been targeted
+        "NavRoute" => {}      //If route has been set -> check json for further information
         "NavRouteClear" => {} //If navigation is complete -> no further information
 
         //Approaching
@@ -239,18 +338,18 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "FSSAllBodiesFound" => {}
         //{ "timestamp":"2022-10-16T23:46:48Z", "event":"FSSDiscoveryScan", "Progress":0.680273, "BodyCount":21, "NonBodyCount":80, "SystemName":"Ogmar", "SystemAddress":84180519395914 }
         "FSSDiscoveryScan" => {
-            if !explorer.systems.is_empty(){
-                let len = explorer.systems.len()-1;
+            if !explorer.systems.is_empty() {
+                let len = explorer.systems.len() - 1;
                 let system = &mut explorer.systems[len];
                 system.body_count = json["BodyCount"].to_string();
                 system.non_body_count = json["NonBodyCount"].to_string();
             }
-        }//Honk
+        } //Honk
         //{ "timestamp":"2022-07-07T20:58:06Z", "event":"SAASignalsFound", "BodyName":"IC 2391 Sector YE-A d103 B 1", "SystemAddress":3549631072611, "BodyID":15, "Signals":[ { "Type":"$SAA_SignalType_Guardian;", "Type_Localised":"Guardian", "Count":1 }, { "Type":"$SAA_SignalType_Human;", "Type_Localised":"Menschlich", "Count":9 } ] }
         "FSSBodySignals" | "SAASignalsFound" => {
             //TODO Implement NFT
             //{ "timestamp":"2022-09-07T17:50:41Z", "event":"FSSBodySignals", "BodyName":"Synuefe EN-H d11-106 6 a", "BodyID":31, "SystemAddress":3652777380195, "Signals":[ { "Type":"$SAA_SignalType_Biological;", "Type_Localised":"Biologisch", "Count":1 }, { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geologisch", "Count":3 } ] }
-            if !explorer.systems.is_empty(){
+            if !explorer.systems.is_empty() {
                 let mut signals: Vec<Signal> = Vec::new();
 
                 for i in 0..json["Signals"].len() {
@@ -261,29 +360,33 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     })
                 }
 
-                let planet_signals = PlanetSignals{
+                let planet_signals = PlanetSignals {
                     body_name: json["BodyName"].to_string(),
                     body_id: json["BodyID"].as_i64().unwrap(),
                     signals: signals.clone(),
                 };
 
-                info!("Body {} number of signals: {}",json["BodyName"].to_string(),signals.len().clone());
+                info!(
+                    "Body {} number of signals: {}",
+                    json["BodyName"].to_string(),
+                    signals.len().clone()
+                );
 
-                let len = explorer.systems.len()-1;
+                let len = explorer.systems.len() - 1;
 
                 let mut found = false;
-                for i in 0..explorer.systems[len].planet_signals.len(){
+                for i in 0..explorer.systems[len].planet_signals.len() {
                     let planet_signal = &mut explorer.systems[len].planet_signals[i];
-                    if planet_signal.body_id == planet_signals.body_id{
+                    if planet_signal.body_id == planet_signals.body_id {
                         planet_signal.signals = planet_signals.signals.clone();
                         found = true;
                     }
                 }
                 if !found {
                     explorer.systems[len].planet_signals.push(planet_signals);
-                    explorer.systems[len].planet_signals.sort_by(|a, b|{
-                        a.body_id.cmp(&b.body_id)
-                    });
+                    explorer.systems[len]
+                        .planet_signals
+                        .sort_by(|a, b| a.body_id.cmp(&b.body_id));
                 }
             }
         }
@@ -292,17 +395,17 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             // { "timestamp":"2023-05-29T22:40:26Z", "event":"FSSSignalDiscovered", "SystemAddress":672296347049, "SignalName":"THE GENERAL MELCHETT X5W-0XL", "IsStation":true }
             //{ "timestamp":"2023-05-29T22:40:42Z", "event":"FSSSignalDiscovered", "SystemAddress":672296347049, "SignalName":"$USS_HighGradeEmissions;", "SignalName_Localised":"Unidentifizierte Signalquelle",
             // "USSType":"$USS_Type_ValuableSalvage;", "USSType_Localised":"Verschlüsselte Emissionen", "SpawningState":"", "SpawningFaction":"Murus Major Industry", "ThreatLevel":0, "TimeRemaining":707.545837 }
-            if !explorer.systems.is_empty(){
+            if !explorer.systems.is_empty() {
                 let mut name = json["SignalName_Localised"].to_string();
-                if name == *"null"  {
+                if name == *"null" {
                     name = json["SignalName"].to_string();
-                    if name == *"null"  {
+                    if name == *"null" {
                         name = json["USSType_Localised"].to_string();
                     }
                 }
 
-                let mut thread =  json["ThreatLevel"].to_string();
-                if thread == *"null"  {
+                let mut thread = json["ThreatLevel"].to_string();
+                if thread == *"null" {
                     thread = "".to_string();
                 }
 
@@ -312,12 +415,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     name,
                     threat: thread,
                 };
-                let len = explorer.systems.len()-1;
+                let len = explorer.systems.len() - 1;
                 explorer.systems[len].signal_list.push(system_signal);
-                explorer.systems[len].signal_list.sort_by(|a, b|{
-                    if a.name == b.name{
+                explorer.systems[len].signal_list.sort_by(|a, b| {
+                    if a.name == b.name {
                         a.threat.cmp(&b.threat)
-                    }else {
+                    } else {
                         a.name.cmp(&b.name)
                     }
                 });
@@ -326,19 +429,19 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "SAAScanComplete" => {}
         "Scan" => {
             //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435, "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant", "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ], "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730, "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734, "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320, "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
-            info!("Body found: {}",json["BodyName"].to_string());
-            if !explorer.systems.is_empty(){
-                let mut body = structs::generate_from_json(json.clone(),settings.clone());
+            info!("Body found: {}", json["BodyName"].to_string());
+            if !explorer.systems.is_empty() {
+                let mut body = structs::generate_from_json(json.clone(), settings.clone());
 
-                let len = explorer.systems.len()-1;
+                let len = explorer.systems.len() - 1;
 
-                for planet_signal in &mut explorer.systems[len].planet_signals{
-                    if planet_signal.body_id == body.get_id(){
+                for planet_signal in &mut explorer.systems[len].planet_signals {
+                    if planet_signal.body_id == body.get_id() {
                         body.set_signals(planet_signal.signals.clone());
                     }
                 }
 
-                let len = explorer.systems.len()-1;
+                let len = explorer.systems.len() - 1;
                 if !explorer.systems[len].body_list.contains(&body) {
                     let index = explorer.systems[len].insert_body(body);
                     explorer.systems[len].index = index;
@@ -356,7 +459,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "SellDrones" => {}
         "BuyAmmo" => {}
         //{ "timestamp":"2022-10-16T23:55:55Z", "event":"ReservoirReplenished", "FuelMain":30.905506, "FuelReservoir":1.070000 }
-        "ReservoirReplenished" => {}//If reservoir needs to drain more fuel from main tank
+        "ReservoirReplenished" => {} //If reservoir needs to drain more fuel from main tank
         "RepairAll" => {}
         "RebootRepair" => {}
         "RestockVehicle" => {}
@@ -390,28 +493,18 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             for i in 0..count {
                 let ingrediant = &ingrediants[i];
                 let name = &ingrediant["Name"].to_string();
-                let (material,category) = match materials.raw.get(name){
-                    None => {
-                        match materials.encoded.get(name){
+                let (material, category) = match materials.raw.get(name) {
+                    None => match materials.encoded.get(name) {
+                        None => match materials.manufactured.get(name) {
                             None => {
-                                match materials.manufactured.get(name){
-                                    None => {
-                                        error!("Didn't found material: {}",&ingrediant);
-                                        (None,"")
-                                    }
-                                    Some(material) => {
-                                        (Some(material.clone()),"Manufactured")
-                                    }
-                                }
+                                error!("Didn't found material: {}", &ingrediant);
+                                (None, "")
                             }
-                            Some(material) => {
-                                (Some(material.clone()),"Encoded")
-                            }
-                        }
-                    }
-                    Some(material) => {
-                        (Some(material.clone()),"Raw")
-                    }
+                            Some(material) => (Some(material.clone()), "Manufactured"),
+                        },
+                        Some(material) => (Some(material.clone()), "Encoded"),
+                    },
+                    Some(material) => (Some(material.clone()), "Raw"),
                 };
                 match category {
                     "Manufactured" => {
@@ -419,9 +512,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             let mut cloned_material = material.clone();
                             materials.manufactured.remove(name);
                             cloned_material.count -= ingrediant["Count"].as_u64().unwrap();
-                            materials.manufactured.insert(name.clone(),cloned_material);
+                            materials.manufactured.insert(name.clone(), cloned_material);
                         } else {
-                            error!("Didn't found manufactured material in material list: {}", &ingrediant);
+                            error!(
+                                "Didn't found manufactured material in material list: {}",
+                                &ingrediant
+                            );
                         }
                     }
                     "Encoded" => {
@@ -429,9 +525,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             let mut cloned_material = material.clone();
                             materials.encoded.remove(name);
                             cloned_material.count -= ingrediant["Count"].as_u64().unwrap();
-                            materials.encoded.insert(name.clone(),cloned_material);
+                            materials.encoded.insert(name.clone(), cloned_material);
                         } else {
-                            error!("Didn't found encoded material in material list: {}", &ingrediant);
+                            error!(
+                                "Didn't found encoded material in material list: {}",
+                                &ingrediant
+                            );
                         }
                     }
                     "Raw" => {
@@ -439,9 +538,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                             let mut cloned_material = material.clone();
                             materials.raw.remove(name);
                             cloned_material.count -= ingrediant["Count"].as_u64().unwrap();
-                            materials.raw.insert(name.clone(),cloned_material);
+                            materials.raw.insert(name.clone(), cloned_material);
                         } else {
-                            error!("Didn't found raw material in material list: {}", &ingrediant);
+                            error!(
+                                "Didn't found raw material in material list: {}",
+                                &ingrediant
+                            );
                         }
                     }
                     _ => {
@@ -510,9 +612,9 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     let result = materials.raw.get(&material_json["Name"].to_string());
                     match result {
                         None => {
-                            warn!("Unknown material found! {}",material_json);
-                            warn!("Looked for {}",&material_json["Name"].to_string());
-                            let new_material = Material{
+                            warn!("Unknown material found! {}", material_json);
+                            warn!("Looked for {}", &material_json["Name"].to_string());
+                            let new_material = Material {
                                 name: material_json["Name"].to_string(),
                                 name_localised: material_json["Name_Localised"].to_string(),
                                 grade: 0,
@@ -525,10 +627,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 synthesis: vec![],
                                 description: "".to_string(),
                             };
-                            materials.raw.insert(material_json["Name"].to_string(),new_material);
+                            materials
+                                .raw
+                                .insert(material_json["Name"].to_string(), new_material);
                         }
                         Some(material) => {
-                            let updated_material = Material{
+                            let updated_material = Material {
                                 name: material.name.clone(),
                                 name_localised: material_json["Name_Localised"].to_string(),
                                 grade: material.grade,
@@ -541,7 +645,9 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 synthesis: material.synthesis.clone(),
                                 description: material.description.clone(),
                             };
-                            materials.raw.insert(material.name.clone(),updated_material);
+                            materials
+                                .raw
+                                .insert(material.name.clone(), updated_material);
                         }
                     }
                     material_json = json["Raw"].pop();
@@ -553,9 +659,9 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     let result = materials.encoded.get(&material_json["Name"].to_string());
                     match result {
                         None => {
-                            warn!("Unknown material found! {}",material_json);
-                            warn!("Looked for {}",&material_json["Name"].to_string());
-                            let new_material = Material{
+                            warn!("Unknown material found! {}", material_json);
+                            warn!("Looked for {}", &material_json["Name"].to_string());
+                            let new_material = Material {
                                 name: material_json["Name"].to_string(),
                                 name_localised: material_json["Name_Localised"].to_string(),
                                 grade: 0,
@@ -568,10 +674,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 synthesis: vec![],
                                 description: "".to_string(),
                             };
-                            materials.encoded.insert(material_json["Name"].to_string(),new_material);
+                            materials
+                                .encoded
+                                .insert(material_json["Name"].to_string(), new_material);
                         }
                         Some(material) => {
-                            let updated_material = Material{
+                            let updated_material = Material {
                                 name: material.name.clone(),
                                 name_localised: material_json["Name_Localised"].to_string(),
                                 grade: material.grade,
@@ -584,7 +692,9 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 synthesis: material.synthesis.clone(),
                                 description: material.description.clone(),
                             };
-                            materials.encoded.insert(material.name.clone(),updated_material);
+                            materials
+                                .encoded
+                                .insert(material.name.clone(), updated_material);
                         }
                     }
                     material_json = json["Encoded"].pop();
@@ -593,12 +703,14 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             {
                 let mut material_json = json["Manufactured"].pop();
                 while material_json != Null {
-                    let result = materials.manufactured.get(&material_json["Name"].to_string());
+                    let result = materials
+                        .manufactured
+                        .get(&material_json["Name"].to_string());
                     match result {
                         None => {
-                            warn!("Unknown material found! {}",material_json);
-                            warn!("Looked for {}",&material_json["Name"].to_string());
-                            let new_material = Material{
+                            warn!("Unknown material found! {}", material_json);
+                            warn!("Looked for {}", &material_json["Name"].to_string());
+                            let new_material = Material {
                                 name: material_json["Name"].to_string(),
                                 name_localised: material_json["Name_Localised"].to_string(),
                                 grade: 0,
@@ -611,10 +723,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 synthesis: vec![],
                                 description: "".to_string(),
                             };
-                            materials.manufactured.insert(material_json["Name"].to_string(),new_material);
+                            materials
+                                .manufactured
+                                .insert(material_json["Name"].to_string(), new_material);
                         }
                         Some(material) => {
-                            let updated_material = Material{
+                            let updated_material = Material {
                                 name: material.name.clone(),
                                 name_localised: material_json["Name_Localised"].to_string(),
                                 grade: material.grade,
@@ -627,7 +741,9 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 synthesis: material.synthesis.clone(),
                                 description: material.description.clone(),
                             };
-                            materials.manufactured.insert(material.name.clone(),updated_material);
+                            materials
+                                .manufactured
+                                .insert(material.name.clone(), updated_material);
                         }
                     }
                     material_json = json["Manufactured"].pop();
@@ -645,9 +761,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                         let mut cloned_material = material.clone();
                         materials.manufactured.remove(name);
                         cloned_material.count += json["Count"].as_u64().unwrap();
-                        materials.manufactured.insert(name.clone(),cloned_material);
+                        materials.manufactured.insert(name.clone(), cloned_material);
                     } else {
-                        error!("Didn't found manufactured material in material list: {}", &json);
+                        error!(
+                            "Didn't found manufactured material in material list: {}",
+                            &json
+                        );
                     }
                 }
                 "Encoded" => {
@@ -655,7 +774,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                         let mut cloned_material = material.clone();
                         materials.encoded.remove(name);
                         cloned_material.count += json["Count"].as_u64().unwrap();
-                        materials.encoded.insert(name.clone(),cloned_material);
+                        materials.encoded.insert(name.clone(), cloned_material);
                     } else {
                         error!("Didn't found encoded material in material list: {}", &json);
                     }
@@ -665,7 +784,7 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                         let mut cloned_material = material.clone();
                         materials.raw.remove(name);
                         cloned_material.count += json["Count"].as_u64().unwrap();
-                        materials.raw.insert(name.clone(),cloned_material);
+                        materials.raw.insert(name.clone(), cloned_material);
                     } else {
                         error!("Didn't found raw material in material list: {}", &json);
                     }
@@ -693,7 +812,10 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     .build()
                     .unwrap()
                     .block_on(async {
-                        let url = format!("https://api.edcas.de/data/odyssey/commodity/{}",material_json["Name"].to_string().to_lowercase());
+                        let url = format!(
+                            "https://api.edcas.de/data/odyssey/commodity/{}",
+                            material_json["Name"].to_string().to_lowercase()
+                        );
                         debug!("Api call to edcas: {}", url.clone());
                         let result = reqwest::get(url.clone()).await;
                         return match result {
@@ -701,21 +823,23 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                                 let text = response.text().await.unwrap();
                                 let result = json::parse(text.as_str());
                                 return match result {
-                                    Ok(json) => {
-                                        Some(json)
-                                    }
+                                    Ok(json) => Some(json),
                                     Err(err) => {
-                                        error!("Couldn't parse answer to json: {}",err);
+                                        error!("Couldn't parse answer to json: {}", err);
                                         error!("Value: {}", text);
                                         None
                                     }
-                                }
+                                };
                             }
                             Err(err) => {
-                                error!("Couldn't reach edcas api under {} Reason: {}", url.clone(),err);
+                                error!(
+                                    "Couldn't reach edcas api under {} Reason: {}",
+                                    url.clone(),
+                                    err
+                                );
                                 None
                             }
-                        }
+                        };
                     });
 
                 match answer {
@@ -728,12 +852,12 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
                     name: material_json["Name"].to_string(),
                     name_localised: material_json["Name_Localised"].to_string(),
                     proportion: material_json["Proportion"].as_f64().unwrap_or(-1.0),
-                    buy_price
+                    buy_price,
                 });
                 material_json = json["Materials"].pop();
             }
 
-            let prospector: Prospector = Prospector{
+            let prospector: Prospector = Prospector {
                 timestamp: json["timestamp"].to_string(),
                 event: json["event"].to_string(),
                 materials,
@@ -771,7 +895,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "CarrierCrewServices" => {}
         "CarrierModulePack" => {}
         "CarrierBankTransfer" => {}
-
 
         //Dropship
         "BookDropship" => {}
@@ -820,57 +943,103 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
             let received = &json["Received"];
             match json["TraderType"].to_string().as_str() {
                 "manufactured" => {
-                    if let Some(paid_material) = materials.manufactured.get(&paid["Material"].to_string()) {
+                    if let Some(paid_material) =
+                        materials.manufactured.get(&paid["Material"].to_string())
+                    {
                         let mut cloned_paid_material = paid_material.clone();
-                        if let Some(received_material) = materials.manufactured.get(&received["Material"].to_string()) {
+                        if let Some(received_material) = materials
+                            .manufactured
+                            .get(&received["Material"].to_string())
+                        {
                             let mut cloned_received_material = received_material.clone();
                             materials.manufactured.remove(&paid["Material"].to_string());
-                            materials.manufactured.remove(&received["Material"].to_string());
+                            materials
+                                .manufactured
+                                .remove(&received["Material"].to_string());
                             cloned_paid_material.count -= paid["Quantity"].as_u64().unwrap();
-                            cloned_received_material.count += received["Quantity"].as_u64().unwrap();
-                            materials.manufactured.insert(paid["Material"].to_string(),cloned_paid_material);
-                            materials.manufactured.insert(received["Material"].to_string(),cloned_received_material);
+                            cloned_received_material.count +=
+                                received["Quantity"].as_u64().unwrap();
+                            materials
+                                .manufactured
+                                .insert(paid["Material"].to_string(), cloned_paid_material);
+                            materials
+                                .manufactured
+                                .insert(received["Material"].to_string(), cloned_received_material);
                         } else {
-                            error!("Didn't found manufactured material in material list: {}", &json);
+                            error!(
+                                "Didn't found manufactured material in material list: {}",
+                                &json
+                            );
                         }
                     } else {
-                        error!("Didn't found manufactured material in material list: {}", &json);
+                        error!(
+                            "Didn't found manufactured material in material list: {}",
+                            &json
+                        );
                     }
                 }
                 "raw" => {
                     if let Some(paid_material) = materials.raw.get(&paid["Material"].to_string()) {
                         let mut cloned_paid_material = paid_material.clone();
-                        if let Some(received_material) = materials.raw.get(&received["Material"].to_string()) {
+                        if let Some(received_material) =
+                            materials.raw.get(&received["Material"].to_string())
+                        {
                             let mut cloned_received_material = received_material.clone();
                             materials.raw.remove(&paid["Material"].to_string());
                             materials.raw.remove(&received["Material"].to_string());
                             cloned_paid_material.count -= paid["Quantity"].as_u64().unwrap();
-                            cloned_received_material.count += received["Quantity"].as_u64().unwrap();
-                            materials.raw.insert(paid["Material"].to_string(),cloned_paid_material);
-                            materials.raw.insert(received["Material"].to_string(),cloned_received_material);
+                            cloned_received_material.count +=
+                                received["Quantity"].as_u64().unwrap();
+                            materials
+                                .raw
+                                .insert(paid["Material"].to_string(), cloned_paid_material);
+                            materials
+                                .raw
+                                .insert(received["Material"].to_string(), cloned_received_material);
                         } else {
-                            error!("Didn't found manufactured material in material list: {}", &json);
+                            error!(
+                                "Didn't found manufactured material in material list: {}",
+                                &json
+                            );
                         }
                     } else {
-                        error!("Didn't found manufactured material in material list: {}", &json);
+                        error!(
+                            "Didn't found manufactured material in material list: {}",
+                            &json
+                        );
                     }
                 }
                 "encoded" => {
-                    if let Some(paid_material) = materials.encoded.get(&paid["Material"].to_string()) {
+                    if let Some(paid_material) =
+                        materials.encoded.get(&paid["Material"].to_string())
+                    {
                         let mut cloned_paid_material = paid_material.clone();
-                        if let Some(received_material) = materials.encoded.get(&received["Material"].to_string()) {
+                        if let Some(received_material) =
+                            materials.encoded.get(&received["Material"].to_string())
+                        {
                             let mut cloned_received_material = received_material.clone();
                             materials.encoded.remove(&paid["Material"].to_string());
                             materials.encoded.remove(&received["Material"].to_string());
                             cloned_paid_material.count -= paid["Quantity"].as_u64().unwrap();
-                            cloned_received_material.count += received["Quantity"].as_u64().unwrap();
-                            materials.encoded.insert(paid["Material"].to_string(),cloned_paid_material);
-                            materials.encoded.insert(received["Material"].to_string(),cloned_received_material);
+                            cloned_received_material.count +=
+                                received["Quantity"].as_u64().unwrap();
+                            materials
+                                .encoded
+                                .insert(paid["Material"].to_string(), cloned_paid_material);
+                            materials
+                                .encoded
+                                .insert(received["Material"].to_string(), cloned_received_material);
                         } else {
-                            error!("Didn't found manufactured material in material list: {}", &json);
+                            error!(
+                                "Didn't found manufactured material in material list: {}",
+                                &json
+                            );
                         }
                     } else {
-                        error!("Didn't found manufactured material in material list: {}", &json);
+                        error!(
+                            "Didn't found manufactured material in material list: {}",
+                            &json
+                        );
                     }
                 }
                 &_ => {
@@ -913,7 +1082,6 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         "TechnologyBroker" => {}
         "NavBeaconDetail" => {}
 
-
         //Jesus
         "Died" => {}
         "Resurrect" => {}
@@ -928,6 +1096,10 @@ pub fn interpret_json(json: JsonValue, explorer: &mut Explorer, materials: &mut 
         }
     }
     if now.elapsed().as_secs() >= 1 {
-        warn!("Event took over a second ({}): {}",now.elapsed().as_secs(),&json);
+        warn!(
+            "Event took over a second ({}): {}",
+            now.elapsed().as_secs(),
+            &json
+        );
     }
 }

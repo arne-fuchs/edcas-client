@@ -365,4 +365,3 @@ fn get_array_values(material_array: &JsonValue, key: &str) -> Vec<String> {
     }
     key_values
 }
-
