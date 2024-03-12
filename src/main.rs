@@ -9,6 +9,7 @@ use crate::app::EliteRustClient;
 use crate::egui::Vec2;
 
 mod app;
+mod tui;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -62,6 +63,11 @@ fn main() {
                 println!("--version\tPrints the current version of edcas");
                 println!("--height <f32>\tSets the height for the edcas gui");
                 println!("--width <f32>\tSets the width for the edcas gui");
+                return;
+            }
+            "--tui" => {
+                let client = EliteRustClient::default();
+                tui::draw_tui(client).unwrap();
                 return;
             }
             _ => {}

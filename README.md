@@ -72,7 +72,6 @@ makepkg -i
 ## Build Requirements
 
 * Around 10 GB of disk space required
-* gcc 12 required
 * <a href=https://www.rust-lang.org/tools/install >Rust with cargo</a>
 
 ### Debian based
@@ -85,16 +84,6 @@ sudo apt install cmake cargo pkg-config libssl-dev libfontconfig1-dev libclang-d
 ```bash 
 cargo alsa-lib fontconfig clang rocksdb
 sudo pacman -S cargo alsa-lib fontconfig git
-```
-From AUR: `gcc12 gcc12-libs`
-
-At the moment (22.07.2023) rocksdb does not like to compile with c++ > 12.
-This results in build failing.
-
-You can solve this problem by changing the gefault c++ version to 12:
-```
-sudo rm /sbin/c++
-sudo ln -s /sbin/c++-12 /sbin/c++ 
 ```
 ## Building
 

@@ -24,8 +24,8 @@ pub mod explorer;
 #[cfg(feature = "iota")]
 mod journal_interpreter;
 mod journal_reader;
-mod materials;
-mod mining;
+pub mod materials;
+pub mod mining;
 mod news;
 mod settings;
 mod tangle_interpreter;

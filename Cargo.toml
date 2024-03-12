@@ -8,7 +8,7 @@ repository = "https://github.com/arne-fuchs/edcas-client"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-eframe = { version = "0.22.0"}
+eframe = { version = "0.22.0" }
 egui_extras = { version = "0.22.0", features = ["image"] }
 egui_plot = "0.23.0"
 image = { version = "0.24.5", features = ["png"] }
@@ -16,7 +16,10 @@ image = { version = "0.24.5", features = ["png"] }
 #iota-client = { git = "https://github.com/arne-fuchs/iota.rs" }
 #iota-wallet = { git = "https://github.com/iotaledger/wallet.rs" }
 #iota-wallet = "1.0.0-rc.6"
-iota-sdk = { version = "1.0.3", features = ["stronghold","rocksdb"], optional = true}
+iota-sdk = { version = "1.0.3", features = [
+  "stronghold",
+  "rocksdb",
+], optional = true }
 #Stay above 1.22.1 because of security reasons
 tokio = { version = "1.26.0", features = ["full"] }
 derive = "1.0.0"
@@ -35,13 +38,20 @@ num-format = "0.4.4"
 enum-map = { version = "2", features = ["serde"] }
 opener = "0.6.1"
 lazy_static = "1.4.0"
-flate2 = { version = "1.0.25", features = ["zlib-ng"], default-features = false }
+flate2 = { version = "1.0.25", features = [
+  "zlib-ng",
+], default-features = false }
 base64 = "0.21.2"
 
 fern-logger = "0.5.0"
 log = "0.4.17"
 #Text to speech
 #tts_rust = "0.3.3"
+
+# TUI
+ratatui = "0.26.1"
+crossterm = "0.27.0"
+
 
 [features]
 default = ["iota"]
