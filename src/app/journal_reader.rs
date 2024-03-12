@@ -24,41 +24,38 @@ pub fn initialize(settings: Arc<Settings>) -> JournalReader {
         0,
     );
     let flag = 1;
-    if flag != 0 {
-        loop {
-            //while flag != 0 {
-            let mut line = String::new();
+    while flag != 0 {
+        let mut line = String::new();
 
-            match reader.read_line(&mut line) {
-                Ok(flag) => {
-                    if flag == 0 {
-                        break;
-                    } else if !line.eq("") {
-                        let json_result = json::parse(&line);
-                        match json_result {
-                            Ok(json) => {
-                                let event = json["event"].as_str().unwrap();
-                                if event == "Shutdown" {
-                                    //debug!("\n\nReached Shutdown -> looking for newer journals\n");
-                                    sleep(Duration::from_secs(1));
-                                    reader = get_journal_log_by_index(
-                                        settings.journal_reader_settings.journal_directory.clone(),
-                                        0,
-                                    )
-                                }
-                            }
-                            Err(err) => {
-                                error!("Couldn't parse json: {}", err)
+        match reader.read_line(&mut line) {
+            Ok(flag) => {
+                if flag == 0 {
+                    break;
+                } else if !line.eq("") {
+                    let json_result = json::parse(&line);
+                    match json_result {
+                        Ok(json) => {
+                            let event = json["event"].as_str().unwrap();
+                            if event == "Shutdown" {
+                                //debug!("\n\nReached Shutdown -> looking for newer journals\n");
+                                sleep(Duration::from_secs(1));
+                                reader = get_journal_log_by_index(
+                                    settings.journal_reader_settings.journal_directory.clone(),
+                                    0,
+                                )
                             }
                         }
+                        Err(err) => {
+                            error!("Couldn't parse json: {}", err)
+                        }
                     }
-                    line.clear();
                 }
-                Err(_err) => {
-                    error!("Error reading journal file!");
-                }
-            };
-        }
+                line.clear();
+            }
+            Err(_err) => {
+                error!("Error reading journal file!");
+            }
+        };
     }
 
     info!("Journal reader found new journal -> initializing");

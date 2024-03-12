@@ -2,7 +2,6 @@ extern crate core;
 
 use eframe::egui::Pos2;
 use eframe::{egui, HardwareAcceleration, IconData};
-use iota_sdk::client::{self, Client};
 use std::env;
 use std::str::FromStr;
 
@@ -76,6 +75,7 @@ fn main() {
     }
 
     let client = Box::<EliteRustClient>::default();
+
     //App icon
     let mut image = image::open("graphics\\logo\\edcas_128.png");
     if cfg!(target_os = "linux") {
