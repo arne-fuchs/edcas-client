@@ -1,33 +1,21 @@
-use std::{env, fs};
 use std::fs::File;
 use std::io::Write;
 use std::path::PathBuf;
 use std::sync::Arc;
+use std::{env, fs};
 
-use base64::Engine;
 use base64::engine::general_purpose;
+use base64::Engine;
 use bus::BusReader;
-use flate2::Compression;
 use flate2::write::ZlibEncoder;
+use flate2::Compression;
 #[cfg(feature = "iota")]
 use iota_sdk::{
-    client::{
-        constants::SHIMMER_COIN_TYPE,
-    },
-    client::{
-        secret::{
-            SecretManage,
-            SecretManager,
-            stronghold::StrongholdSecretManager
-        }
-    },
-    wallet::{
-        Account,
-        ClientOptions,
-        account::types::Balance
-    },
+    client::constants::SHIMMER_COIN_TYPE,
+    client::secret::{stronghold::StrongholdSecretManager, SecretManage, SecretManager},
     crypto::keys::bip44::Bip44,
-    Wallet
+    wallet::{account::types::Balance, Account, ClientOptions},
+    Wallet,
 };
 use json::JsonValue;
 use log::{debug, error, info, warn};
@@ -62,7 +50,9 @@ impl TangleInterpreter {
                 info!("Tangle event received: {}", event);
 
                 let mut encoder = ZlibEncoder::new(Vec::new(), Compression::fast());
-                encoder.write_all(json_clone.to_string().as_bytes()).unwrap();
+                encoder
+                    .write_all(json_clone.to_string().as_bytes())
+                    .unwrap();
                 let compressed_data = encoder.finish().unwrap();
 
                 match event {
@@ -79,26 +69,29 @@ impl TangleInterpreter {
 
                                 //let bkake2b256: [u8; 32] = hash.as_slice().try_into().expect("Invalid length");
 
-
                                 let bip44_chain = Bip44::new(SHIMMER_COIN_TYPE)
                                     .with_account(0)
                                     .with_change(false as _)
                                     .with_address_index(0);
 
-                                let ed255195_signature = self.stronghold
+                                let ed255195_signature = self
+                                    .stronghold
                                     .sign_ed25519(&compressed_data, bip44_chain)
-                                    .await.unwrap();
+                                    .await
+                                    .unwrap();
 
                                 let mut signature: String = "0x".to_string();
-                                let tmp_sig: String = ed255195_signature.signature().to_bytes().to_hex();
+                                let tmp_sig: String =
+                                    ed255195_signature.signature().to_bytes().to_hex();
                                 signature.push_str(tmp_sig.as_str());
 
                                 let mut public_key: String = "0x".to_string();
-                                let tmp_pk: String = ed255195_signature.public_key().to_bytes().to_hex();
+                                let tmp_pk: String =
+                                    ed255195_signature.public_key().to_bytes().to_hex();
                                 public_key.push_str(tmp_pk.as_str());
 
-                                let message_data = general_purpose::STANDARD.encode(compressed_data);
-
+                                let message_data =
+                                    general_purpose::STANDARD.encode(compressed_data);
 
                                 let message = json!(
                                     {
@@ -108,7 +101,10 @@ impl TangleInterpreter {
                                     }
                                 );
 
-                                let result = self.account.client().build_block()
+                                let result = self
+                                    .account
+                                    .client()
+                                    .build_block()
                                     .with_tag(event.to_uppercase().as_bytes().to_vec())
                                     .with_data(message.to_string().as_bytes().to_vec())
                                     .finish()
@@ -116,7 +112,7 @@ impl TangleInterpreter {
 
                                 match result {
                                     Ok(block) => {
-                                        debug!("Block send: {}",block.id());
+                                        debug!("Block send: {}", block.id());
                                     }
                                     Err(err) => {
                                         error!("Couldn't send block: {:?}", err);
@@ -130,7 +126,10 @@ impl TangleInterpreter {
     }
 }
 #[cfg(feature = "iota")]
-pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Settings>) -> TangleInterpreter {
+pub fn initialize(
+    tangle_bus_reader: BusReader<JsonValue>,
+    settings: Arc<Settings>,
+) -> TangleInterpreter {
     info!("Loading wallet");
 
     let mut node_url = settings.iota_settings.base_url.clone();
@@ -145,7 +144,8 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
     let client_options = ClientOptions::new()
         .with_pow_worker_count(1)
         .with_local_pow(settings.iota_settings.local_pow)
-        .with_node(node_url.as_str()).unwrap();
+        .with_node(node_url.as_str())
+        .unwrap();
 
     //create stronghold account
     let mut wallet_path = PathBuf::from("wallet.stronghold");
@@ -155,7 +155,10 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
             match fs::create_dir_all(format!("{}/.local/share/edcas-client/walletdb", home)) {
                 Ok(_) => {
                     storage_path = format!("{}/.local/share/edcas-client/walletdb", home);
-                    wallet_path = PathBuf::from(format!("{}/.local/share/edcas-client/wallet.stronghold", home));
+                    wallet_path = PathBuf::from(format!(
+                        "{}/.local/share/edcas-client/wallet.stronghold",
+                        home
+                    ));
                 }
                 Err(_) => {}
             }
@@ -168,7 +171,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
     info!("Wallet path: {:?}", &wallet_path);
     info!("Wallet storage path: {}", &storage_path);
 
-    info!("Existing wallet found?: {}",wallet_file_result.is_ok());
+    info!("Existing wallet found?: {}", wallet_file_result.is_ok());
 
     let account = match wallet_file_result {
         Ok(file) => {
@@ -181,7 +184,8 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                 .block_on(async {
                     let secret_manager = StrongholdSecretManager::builder()
                         .password(settings.iota_settings.password.to_string())
-                        .build(&wallet_path).unwrap();
+                        .build(&wallet_path)
+                        .unwrap();
 
                     let stronghold = SecretManager::Stronghold(secret_manager);
 
@@ -190,11 +194,12 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                         .with_client_options(client_options)
                         .with_coin_type(SHIMMER_COIN_TYPE)
                         .with_storage_path(&storage_path)
-                        .finish().await.unwrap();
+                        .finish()
+                        .await
+                        .unwrap();
 
-                    let account = match wallet
-                        .get_account("User").await {
-                        Ok(account) => {account}
+                    let account = match wallet.get_account("User").await {
+                        Ok(account) => account,
                         Err(err) => {
                             error!("Couldn't get stronghold account: {}", err);
                             panic!("Couldn't get stronghold account: {}", err);
@@ -203,16 +208,23 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
 
                     let balance = account.sync(None).await.unwrap();
 
-                    info!("[Total: {} : Available: {}]",balance.base_coin().total(),balance.base_coin().available());
-                    info!("[NFTS Count: {}]",balance.nfts().len());
-                    info!("[Req. storage deposit (basic): {}]",balance.required_storage_deposit().basic());
+                    info!(
+                        "[Total: {} : Available: {}]",
+                        balance.base_coin().total(),
+                        balance.base_coin().available()
+                    );
+                    info!("[NFTS Count: {}]", balance.nfts().len());
+                    info!(
+                        "[Req. storage deposit (basic): {}]",
+                        balance.required_storage_deposit().basic()
+                    );
 
                     account
                 })
         }
         Err(err) => {
             debug!("{}", &err);
-            warn!("{}",err);
+            warn!("{}", err);
             info!("Stronghold file not found -> creating");
 
             tokio::runtime::Builder::new_current_thread()
@@ -225,7 +237,8 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                     // Setup Stronghold secret_manager
                     let secret_manager = StrongholdSecretManager::builder()
                         .password(settings.iota_settings.password.to_string())
-                        .build(&wallet_path).unwrap();
+                        .build(&wallet_path)
+                        .unwrap();
 
                     // Only required the first time, can also be generated with `manager.generate_mnemonic()?`
                     let wallet = Wallet::builder()
@@ -233,7 +246,9 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                         .with_client_options(client_options)
                         .with_coin_type(SHIMMER_COIN_TYPE)
                         .with_storage_path(storage_path.as_str())
-                        .finish().await.unwrap();
+                        .finish()
+                        .await
+                        .unwrap();
 
                     // The mnemonic only needs to be stored the first time
                     let mnemonic = wallet.generate_mnemonic().unwrap();
@@ -244,7 +259,8 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
                         .create_account()
                         .with_alias("User".to_string())
                         .finish()
-                        .await.unwrap()
+                        .await
+                        .unwrap()
                 })
         }
     };
@@ -255,7 +271,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .unwrap()
         .block_on(async {
             match account.sync(None).await {
-                Ok(balance) => {balance}
+                Ok(balance) => balance,
                 Err(err) => {
                     error!("Couldn't get balance: {}", err);
                     panic!("Couldn't get balance: {}", err);
@@ -271,7 +287,7 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .block_on(async {
             let address = account.addresses().await.unwrap()[0].address().to_string();
             debug!("{}", &address);
-            info!("Address: {}",&address);
+            info!("Address: {}", &address);
             address
         });
 
@@ -279,19 +295,18 @@ pub fn initialize(tangle_bus_reader: BusReader<JsonValue>, settings: Arc<Setting
         .enable_all()
         .build()
         .expect("Failed creating addresses")
-        .block_on(async {
-            account.client().get_bech32_hrp().await.unwrap().to_string()
-        });
+        .block_on(async { account.client().get_bech32_hrp().await.unwrap().to_string() });
 
     assert_eq!(&bech32_hrp, "edcas");
 
-    info!("Bech32: {}",&bech32_hrp);
+    info!("Bech32: {}", &bech32_hrp);
     info!("Done loading wallet");
 
     TangleInterpreter {
         stronghold: StrongholdSecretManager::builder()
             .password(settings.iota_settings.password.to_string())
-            .build(&wallet_path).unwrap(),
+            .build(&wallet_path)
+            .unwrap(),
         bus: tangle_bus_reader,
         settings,
         account,
