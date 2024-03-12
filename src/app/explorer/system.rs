@@ -9,7 +9,7 @@ use crate::app::settings::Settings;
 
 pub struct System {
     pub name: String,
-    pub address: String,
+    pub address : String,
     pub allegiance: String,
     pub economy_localised: String,
     pub second_economy_localised: String,
@@ -58,66 +58,35 @@ impl System {
                             ui.label(&signal.type_localised);
                         }
 
-                        let id = body_signal
-                            .body_name
-                            .clone()
-                            .add(&signal.r#type.to_string().clone());
+                        let id = body_signal.body_name.clone().add(&signal.r#type.to_string().clone());
 
-                        egui::Grid::new(id).num_columns(2).striped(true).show(
-                            ui,
-                            |ui| match signal.r#type.as_str() {
-                                "$SAA_SignalType_Biological;" => {
-                                    ui.label(&signal.count.to_string());
-                                    ui.label(
-                                        self.settings
-                                            .icons
-                                            .get("bio_signal")
-                                            .unwrap()
-                                            .get_richtext(),
-                                    );
+                        egui::Grid::new(id)
+                            .num_columns(2)
+                            .striped(true)
+                            .show(ui, |ui| {
+                                match signal.r#type.as_str() {
+                                    "$SAA_SignalType_Biological;" => {
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("bio_signal").unwrap().get_richtext());
+                                    }
+                                    "$SAA_SignalType_Geological;" => {
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("geo_signal").unwrap().get_richtext());
+                                    }
+                                    "$SAA_SignalType_Xenological;" => {
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("xeno_signal").unwrap().get_richtext());
+                                    }
+                                    "$SAA_SignalType_Human;" => {
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("human_signal").unwrap().get_richtext());
+                                    }
+                                    _ => {
+                                        ui.label(&signal.count.to_string());
+                                        ui.label(self.settings.icons.get("unknown_signal").unwrap().get_richtext());
+                                    }
                                 }
-                                "$SAA_SignalType_Geological;" => {
-                                    ui.label(&signal.count.to_string());
-                                    ui.label(
-                                        self.settings
-                                            .icons
-                                            .get("geo_signal")
-                                            .unwrap()
-                                            .get_richtext(),
-                                    );
-                                }
-                                "$SAA_SignalType_Xenological;" => {
-                                    ui.label(&signal.count.to_string());
-                                    ui.label(
-                                        self.settings
-                                            .icons
-                                            .get("xeno_signal")
-                                            .unwrap()
-                                            .get_richtext(),
-                                    );
-                                }
-                                "$SAA_SignalType_Human;" => {
-                                    ui.label(&signal.count.to_string());
-                                    ui.label(
-                                        self.settings
-                                            .icons
-                                            .get("human_signal")
-                                            .unwrap()
-                                            .get_richtext(),
-                                    );
-                                }
-                                _ => {
-                                    ui.label(&signal.count.to_string());
-                                    ui.label(
-                                        self.settings
-                                            .icons
-                                            .get("unknown_signal")
-                                            .unwrap()
-                                            .get_richtext(),
-                                    );
-                                }
-                            },
-                        );
+                            });
                         ui.end_row();
                     }
                 }
@@ -173,22 +142,10 @@ impl System {
                 ui.end_row();
             });
 
+
         if !self.body_count.eq("N/A") {
-            ui.add(
-                egui::ProgressBar::new(
-                    (&self.body_list.len().to_f64()
-                        / (&self.body_count.parse::<f64>().unwrap()
-                            + &self.non_body_count.parse::<f64>().unwrap()))
-                        as f32,
-                )
-                .text(
-                    self.body_list.len().to_string().add("/").add(
-                        (&self.body_count.parse::<f64>().unwrap()
-                            + &self.non_body_count.parse::<f64>().unwrap())
-                            .to_string()
-                            .as_str(),
-                    ),
-                ),
+            ui.add(egui::ProgressBar::new((&self.body_list.len().to_f64() / (&self.body_count.parse::<f64>().unwrap() + &self.non_body_count.parse::<f64>().unwrap())) as f32)
+                .text(self.body_list.len().to_string().add("/").add((&self.body_count.parse::<f64>().unwrap() + &self.non_body_count.parse::<f64>().unwrap()).to_string().as_str()))
             );
         }
         ui.end_row();
@@ -200,6 +157,7 @@ impl System {
                 self.draw_system_signal_list(ui);
             });
     }
+
 
     fn draw_system_signal_list(&self, ui: &mut egui::Ui) {
         egui::Grid::new("system_signal_grid")
@@ -223,8 +181,9 @@ impl System {
         let id = body.get_id();
         self.body_list.push(body);
 
-        self.body_list
-            .sort_by(|body_a, body_b| body_a.get_id().cmp(&body_b.get_id()));
+        self.body_list.sort_by(|body_a, body_b| {
+            body_a.get_id().cmp(&body_b.get_id())
+        });
 
         for i in 0..self.body_list.len() {
             if id == self.body_list.get(i).unwrap().get_id() {
@@ -234,6 +193,7 @@ impl System {
         0
     }
 }
+
 
 #[derive(Clone)]
 pub struct SystemSignal {

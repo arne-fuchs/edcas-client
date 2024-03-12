@@ -1,15 +1,15 @@
+use std::{env, fs};
 use std::default::Default;
 use std::fs::File;
 use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::str::FromStr;
-use std::{env, fs};
 
+use eframe::{App, egui, Frame};
+use eframe::egui::{Color32, Context, RichText, vec2, Window};
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
-use eframe::egui::{vec2, Color32, Context, RichText, Window};
 use eframe::epaint::ahash::HashMap;
-use eframe::{egui, App, Frame};
 #[cfg(feature = "iota")]
 use iota_sdk::client::Client;
 use log::{error, info, warn};
@@ -63,7 +63,7 @@ impl FromStr for ActionAtShutdownSignal {
             "Exit" => Ok(Exit),
             "nothing" => Ok(Nothing),
             "continue" => Ok(Continue),
-            _ => Err("Failed to parse ActionShutdownSignal".to_string()),
+            _ => Err("Failed to parse ActionShutdownSignal".to_string())
         }
     }
 }
@@ -73,7 +73,7 @@ impl ToString for ActionAtShutdownSignal {
         match self {
             Exit => "Exit".to_string(),
             Nothing => "nothing".to_string(),
-            Continue => "continue".to_string(),
+            Continue => "continue".to_string()
         }
     }
 }
@@ -128,110 +128,84 @@ impl Default for Settings {
     fn default() -> Self {
         let mut settings_path = "settings.json".to_string();
         let mut settings_file = match env::var("HOME") {
-            Ok(home) => match File::open(format!("{}/.config/edcas-client/settings.json", home)) {
-                Ok(file) => {
-                    settings_path = format!("{}/.config/edcas-client/settings.json", home);
-                    file
-                }
-                Err(err) => {
-                    warn!("{}", err);
-                    info!("Couldn't find config file in {} -> trying to create file structure and copy to desired config folder",format!("{}/.config/edcas-client/settings.json",home));
-                    match fs::create_dir_all(format!("{}/.config/edcas-client", home)) {
-                        Ok(_) => {
-                            info!("Created $HOME/.config/edcas-client/");
-                            info!("Copying from /etc/edcas-client/settings-example.json to $HOME/.config/edcas-client/settings.json");
-                            match fs::copy(
-                                "/etc/edcas-client/settings-example.json",
-                                format!("{}/.config/edcas-client/settings.json", home),
-                            ) {
-                                Ok(_) => {
-                                    info!(
-                                        "Copied /etc/edcas-client/settings-example.json to {}",
-                                        format!("{}/.config/edcas-client/settings.json", home)
-                                    );
+            Ok(home) => {
+                match File::open(format!("{}/.config/edcas-client/settings.json",home)) {
+                    Ok(file) => {
+                        settings_path = format!("{}/.config/edcas-client/settings.json",home);
+                        file
+                    }
+                    Err(err) => {
+                        warn!("{}",err);
+                        info!("Couldn't find config file in {} -> trying to create file structure and copy to desired config folder",format!("{}/.config/edcas-client/settings.json",home));
+                        match fs::create_dir_all(format!("{}/.config/edcas-client",home)) {
+                            Ok(_) => {
+                                info!("Created $HOME/.config/edcas-client/");
+                                info!("Copying from /etc/edcas-client/settings-example.json to $HOME/.config/edcas-client/settings.json");
+                                match fs::copy("/etc/edcas-client/settings-example.json", format!("{}/.config/edcas-client/settings.json",home)) {
+                                    Ok(_) => {
+                                        info!("Copied /etc/edcas-client/settings-example.json to {}",format!("{}/.config/edcas-client/settings.json",home));
+                                    }
+                                    Err(err) => {
+                                        info!("Failed copying from /etc/edcas-client/settings-example.json\n Trying to copy from settings-example.json to $HOME/.config/edcas-client/settings.json: {}",err);
+                                        fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
+                                    }
                                 }
-                                Err(err) => {
-                                    info!("Failed copying from /etc/edcas-client/settings-example.json\n Trying to copy from settings-example.json to $HOME/.config/edcas-client/settings.json: {}",err);
-                                    fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
+                                #[cfg(unix)]
+                                {
+                                    info!("Setting permissions: {:?}",fs::set_permissions(format!("{}/.config/edcas-client/settings.json",home),fs::Permissions::from_mode(0o644)));
                                 }
-                            }
-                            #[cfg(unix)]
-                            {
-                                info!(
-                                    "Setting permissions: {:?}",
-                                    fs::set_permissions(
-                                        format!("{}/.config/edcas-client/settings.json", home),
-                                        fs::Permissions::from_mode(0o644)
-                                    )
-                                );
-                            }
 
-                            info!("Accessing settings file at $HOME/.config/edcas-client/settings.json");
-                            settings_path = format!("{}/.config/edcas-client/settings.json", home);
-                            File::open(format!("{}/.config/edcas-client/settings.json", home))
-                                .expect(
-                                    "Couldn't open settings file in $HOME/.config/edcas-client/",
-                                )
-                        }
-                        Err(err) => {
-                            warn!("{}", err);
-                            info!("Couldn't create directories in $HOME/.config/edcas-client/");
-                            match File::open("settings.json") {
-                                Ok(file) => {
-                                    info!("Accessing settings file at settings.json");
-                                    file
-                                }
-                                Err(err) => {
-                                    warn!("{}", err);
-                                    info!("Copying from settings-example.json to settings.json");
-                                    match fs::copy("settings-example.json", "settings.json") {
-                                        Ok(_) => {}
-                                        Err(err) => {
-                                            error!("Error copying settings file: {}", err);
-                                            panic!("Error copying settings file: {}", err);
+                                info!("Accessing settings file at $HOME/.config/edcas-client/settings.json");
+                                settings_path = format!("{}/.config/edcas-client/settings.json",home);
+                                File::open(format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't open settings file in $HOME/.config/edcas-client/")
+                            }
+                            Err(err) => {
+                                warn!("{}",err);
+                                info!("Couldn't create directories in $HOME/.config/edcas-client/");
+                                match File::open("settings.json"){
+                                    Ok(file) => {
+                                        info!("Accessing settings file at settings.json");
+                                        file
+                                    }
+                                    Err(err) => {
+                                        warn!("{}",err);
+                                        info!("Copying from settings-example.json to settings.json");
+                                        match fs::copy("settings-example.json", "settings.json") {
+                                            Ok(_) => {}
+                                            Err(err) => {
+                                                error!("Error copying settings file: {}", err);
+                                                panic!("Error copying settings file: {}", err);
+                                            }
                                         }
+                                        #[cfg(unix)]
+                                        {
+                                            info!("Setting permissions: {:?}",fs::set_permissions("settings.json",fs::Permissions::from_mode(0o644)));
+                                        }
+                                        #[cfg(windows)]
+                                        {
+                                            fs::metadata("settings.json").unwrap().permissions().set_readonly(false);
+                                        }
+                                        info!("Accessing settings file at settings.json");
+                                        File::open("settings.json").unwrap()
                                     }
-                                    #[cfg(unix)]
-                                    {
-                                        info!(
-                                            "Setting permissions: {:?}",
-                                            fs::set_permissions(
-                                                "settings.json",
-                                                fs::Permissions::from_mode(0o644)
-                                            )
-                                        );
-                                    }
-                                    #[cfg(windows)]
-                                    {
-                                        fs::metadata("settings.json")
-                                            .unwrap()
-                                            .permissions()
-                                            .set_readonly(false);
-                                    }
-                                    info!("Accessing settings file at settings.json");
-                                    File::open("settings.json").unwrap()
                                 }
                             }
                         }
+
                     }
                 }
-            },
+            }
             Err(err) => {
-                warn!("{}", err);
-                match File::open("settings.json") {
+                warn!("{}",err);
+                match File::open("settings.json"){
                     Ok(file) => {
                         info!("Accessing settings file at settings.json");
                         file
                     }
                     Err(err) => {
-                        warn!("{}", err);
-                        info!(
-                            "Copying from /etc/edcas-client/settings-example.json to settings.json"
-                        );
-                        fs::copy("/etc/edcas-client/settings-example.json", "settings.json")
-                            .unwrap_or(fs::copy("settings-example.json", "settings.json").expect(
-                                "Couldn't copy settings file to $HOME/.config/edcas-client/",
-                            ));
+                        warn!("{}",err);
+                        info!("Copying from /etc/edcas-client/settings-example.json to settings.json");
+                        fs::copy("/etc/edcas-client/settings-example.json", "settings.json").unwrap_or(fs::copy("settings-example.json", "settings.json").expect("Couldn't copy settings file to $HOME/.config/edcas-client/"));
                         info!("Accessing settings file at settings.json");
                         File::open("settings.json").unwrap()
                     }
@@ -274,18 +248,14 @@ impl Default for Settings {
         if !graphics_path.exists() {
             if cfg!(target_os = "windows") {
                 let mut userprofile = env::var("USERPROFILE").unwrap_or("".to_string());
-                userprofile.push_str(
-                    "\\AppData\\Local\\Frontier Developments\\Elite Dangerous\\Options\\Graphics",
-                );
+                userprofile.push_str("\\AppData\\Local\\Frontier Developments\\Elite Dangerous\\Options\\Graphics");
                 graphics_directory = userprofile;
-                graphics_override_file =
-                    format!("{}\\GraphicsConfigurationOverride.xml", graphics_directory);
+                graphics_override_file = format!("{}\\GraphicsConfigurationOverride.xml", graphics_directory);
             } else if cfg!(target_os = "linux") {
                 let mut home = env::var("HOME").unwrap_or("~".to_string());
                 home.push_str("/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics");
                 graphics_directory = home;
-                graphics_override_file =
-                    format!("{}/GraphicsConfigurationOverride.xml", graphics_directory);
+                graphics_override_file = format!("{}/GraphicsConfigurationOverride.xml", graphics_directory);
             }
             if !Path::new(&graphics_directory).exists() {
                 graphics_directory = String::from("");
@@ -300,10 +270,7 @@ impl Default for Settings {
         #[cfg(feature = "iota")]
         let some_client = {
             if json["iota"]["allow-share-data"].as_bool().unwrap_or(false) {
-                let mut node_url = json["iota"]["base-url"]
-                    .as_str()
-                    .unwrap_or("https://tangle.paesserver.de")
-                    .to_string();
+                let mut node_url = json["iota"]["base-url"].as_str().unwrap_or("https://tangle.paesserver.de").to_string();
                 node_url.push(':');
                 node_url.push_str(json["iota"]["port"].as_str().unwrap_or("443"));
                 tokio::runtime::Builder::new_current_thread()
@@ -311,22 +278,16 @@ impl Default for Settings {
                     .build()
                     .unwrap()
                     .block_on(async {
-                        Some(
-                            Client::builder()
-                                .with_node(node_url.as_str())
-                                .unwrap()
-                                .with_local_pow(
-                                    json["iota"]["local-pow"].as_bool().unwrap_or(false),
-                                )
-                                .finish()
-                                .await
-                                .unwrap(),
-                        )
+                        Some(Client::builder()
+                            .with_node(node_url.as_str()).unwrap()
+                            .with_local_pow(json["iota"]["local-pow"].as_bool().unwrap_or(false))
+                            .finish().await.unwrap())
                     })
-            } else {
+            }else {
                 None
             }
         };
+
 
         //---------------------------
         // Appearance
@@ -335,10 +296,7 @@ impl Default for Settings {
         let font_size = json["appearance"]["font-size"].as_f32().unwrap_or(24.0);
         let mut _font_id = egui::FontId::default();
 
-        match json["appearance"]["font-family"]
-            .as_str()
-            .unwrap_or("Proportional")
-        {
+        match json["appearance"]["font-family"].as_str().unwrap_or("Proportional") {
             "Monospace" => {
                 _font_id = egui::FontId::monospace(font_size);
             }
@@ -358,11 +316,7 @@ impl Default for Settings {
                 Icon {
                     name: icon_json["name"].to_string(),
                     char: icon_json["char"].as_str().unwrap_or("⁉").to_string(),
-                    color: Color32::from_rgb(
-                        icon_json["r"].as_u8().unwrap_or(255),
-                        icon_json["g"].as_u8().unwrap_or(255),
-                        icon_json["b"].as_u8().unwrap_or(255),
-                    ),
+                    color: Color32::from_rgb(icon_json["r"].as_u8().unwrap_or(255), icon_json["g"].as_u8().unwrap_or(255), icon_json["b"].as_u8().unwrap_or(255)),
                     enabled: icon_json["enabled"].as_bool().unwrap_or(true),
                 },
             );
@@ -379,11 +333,7 @@ impl Default for Settings {
                 Icon {
                     name: stars_json["class"].to_string(),
                     char: stars_json["char"].as_str().unwrap_or("⁉").to_string(),
-                    color: Color32::from_rgb(
-                        stars_json["r"].as_u8().unwrap_or(255),
-                        stars_json["g"].as_u8().unwrap_or(255),
-                        stars_json["b"].as_u8().unwrap_or(255),
-                    ),
+                    color: Color32::from_rgb(stars_json["r"].as_u8().unwrap_or(255), stars_json["g"].as_u8().unwrap_or(255), stars_json["b"].as_u8().unwrap_or(255)),
                     enabled: stars_json["enabled"].as_bool().unwrap_or(true),
                 },
             );
@@ -400,65 +350,42 @@ impl Default for Settings {
                 Icon {
                     name: stars_json["class"].to_string(),
                     char: stars_json["char"].as_str().unwrap_or("⁉").to_string(),
-                    color: Color32::from_rgb(
-                        stars_json["r"].as_u8().unwrap_or(255),
-                        stars_json["g"].as_u8().unwrap_or(255),
-                        stars_json["b"].as_u8().unwrap_or(255),
-                    ),
+                    color: Color32::from_rgb(stars_json["r"].as_u8().unwrap_or(255), stars_json["g"].as_u8().unwrap_or(255), stars_json["b"].as_u8().unwrap_or(255)),
                     enabled: stars_json["enabled"].as_bool().unwrap_or(true),
                 },
             );
         }
 
+
         Self {
             appearance_settings: AppearanceSettings {
                 font_size: json["appearance"]["font-size"].as_f32().unwrap_or(24.0),
-                font_style: json["appearance"]["font_style"]
-                    .as_str()
-                    .unwrap_or("Proportional")
-                    .to_string(),
+                font_style: json["appearance"]["font_style"].as_str().unwrap_or("Proportional").to_string(),
                 font_id: _font_id,
                 applied: false,
             },
             journal_reader_settings: JournalReaderSettings {
                 journal_directory,
-                action_at_shutdown_signal: ActionAtShutdownSignal::from_str(
-                    json["journal-reader"]["action-at-shutdown-signal"]
-                        .as_str()
-                        .unwrap_or("Nothing"),
-                )
-                .unwrap_or(Nothing),
+                action_at_shutdown_signal: ActionAtShutdownSignal::from_str(json["journal-reader"]["action-at-shutdown-signal"].as_str().unwrap_or("Nothing")).unwrap_or(Nothing),
             },
             explorer_settings: ExplorerSettings {
-                include_system_name: json["explorer"]["include_system_name"]
-                    .as_bool()
-                    .unwrap_or(true),
+                include_system_name: json["explorer"]["include_system_name"].as_bool().unwrap_or(true),
             },
             iota_settings: IotaSettings {
                 #[cfg(feature = "iota")]
                 node: some_client,
-                base_url: json["iota"]["base-url"]
-                    .as_str()
-                    .unwrap_or("https://tangle.paesserver.de")
-                    .to_string(),
+                base_url: json["iota"]["base-url"].as_str().unwrap_or("https://tangle.paesserver.de").to_string(),
                 port: json["iota"]["port"].as_u64().unwrap_or(443),
                 n_timeout: json["iota"]["timeout"].as_u64().unwrap_or(5),
                 n_attempts: json["iota"]["attempts"].as_u64().unwrap_or(4),
-                faucet_url: json["iota"]["faucet-url"]
-                    .as_str()
-                    .unwrap_or("https://faucet.paesserver.de")
-                    .to_string(),
+                faucet_url: json["iota"]["faucet-url"].as_str().unwrap_or("https://faucet.paesserver.de").to_string(),
                 local_pow: json["iota"]["local-pow"].as_bool().unwrap_or(false),
-                password: json["iota"]["password"]
-                    .as_str()
-                    .unwrap_or("CoUBZ9W6eRVpTKEYrgj3")
-                    .to_string(),
+                password: json["iota"]["password"].as_str().unwrap_or("CoUBZ9W6eRVpTKEYrgj3").to_string(),
                 allow_share_data: json["iota"]["allow-share-data"].as_bool().unwrap_or(false),
             },
             graphic_editor_settings: GraphicEditorSettings {
                 graphics_directory: graphics_directory.clone(),
-                graphic_override_content: fs::read_to_string(graphics_override_file)
-                    .unwrap_or_default(),
+                graphic_override_content: fs::read_to_string(graphics_override_file).unwrap_or_default(),
                 show_editor: false,
             },
             icons,
@@ -471,7 +398,9 @@ impl Default for Settings {
 
 impl App for Settings {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
-        let Self { .. } = self;
+        let Self {
+            ..
+        } = self;
 
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
@@ -766,103 +695,90 @@ impl App for Settings {
 
 impl Settings {
     pub fn save_settings_to_file(&mut self) {
-        let icon_array: serde_json::Value = self
-            .icons
+        let icon_array: serde_json::Value = self.icons
             .iter()
-            .map(|(_, icon)| {
-                json!(
-                    {
-                        "name": icon.name,
-                        "char": icon.char,
-                        "r": icon.color.r(),
-                        "g": icon.color.g(),
-                        "b": icon.color.b(),
-                        "enabled": icon.enabled
-                    }
-                )
-            })
-            .collect();
-        let star_array: serde_json::Value = self
-            .stars
+            .map(|(_, icon)| json!(
+                            {
+                                "name": icon.name,
+                                "char": icon.char,
+                                "r": icon.color.r(),
+                                "g": icon.color.g(),
+                                "b": icon.color.b(),
+                                "enabled": icon.enabled
+                            }
+                        )).collect();
+        let star_array: serde_json::Value = self.stars
             .iter()
-            .map(|(_, star)| {
-                json!(
-                    {
-                        "class": star.name,
-                        "char": star.char,
-                        "r": star.color.r(),
-                        "g": star.color.g(),
-                        "b": star.color.b(),
-                        "enabled": star.enabled
-                    }
-                )
-            })
-            .collect();
-        let planet_array: serde_json::Value = self
-            .planets
+            .map(|(_, star)| json!(
+                            {
+                                "class": star.name,
+                                "char": star.char,
+                                "r": star.color.r(),
+                                "g": star.color.g(),
+                                "b": star.color.b(),
+                                "enabled": star.enabled
+                            }
+                        )).collect();
+        let planet_array: serde_json::Value = self.planets
             .iter()
-            .map(|(_, planet)| {
-                json!(
-                    {
-                        "class": planet.name,
-                        "char": planet.char,
-                        "r": planet.color.r(),
-                        "g": planet.color.g(),
-                        "b": planet.color.b(),
-                        "enabled": planet.enabled
-                    }
-                )
-            })
-            .collect();
+            .map(|(_, planet)| json!(
+                            {
+                                "class": planet.name,
+                                "char": planet.char,
+                                "r": planet.color.r(),
+                                "g": planet.color.g(),
+                                "b": planet.color.b(),
+                                "enabled": planet.enabled
+                            }
+                        )).collect();
 
         let json = json!(
-            {
-                "appearance": {
-                    "font-size": self.appearance_settings.font_size,
-                    "font-family": self.appearance_settings.font_id.family.to_string(),
-                },
-                "journal-reader": {
-                    "directory": self.journal_reader_settings.journal_directory,
-                    "action-at-shutdown-signal": self.journal_reader_settings.action_at_shutdown_signal.to_string()
-                },
-                "explorer": {
-                    "include_system_name": self.explorer_settings.include_system_name
-                },
-                "iota": {
-                    "base-url": self.iota_settings.base_url,
-                    "port": self.iota_settings.port,
-                    "timeout": self.iota_settings.n_timeout,
-                    "attempts": self.iota_settings.n_attempts,
-                    "local-pow": self.iota_settings.local_pow,
-                    "password": self.iota_settings.password,
-                    "allow-share-data": self.iota_settings.allow_share_data
-                },
-                "icons": icon_array,
-                "stars": star_array,
-                "planets": planet_array,
-                "graphics-editor": {
-                    "graphics-directory": self.graphic_editor_settings.graphics_directory
-                }
-            }
-        );
+                        {
+                            "appearance": {
+                                "font-size": self.appearance_settings.font_size,
+                                "font-family": self.appearance_settings.font_id.family.to_string(),
+                            },
+                            "journal-reader": {
+                                "directory": self.journal_reader_settings.journal_directory,
+                                "action-at-shutdown-signal": self.journal_reader_settings.action_at_shutdown_signal.to_string()
+                            },
+                            "explorer": {
+                                "include_system_name": self.explorer_settings.include_system_name
+                            },
+                            "iota": {
+                                "base-url": self.iota_settings.base_url,
+                                "port": self.iota_settings.port,
+                                "timeout": self.iota_settings.n_timeout,
+                                "attempts": self.iota_settings.n_attempts,
+                                "local-pow": self.iota_settings.local_pow,
+                                "password": self.iota_settings.password,
+                                "allow-share-data": self.iota_settings.allow_share_data
+                            },
+                            "icons": icon_array,
+                            "stars": star_array,
+                            "planets": planet_array,
+                            "graphics-editor": {
+                                "graphics-directory": self.graphic_editor_settings.graphics_directory
+                            }
+                        }
+                    );
         info!("Trying to write settings file to {}", &self.settings_path);
         match File::create(&self.settings_path) {
             Ok(mut settings_file) => {
-                match settings_file
-                    .write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes())
-                {
+                match settings_file.write_all(serde_json::to_string_pretty(&json).unwrap().as_bytes()) {
                     Ok(_) => {}
                     Err(err) => {
-                        error!("Failed to save settings: {}", err);
-                        panic!("Failed to save settings: {}", err);
+                        error!("Failed to save settings: {}",err);
+                        panic!("Failed to save settings: {}",err);
                     }
                 };
             }
             Err(err) => {
-                error!("Failed to create settings: {}", err);
-                panic!("Failed to create settings: {}", err);
+                error!("Failed to create settings: {}",err);
+                panic!("Failed to create settings: {}",err);
             }
         };
         info!("Done writing to settings file");
+
     }
 }

@@ -21,7 +21,7 @@ pub fn get_increase_texture_resolution_preset() -> String {
 		</High>
 	</Envmap>[2]
 </GraphicsConfig>
-",
+"
     )
 }
 
@@ -73,7 +73,7 @@ pub fn get_8gb_plus_preset() -> String {
 	</High>
   </Envmap>
 </GraphicsConfig>
-",
+"
     )
 }
 
@@ -98,7 +98,7 @@ pub fn get_increased_star_count_preset() -> String {
 		</High>
 	</GalaxyMap>
 </GraphicsConfig>
-",
+"
     )
 }
 
@@ -150,6 +150,6 @@ pub fn get_better_skybox_preset() -> String {
 		</Ultra>
 	</Environment>
 </GraphicsConfig>
-",
+"
     )
 }

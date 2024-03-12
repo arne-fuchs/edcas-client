@@ -75,72 +75,43 @@ impl BodyImplementation for Star {
         ui.end_row();
         for ring in &self.asteroid_rings {
             ui.label(&ring.ring_class);
-            ui.vertical(|ui| {
-                ui.label(format!("{}km", &ring.outer_rad));
-                ui.label(format!("{}km", &ring.inner_rad));
+            ui.vertical(|ui|{
+                ui.label(format!("{}km",&ring.outer_rad));
+                ui.label(format!("{}km",&ring.inner_rad));
             });
             ui.end_row();
         }
     }
 
-    fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
-        if self
-            .settings
-            .stars
-            .get(self.star_type.as_str())
-            .unwrap()
-            .enabled
-        {
-            ui.label(
-                self.settings
-                    .stars
-                    .get(self.star_type.as_str())
-                    .unwrap()
-                    .get_richtext()
-                    .size(self.radius.log(1.7) as f32),
-            );
+    fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize){
+        if self.settings.stars.get(self.star_type.as_str()).unwrap().enabled{
+            ui.label(self.settings.stars.get(self.star_type.as_str()).unwrap().get_richtext().size(self.radius.log(1.7) as f32));
         }
         let mut body_name = self.body_name.to_string();
-        if !self.settings.explorer_settings.include_system_name {
-            body_name.replace_range(0..self.star_system.len(), "");
+        if !self.settings.explorer_settings.include_system_name{
+            body_name.replace_range(0..self.star_system.len(),"");
         }
         if ui.selectable_label(false, &body_name).clicked() {
             *system_index = body_index;
         };
 
-        for ring in &self.asteroid_rings {
-            if self
-                .settings
-                .icons
-                .get(ring.ring_class.as_str())
-                .unwrap()
-                .enabled
-            {
+        for ring in &self.asteroid_rings{
+            if self.settings.icons.get(ring.ring_class.as_str()).unwrap().enabled{
                 ui.label("|");
-                ui.label(
-                    self.settings
-                        .icons
-                        .get(ring.ring_class.as_str())
-                        .unwrap()
-                        .get_richtext(),
-                );
+                ui.label(self.settings.icons.get(ring.ring_class.as_str()).unwrap().get_richtext());
             }
         }
 
-        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled {
+        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled{
             ui.label("|");
-            ui.label(
-                self.settings
-                    .icons
-                    .get("discovered")
-                    .unwrap()
-                    .get_richtext(),
-            );
+            ui.label(self.settings.icons.get("discovered").unwrap().get_richtext());
         }
-        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled {
+        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled{
             ui.label("|");
             ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
         }
+
+
     }
 
     fn get_name(&self) -> &str {

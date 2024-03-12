@@ -31,40 +31,31 @@ impl BodyImplementation for BeltCluster {
         ui.label(&self.distance_from_arrival_ls.to_string());
     }
 
-    fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
+    fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize){
         if self.settings.icons.get("belt_cluster").unwrap().enabled {
-            ui.label(
-                self.settings
-                    .icons
-                    .get("belt_cluster")
-                    .unwrap()
-                    .get_richtext(),
-            );
+            ui.label(self.settings.icons.get("belt_cluster").unwrap().get_richtext());
         }
         let mut body_name = self.body_name.to_string();
-        if !self.settings.explorer_settings.include_system_name {
+        if !self.settings.explorer_settings.include_system_name{
             let system_name = self.star_system.clone();
-            body_name.replace_range(0..system_name.len(), "");
+            body_name.replace_range(0..system_name.len(),"");
         }
 
         if ui.selectable_label(false, &body_name).clicked() {
             *system_index = body_index;
         };
 
-        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled {
+        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled{
             ui.label("|");
-            ui.label(
-                self.settings
-                    .icons
-                    .get("discovered")
-                    .unwrap()
-                    .get_richtext(),
-            );
+            ui.label(self.settings.icons.get("discovered").unwrap().get_richtext());
         }
-        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled {
+        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled{
             ui.label("|");
             ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
         }
+
+
+
     }
 
     fn get_name(&self) -> &str {
