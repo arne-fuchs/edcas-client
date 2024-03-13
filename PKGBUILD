@@ -1,7 +1,7 @@
 #Maintainer: serf dot jp at gmail dot com
 pkgname="edcas-client-bin"
 _pkgname="edcas-client"
-pkgver="0.2.2"
+pkgver="0.3.0"
 pkgrel="1"
 pkgdesc="Elite Dangerous Commander Assistant System. Shows system information compact for explorer."
 url="https://github.com/arne-fuchs/edcas-client"
