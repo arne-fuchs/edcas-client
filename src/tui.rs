@@ -1,12 +1,11 @@
 use core::f64;
-use std::{error::Error, io, net::ToSocketAddrs};
-
 use crossterm::{
     event::{self, Event::Key, KeyCode},
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, style::Stylize, widgets::*};
+use std::{error::Error, io};
 
 use crate::app::{materials::Material, mining::MiningMaterial, EliteRustClient};
 

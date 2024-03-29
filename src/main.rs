@@ -9,6 +9,7 @@ use std::sync::Arc;
 use crate::app::EliteRustClient;
 
 mod app;
+#[cfg(feature = "tui")]
 mod tui;
 
 fn main() {
@@ -55,6 +56,7 @@ fn main() {
                 println!("--width <f32>\tSets the width for the edcas gui");
                 return;
             }
+            #[cfg(feature = "tui")]
             "--tui" => {
                 let client = EliteRustClient::default();
                 tui::draw_tui(client).unwrap();

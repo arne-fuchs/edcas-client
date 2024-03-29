@@ -10,10 +10,8 @@ use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::egui::{vec2, Color32, Context, RichText, Window};
 use eframe::epaint::ahash::HashMap;
 use eframe::{egui, App, Frame};
-use ethers::abi::AbiEncode;
 use ethers::prelude::{LocalWallet, Signer};
 use ethers::utils::hex;
-use ethers::utils::hex::ToHexExt;
 use log::{error, info, warn};
 use serde_json::json;
 
