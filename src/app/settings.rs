@@ -10,8 +10,10 @@ use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::egui::{vec2, Color32, Context, RichText, Window};
 use eframe::epaint::ahash::HashMap;
 use eframe::{egui, App, Frame};
-#[cfg(feature = "iota")]
-use iota_sdk::client::Client;
+use ethers::abi::AbiEncode;
+use ethers::prelude::{LocalWallet, Signer};
+use ethers::utils::hex;
+use ethers::utils::hex::ToHexExt;
 use log::{error, info, warn};
 use serde_json::json;
 
@@ -90,17 +92,13 @@ pub struct ExplorerSettings {
 }
 
 #[derive(Clone)]
-pub struct IotaSettings {
-    #[cfg(feature = "iota")]
-    pub node: Option<Client>,
-    pub base_url: String,
-    pub port: u64,
+pub struct EvmSettings {
+    pub url: String,
     pub n_timeout: u64,
     pub n_attempts: u64,
-    pub faucet_url: String,
-    pub local_pow: bool,
-    pub password: String,
     pub allow_share_data: bool,
+    pub private_key: String,
+    pub smart_contract_address: String,
 }
 
 #[derive(Clone)]
@@ -116,7 +114,7 @@ pub struct Settings {
     pub appearance_settings: AppearanceSettings,
     pub journal_reader_settings: JournalReaderSettings,
     pub explorer_settings: ExplorerSettings,
-    pub iota_settings: IotaSettings,
+    pub evm_settings: EvmSettings,
     pub graphic_editor_settings: GraphicEditorSettings,
     pub icons: HashMap<String, Icon>,
     pub stars: HashMap<String, Icon>,
@@ -152,7 +150,7 @@ impl Default for Settings {
                                 }
                                 Err(err) => {
                                     info!("Failed copying from /etc/edcas-client/settings-example.json\n Trying to copy from settings-example.json to $HOME/.config/edcas-client/settings.json: {}",err);
-                                    fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json",home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
+                                    fs::copy("settings-example.json", format!("{}/.config/edcas-client/settings.json", home)).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
                                 }
                             }
                             #[cfg(unix)]
@@ -294,39 +292,28 @@ impl Default for Settings {
         }
 
         //---------------------------
-        // IOTA
+        // EVM
         //---------------------------
 
-        #[cfg(feature = "iota")]
-        let some_client = {
-            if json["iota"]["allow-share-data"].as_bool().unwrap_or(false) {
-                let mut node_url = json["iota"]["base-url"]
-                    .as_str()
-                    .unwrap_or("https://tangle.paesserver.de")
-                    .to_string();
-                node_url.push(':');
-                node_url.push_str(json["iota"]["port"].as_str().unwrap_or("443"));
-                tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap()
-                    .block_on(async {
-                        Some(
-                            Client::builder()
-                                .with_node(node_url.as_str())
-                                .unwrap()
-                                .with_local_pow(
-                                    json["iota"]["local-pow"].as_bool().unwrap_or(false),
-                                )
-                                .finish()
-                                .await
-                                .unwrap(),
-                        )
-                    })
-            } else {
-                None
-            }
-        };
+        let mut private_key = json["evm"]["private-key"]
+            .as_str()
+            .unwrap_or("")
+            .to_string();
+        if private_key.is_empty() {
+            let mut buffer = [0u8; 32];
+
+            // Open a file to read random bytes from the OS
+            #[cfg(target_os = "linux")]
+            let mut file = File::open("/dev/urandom").unwrap();
+
+            #[cfg(target_os = "windows")]
+            let mut file = File::open("C:\\Windows\\System32\\advapi32.dll").unwrap();
+
+            // Read random bytes into the buffer
+            file.read_exact(&mut buffer).unwrap();
+
+            private_key = hex::encode(buffer);
+        }
 
         //---------------------------
         // Appearance
@@ -427,33 +414,23 @@ impl Default for Settings {
                         .as_str()
                         .unwrap_or("Nothing"),
                 )
-                .unwrap_or(Nothing),
+                    .unwrap_or(Nothing),
             },
             explorer_settings: ExplorerSettings {
                 include_system_name: json["explorer"]["include_system_name"]
                     .as_bool()
                     .unwrap_or(true),
             },
-            iota_settings: IotaSettings {
-                #[cfg(feature = "iota")]
-                node: some_client,
-                base_url: json["iota"]["base-url"]
+            evm_settings: EvmSettings {
+                url: json["evm"]["base-url"]
                     .as_str()
-                    .unwrap_or("https://tangle.paesserver.de")
+                    .unwrap_or("https://api.testnet.undertheocean.net/wasp/api/v1/chains/rms1prflcwju7wyzks0wzyyvejz6sqzf8gl7qwyen339e7zeaue9k99yv2exr04/evm")
                     .to_string(),
-                port: json["iota"]["port"].as_u64().unwrap_or(443),
-                n_timeout: json["iota"]["timeout"].as_u64().unwrap_or(5),
-                n_attempts: json["iota"]["attempts"].as_u64().unwrap_or(4),
-                faucet_url: json["iota"]["faucet-url"]
-                    .as_str()
-                    .unwrap_or("https://faucet.paesserver.de")
-                    .to_string(),
-                local_pow: json["iota"]["local-pow"].as_bool().unwrap_or(false),
-                password: json["iota"]["password"]
-                    .as_str()
-                    .unwrap_or("CoUBZ9W6eRVpTKEYrgj3")
-                    .to_string(),
-                allow_share_data: json["iota"]["allow-share-data"].as_bool().unwrap_or(false),
+                n_timeout: json["evm"]["timeout"].as_u64().unwrap_or(5),
+                n_attempts: json["evm"]["attempts"].as_u64().unwrap_or(4),
+                allow_share_data: json["evm"]["allow-share-data"].as_bool().unwrap_or(false),
+                private_key,
+                smart_contract_address: json["evm"]["smart-contract-address"].as_str().unwrap_or("0x0FBc37632e58F1730E2F1a4856EB8CD2F26b31f0").to_string(),
             },
             graphic_editor_settings: GraphicEditorSettings {
                 graphics_directory: graphics_directory.clone(),
@@ -530,7 +507,6 @@ impl App for Settings {
                             .min_col_width(300.0)
                             .striped(true)
                             .show(ui, |ui| {
-
                                 for icon in &mut self.icons {
                                     ui.horizontal(|ui| {
                                         ui.text_edit_singleline(&mut icon.1.char);
@@ -590,7 +566,6 @@ impl App for Settings {
                             });
                     });
                     ui.end_row();
-
                 });
                 ui.separator();
                 ui.heading("Graphics Override");
@@ -637,7 +612,7 @@ impl App for Settings {
                                             if ui.button("Load custom preset").clicked() {
                                                 self.graphic_editor_settings.graphic_override_content = match env::var("HOME") {
                                                     Ok(home) => {
-                                                        match  fs::read_to_string(format!("{}/.local/share/edcas-client/custom_graphics_override.xml",home)) {
+                                                        match fs::read_to_string(format!("{}/.local/share/edcas-client/custom_graphics_override.xml", home)) {
                                                             Ok(file) => {
                                                                 file
                                                             }
@@ -654,7 +629,7 @@ impl App for Settings {
                                             if ui.button("Save as custom preset").clicked() {
                                                 match env::var("HOME") {
                                                     Ok(home) => {
-                                                        match  fs::write(format!("{}/.local/share/edcas-client/custom_graphics_override.xml",home),self.graphic_editor_settings.graphic_override_content.clone()) {
+                                                        match fs::write(format!("{}/.local/share/edcas-client/custom_graphics_override.xml", home), self.graphic_editor_settings.graphic_override_content.clone()) {
                                                             Ok(_) => {}
                                                             Err(_) => {
                                                                 fs::write("custom_graphics_override.xml", self.graphic_editor_settings.graphic_override_content.clone()).unwrap();
@@ -689,7 +664,7 @@ impl App for Settings {
                                                     Ok(_) => {}
                                                     Err(err) => {
                                                         error!("Failed to save settings: {}",err);
-                                                        panic!("Failed to save settings: {}",err);
+                                                        panic!("Failed to save settings: {}", err);
                                                     }
                                                 }
                                             }
@@ -716,33 +691,44 @@ impl App for Settings {
                     If you do not want that, please leave this function disabled.\n\
                     Keep in mind, that your experience might decrease if you leave this disabled.");
                 };
-                #[cfg(feature = "iota")]{
-                    ui.heading("EDCAS Network").on_hover_ui(info_ui);
-                    egui::Grid::new("network_grid")
-                        .num_columns(2)
-                        .spacing([60.0, 5.0])
-                        .min_col_width(300.0)
-                        .striped(true)
-                        .show(ui, |ui| {
-                            ui.label("Allow to share journal log data:").on_hover_ui(info_ui);
-                            ui.checkbox(&mut self.iota_settings.allow_share_data, "");
-                            ui.end_row();
-                            ui.label("Node Url:");
-                            ui.text_edit_singleline(&mut self.iota_settings.base_url);
-                            ui.end_row();
-                            ui.label("Port:");
-                            ui.text_edit_singleline(&mut self.iota_settings.port.to_string());
-                            ui.end_row();
-                            ui.label("Faucet Url:");
-                            ui.text_edit_singleline(&mut self.iota_settings.faucet_url);
-                            ui.end_row();
-                            ui.label("Nft Adapter Timeout:");
-                            ui.add(egui::Slider::new(&mut self.iota_settings.n_timeout, 0..=20).suffix(" Seconds"));
-                            ui.end_row();
-                            ui.label("Nft Adapter Attempts:");
-                            ui.add(egui::Slider::new(&mut self.iota_settings.n_attempts, 0..=20).suffix(" Attempts"));
-                        });
-                }
+
+                ui.heading("EDCAS Network").on_hover_ui(info_ui);
+                egui::Grid::new("network_grid")
+                    .num_columns(2)
+                    .spacing([60.0, 5.0])
+                    .min_col_width(300.0)
+                    .striped(true)
+                    .show(ui, |ui| {
+                        ui.label("Allow to share journal log data:").on_hover_ui(info_ui);
+                        ui.checkbox(&mut self.evm_settings.allow_share_data, "");
+                        ui.end_row();
+                        ui.label("EVM RPC:");
+                        ui.text_edit_singleline(&mut self.evm_settings.url);
+                        ui.end_row();
+                        ui.label("Smart Contract Address:");
+                        ui.text_edit_singleline(&mut self.evm_settings.smart_contract_address);
+                        ui.end_row();
+                        ui.label("Private Key:");
+                        ui.add(egui::TextEdit::singleline(&mut self.evm_settings.private_key).password(true));
+                        ui.end_row();
+                        ui.label("Address:");
+                        let address = format!("{:?}", self.evm_settings.private_key.parse::<LocalWallet>().unwrap().address());
+                        if ui
+                            .button(format!("{} 🗐", &address))
+                            .clicked()
+                        {
+                            ui.output_mut(|o| {
+                                o.copied_text =
+                                    address
+                            });
+                        }
+                        ui.end_row();
+                        ui.label("EVM Adapter Timeout:");
+                        ui.add(egui::Slider::new(&mut self.evm_settings.n_timeout, 0..=20).suffix(" Seconds"));
+                        ui.end_row();
+                        ui.label("EVM Adapter Attempts:");
+                        ui.add(egui::Slider::new(&mut self.evm_settings.n_attempts, 0..=20).suffix(" Attempts"));
+                    });
             });
             ui.separator();
             ui.end_row();
@@ -828,14 +814,13 @@ impl Settings {
                 "explorer": {
                     "include_system_name": self.explorer_settings.include_system_name
                 },
-                "iota": {
-                    "base-url": self.iota_settings.base_url,
-                    "port": self.iota_settings.port,
-                    "timeout": self.iota_settings.n_timeout,
-                    "attempts": self.iota_settings.n_attempts,
-                    "local-pow": self.iota_settings.local_pow,
-                    "password": self.iota_settings.password,
-                    "allow-share-data": self.iota_settings.allow_share_data
+                "evm": {
+                    "base-url": self.evm_settings.url,
+                    "timeout": self.evm_settings.n_timeout,
+                    "attempts": self.evm_settings.n_attempts,
+                    "private-key": self.evm_settings.private_key,
+                    "smart-contract-address": self.evm_settings.smart_contract_address,
+                    "allow-share-data": self.evm_settings.allow_share_data
                 },
                 "icons": icon_array,
                 "stars": star_array,

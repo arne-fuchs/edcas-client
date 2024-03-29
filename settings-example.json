@@ -131,12 +131,12 @@
       "r": 175
     }
   ],
-  "iota": {
+  "evm": {
     "allow-share-data": false,
     "attempts": 4,
-    "base-url": "https://api.edcas.de",
-    "local-pow": false,
-    "password": "CoUBZ9W6eRVpTKEYrgj3",
+    "base-url": "https://api.testnet.undertheocean.net/wasp/api/v1/chains/rms1prflcwju7wyzks0wzyyvejz6sqzf8gl7qwyen339e7zeaue9k99yv2exr04/evm",
+    "private-key": "",
+    "smart-contract-address": "0x0FBc37632e58F1730E2F1a4856EB8CD2F26b31f0",
     "port": 443,
     "timeout": 5
   },

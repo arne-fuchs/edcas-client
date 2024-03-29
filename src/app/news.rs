@@ -90,9 +90,9 @@ impl News {
                 let texture: TextureHandle =
                     ui.ctx()
                         .load_texture("logo", self.logo.clone(), egui::TextureOptions::LINEAR);
-                let img_size = 256.0 * texture.size_vec2() / texture.size_vec2().y;
+                let image = egui::Image::new(&texture).max_width(512.0).rounding(10.0);
                 ui.vertical_centered(|ui| {
-                    ui.image(&texture, img_size);
+                    ui.add(image);
                     ui.heading("Galnet News");
                 });
 

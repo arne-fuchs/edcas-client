@@ -1,0 +1,1200 @@
+[
+    {
+      "inputs": [],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "systemAddress",
+          "type": "uint64"
+        }
+      ],
+      "name": "BodyRegistration",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "systemAddress",
+          "type": "uint64"
+        }
+      ],
+      "name": "StarRegistration",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "systemAddress",
+          "type": "uint64"
+        }
+      ],
+      "name": "SystemRegistration",
+      "type": "event"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "data",
+          "type": "bytes"
+        }
+      ],
+      "name": "getId",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "planetMap",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "bool",
+          "name": "discovered",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "mapped",
+          "type": "bool"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "atmosphere",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "class",
+              "type": "string"
+            },
+            {
+              "internalType": "bool",
+              "name": "landable",
+              "type": "bool"
+            },
+            {
+              "internalType": "string",
+              "name": "terraform_state",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "volcanism",
+              "type": "string"
+            },
+            {
+              "internalType": "bool",
+              "name": "tidal_lock",
+              "type": "bool"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "mass_em",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "surface_gravity",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "surface_pressure",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "ascending_node",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "eccentricity",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "mean_anomaly",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "orbital_inclination",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "orbital_period",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "periapsis",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "semi_major_axis",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct PlanetProperties",
+          "name": "planetProperties",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "radius",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "distance_from_arrival_ls",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "axial_tilt",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "rotation_period",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "surface_temperature",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct BodyProperties",
+          "name": "bodyProperties",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "bool",
+          "name": "discovered",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "mapped",
+          "type": "bool"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "atmosphere",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "class",
+              "type": "string"
+            },
+            {
+              "internalType": "bool",
+              "name": "landable",
+              "type": "bool"
+            },
+            {
+              "internalType": "string",
+              "name": "terraform_state",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "volcanism",
+              "type": "string"
+            },
+            {
+              "internalType": "bool",
+              "name": "tidal_lock",
+              "type": "bool"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "mass_em",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "surface_gravity",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "surface_pressure",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "ascending_node",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "eccentricity",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "mean_anomaly",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "orbital_inclination",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "orbital_period",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "periapsis",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "semi_major_axis",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct PlanetProperties",
+          "name": "planetProperties",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "radius",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "distance_from_arrival_ls",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "axial_tilt",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "rotation_period",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "surface_temperature",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct BodyProperties",
+          "name": "bodyProperties",
+          "type": "tuple"
+        }
+      ],
+      "name": "registerPlanet",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "bool",
+          "name": "discovered",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "mapped",
+          "type": "bool"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint8",
+              "name": "subclass",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint16",
+              "name": "age_my",
+              "type": "uint16"
+            },
+            {
+              "internalType": "string",
+              "name": "_type",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "luminosity",
+              "type": "string"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "stellar_mass",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "absolute_magnitude",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct StarProperties",
+          "name": "starProperties",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "radius",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "distance_from_arrival_ls",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "axial_tilt",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "rotation_period",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "surface_temperature",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct BodyProperties",
+          "name": "bodyProperties",
+          "type": "tuple"
+        }
+      ],
+      "name": "registerStar",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "allegiance",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "economy",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "second_economy",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "security",
+          "type": "string"
+        },
+        {
+          "internalType": "uint64",
+          "name": "population",
+          "type": "uint64"
+        }
+      ],
+      "name": "registerSystem",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "starMap",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "bool",
+          "name": "discovered",
+          "type": "bool"
+        },
+        {
+          "internalType": "bool",
+          "name": "mapped",
+          "type": "bool"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint8",
+              "name": "subclass",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint16",
+              "name": "age_my",
+              "type": "uint16"
+            },
+            {
+              "internalType": "string",
+              "name": "_type",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "luminosity",
+              "type": "string"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "stellar_mass",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "absolute_magnitude",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct StarProperties",
+          "name": "starProperties",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "radius",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "distance_from_arrival_ls",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "axial_tilt",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "rotation_period",
+              "type": "tuple"
+            },
+            {
+              "components": [
+                {
+                  "internalType": "int128",
+                  "name": "decimal",
+                  "type": "int128"
+                },
+                {
+                  "internalType": "uint8",
+                  "name": "floating_point",
+                  "type": "uint8"
+                }
+              ],
+              "internalType": "struct floating",
+              "name": "surface_temperature",
+              "type": "tuple"
+            }
+          ],
+          "internalType": "struct BodyProperties",
+          "name": "bodyProperties",
+          "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_address",
+          "type": "uint64"
+        }
+      ],
+      "name": "systemMap",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "allegiance",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "economy",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "second_economy",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "security",
+          "type": "string"
+        },
+        {
+          "internalType": "uint64",
+          "name": "population",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    }
+  ]

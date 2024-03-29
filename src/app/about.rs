@@ -40,8 +40,8 @@ impl About {
             let texture: TextureHandle =
                 ui.ctx()
                     .load_texture("logo", self.logo.clone(), egui::TextureOptions::LINEAR);
-            let img_size = 256.0 * texture.size_vec2() / texture.size_vec2().y;
-            ui.image(&texture, img_size);
+            let image = egui::Image::new(&texture).max_width(512.0).rounding(10.0);
+            ui.add(image);
             ui.horizontal(|ui| {
                 ui.label("Github:");
                 ui.hyperlink(&self.github_url);

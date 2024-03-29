@@ -20,15 +20,16 @@ use crate::egui::Context;
 
 mod about;
 mod cargo_reader;
+
+mod evm_interpreter;
 pub mod explorer;
-#[cfg(feature = "iota")]
+
 mod journal_interpreter;
 mod journal_reader;
 pub mod materials;
 pub mod mining;
 mod news;
 mod settings;
-mod tangle_interpreter;
 
 pub struct EliteRustClient {
     pub about: about::About,
@@ -45,7 +46,6 @@ pub struct EliteRustClient {
 
 impl EliteRustClient {
     pub fn update_values(&mut self) {
-        #[cfg(feature = "iota")]
         match self.journal_log_bus_reader.try_recv() {
             Ok(json) => {
                 self.timestamp = json["timestamp"].to_string();
@@ -93,16 +93,15 @@ impl Default for EliteRustClient {
         let settings_pointer_clone = settings_pointer.clone();
         info!(
             "Allow to share data over edcas: {}",
-            settings_pointer.iota_settings.allow_share_data
+            settings_pointer.evm_settings.allow_share_data
         );
-        #[cfg(feature = "iota")]
-        if settings_pointer.iota_settings.allow_share_data {
+        if settings_pointer.evm_settings.allow_share_data {
             info!("Starting Tangle Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
             let settings_pointer = settings_pointer_clone;
             thread::spawn(move || {
                 let mut tangle_interpreter =
-                    tangle_interpreter::initialize(tangle_journal_bus_reader, settings_pointer);
+                    evm_interpreter::initialize(tangle_journal_bus_reader, settings_pointer);
                 loop {
                     tangle_interpreter.run();
                 }
