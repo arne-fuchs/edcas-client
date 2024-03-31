@@ -567,10 +567,17 @@ fn tab_explorer(
             data_body_list.reverse();
 
             //TODO: parse json to Vec and use it here
+
             data_body_info = vec![client.explorer.systems[client.explorer.index].body_list
                 [client.explorer.systems[client.explorer.index].index]
                 .get_name()
                 .to_string()];
+
+            // neues data
+            let struct_body = structs::get_struct(
+                client.explorer.systems[client.explorer.index].body_list
+                    [client.explorer.systems[client.explorer.index].index],
+            );
 
             // Selection from body_list (cursor and scrolling)
             app.body_list_state
