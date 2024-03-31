@@ -1,8 +1,9 @@
-use std::env;
 use std::sync::Arc;
 use std::time::Duration;
+use std::{env, thread};
 
 use bus::BusReader;
+use chrono::DateTime;
 use ethers::core::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
 use ethers::utils::hex::hex;
@@ -39,7 +40,7 @@ impl EvmInterpreter {
                 info!("EVM event received: {}", event);
 
                 match event {
-                    "FSDJump" | "CarrierJump" => {
+                    "FSDJump" => {
                         //TODO Learn tokio
                         tokio::runtime::Builder::new_multi_thread()
                             .enable_all()
@@ -139,6 +140,179 @@ impl EvmInterpreter {
                                 }
                             });
                     }
+                    //Carrier
+                    "CarrierJumpRequest" => {
+                        //{
+                        //     "timestamp": "2020-04-20T09:30:58Z",
+                        //     "event": "CarrierJumpRequest",
+                        //     "CarrierID": 3700005632,
+                        //     "SystemName": "Paesui Xena",
+                        //     "Body": "Paesui Xena A",
+                        //     "SystemAddress": 7269634680241,
+                        //     "BodyID": 1,
+                        //     "DepartureTime":"2020-04-20T09:45:00Z"
+                        // }
+
+                        tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap()
+                            .block_on(async move {
+                                let contract = self.contract.clone();
+                                let function_call: FunctionCall<
+                                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                    (),
+                                > = contract.emit_carrier_jump(
+                                    json["CarrierID"].as_u64().unwrap(),
+                                    json["SystemName"].as_str().unwrap().to_string(),
+                                    json["Body"].as_str().unwrap().to_string(),
+                                    DateTime::parse_from_rfc3339(
+                                        json["DepartureTime"].as_str().unwrap(),
+                                    )
+                                    .unwrap()
+                                    .timestamp()
+                                    .into(),
+                                );
+                                //execute_send(function_call).await;
+                                execute_send_repeatable(function_call).await;
+                            });
+                    }
+                    "CarrierJumpCancelled" => {
+                        tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap()
+                            .block_on(async move {
+                                let contract = self.contract.clone();
+                                let function_call: FunctionCall<
+                                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                    (),
+                                > = contract
+                                    .cancel_carrier_jump(json["CarrierID"].as_u64().unwrap());
+                                //execute_send(function_call).await;
+                                execute_send_repeatable(function_call).await;
+                            });
+                    }
+                    "CarrierJump" => {
+                        //{ "timestamp":"2023-09-09T23:59:09Z", "event":"CarrierJump", "Docked":true, "StationName":"Q2K-BHB", "StationType":"FleetCarrier",
+                        // "MarketID":3704402432, "StationFaction":{ "Name":"FleetCarrier" }, "StationGovernment":"$government_Carrier;",
+                        // "StationGovernment_Localised":"Privateigentum", "StationServices":[ "dock", "autodock", "commodities", "contacts", "exploration", "outfitting", "crewlounge", "rearm", "refuel", "repair", "shipyard", "engineer", "flightcontroller", "stationoperations", "stationMenu", "carriermanagement", "carrierfuel", "livery", "voucherredemption", "socialspace", "bartender", "vistagenomics" ],
+                        // "StationEconomy":"$economy_Carrier;", "StationEconomy_Localised":"Privatunternehmen",
+                        // "StationEconomies":[ { "Name":"$economy_Carrier;", "Name_Localised":"Privatunternehmen", "Proportion":1.000000 } ], "Taxi":false, "Multicrew":false,
+                        // "StarSystem":"Plio Broae ML-D c2", "SystemAddress":637165713922, "StarPos":[2112.75000,719.12500,50162.93750], "SystemAllegiance":"",
+                        // "SystemEconomy":"$economy_None;", "SystemEconomy_Localised":"n/v", "SystemSecondEconomy":"$economy_None;", "SystemSecondEconomy_Localised":"n/v",
+                        // "SystemGovernment":"$government_None;", "SystemGovernment_Localised":"n/v", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;",
+                        // "SystemSecurity_Localised":"Anarchie", "Population":0, "Body":"Plio Broae ML-D c2", "BodyID":0, "BodyType":"Star" }
+                        process_jump(json.clone(), self.contract.clone());
+                    }
+                    "CarrierBuy" => {
+                        //{
+                        //     "timestamp": "2020-03-11T15:31:46Z",
+                        //     "event": "CarrierBuy",
+                        //     "CarrierID": 3700029440,
+                        //     "BoughtAtMarket": 3221301504,
+                        //     "Location": "Kakmbutan",
+                        //     "SystemAddress": 3549513615723,
+                        //     "Price": 4875000000,
+                        //     "Variant": "CarrierDockB",
+                        //     "Callsign": "P07-V3L"
+                        // }
+
+                        tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap()
+                            .block_on(async move {
+                                let mut services = String::new();
+                                for entry in 0..json["Crew"].len() {
+                                    if json["Crew"][entry]["Activated"].as_bool().unwrap_or(false) {
+                                        if !services.is_empty() {
+                                            services.push_str(",");
+                                        }
+                                        services.push_str(
+                                            json["Crew"][entry]["CrewRole"].to_string().as_str(),
+                                        );
+                                    }
+                                }
+
+                                let contract = self.contract.clone();
+                                let function_call: FunctionCall<
+                                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                    (),
+                                > = contract.register_carrier(
+                                    json["CarrierID"].as_u64().unwrap(),
+                                    "Carrier".to_string(),
+                                    json["Callsign"].as_str().unwrap().to_string(),
+                                    "".to_string(),
+                                    "".to_string(),
+                                    false,
+                                );
+                                //execute_send(function_call).await;
+                                execute_send_repeatable(function_call).await;
+                            });
+                    }
+                    "CarrierDecommission" => {
+                        //{
+                        //     "timestamp": "2020-03-11T15:12:26Z",
+                        //     "event": "CarrierDecommission",
+                        //     "CarrierID": 3700005632,
+                        //     "ScrapRefund": 1746872629,
+                        //     "ScrapTime": 1584601200
+                        // }
+                    }
+                    "CarrierStats" => {
+                        //{ "timestamp":"2024-03-31T18:14:39Z", "event":"CarrierStats", "CarrierID":3704402432, "Callsign":"Q2K-BHB", "Name":"FUXBAU",
+                        // "DockingAccess":"all", "AllowNotorious":true, "FuelLevel":885, "JumpRangeCurr":500.000000, "JumpRangeMax":500.000000,
+                        // "PendingDecommission":false, "SpaceUsage":{ "TotalCapacity":25000, "Crew":6170, "Cargo":2853, "CargoSpaceReserved":2169, "ShipPacks":0,
+                        // "ModulePacks":4453, "FreeSpace":9355 }, "Finance":{ "CarrierBalance":28458349715, "ReserveBalance":86981722, "AvailableBalance":28148606640,
+                        // "ReservePercent":0, "TaxRate_shipyard":0, "TaxRate_rearm":100, "TaxRate_outfitting":100, "TaxRate_refuel":100, "TaxRate_repair":100 },
+                        // "Crew":[ { "CrewRole":"BlackMarket", "Activated":false }, { "CrewRole":"Captain", "Activated":true, "Enabled":true, "CrewName":"Vada Cannon" }, { "CrewRole":"Refuel", "Activated":true, "Enabled":true, "CrewName":"Donna Moon" }, { "CrewRole":"Repair", "Activated":true, "Enabled":true, "CrewName":"Darnell Grant" }, { "CrewRole":"Rearm", "Activated":true, "Enabled":true, "CrewName":"Eiza York" }, { "CrewRole":"Commodities", "Activated":true, "Enabled":true, "CrewName":"Jewel King" }, { "CrewRole":"VoucherRedemption", "Activated":true, "Enabled":true, "CrewName":"Ezra Ramirez" }, { "CrewRole":"Exploration", "Activated":true, "Enabled":true, "CrewName":"Kasey Callahan" }, { "CrewRole":"Shipyard", "Activated":true, "Enabled":true, "CrewName":"Abby Cooke" }, { "CrewRole":"Outfitting", "Activated":true, "Enabled":true, "CrewName":"Jayne Callahan" }, { "CrewRole":"CarrierFuel", "Activated":true, "Enabled":true, "CrewName":"Abraham Strickland" }, { "CrewRole":"VistaGenomics", "Activated":true, "Enabled":true, "CrewName":"Melinda Reilly" }, { "CrewRole":"PioneerSupplies", "Activated":false }, { "CrewRole":"Bartender", "Activated":true, "Enabled":true, "CrewName":"Dean Barlow" } ],
+                        // "ShipPacks":[  ], "ModulePacks":[ { "PackTheme":"VehicleSupport", "PackTier":1 }, { "PackTheme":"Storage", "PackTier":2 }, { "PackTheme":"Limpets", "PackTier":1 }, { "PackTheme":"Sensors", "PackTier":3 }, { "PackTheme":"Mining Tools", "PackTier":3 }, { "PackTheme":"Mining Utilities", "PackTier":2 }, { "PackTheme":"ShipUtilities", "PackTier":2 }, { "PackTheme":"TravelEnhancements", "PackTier":3 } ] }
+                        tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap()
+                            .block_on(async move {
+                                let mut services = String::new();
+                                for entry in 0..json["Crew"].len() {
+                                    if json["Crew"][entry]["Activated"].as_bool().unwrap_or(false) {
+                                        if !services.is_empty() {
+                                            services.push_str(",");
+                                        }
+                                        services.push_str(
+                                            json["Crew"][entry]["CrewRole"].to_string().as_str(),
+                                        );
+                                    }
+                                }
+
+                                let contract = self.contract.clone();
+
+                                let function_call: FunctionCall<
+                                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                    (),
+                                > = contract.register_carrier(
+                                    json["CarrierID"].as_u64().unwrap(),
+                                    json["Name"].as_str().unwrap().to_string(),
+                                    json["Callsign"].as_str().unwrap().to_string(),
+                                    services,
+                                    json["DockingAccess"].as_str().unwrap().to_string(),
+                                    json["AllowNotorious"].as_bool().unwrap(),
+                                );
+                                //execute_send(function_call).await;
+                                execute_send_repeatable(function_call).await;
+                            });
+                    }
+                    "CarrierTradeOrder" => {}
+                    "CarrierFinance" => {}
+                    "CarrierDepositFuel" => {}
+                    "CarrierDockingPermission" => {}
+                    "CarrierCrewServices" => {}
+                    "CarrierModulePack" => {}
+                    "CarrierBankTransfer" => {}
                     _ => {}
                 }
             }
@@ -555,7 +729,34 @@ async fn execute_send(
         },
     }
 }
-
+fn process_jump(
+    json: JsonValue,
+    contract: edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>,
+) {
+    thread::spawn(|| {
+        tokio::runtime::Builder::new_multi_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async move {
+                let function_call: FunctionCall<
+                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                    (),
+                > = contract.register_system(
+                    json["SystemAddress"].as_u64().unwrap(),
+                    json["StarSystem"].to_string(),
+                    json["SystemAllegiance"].to_string(),
+                    json["SystemEconomy"].to_string(),
+                    json["SystemSecondEconomy"].to_string(),
+                    json["SystemSecurity"].to_string(),
+                    json["Population"].as_u64().unwrap_or(0),
+                );
+                //execute_send(function_call).await;
+                execute_send_repeatable(function_call).await;
+            });
+    });
+}
 fn get_revert_message(bytes: Bytes) -> String {
     match hex::encode(&bytes).as_str() {
         "08c379a00000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000001953797374656d206e6f7420726567697374657265642079657400000000000000" => {
