@@ -189,6 +189,10 @@ pub trait BodyImplementation {
     fn get_parents(&self) -> Vec<Parent>;
 }
 
+pub fn get_struct<T: BodyImplementation>(input: T) -> T {
+    input
+}
+
 impl PartialEq for dyn BodyImplementation {
     fn eq(&self, other: &Self) -> bool {
         self.get_id() == other.get_id()
