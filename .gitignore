@@ -1,3 +1,4 @@
+.gitignore
 /target
 settings.json
 /edcas-client
@@ -8,3 +9,4 @@ edcas-client-linux.tar.gz
 edcas-client.zip
 edcas-client.deb
 custom_graphics_override.xml
+Cargo.lock
