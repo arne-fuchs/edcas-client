@@ -43,7 +43,6 @@ impl BodyImplementation for Ring {
             ui.end_row();
         }
     }
-
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
         let mut body_name = self.body_name.to_string();
         if !self.settings.explorer_settings.include_system_name {
@@ -108,5 +107,9 @@ impl BodyImplementation for Ring {
 
     fn get_parents(&self) -> Vec<Parent> {
         self.parents.clone()
+    }
+
+    fn get_body(&self) -> crate::app::explorer::structs::BodyType {
+        crate::app::explorer::structs::BodyType::Ring(self)
     }
 }

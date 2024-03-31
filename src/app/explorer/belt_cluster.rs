@@ -21,6 +21,9 @@ pub struct BeltCluster {
 }
 
 impl BodyImplementation for BeltCluster {
+    fn get_body(&self) -> crate::app::explorer::structs::BodyType {
+        crate::app::explorer::structs::BodyType::BeltCluster(self)
+    }
     fn print_side_panel_information(&self, ui: &mut Ui) {
         ui.heading(&self.body_name);
         ui.end_row();

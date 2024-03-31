@@ -1,10 +1,11 @@
+use std::ops::Deref;
 use std::sync::Arc;
 
 use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
 use eframe::egui::{Align, Layout};
 use eframe::{egui, App, Frame};
 
-use crate::app::explorer::structs::{BodyImplementation, Parent};
+use crate::app::explorer::structs::{get_struct, BodyImplementation, BodyType, Parent};
 use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
 use crate::egui::Context;

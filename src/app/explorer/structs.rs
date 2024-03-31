@@ -187,10 +187,13 @@ pub trait BodyImplementation {
     }
     fn set_signals(&mut self, _signals: Vec<Signal>) {}
     fn get_parents(&self) -> Vec<Parent>;
+    fn get_body(&self) -> BodyType;
 }
-
-pub fn get_struct<T: BodyImplementation>(input: T) -> T {
-    input
+pub(crate) enum BodyType<'a> {
+    Star(&'a Star),
+    Planet(&'a Planet),
+    Ring(&'a Ring),
+    BeltCluster(&'a BeltCluster),
 }
 
 impl PartialEq for dyn BodyImplementation {

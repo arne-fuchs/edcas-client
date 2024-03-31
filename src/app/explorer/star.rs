@@ -82,7 +82,6 @@ impl BodyImplementation for Star {
             ui.end_row();
         }
     }
-
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
         if self
             .settings
@@ -153,6 +152,10 @@ impl BodyImplementation for Star {
 
     fn get_parents(&self) -> Vec<Parent> {
         self.parents.clone()
+    }
+
+    fn get_body(&self) -> crate::app::explorer::structs::BodyType {
+        crate::app::explorer::structs::BodyType::Star(self)
     }
 }
 
