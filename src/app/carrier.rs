@@ -15,6 +15,7 @@ pub struct CarrierState {
 
 #[derive(Clone)]
 pub struct Carrier {
+    pub timestamp: DateTime<Utc>,
     pub name: String,
     pub callsign: String,
     pub services: String,
@@ -55,6 +56,8 @@ impl App for CarrierState {
                                     .num_columns(1)
                                     .striped(true)
                                     .show(ui, |ui| {
+                                        ui.label(format!("Last update: {}", carrier.timestamp));
+                                        ui.end_row();
                                         ui.label(format!(
                                             "Location: {} - {}",
                                             carrier.current_system, carrier.current_body

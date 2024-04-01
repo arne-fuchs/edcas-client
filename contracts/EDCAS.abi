@@ -156,6 +156,11 @@
           "type": "bool"
         },
         {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
           "internalType": "string",
           "name": "name",
           "type": "string"
@@ -202,7 +207,7 @@
         },
         {
           "internalType": "uint256",
-          "name": "timestamp",
+          "name": "jump_timestamp",
           "type": "uint256"
         }
       ],
@@ -228,7 +233,7 @@
         },
         {
           "internalType": "uint256",
-          "name": "timestamp",
+          "name": "jump_timestamp",
           "type": "uint256"
         }
       ],
@@ -278,6 +283,11 @@
       ],
       "name": "planetMap",
       "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
         {
           "internalType": "uint8",
           "name": "id",
@@ -632,6 +642,11 @@
           "internalType": "bool",
           "name": "allow_notorious",
           "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
         }
       ],
       "name": "registerCarrier",
@@ -964,6 +979,11 @@
           "internalType": "struct BodyProperties",
           "name": "bodyProperties",
           "type": "tuple"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
         }
       ],
       "name": "register_planet",
@@ -975,7 +995,7 @@
       "inputs": [
         {
           "internalType": "uint64",
-          "name": "_address",
+          "name": "system_address",
           "type": "uint64"
         },
         {
@@ -1150,6 +1170,11 @@
           "internalType": "struct BodyProperties",
           "name": "bodyProperties",
           "type": "tuple"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
         }
       ],
       "name": "register_star",
@@ -1193,6 +1218,11 @@
           "internalType": "uint64",
           "name": "population",
           "type": "uint64"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
         }
       ],
       "name": "register_system",
@@ -1216,6 +1246,11 @@
           "internalType": "string",
           "name": "body",
           "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
         }
       ],
       "name": "report_carrier_location",
@@ -1238,6 +1273,11 @@
       ],
       "name": "starMap",
       "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
         {
           "internalType": "uint8",
           "name": "id",
@@ -1444,6 +1484,11 @@
       ],
       "name": "systemMap",
       "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
         {
           "internalType": "string",
           "name": "name",

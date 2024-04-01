@@ -40,17 +40,22 @@ impl EvmUpdater {
                             let function_call = contract.carrier_map(carrier_id);
                             if let Ok(result) = function_call.call().await {
                                 let carrier = Carrier {
-                                    name: result.1,
-                                    callsign: result.2,
-                                    services: result.3,
-                                    docking_access: result.4,
-                                    allow_notorious: result.5,
-                                    current_system: result.6,
-                                    current_body: result.7,
-                                    next_system: result.8,
-                                    next_body: result.9,
+                                    timestamp: DateTime::from_timestamp(
+                                        result.1.as_u64() as i64,
+                                        0,
+                                    )
+                                    .unwrap(),
+                                    name: result.2,
+                                    callsign: result.3,
+                                    services: result.4,
+                                    docking_access: result.5,
+                                    allow_notorious: result.6,
+                                    current_system: result.7,
+                                    current_body: result.8,
+                                    next_system: result.9,
+                                    next_body: result.10,
                                     departure: DateTime::from_timestamp(
-                                        result.10.as_u64() as i64,
+                                        result.11.as_u64() as i64,
                                         0,
                                     )
                                     .unwrap(),
