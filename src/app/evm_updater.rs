@@ -34,28 +34,37 @@ impl EvmUpdater {
                         Vec<u64>,
                     > = contract.get_carrier_ids();
                     let mut carriers = Vec::new();
-                    let results = function_call.legacy().call().await.unwrap();
-                    for carrier_id in results {
-                        let function_call = contract.carrier_map(carrier_id);
-                        let result = function_call.call().await.unwrap();
-                        let carrier = Carrier {
-                            name: result.1,
-                            callsign: result.2,
-                            services: result.3,
-                            docking_access: result.4,
-                            allow_notorious: result.5,
-                            current_system: result.6,
-                            current_body: result.7,
-                            next_system: result.8,
-                            next_body: result.9,
-                            departure: DateTime::from_timestamp(result.10.as_u64() as i64, 0)
-                                .unwrap(),
-                        };
-                        carriers.push(carrier);
+                    if let Ok(results) = function_call.legacy().call().await {
+                        for carrier_id in results {
+                            let function_call = contract.carrier_map(carrier_id);
+                            if let Ok(result) = function_call.call().await {
+                                let carrier = Carrier {
+                                    name: result.1,
+                                    callsign: result.2,
+                                    services: result.3,
+                                    docking_access: result.4,
+                                    allow_notorious: result.5,
+                                    current_system: result.6,
+                                    current_body: result.7,
+                                    next_system: result.8,
+                                    next_body: result.9,
+                                    departure: DateTime::from_timestamp(
+                                        result.10.as_u64() as i64,
+                                        0,
+                                    )
+                                    .unwrap(),
+                                };
+                                carriers.push(carrier);
+                            } else {
+                                return vec![];
+                            }
+                        }
                     }
                     carriers
                 });
-            self.bus.broadcast(CarrierListUpdate(carriers));
+            if !carriers.is_empty() {
+                self.bus.broadcast(CarrierListUpdate(carriers));
+            }
         }
     }
 }
