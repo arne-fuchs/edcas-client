@@ -7,8 +7,23 @@ use crossterm::{
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
 use ratatui::{prelude::*, style::Stylize, widgets::*};
+use serde_json::to_string;
 
+<<<<<<< HEAD
 use crate::edcas::{materials::Material, mining::MiningMaterial, EliteRustClient};
+=======
+use crate::app::{
+    explorer::{
+        belt_cluster::BeltCluster,
+        planet::{AsteroidRing, Planet},
+        star::{self, Star},
+        structs::{self, BodyType},
+    },
+    materials::Material,
+    mining::MiningMaterial,
+    EliteRustClient,
+};
+>>>>>>> 0208ae9 (basic body info implementations)
 
 // TODO: DONE signals_scanned/all_signals (gauge and text)
 // TODO: DONE signal threat (in system_signals)
@@ -165,6 +180,20 @@ impl<'a> App<'a> {
             }
         }
     }
+
+    /*
+    pub fn next_info(&mut self, data_body_info: Vec<String>) {
+        self.body_info_index = (self.body_info_index + 1) % data_body_info.len();
+    }
+
+    pub fn previous_info(&mut self, data_body_info: Vec<String>) {
+        if self.body_info_index > 0 {
+            self.body_info_index -= 1
+        } else {
+            self.body_info_index = data_body_info.len() - 1
+        }
+    }
+    */
 
     pub fn next_material(&mut self, client: &mut EliteRustClient) {
         self.material_index = (self.material_index + 1) % {
@@ -389,11 +418,13 @@ fn tab_explorer(
     let mut data_signals_list = vec![Row::new(vec!["no data".to_string()])];
     let mut data_body_list: Vec<Line> = vec![Line::styled("no data", Style::default().light_red())];
     //let mut data_body_signals_list = vec![Row::new(vec!["no data".to_string()])];
-    let mut data_body_info = vec!["no data".to_string()];
+    let mut data_body_info: Vec<Row> =
+        vec![Row::new(vec!["no data".to_string()]).style(Style::default().light_red())];
     let mut data_system_gauge_scanned: i32 = 0;
     let mut data_system_gauge_all: i32 = 0;
     let mut data_system_gauge: f64 = 0.0 / 1.0;
     let mut data_planet_signals: Vec<Row> = vec![Row::new(vec!["no data".light_red()])]; //client.explorer.systems[index].planet_signals[index] (body_name, body_id, Vec signals)
+    let mut additional_length_data_body_info: usize = 0;
 
     // Checks to not crash everything if list is empty
     // Data acquisition
@@ -568,16 +599,480 @@ fn tab_explorer(
 
             //TODO: parse json to Vec and use it here
 
-            data_body_info = vec![client.explorer.systems[client.explorer.index].body_list
+            data_body_info = match client.explorer.systems[client.explorer.index].body_list
                 [client.explorer.systems[client.explorer.index].index]
-                .get_name()
-                .to_string()];
+                .get_body()
+            {
+                BodyType::Star(star_body) => vec![
+                    Row::new(vec![
+                        "Timestamp".to_string(),
+                        star_body.timestamp.to_string(),
+                    ]),
+                    Row::new(vec!["Event".to_string(), star_body.event.to_string()]),
+                    Row::new(vec![
+                        "Scan Type".to_string(),
+                        star_body.scan_type.to_string(),
+                    ]),
+                    Row::new(vec!["Name".to_string(), star_body.body_name.to_string()]),
+                    Row::new(vec!["ID".to_string(), star_body.body_id.to_string()]),
+                    Row::new(vec![
+                        "System".to_string(),
+                        star_body.star_system.to_string(),
+                    ]),
+                    //Row::new(vec!["".to_string(), star_body.system_address.to_string()]),
+                    Row::new(vec![
+                        "Distance".to_string(),
+                        [
+                            star_body.distance_from_arrival_ls.to_string(),
+                            "ls".to_string(),
+                        ]
+                        .join(" "),
+                    ]),
+                    Row::new(vec!["Type".to_string(), star_body.star_type.to_string()]),
+                    Row::new(vec!["Subclass".to_string(), star_body.subclass.to_string()]),
+                    Row::new(vec![
+                        "Stellar Mass".to_string(),
+                        star_body.stellar_mass.to_string(),
+                    ]),
+                    Row::new(vec!["Radius".to_string(), star_body.radius.to_string()]),
+                    Row::new(vec![
+                        "Abs. Magnitude".to_string(),
+                        star_body.absolute_magnitude.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Age".to_string(),
+                        [star_body.age_my.to_string(), "M.Years".to_string()].join(" "),
+                    ]),
+                    Row::new(vec![
+                        "Surface Temp".to_string(),
+                        star_body.surface_temperature.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Luminosity".to_string(),
+                        star_body.luminosity.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Semi major Axis".to_string(),
+                        match star_body.semi_major_axis {
+                            Some(sma) => sma.to_string(),
+                            None => "no data".to_string(),
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Eccentricity".to_string(),
+                        match star_body.eccentricity {
+                            Some(sma) => sma.to_string(),
+                            None => "no data".to_string(),
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Orb. Inclanation".to_string(),
+                        match star_body.orbital_inclination {
+                            Some(sma) => sma.to_string(),
+                            None => "no data".to_string(),
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Periapsis".to_string(),
+                        match star_body.periapsis {
+                            Some(sma) => sma.to_string(),
+                            None => "no data".to_string(),
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Orbital Period".to_string(),
+                        match star_body.orbital_period {
+                            Some(sma) => sma.to_string(),
+                            None => "no data".to_string(),
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Mean Anomaly".to_string(),
+                        match star_body.mean_anomaly {
+                            Some(sma) => sma.to_string(),
+                            None => "no data".to_string(),
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Rot. Period".to_string(),
+                        star_body.rotation_period.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Axial Tilt".to_string(),
+                        star_body.axial_tilt.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Discovered".to_string(),
+                        if star_body.was_discovered {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Mapped".to_string(),
+                        if star_body.was_mapped {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Asteroid Rings".to_string(),
+                        star_body.asteroid_rings.len().to_string(),
+                    ]),
+                ],
 
-            // neues data
-            let struct_body = structs::get_struct(
-                client.explorer.systems[client.explorer.index].body_list
-                    [client.explorer.systems[client.explorer.index].index],
-            );
+                BodyType::BeltCluster(belt_body) => vec![
+                    Row::new(vec![
+                        "Timestamp".to_string(),
+                        belt_body.timestamp.to_string(),
+                    ]),
+                    Row::new(vec!["Event".to_string(), belt_body.event.to_string()]),
+                    Row::new(vec![
+                        "Scan Type".to_string(),
+                        belt_body.scan_type.to_string(),
+                    ]),
+                    Row::new(vec!["Name".to_string(), belt_body.body_name.to_string()]),
+                    Row::new(vec!["ID".to_string(), belt_body.body_id.to_string()]),
+                    Row::new(vec![
+                        "System".to_string(),
+                        belt_body.star_system.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Parents".to_string(),
+                        belt_body.parents.len().to_string(),
+                    ]),
+                    //Row::new(vec!["System Address".to_string(), belt_body.system_address.to_string(),]),
+                    Row::new(vec![
+                        "Distance".to_string(),
+                        [
+                            belt_body.distance_from_arrival_ls.to_string(),
+                            "ls".to_string(),
+                        ]
+                        .join(" "),
+                    ]),
+                    Row::new(vec![
+                        "Discovered".to_string(),
+                        if belt_body.was_discovered {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Mapped".to_string(),
+                        if belt_body.was_mapped {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                ],
+                BodyType::Planet(planet_body) => vec![
+                    Row::new(vec![
+                        "Timestamp".to_string(),
+                        planet_body.timestamp.to_string(),
+                    ]),
+                    Row::new(vec!["Event".to_string(), planet_body.event.to_string()]),
+                    Row::new(vec![
+                        "Scan Type".to_string(),
+                        planet_body.scan_type.to_string(),
+                    ]),
+                    Row::new(vec!["Name".to_string(), planet_body.body_name.to_string()]),
+                    Row::new(vec!["ID".to_string(), planet_body.body_id.to_string()]),
+                    Row::new(vec![
+                        "Parents".to_string(),
+                        planet_body.parents.len().to_string(),
+                    ]),
+                    Row::new(vec![
+                        "System".to_string(),
+                        planet_body.star_system.to_string(),
+                    ]),
+                    //Row::new(vec!["".to_string(),planet_body.system_address.to_string()]),
+                    Row::new(vec![
+                        "Distance".to_string(),
+                        [
+                            planet_body.distance_from_arrival_ls.to_string(),
+                            "ls".to_string(),
+                        ]
+                        .join(" "),
+                    ]),
+                    Row::new(vec![
+                        "Tidal Lock".to_string(),
+                        planet_body.tidal_lock.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Terraform State".to_string(),
+                        planet_body.terraform_state.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Class".to_string(),
+                        planet_body.planet_class.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Atmosphere".to_string(),
+                        planet_body.atmosphere.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Atmosphere Type".to_string(),
+                        planet_body.atmosphere_type.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Atmosphere Comp.".to_string(),
+                        planet_body
+                            .atmosphere_composition
+                            .iter()
+                            .map(|mat| {
+                                [
+                                    mat.name.to_string(),
+                                    " ".to_string(),
+                                    mat.percent.to_string(),
+                                    "%".to_string(),
+                                ]
+                                .join("")
+                            })
+                            .collect::<Vec<String>>()
+                            .join("\n"),
+                    ])
+                    .height(
+                        if planet_body.atmosphere_composition.is_empty() {
+                            1
+                        } else {
+                            additional_length_data_body_info +=
+                                planet_body.atmosphere_composition.len() - 1;
+                            planet_body.atmosphere_composition.len() as u16
+                        },
+                    ),
+                    Row::new(vec![
+                        "Volcanism".to_string(),
+                        planet_body.volcanism.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Mass".to_string(),
+                        [planet_body.mass_em.to_string(), "EM".to_string()].join(" "),
+                    ]),
+                    Row::new(vec!["Radius".to_string(), planet_body.radius.to_string()]),
+                    Row::new(vec![
+                        "Surface Gravity".to_string(),
+                        planet_body.surface_gravity.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Surface Term.".to_string(),
+                        planet_body.surface_temperature.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Surface Pressure".to_string(),
+                        planet_body.surface_pressure.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Landable".to_string(),
+                        if planet_body.landable {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Materials".to_string(),
+                        planet_body
+                            .materials
+                            .iter()
+                            .map(|mat| {
+                                [
+                                    mat.name.to_string(),
+                                    " ".to_string(),
+                                    mat.percentage.to_string(),
+                                    "%".to_string(),
+                                ]
+                                .join("")
+                            })
+                            .collect::<Vec<String>>()
+                            .join("\n"),
+                    ]),
+                    Row::new(vec![
+                        "Composition".to_string(),
+                        planet_body
+                            .composition
+                            .iter()
+                            .map(|mat| {
+                                [
+                                    mat.name.to_string(),
+                                    " ".to_string(),
+                                    mat.percentage.to_string(),
+                                    "%".to_string(),
+                                ]
+                                .join("")
+                            })
+                            .collect::<Vec<String>>()
+                            .join("\n"),
+                    ])
+                    .height(if planet_body.composition.is_empty() {
+                        1
+                    } else {
+                        additional_length_data_body_info += planet_body.composition.len() - 1;
+                        planet_body.composition.len() as u16
+                    }),
+                    Row::new(vec![
+                        "Semi major Axis".to_string(),
+                        planet_body.semi_major_axis.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Eccentricity".to_string(),
+                        planet_body.eccentricity.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Orb. Inclanation".to_string(),
+                        planet_body.orbital_inclination.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Periapsis".to_string(),
+                        planet_body.periapsis.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Orbital Period".to_string(),
+                        planet_body.orbital_period.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Ascending Node".to_string(),
+                        planet_body.ascending_node.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Mean Anomaly".to_string(),
+                        planet_body.mean_anomaly.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Rot. Period".to_string(),
+                        planet_body.rotation_period.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Axial Tilt".to_string(),
+                        planet_body.axial_tilt.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Discovered".to_string(),
+                        if planet_body.was_mapped {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Mapped".to_string(),
+                        if planet_body.was_mapped {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Reserve Level".to_string(),
+                        planet_body.reserve_level.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Rings".to_string(),
+                        planet_body.asteroid_rings.len().to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Signals".to_string(),
+                        planet_body.planet_signals.len().to_string(),
+                    ]),
+                ],
+                BodyType::Ring(ring_body) => vec![
+                    Row::new(vec![
+                        "Timestamp".to_string(),
+                        ring_body.timestamp.to_string(),
+                    ]),
+                    Row::new(vec!["Event".to_string(), ring_body.event.to_string()]),
+                    Row::new(vec![
+                        "Scan Type".to_string(),
+                        ring_body.scan_type.to_string(),
+                    ]),
+                    Row::new(vec!["Name".to_string(), ring_body.body_name.to_string()]),
+                    Row::new(vec!["ID".to_string(), ring_body.body_id.to_string()]),
+                    Row::new(vec![
+                        "Parents".to_string(),
+                        ring_body.parents.len().to_string(),
+                    ]),
+                    Row::new(vec![
+                        "System".to_string(),
+                        ring_body.star_system.to_string(),
+                    ]),
+                    //Row::new(vec!["".to_string(), ring_body.system_address.to_string()]),
+                    Row::new(vec![
+                        "Distance".to_string(),
+                        [
+                            ring_body.distance_from_arrival_ls.to_string(),
+                            "ls".to_string(),
+                        ]
+                        .join(" "),
+                    ]),
+                    Row::new(vec![
+                        "Semi major Axis".to_string(),
+                        ring_body.semi_major_axis.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Periapsis".to_string(),
+                        ring_body.periapsis.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Ascending Node".to_string(),
+                        ring_body.ascending_node.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Mean Anomaly".to_string(),
+                        ring_body.mean_anomaly.to_string(),
+                    ]),
+                    Row::new(vec![
+                        "Discovered".to_string(),
+                        if ring_body.was_discovered {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Mapped".to_string(),
+                        if ring_body.was_mapped {
+                            "yes".to_string()
+                        } else {
+                            "no".to_string()
+                        },
+                    ]),
+                    Row::new(vec![
+                        "Signals".to_string(),
+                        ring_body
+                            .ring_signals
+                            .iter()
+                            .map(|sig| {
+                                [
+                                    {
+                                        if sig.type_localised != "null" {
+                                            sig.type_localised.to_string()
+                                        } else {
+                                            sig.r#type.to_string()
+                                        }
+                                    },
+                                    sig.count.to_string(),
+                                ]
+                                .join(" ")
+                            })
+                            .collect::<Vec<String>>()
+                            .join("\n"),
+                    ])
+                    .height(if ring_body.ring_signals.is_empty() {
+                        1
+                    } else {
+                        additional_length_data_body_info += ring_body.ring_signals.len() - 1;
+                        ring_body.ring_signals.len() as u16
+                    }),
+                ],
+                /*
+                    _ => {
+                    vec![Row::new(vec!["no data".to_string()]).style(Style::default().light_red())]
+                }
+                */
+            };
 
             // Selection from body_list (cursor and scrolling)
             app.body_list_state
@@ -615,9 +1110,9 @@ fn tab_explorer(
     let layout_explorer = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Horizontal)
         .constraints(vec![
-            Constraint::Percentage(30),
-            Constraint::Fill(1),
-            Constraint::Percentage(25),
+            Constraint::Fill(2),
+            Constraint::Fill(3),
+            Constraint::Fill(3),
         ])
         .split(chunk);
 
@@ -630,7 +1125,12 @@ fn tab_explorer(
     // layout of "body information" panel
     let layout_body = Layout::default()
         .direction(Direction::Vertical)
-        .constraints([Constraint::Length(20), Constraint::Fill(1)])
+        .constraints([
+            Constraint::Length(
+                data_body_info.len() as u16 + additional_length_data_body_info as u16 + 1,
+            ),
+            Constraint::Fill(1), //Min(20),
+        ])
         .split(layout_explorer[2]);
 
     // layout of system inforamtion
@@ -684,7 +1184,11 @@ fn tab_explorer(
         )
         .highlight_style(Style::default().bold().on_dark_gray());
 
-    let widget_body_info = List::new(data_body_info).block(
+    let widget_body_info = Table::new(
+        data_body_info,
+        vec![Constraint::Length(16), Constraint::Fill(1)],
+    )
+    .block(
         Block::default()
             .title(" Body Info ")
             .borders(Borders::TOP | Borders::LEFT)
@@ -705,6 +1209,7 @@ fn tab_explorer(
             .white(),
     );*/
 
+    // TODO: make table scrollable how?
     let widget_planet_signals_list = Table::new(
         data_planet_signals,
         [
