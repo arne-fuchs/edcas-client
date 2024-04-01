@@ -136,7 +136,7 @@
     "attempts": 4,
     "base-url": "https://api.testnet.undertheocean.net/wasp/api/v1/chains/rms1prflcwju7wyzks0wzyyvejz6sqzf8gl7qwyen339e7zeaue9k99yv2exr04/evm",
     "private-key": "",
-    "smart-contract-address": "0x0FBc37632e58F1730E2F1a4856EB8CD2F26b31f0",
+    "smart-contract-address": "0xd0ca5F2ad743082cA258195Cbe18b10d41dda50d",
     "port": 443,
     "timeout": 5
   },

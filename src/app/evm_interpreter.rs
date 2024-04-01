@@ -15,12 +15,18 @@ use edcas_contract::{BodyProperties, PlanetProperties, StarProperties};
 use crate::app::evm_interpreter::SendError::{NonRepeatableError, RepeatableError};
 use crate::app::settings::Settings;
 
-mod edcas_contract;
+pub(crate) mod edcas_contract;
 
+pub type Edcas = edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>;
+pub type ContractFunctionCall = FunctionCall<
+    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+    (),
+>;
 pub struct EvmInterpreter {
     bus: BusReader<JsonValue>,
     settings: Arc<Settings>,
-    contract: edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>,
+    contract: Edcas,
 }
 
 impl EvmInterpreter {
@@ -320,49 +326,51 @@ impl EvmInterpreter {
     }
 }
 pub fn initialize(bus_reader: BusReader<JsonValue>, settings: Arc<Settings>) -> EvmInterpreter {
-    info!("Loading wallet");
-
-    let node_url = settings.evm_settings.url.as_str();
-    let pirvate_key = settings.evm_settings.private_key.as_str();
-    let retry = settings.evm_settings.n_attempts;
-    let timeout = settings.evm_settings.n_timeout;
-    let sc_address = settings.evm_settings.smart_contract_address.as_str();
-
-    info!("Using URL:{}", &node_url);
-
+    let settings_arc_clone = &settings.clone();
     let contract = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .unwrap()
-        .block_on(async move {
-            let provider = Provider::connect(node_url).await;
-
-            let wallet: LocalWallet = pirvate_key.parse::<LocalWallet>().unwrap();
-            info!("EVM Address: {:?}", wallet.address());
-
-            let mut result =
-                SignerMiddleware::new_with_provider_chain(provider.clone(), wallet.clone()).await;
-            let mut retries = 0;
-            while result.is_err() && retries < retry {
-                retries += 1;
-                tokio::time::sleep(Duration::from_secs(timeout)).await;
-                result =
-                    SignerMiddleware::new_with_provider_chain(provider.clone(), wallet.clone())
-                        .await;
-            }
-
-            let client: SignerMiddleware<Provider<Http>, LocalWallet> = result.unwrap();
-
-            let edcas_address = sc_address.parse::<Address>().unwrap();
-
-            edcas_contract::EDCAS::new(edcas_address, Arc::new(client.clone()))
-        });
+        .block_on(async move { get_contract(settings_arc_clone).await });
 
     EvmInterpreter {
         bus: bus_reader,
         settings,
         contract,
     }
+}
+pub async fn get_contract(
+    settings: &Arc<Settings>,
+) -> edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>> {
+    info!("Loading wallet");
+
+    let node_url = settings.evm_settings.url.as_str();
+    let private = settings.evm_settings.private_key.as_str();
+    let retry = settings.evm_settings.n_attempts;
+    let timeout = settings.evm_settings.n_timeout;
+    let sc_address = settings.evm_settings.smart_contract_address.as_str();
+
+    info!("Using URL:{}", &node_url);
+
+    let provider = Provider::connect(node_url).await;
+
+    let wallet: LocalWallet = private.parse::<LocalWallet>().unwrap();
+    info!("EVM Address: {:?}", wallet.address());
+
+    let mut result =
+        SignerMiddleware::new_with_provider_chain(provider.clone(), wallet.clone()).await;
+    let mut retries = 0;
+    while result.is_err() && retries < retry {
+        retries += 1;
+        tokio::time::sleep(Duration::from_secs(timeout)).await;
+        result = SignerMiddleware::new_with_provider_chain(provider.clone(), wallet.clone()).await;
+    }
+
+    let client: SignerMiddleware<Provider<Http>, LocalWallet> = result.unwrap();
+
+    let edcas_address = sc_address.parse::<Address>().unwrap();
+
+    edcas_contract::EDCAS::new(edcas_address, Arc::new(client.clone()))
 }
 
 fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {

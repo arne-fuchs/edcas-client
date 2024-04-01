@@ -124,6 +124,25 @@
     {
       "inputs": [
         {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "carrierIDs",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
           "internalType": "uint64",
           "name": "_carrierID",
           "type": "uint64"
@@ -216,6 +235,32 @@
       "name": "emit_carrier_jump",
       "outputs": [],
       "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "get_carrier_ids",
+      "outputs": [
+        {
+          "internalType": "uint64[]",
+          "name": "",
+          "type": "uint64[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "get_systems",
+      "outputs": [
+        {
+          "internalType": "string[]",
+          "name": "",
+          "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
       "type": "function"
     },
     {
@@ -598,7 +643,7 @@
       "inputs": [
         {
           "internalType": "uint64",
-          "name": "_address",
+          "name": "system_address",
           "type": "uint64"
         },
         {
@@ -1116,7 +1161,7 @@
       "inputs": [
         {
           "internalType": "uint64",
-          "name": "_address",
+          "name": "system_address",
           "type": "uint64"
         },
         {
@@ -1373,8 +1418,27 @@
     {
       "inputs": [
         {
+          "internalType": "string",
+          "name": "systemName",
+          "type": "string"
+        }
+      ],
+      "name": "systemIdMap",
+      "outputs": [
+        {
           "internalType": "uint64",
-          "name": "_address",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "systemAddress",
           "type": "uint64"
         }
       ],
@@ -1409,6 +1473,25 @@
           "internalType": "uint64",
           "name": "population",
           "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "systems",
+      "outputs": [
+        {
+          "internalType": "string",
+          "name": "",
+          "type": "string"
         }
       ],
       "stateMutability": "view",

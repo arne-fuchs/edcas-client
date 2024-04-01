@@ -4,13 +4,19 @@ use std::io::{Read, Write};
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::str::FromStr;
+use std::sync::Arc;
+use std::time::Duration;
 use std::{env, fs};
 
+use crate::app::evm_interpreter::{edcas_contract, Edcas};
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::egui::{vec2, Color32, Context, RichText, Window};
 use eframe::epaint::ahash::HashMap;
 use eframe::{egui, App, Frame};
-use ethers::prelude::{LocalWallet, Signer};
+use ethers::addressbook::Address;
+use ethers::middleware::signer::SignerMiddlewareError;
+use ethers::middleware::SignerMiddleware;
+use ethers::prelude::*;
 use ethers::utils::hex;
 use log::{error, info, warn};
 use serde_json::json;
@@ -97,6 +103,7 @@ pub struct EvmSettings {
     pub allow_share_data: bool,
     pub private_key: String,
     pub smart_contract_address: String,
+    pub contract: Option<Edcas>,
 }
 
 #[derive(Clone)]
@@ -313,6 +320,53 @@ impl Default for Settings {
             private_key = hex::encode(buffer);
         }
 
+        let evm_url = json["evm"]["base-url"]
+            .as_str()
+            .unwrap_or("https://api.testnet.undertheocean.net/wasp/api/v1/chains/rms1prflcwju7wyzks0wzyyvejz6sqzf8gl7qwyen339e7zeaue9k99yv2exr04/evm")
+            .to_string();
+
+        let smart_contract_address = json["evm"]["smart-contract-address"]
+            .as_str()
+            .unwrap_or("0x0FBc37632e58F1730E2F1a4856EB8CD2F26b31f0")
+            .to_string();
+
+        let middleware_result = tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+            .unwrap()
+            .block_on(async {
+                let provider = Provider::connect(evm_url.as_str()).await;
+
+                let wallet: LocalWallet = private_key.parse::<LocalWallet>().unwrap();
+
+                let mut result =
+                    SignerMiddleware::new_with_provider_chain(provider.clone(), wallet.clone())
+                        .await;
+                let mut retries = 0;
+                while result.is_err() && retries < 20 {
+                    retries += 1;
+                    tokio::time::sleep(Duration::from_millis(100)).await;
+                    result =
+                        SignerMiddleware::new_with_provider_chain(provider.clone(), wallet.clone())
+                            .await;
+                }
+                result
+            });
+
+        let contract = match middleware_result {
+            Ok(middleware) => {
+                let edcas_address = smart_contract_address.parse::<Address>().unwrap();
+                Some(edcas_contract::EDCAS::new(
+                    edcas_address,
+                    Arc::new(middleware),
+                ))
+            }
+            Err(_) => {
+                error!("Couldn't get contract by settings initialization");
+                None
+            }
+        };
+
         //---------------------------
         // Appearance
         //---------------------------
@@ -412,7 +466,7 @@ impl Default for Settings {
                         .as_str()
                         .unwrap_or("Nothing"),
                 )
-                    .unwrap_or(Nothing),
+                .unwrap_or(Nothing),
             },
             explorer_settings: ExplorerSettings {
                 include_system_name: json["explorer"]["include_system_name"]
@@ -420,15 +474,13 @@ impl Default for Settings {
                     .unwrap_or(true),
             },
             evm_settings: EvmSettings {
-                url: json["evm"]["base-url"]
-                    .as_str()
-                    .unwrap_or("https://api.testnet.undertheocean.net/wasp/api/v1/chains/rms1prflcwju7wyzks0wzyyvejz6sqzf8gl7qwyen339e7zeaue9k99yv2exr04/evm")
-                    .to_string(),
+                url: evm_url,
                 n_timeout: json["evm"]["timeout"].as_u64().unwrap_or(5),
                 n_attempts: json["evm"]["attempts"].as_u64().unwrap_or(4),
                 allow_share_data: json["evm"]["allow-share-data"].as_bool().unwrap_or(false),
                 private_key,
-                smart_contract_address: json["evm"]["smart-contract-address"].as_str().unwrap_or("0x0FBc37632e58F1730E2F1a4856EB8CD2F26b31f0").to_string(),
+                smart_contract_address,
+                contract,
             },
             graphic_editor_settings: GraphicEditorSettings {
                 graphics_directory: graphics_directory.clone(),

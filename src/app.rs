@@ -9,13 +9,16 @@ use chrono::Local;
 use eframe::egui;
 use eframe::egui::TextStyle;
 use eframe::App;
+use ethers::prelude::{Http, LocalWallet, Provider};
 
 use crate::app::cargo_reader::CargoReader;
+use crate::app::carrier::{Carrier, CarrierState};
+use crate::app::evm_updater::EvmUpdate;
 use json::JsonValue;
 use log::info;
 
 use crate::app::materials::MaterialState;
-use crate::app::State::{About, Explorer, MaterialInventory, Mining, News, Settings};
+use crate::app::State::{About, CarrierPage, Explorer, MaterialInventory, Mining, News, Settings};
 use crate::egui::Context;
 
 mod about;
@@ -24,6 +27,8 @@ mod cargo_reader;
 mod evm_interpreter;
 pub mod explorer;
 
+mod carrier;
+mod evm_updater;
 mod journal_interpreter;
 mod journal_reader;
 pub mod materials;
@@ -34,33 +39,41 @@ mod settings;
 pub struct EliteRustClient {
     pub about: about::About,
     pub explorer: explorer::Explorer,
+    pub carrier: CarrierState,
     pub state: State,
-    pub journal_log_bus_reader: BusReader<JsonValue>,
     pub materials: MaterialState,
     pub settings: settings::Settings,
     pub news: news::News,
-    pub cargo_reader: Arc<Mutex<CargoReader>>,
     pub mining: mining::Mining,
+    pub cargo_reader: Arc<Mutex<CargoReader>>,
+    pub journal_log_bus_reader: BusReader<JsonValue>,
+    pub evm_update_reader: BusReader<EvmUpdate>,
     pub timestamp: String,
 }
 
 impl EliteRustClient {
     pub fn update_values(&mut self) {
-        match self.journal_log_bus_reader.try_recv() {
-            Ok(json) => {
-                self.timestamp = json["timestamp"].to_string();
-                journal_interpreter::interpret_json(
-                    json.clone(),
-                    &mut self.explorer,
-                    &mut self.materials,
-                    &mut self.mining,
-                    Arc::new(self.settings.clone()),
-                );
-            }
-            Err(_) => {}
+        if let Ok(json) = self.journal_log_bus_reader.try_recv() {
+            self.timestamp = json["timestamp"].to_string();
+            journal_interpreter::interpret_json(
+                json.clone(),
+                &mut self.explorer,
+                &mut self.materials,
+                &mut self.mining,
+                Arc::new(self.settings.clone()),
+            );
         }
         {
             self.cargo_reader.lock().unwrap().run();
+        }
+        {
+            if let Ok(update) = self.evm_update_reader.try_recv() {
+                match update {
+                    EvmUpdate::CarrierListUpdate(carriers) => {
+                        self.carrier.carriers = carriers;
+                    }
+                }
+            }
         }
     }
 }
@@ -96,7 +109,7 @@ impl Default for EliteRustClient {
             settings_pointer.evm_settings.allow_share_data
         );
         if settings_pointer.evm_settings.allow_share_data {
-            info!("Starting Tangle Interpreter");
+            info!("Starting Evm Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
             let settings_pointer = settings_pointer_clone;
             thread::spawn(move || {
@@ -107,6 +120,17 @@ impl Default for EliteRustClient {
                 }
             });
         }
+        info!("Starting Evm Updater");
+        let mut evm_update_bus: Bus<EvmUpdate> = Bus::new(1);
+        let evm_update_reader = evm_update_bus.add_rx();
+        let settings_pointer_clone = settings_pointer.clone();
+        thread::spawn(move || {
+            let mut evm_updater = evm_updater::initialize(evm_update_bus, settings_pointer_clone);
+            loop {
+                evm_updater.run_update();
+                sleep(Duration::from_secs(3));
+            }
+        });
         info!("Done starting threads");
 
         let cargo_reader = Arc::new(Mutex::new(cargo_reader::initialize(
@@ -120,6 +144,11 @@ impl Default for EliteRustClient {
         Self {
             news: news::News::default(),
             about: about::About::default(),
+            carrier: CarrierState {
+                carriers: vec![],
+                search: "".to_string(),
+                settings: settings_pointer.clone(),
+            },
             explorer: explorer::Explorer {
                 systems: vec![],
                 index: 0,
@@ -127,10 +156,11 @@ impl Default for EliteRustClient {
                 settings: settings_pointer.clone(),
             },
             state: News,
+            cargo_reader,
             journal_log_bus_reader: journal_bus_reader,
+            evm_update_reader,
             materials,
             settings,
-            cargo_reader,
             mining,
             timestamp: String::from(""),
         }
@@ -140,6 +170,7 @@ impl Default for EliteRustClient {
 pub enum State {
     News,
     About,
+    CarrierPage,
     Settings,
     Explorer,
     MaterialInventory,
@@ -195,6 +226,10 @@ impl App for EliteRustClient {
                 if materials_button.clicked() {
                     self.state = MaterialInventory;
                 }
+                let carrier_button = menu_bar.button("Carrier");
+                if carrier_button.clicked() {
+                    self.state = CarrierPage;
+                }
                 let settings_button = menu_bar.button("Settings");
                 if settings_button.clicked() {
                     self.state = Settings;
@@ -213,6 +248,9 @@ impl App for EliteRustClient {
                     }
                     About => {
                         about_button.highlight();
+                    }
+                    CarrierPage => {
+                        carrier_button.highlight();
                     }
                     Settings => {
                         settings_button.highlight();
@@ -235,6 +273,7 @@ impl App for EliteRustClient {
         egui::CentralPanel::default().show(ctx, |_ui| match self.state {
             News => self.news.update(ctx, frame),
             About => self.about.update(ctx, frame),
+            CarrierPage => self.carrier.update(ctx, frame),
             Settings => self.settings.update(ctx, frame),
             Explorer => self.explorer.update(ctx, frame),
             MaterialInventory => self.materials.update(ctx, frame),
