@@ -1849,14 +1849,16 @@ fn tab_carrier(
             client.carrier.carriers[app.carrier_list_index]
                 .next_system
                 .to_string(),
+            " - ".to_string(),
             client.carrier.carriers[app.carrier_list_index]
                 .next_body
                 .to_string(),
+            "\n".to_string(),
             client.carrier.carriers[app.carrier_list_index]
                 .departure
                 .to_string(),
         ]
-        .join(" - ");
+        .join("");
 
         data_carrier_info_modules = client.carrier.carriers[app.carrier_list_index]
             .services
@@ -1932,7 +1934,7 @@ fn tab_carrier(
         );
     let widget_carrier_info_modules = List::new(data_carrier_info_modules).block(
         Block::default()
-            .title(" Available Modules ")
+            .title(" Available Services ")
             .bold()
             .borders(Borders::TOP | Borders::LEFT),
     );
