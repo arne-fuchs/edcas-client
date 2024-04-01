@@ -6,19 +6,13 @@ use crossterm::{
     execute,
     terminal::{disable_raw_mode, enable_raw_mode, EnterAlternateScreen, LeaveAlternateScreen},
 };
-use ratatui::{buffer::Cell, prelude::*, style::Stylize, widgets::*};
-use serde_json::to_string;
+use ratatui::{prelude::*, style::Stylize, widgets::*};
 
 <<<<<<< HEAD
 use crate::edcas::{materials::Material, mining::MiningMaterial, EliteRustClient};
 =======
 use crate::app::{
-    explorer::{
-        belt_cluster::BeltCluster,
-        planet::{AsteroidRing, Planet},
-        star::{self, Star},
-        structs::{self, BodyType},
-    },
+    explorer::structs::{self, BodyType},
     materials::Material,
     mining::MiningMaterial,
     EliteRustClient,
@@ -45,25 +39,29 @@ fn round_to_4(input: f64) -> f64 {
     (input * 10000.0).round() / 10000.0
 }
 struct App<'a> {
-    pub titles: Vec<&'a str>,             // tabs
-    pub tab_index: usize,                 //
-    pub body_list_state: ListState,       // explorer
-    pub cargo_table_state: TableState,    // mining
-    pub cargo_index: usize,               //
-    pub prospector_list_state: ListState, //
-    pub prospector_index: usize,          //
-    pub material_index: usize,            // materials
-    pub material_list_state: ListState,   //
-    pub material_list_index: usize,       // materials lists
-    pub search_input_mode: InputMode,     // user input
-    pub search_cursor_position: usize,    //
-    pub search_input: String,             //
+    pub titles: Vec<&'a str>,                    // tabs
+    pub tab_index: usize,                        //
+    pub body_list_state: ListState,              // explorer
+    pub cargo_table_state: TableState,           // mining
+    pub cargo_index: usize,                      //
+    pub prospector_list_state: ListState,        //
+    pub prospector_index: usize,                 //
+    pub material_index: usize,                   // materials
+    pub material_list_state: ListState,          //
+    pub material_list_index: usize,              // materials lists
+    pub search_input_mode: InputMode,            // user input
+    pub materials_search_cursor_position: usize, //
+    pub materials_search_input: String,          //
+    pub carrier_list_state: ListState,
+    pub carrier_list_index: usize,
+    pub carrier_search_cursor_position: usize, //
+    pub carrier_search_input: String,          //
 }
 
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
-            titles: vec!["Explorer", "Mining", "Materials", "About"],
+            titles: vec!["Explorer", "Mining", "Materials", "Carrier", "About"],
             tab_index: 0,
             body_list_state: ListState::default(),
             prospector_list_state: ListState::default(),
@@ -74,60 +72,109 @@ impl<'a> App<'a> {
             material_list_state: ListState::default(),
             material_list_index: 0,
             search_input_mode: InputMode::Normal,
-            search_cursor_position: 0,
-            search_input: "".to_string(),
+            materials_search_cursor_position: 0,
+            materials_search_input: "".to_string(),
+            carrier_list_state: ListState::default(),
+            carrier_list_index: 0,
+            carrier_search_cursor_position: 0,
+            carrier_search_input: "".to_string(),
         }
     }
 
-    //serach Input
+    //Search Input materials
     fn move_cursor_left(&mut self) {
-        let cursor_moved_left = self.search_cursor_position.saturating_sub(1);
-        self.search_cursor_position = self.clamp_cursor(cursor_moved_left);
+        let cursor_moved_left = self.materials_search_cursor_position.saturating_sub(1);
+        self.materials_search_cursor_position = self.clamp_cursor(cursor_moved_left);
     }
 
     fn move_cursor_right(&mut self) {
-        let cursor_moved_right = self.search_cursor_position.saturating_add(1);
-        self.search_cursor_position = self.clamp_cursor(cursor_moved_right);
+        let cursor_moved_right = self.materials_search_cursor_position.saturating_add(1);
+        self.materials_search_cursor_position = self.clamp_cursor(cursor_moved_right);
     }
 
     fn enter_char(&mut self, new_char: char) {
-        self.search_input
-            .insert(self.search_cursor_position, new_char);
+        self.materials_search_input
+            .insert(self.materials_search_cursor_position, new_char);
 
         self.move_cursor_right();
     }
 
     fn delete_char(&mut self) {
-        let is_not_cursor_leftmost = self.search_cursor_position != 0;
+        let is_not_cursor_leftmost = self.materials_search_cursor_position != 0;
         if is_not_cursor_leftmost {
             // Method "remove" is not used on the saved text for deleting the selected char.
             // Reason: Using remove on String works on bytes instead of the chars.
             // Using remove would require special care because of char boundaries.
 
-            let current_index = self.search_cursor_position;
+            let current_index = self.materials_search_cursor_position;
             let from_left_to_current_index = current_index - 1;
 
             // Getting all characters before the selected character.
-            let before_char_to_delete = self.search_input.chars().take(from_left_to_current_index);
+            let before_char_to_delete = self
+                .materials_search_input
+                .chars()
+                .take(from_left_to_current_index);
             // Getting all characters after selected character.
-            let after_char_to_delete = self.search_input.chars().skip(current_index);
+            let after_char_to_delete = self.materials_search_input.chars().skip(current_index);
 
             // Put all characters together except the selected one.
             // By leaving the selected one out, it is forgotten and therefore deleted.
-            self.search_input = before_char_to_delete.chain(after_char_to_delete).collect();
+            self.materials_search_input =
+                before_char_to_delete.chain(after_char_to_delete).collect();
             self.move_cursor_left();
         }
     }
 
     fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
-        new_cursor_pos.clamp(0, self.search_input.len())
+        new_cursor_pos.clamp(0, self.materials_search_input.len())
     }
 
-    /*
-    fn reset_cursor(&mut self) {
-        self.search_cursor_position = 0;
+    //Search Input carriers
+    fn carrier_move_cursor_left(&mut self) {
+        let cursor_moved_left = self.carrier_search_cursor_position.saturating_sub(1);
+        self.carrier_search_cursor_position = self.carrier_clamp_cursor(cursor_moved_left);
     }
-    */
+
+    fn carrier_move_cursor_right(&mut self) {
+        let cursor_moved_right = self.carrier_search_cursor_position.saturating_add(1);
+        self.carrier_search_cursor_position = self.carrier_clamp_cursor(cursor_moved_right);
+    }
+
+    fn carrier_enter_char(&mut self, new_char: char) {
+        self.carrier_search_input
+            .insert(self.carrier_search_cursor_position, new_char);
+
+        self.carrier_move_cursor_right();
+    }
+
+    fn carrier_delete_char(&mut self) {
+        let is_not_cursor_leftmost = self.carrier_search_cursor_position != 0;
+        if is_not_cursor_leftmost {
+            // Method "remove" is not used on the saved text for deleting the selected char.
+            // Reason: Using remove on String works on bytes instead of the chars.
+            // Using remove would require special care because of char boundaries.
+
+            let current_index = self.carrier_search_cursor_position;
+            let from_left_to_current_index = current_index - 1;
+
+            // Getting all characters before the selected character.
+            let before_char_to_delete = self
+                .carrier_search_input
+                .chars()
+                .take(from_left_to_current_index);
+            // Getting all characters after selected character.
+            let after_char_to_delete = self.carrier_search_input.chars().skip(current_index);
+
+            // Put all characters together except the selected one.
+            // By leaving the selected one out, it is forgotten and therefore deleted.
+            self.carrier_search_input = before_char_to_delete.chain(after_char_to_delete).collect();
+            self.carrier_move_cursor_left();
+        }
+    }
+
+    fn carrier_clamp_cursor(&self, new_cursor_pos: usize) -> usize {
+        new_cursor_pos.clamp(0, self.carrier_search_input.len())
+    }
 
     // functions for navigating scrollable elements
     pub fn next_tab(&mut self) {
@@ -275,6 +322,19 @@ impl<'a> App<'a> {
         }
     }
 
+    // carriers
+    pub fn next_carrier(&mut self, client: &mut EliteRustClient) {
+        self.carrier_list_index = (self.carrier_list_index + 1) % client.carrier.carriers.len();
+    }
+
+    pub fn previous_carrier(&mut self, client: &mut EliteRustClient) {
+        if self.carrier_list_index > 0 {
+            self.carrier_list_index = 1
+        } else {
+            self.carrier_list_index = client.carrier.carriers.len() - 1;
+        }
+    }
+
     // TODO: add functions for cursor navigation through signals lists
 }
 
@@ -340,28 +400,49 @@ fn run_app<B: Backend>(
                                 0 => app.next_body(&mut client),
                                 1 => app.next_cargo(&client),
                                 2 => app.next_material(&mut client),
+                                3 => app.next_carrier(&mut client),
                                 _ => {}
                             },
                             KeyCode::Up => match app.tab_index {
                                 0 => app.previous_body(&mut client),
                                 1 => app.previous_cargo(&client),
                                 2 => app.previous_material(&mut client),
+                                3 => app.previous_carrier(&mut client),
                                 _ => {}
                             },
-                            KeyCode::Char('i') => {
-                                if app.tab_index == 2 {
-                                    app.search_input_mode = InputMode::Editing;
-                                }
-                            }
+                            KeyCode::Char('i') => match app.tab_index {
+                                2 => app.search_input_mode = InputMode::Editing,
+                                3 => app.search_input_mode = InputMode::Editing,
+                                _ => {}
+                            },
                             _ => {}
                         },
-                        // TODO: add keys for cursor navigation through signals list (do i need that?)
                         InputMode::Editing => match key.code {
-                            KeyCode::Char(to_insert) => app.enter_char(to_insert),
-                            KeyCode::Backspace => app.delete_char(),
-                            KeyCode::Left => app.move_cursor_left(),
-                            KeyCode::Right => app.move_cursor_right(),
-                            KeyCode::Esc => app.search_input_mode = InputMode::Normal,
+                            KeyCode::Char(to_insert) => match app.tab_index {
+                                2 => app.enter_char(to_insert),
+                                3 => app.carrier_enter_char(to_insert),
+                                _ => {}
+                            },
+                            KeyCode::Backspace => match app.tab_index {
+                                2 => app.delete_char(),
+                                3 => app.carrier_delete_char(),
+                                _ => {}
+                            },
+                            KeyCode::Left => match app.tab_index {
+                                2 => app.move_cursor_left(),
+                                3 => app.carrier_move_cursor_left(),
+                                _ => {}
+                            },
+                            KeyCode::Right => match app.tab_index {
+                                2 => app.move_cursor_right(),
+                                3 => app.carrier_move_cursor_right(),
+                                _ => {}
+                            },
+                            KeyCode::Esc => match app.tab_index {
+                                2 => app.search_input_mode = InputMode::Normal,
+                                3 => app.search_input_mode = InputMode::Normal,
+                                _ => {}
+                            },
                             _ => {}
                         },
                     }
@@ -405,7 +486,8 @@ fn ui(f: &mut Frame, app: &mut App, client: &EliteRustClient) {
         0 => tab_explorer(chunks[1], f, client, app),
         1 => tab_mining(chunks[1], f, client, app),
         2 => tab_materials(chunks[1], f, client, app),
-        3 => tab_about(chunks[1], f),
+        3 => tab_carrier(chunks[1], f, client, app),
+        4 => tab_about(chunks[1], f),
         _ => unreachable!(),
     };
 }
@@ -607,8 +689,6 @@ fn tab_explorer(
             }
 
             data_body_list.reverse();
-
-            //TODO: parse json to Vec and use it here
 
             data_body_info = match client.explorer.systems[client.explorer.index].body_list
                 [client.explorer.systems[client.explorer.index].index]
@@ -1088,40 +1168,20 @@ fn tab_explorer(
                             },
                         ]),
                         /*
-                        Row::new(vec![
-                            "Signals".to_string(),
-                            ring_body
-                                .ring_signals
-                                .iter()
-                                .map(|sig| {
-                                    [
-                                        {
+                        Row::new(vec!["Signals".to_string(),ring_body.ring_signals.iter(.map(|sig| {[{
                                             if sig.type_localised != "null" {
                                                 sig.type_localised.to_string()
                                             } else {
                                                 sig.r#type.to_string()
-                                            }
-                                        },
-                                        sig.count.to_string(),
-                                    ]
-                                    .join(" ")
-                                })
-                                .collect::<Vec<String>>()
-                                .join("\n"),
-                        ])
-                        .height(if ring_body.ring_signals.is_empty() {
-                            1
-                        } else {
+                                            }},
+                                        sig.count.to_string(),].join(" ")}).collect::<Vec<String>>().join("\n"),])
+                        .height(if ring_body.ring_signals.is_empty() {1} else {
                             additional_length_data_body_info += ring_body.ring_signals.len() - 1;
                             ring_body.ring_signals.len() as u16
                         }),
                         */
                     ]
-                } /*
-                      _ => {
-                      vec![Row::new(vec!["no data".to_string()]).style(Style::default().light_red())]
-                  }
-                  */
+                }
             };
 
             // Selection from body_list (cursor and scrolling)
@@ -1511,11 +1571,11 @@ fn tab_materials(
         if material_value
             .name_localised
             .to_lowercase()
-            .contains(&app.search_input.to_lowercase())
+            .contains(&app.materials_search_input.to_lowercase())
             || material_value
                 .name
                 .to_lowercase()
-                .contains(&app.search_input.to_lowercase())
+                .contains(&app.materials_search_input.to_lowercase())
         {
             material_vec_selected_sorted.push(material_value);
         }
@@ -1644,7 +1704,7 @@ fn tab_materials(
     // Widget definitions
     // material_list field
 
-    let widget_materials_search = Paragraph::new(app.search_input.clone()).block(
+    let widget_materials_search = Paragraph::new(app.materials_search_input.clone()).block(
         Block::default()
             .borders(Borders::TOP | Borders::LEFT)
             .white()
@@ -1734,13 +1794,187 @@ fn tab_materials(
             f.set_cursor(
                 // Draw the cursor at the current position in the input field.
                 // This position is can be controlled via the left and right arrow key
-                layout_materials_search_list[0].x + 1 + app.search_cursor_position as u16,
+                layout_materials_search_list[0].x + 1 + app.materials_search_cursor_position as u16,
                 // Move one line down, from the border to the input line
                 layout_materials_search_list[0].y + 1,
             )
         }
     }
 }
+
+fn tab_carrier(
+    chunk: ratatui::layout::Rect,
+    f: &mut ratatui::Frame,
+    client: &EliteRustClient,
+    app: &mut App,
+) {
+    let mut data_carrier_list: Vec<String> = vec!["no data".to_string()];
+    let mut data_carrier_list_selected: Vec<String> = data_carrier_list;
+    let mut data_carrier_info_location = "no data".to_string();
+    let mut data_carrier_info_destination = "no data".to_string();
+    let mut data_carrier_info_modules: Vec<String> = vec!["no data".to_string()];
+    let mut data_carrier_info_other = "no data".to_string();
+
+    app.carrier_list_state.select(Some(app.carrier_list_index));
+
+    if !client.carrier.carriers.is_empty() {
+        data_carrier_list_selected.clear();
+        data_carrier_list = client
+            .carrier
+            .carriers
+            .iter()
+            .map(|carrier| [carrier.name.to_string(), carrier.callsign.to_string()].join(" - "))
+            .collect::<Vec<String>>();
+
+        for carrier_value in data_carrier_list {
+            if carrier_value
+                .to_lowercase()
+                .contains(&app.carrier_search_input.to_lowercase())
+            {
+                data_carrier_list_selected.push(carrier_value);
+            }
+        }
+
+        data_carrier_info_location = [
+            client.carrier.carriers[app.carrier_list_index]
+                .current_system
+                .to_string(),
+            client.carrier.carriers[app.carrier_list_index]
+                .current_body
+                .to_string(),
+        ]
+        .join(" - ");
+
+        data_carrier_info_destination = [
+            client.carrier.carriers[app.carrier_list_index]
+                .next_system
+                .to_string(),
+            client.carrier.carriers[app.carrier_list_index]
+                .next_body
+                .to_string(),
+            client.carrier.carriers[app.carrier_list_index]
+                .departure
+                .to_string(),
+        ]
+        .join(" - ");
+
+        data_carrier_info_modules = client.carrier.carriers[app.carrier_list_index]
+            .services
+            .split(',')
+            .map(|f| f.to_string())
+            .collect::<Vec<String>>();
+
+        data_carrier_info_other = [
+            "Allow notorious:".to_string(),
+            client.carrier.carriers[app.carrier_list_index]
+                .allow_notorious
+                .to_string(),
+            "\nDocking Access:".to_string(),
+            client.carrier.carriers[app.carrier_list_index]
+                .docking_access
+                .to_string(),
+        ]
+        .join(" ");
+    }
+
+    let layout_carrier = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(45), Constraint::Fill(1)])
+        .split(chunk);
+
+    let layout_carrier_search_list = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2), Constraint::Fill(1)])
+        .split(layout_carrier[0]);
+
+    let layout_carrier_info = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(4),                                          // Location
+            Constraint::Length(4),                                          // Destination
+            Constraint::Length(data_carrier_info_modules.len() as u16 + 2), // Modules
+            Constraint::Fill(1),                                            // Other
+        ])
+        .split(layout_carrier[1]);
+
+    // Widget definitions
+    let widget_carrier_search = Paragraph::new(app.carrier_search_input.clone()).block(
+        Block::default()
+            .borders(Borders::TOP | Borders::LEFT)
+            .white()
+            .title(" Search "),
+    );
+
+    let widget_carrier_list = List::new(data_carrier_list_selected)
+        .block(
+            Block::default()
+                .title(" Known Carriers ")
+                .borders(Borders::TOP | Borders::LEFT)
+                .white(),
+        )
+        .highlight_style(Style::default().bold().white().on_dark_gray());
+
+    let widget_carrier_info_location = Paragraph::new(data_carrier_info_location)
+        .wrap(Wrap { trim: true })
+        .block(
+            Block::default()
+                .title(" Location ")
+                .bold()
+                .borders(Borders::TOP | Borders::LEFT),
+        );
+    let widget_carrier_info_destination = Paragraph::new(data_carrier_info_destination)
+        .wrap(Wrap { trim: true })
+        .block(
+            Block::default()
+                .title(" Jump Destination ")
+                .bold()
+                .borders(Borders::TOP | Borders::LEFT),
+        );
+    let widget_carrier_info_modules = List::new(data_carrier_info_modules).block(
+        Block::default()
+            .title(" Available Modules ")
+            .bold()
+            .borders(Borders::TOP | Borders::LEFT),
+    );
+    let widget_carrier_info_other = Paragraph::new(data_carrier_info_other).block(
+        Block::default()
+            .title(" Other ")
+            .bold()
+            .borders(Borders::TOP | Borders::LEFT),
+    );
+
+    // Render calls
+    f.render_widget(widget_carrier_search, layout_carrier_search_list[0]);
+    f.render_stateful_widget(
+        widget_carrier_list,
+        layout_carrier_search_list[1],
+        &mut app.carrier_list_state,
+    );
+
+    f.render_widget(widget_carrier_info_location, layout_carrier_info[0]);
+    f.render_widget(widget_carrier_info_destination, layout_carrier_info[1]);
+    f.render_widget(widget_carrier_info_modules, layout_carrier_info[2]);
+    f.render_widget(widget_carrier_info_other, layout_carrier_info[3]);
+    // make cursor visible for input
+    match app.search_input_mode {
+        InputMode::Normal =>
+            // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
+            {}
+
+        InputMode::Editing => {
+            // Make the cursor visible and ask ratatui to put it at the specified coordinates after
+            // rendering
+            f.set_cursor(
+                // Draw the cursor at the current position in the input field.
+                // This position is can be controlled via the left and right arrow key
+                layout_carrier_search_list[0].x + 1 + app.carrier_search_cursor_position as u16,
+                // Move one line down, from the border to the input line
+                layout_carrier_search_list[0].y + 1,
+            )
+        }
+    }
+}
+
 // About --------------------------------------------------------------------------------------------------------------------------------------------------------------------
 
 fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
