@@ -6,6 +6,7 @@ use chrono::DateTime;
 use ethers::contract::ContractCall;
 use ethers::middleware::SignerMiddleware;
 use ethers::prelude::{Http, LocalWallet, Provider};
+use log::error;
 use std::sync::Arc;
 
 #[derive(Clone)]
@@ -56,9 +57,12 @@ impl EvmUpdater {
                                 };
                                 carriers.push(carrier);
                             } else {
+                                error!("Error getting carriers");
                                 return vec![];
                             }
                         }
+                    } else {
+                        error!("Error getting carriers ids");
                     }
                     carriers
                 });
