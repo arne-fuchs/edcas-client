@@ -226,7 +226,7 @@ impl App for EliteRustClient {
                 if materials_button.clicked() {
                     self.state = MaterialInventory;
                 }
-                let carrier_button = menu_bar.button("Carrier");
+                let carrier_button = menu_bar.button("Carriers");
                 if carrier_button.clicked() {
                     self.state = CarrierPage;
                 }
