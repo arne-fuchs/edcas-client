@@ -101,6 +101,32 @@
         {
           "indexed": false,
           "internalType": "uint64",
+          "name": "marketID",
+          "type": "uint64"
+        }
+      ],
+      "name": "StationRegistration",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "marketID",
+          "type": "uint64"
+        }
+      ],
+      "name": "StationUpdate",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
           "name": "systemAddress",
           "type": "uint64"
         }
@@ -257,12 +283,44 @@
     },
     {
       "inputs": [],
+      "name": "get_stations",
+      "outputs": [
+        {
+          "internalType": "uint64[]",
+          "name": "",
+          "type": "uint64[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "get_systems",
       "outputs": [
         {
           "internalType": "string[]",
           "name": "",
           "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "markedIDs",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
         }
       ],
       "stateMutability": "view",
@@ -1186,6 +1244,98 @@
       "inputs": [
         {
           "internalType": "uint64",
+          "name": "market_id",
+          "type": "uint64"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_type",
+          "type": "string"
+        },
+        {
+          "internalType": "uint64",
+          "name": "system_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "string",
+          "name": "system_name",
+          "type": "string"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "state",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct Faction",
+          "name": "faction",
+          "type": "tuple"
+        },
+        {
+          "internalType": "string",
+          "name": "government",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "economy",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "services",
+          "type": "string"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int128",
+              "name": "decimal",
+              "type": "int128"
+            },
+            {
+              "internalType": "uint8",
+              "name": "floating_point",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct floating",
+          "name": "distance",
+          "type": "tuple"
+        },
+        {
+          "internalType": "string",
+          "name": "landingpads",
+          "type": "string"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "register_station",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
           "name": "system_address",
           "type": "uint64"
         },
@@ -1450,6 +1600,123 @@
           "internalType": "struct BodyProperties",
           "name": "bodyProperties",
           "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_marketID",
+          "type": "uint64"
+        }
+      ],
+      "name": "stationMap",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "registered",
+          "type": "bool"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "string",
+          "name": "name",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "_type",
+          "type": "string"
+        },
+        {
+          "internalType": "uint64",
+          "name": "system_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "string",
+          "name": "system_name",
+          "type": "string"
+        },
+        {
+          "components": [
+            {
+              "internalType": "string",
+              "name": "name",
+              "type": "string"
+            },
+            {
+              "internalType": "string",
+              "name": "state",
+              "type": "string"
+            }
+          ],
+          "internalType": "struct Faction",
+          "name": "faction",
+          "type": "tuple"
+        },
+        {
+          "internalType": "string",
+          "name": "government",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "economy",
+          "type": "string"
+        },
+        {
+          "internalType": "string",
+          "name": "services",
+          "type": "string"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int128",
+              "name": "decimal",
+              "type": "int128"
+            },
+            {
+              "internalType": "uint8",
+              "name": "floating_point",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct floating",
+          "name": "distance",
+          "type": "tuple"
+        },
+        {
+          "internalType": "string",
+          "name": "landingpads",
+          "type": "string"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "string",
+          "name": "stationName",
+          "type": "string"
+        }
+      ],
+      "name": "stationNameMap",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
         }
       ],
       "stateMutability": "view",

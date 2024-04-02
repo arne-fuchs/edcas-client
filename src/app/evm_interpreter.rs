@@ -18,11 +18,12 @@ use crate::app::settings::Settings;
 pub(crate) mod edcas_contract;
 
 pub type Edcas = edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>;
-pub type ContractFunctionCall = FunctionCall<
+pub type ContractCall = FunctionCall<
     Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
     (),
 >;
+
 pub struct EvmInterpreter {
     bus: BusReader<JsonValue>,
     settings: Arc<Settings>,
@@ -349,6 +350,127 @@ impl EvmInterpreter {
                     "CarrierCrewServices" => {}
                     "CarrierModulePack" => {}
                     "CarrierBankTransfer" => {}
+                    "Docked" => {
+                        //{ "timestamp":"2024-04-02T21:22:42Z", "event":"Docked", "StationName":"Q2K-BHB", "StationType":"FleetCarrier", "Taxi":false, "Multicrew":false,
+                        // "StarSystem":"Dulos", "SystemAddress":13865362204089, "MarketID":3704402432,
+                        // "StationFaction":{ "Name":"FleetCarrier" }, "StationGovernment":"$government_Carrier;", "StationGovernment_Localised":"Private Ownership",
+                        // "StationServices":[ "dock", "autodock", "commodities", "contacts", "exploration", "outfitting", "crewlounge", "rearm", "refuel", "repair", "shipyard", "engineer", "flightcontroller", "stationoperations", "stationMenu", "carriermanagement", "carrierfuel", "livery", "voucherredemption", "socialspace", "bartender", "vistagenomics" ],
+                        // "StationEconomy":"$economy_Carrier;", "StationEconomy_Localised":"Private Enterprise",
+                        // "StationEconomies":[ { "Name":"$economy_Carrier;", "Name_Localised":"Private Enterprise", "Proportion":1.000000 } ],
+                        // "DistFromStarLS":0.000000, "LandingPads":{ "Small":4, "Medium":4, "Large":8 } }
+
+                        //{ "timestamp":"2024-04-02T19:42:24Z", "event":"Docked", "StationName":"Milnor Station", "StationType":"Ocellus", "Taxi":false, "Multicrew":false,
+                        // "StarSystem":"Dulos", "SystemAddress":13865362204089, "MarketID":3223819264,
+                        // "StationFaction":{ "Name":"The Sovereign Justice Collective", "FactionState":"Bust" },
+                        // "StationGovernment":"$government_Dictatorship;", "StationGovernment_Localised":"Dictatorship",
+                        // "StationServices":[ "dock", "autodock", "commodities", "contacts", "exploration", "missions", "outfitting", "crewlounge", "rearm", "refuel", "repair", "shipyard", "tuning", "engineer", "missionsgenerated", "flightcontroller", "stationoperations", "powerplay", "searchrescue", "stationMenu", "shop", "livery", "socialspace", "bartender", "vistagenomics", "pioneersupplies", "apexinterstellar", "frontlinesolutions" ],
+                        // "StationEconomy":"$economy_Refinery;", "StationEconomy_Localised":"Refinery",
+                        // "StationEconomies":[ { "Name":"$economy_Refinery;", "Name_Localised":"Refinery", "Proportion":1.000000 } ],
+                        // "DistFromStarLS":20.275191, "LandingPads":{ "Small":11, "Medium":13, "Large":6 } }
+                        let contract = self.contract.clone();
+                        thread::spawn(|| {
+                            tokio::runtime::Builder::new_multi_thread()
+                                .enable_all()
+                                .build()
+                                .unwrap()
+                                .block_on(async move {
+                                    let mut services = String::new();
+                                    for entry in 0..json["StationServices"].len() {
+                                        if !services.is_empty() {
+                                            services.push_str(",");
+                                        }
+                                        services.push_str(
+                                            json["StationServices"][entry].as_str().unwrap(),
+                                        );
+                                    }
+                                    if json["StationType"].as_str().unwrap() == "FleetCarrier" {
+                                        let function_call: ContractCall = contract
+                                            .register_carrier(
+                                                json["MarketID"].as_u64().unwrap(),
+                                                "Fleet Carrier".to_string(),
+                                                json["StationName"].as_str().unwrap().to_string(),
+                                                services,
+                                                "".to_string(),
+                                                false,
+                                                DateTime::parse_from_rfc3339(
+                                                    json["timestamp"].as_str().unwrap(),
+                                                )
+                                                .unwrap()
+                                                .timestamp()
+                                                .into(),
+                                            );
+                                        //execute_send(function_call).await;
+                                        execute_send_repeatable(function_call).await;
+
+                                        let function_call: ContractCall = contract
+                                            .report_carrier_location(
+                                                json["MarketID"].as_u64().unwrap(),
+                                                json["StarSystem"].as_str().unwrap().to_string(),
+                                                "Unkown".to_string(),
+                                                DateTime::parse_from_rfc3339(
+                                                    json["timestamp"].as_str().unwrap(),
+                                                )
+                                                .unwrap()
+                                                .timestamp()
+                                                .into(),
+                                            );
+                                        //execute_send(function_call).await;
+                                        execute_send_repeatable(function_call).await;
+                                    } else {
+                                        let function_call: ContractCall = contract
+                                            .register_station(
+                                                json["MarketID"].as_u64().unwrap(),
+                                                json["StationName"].as_str().unwrap().to_string(),
+                                                json["StationType"].as_str().unwrap().to_string(),
+                                                json["SystemAddress"].as_u64().unwrap(),
+                                                json["StarSystem"].as_str().unwrap().to_string(),
+                                                edcas_contract::Faction {
+                                                    name: json["StationFaction"]["Name"]
+                                                        .as_str()
+                                                        .unwrap()
+                                                        .to_string(),
+                                                    state: json["StationFaction"]["FactionState"]
+                                                        .as_str()
+                                                        .unwrap_or("")
+                                                        .to_string(),
+                                                },
+                                                json["StationGovernment"]
+                                                    .as_str()
+                                                    .unwrap()
+                                                    .to_string(),
+                                                json["StationEconomy"]
+                                                    .as_str()
+                                                    .unwrap()
+                                                    .to_string(),
+                                                services,
+                                                edcas_contract::Floating {
+                                                    decimal: json["DistFromStarLS"]
+                                                        .to_string()
+                                                        .replace('.', "")
+                                                        .parse()
+                                                        .unwrap(),
+                                                    floating_point: json["DistFromStarLS"]
+                                                        .to_string()
+                                                        .split('.')
+                                                        .nth(1)
+                                                        .unwrap_or("")
+                                                        .len()
+                                                        as u8,
+                                                },
+                                                json["LandingPads"].to_string(),
+                                                DateTime::parse_from_rfc3339(
+                                                    json["timestamp"].as_str().unwrap(),
+                                                )
+                                                .unwrap()
+                                                .timestamp()
+                                                .into(),
+                                            );
+                                        //execute_send(function_call).await;
+                                        execute_send_repeatable(function_call).await;
+                                    }
+                                });
+                        });
+                    }
                     _ => {}
                 }
             }
