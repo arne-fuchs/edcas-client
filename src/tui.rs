@@ -106,9 +106,9 @@ struct App<'a> {
     pub prospector_index: usize,          //
     pub material_index: usize,            // materials
     pub material_list_state: ListState,   //
-    pub material_list_index: usize,       // materials lists
+    pub material_list_index: usize,       //
     pub search_input_mode: InputMode,     // user input
-    pub material_search: Search,          // per- tab
+    pub material_search: Search,
     pub carrier_list_state: ListState,
     pub carrier_list_index: usize,
     pub carrier_search: Search,
