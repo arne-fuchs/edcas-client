@@ -3,9 +3,9 @@ use crate::app::evm_updater::EvmUpdate::CarrierListUpdate;
 use crate::app::settings::Settings;
 use bus::Bus;
 use chrono::DateTime;
-use ethers::contract::ContractCall;
+use ethers::contract::{ContractCall, ContractError};
 use ethers::middleware::SignerMiddleware;
-use ethers::prelude::{Http, LocalWallet, Provider};
+use ethers::prelude::{Http, LocalWallet, Provider, U256};
 use log::error;
 use std::sync::Arc;
 
@@ -35,39 +35,45 @@ impl EvmUpdater {
                         Vec<u64>,
                     > = contract.get_carrier_ids();
                     let mut carriers = Vec::new();
-                    if let Ok(results) = function_call.legacy().call().await {
-                        for carrier_id in results {
-                            let function_call = contract.carrier_map(carrier_id);
-                            if let Ok(result) = function_call.call().await {
-                                let carrier = Carrier {
-                                    timestamp: DateTime::from_timestamp(
-                                        result.1.as_u64() as i64,
-                                        0,
-                                    )
-                                    .unwrap(),
-                                    name: result.2,
-                                    callsign: result.3,
-                                    services: result.4,
-                                    docking_access: result.5,
-                                    allow_notorious: result.6,
-                                    current_system: result.7,
-                                    current_body: result.8,
-                                    next_system: result.9,
-                                    next_body: result.10,
-                                    departure: DateTime::from_timestamp(
-                                        result.11.as_u64() as i64,
-                                        0,
-                                    )
-                                    .unwrap(),
-                                };
-                                carriers.push(carrier);
-                            } else {
-                                error!("Error getting carriers");
-                                return vec![];
+                    match function_call.legacy().call().await {
+                        Ok(results) => {
+                            for carrier_id in results {
+                                let function_call = contract.carrier_map(carrier_id);
+                                match function_call.call().await {
+                                    Ok(result) => {
+                                        let carrier = Carrier {
+                                            timestamp: DateTime::from_timestamp(
+                                                result.1.as_u64() as i64,
+                                                0,
+                                            )
+                                            .unwrap(),
+                                            name: result.2,
+                                            callsign: result.3,
+                                            services: result.4,
+                                            docking_access: result.5,
+                                            allow_notorious: result.6,
+                                            current_system: result.7,
+                                            current_body: result.8,
+                                            next_system: result.9,
+                                            next_body: result.10,
+                                            departure: DateTime::from_timestamp(
+                                                result.11.as_u64() as i64,
+                                                0,
+                                            )
+                                            .unwrap(),
+                                        };
+                                        carriers.push(carrier);
+                                    }
+                                    Err(err) => {
+                                        error!("Error getting carriers: {err}");
+                                        return vec![];
+                                    }
+                                }
                             }
                         }
-                    } else {
-                        error!("Error getting carriers ids");
+                        Err(err) => {
+                            error!("Error getting carriers ids: {err}");
+                        }
                     }
                     carriers
                 });
