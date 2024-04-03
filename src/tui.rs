@@ -2030,7 +2030,20 @@ fn tab_station(
                         .timestamp
                         .to_string(),
                 ]),
-                //Row::new(vec!["Distance".to_string(), (client.station.stations[app.station_list_index].distance).to_string()]),
+                Row::new(vec!["Distance".to_string(), {
+                    let mut distance = client.station.stations[app.station_list_index]
+                        .distance
+                        .decimal
+                        .to_string();
+                    distance.insert(
+                        client.station.stations[app.station_list_index]
+                            .distance
+                            .floating_point as usize
+                            - 1,
+                        '.',
+                    );
+                    distance
+                }]),
                 Row::new(vec![
                     "Type".to_string(),
                     client.station.stations[app.station_list_index]
