@@ -12,10 +12,7 @@ use ratatui::{prelude::*, style::Stylize, widgets::*};
 use crate::edcas::{materials::Material, mining::MiningMaterial, EliteRustClient};
 =======
 use crate::app::{
-    explorer::structs::{self, BodyType},
-    materials::Material,
-    mining::MiningMaterial,
-    EliteRustClient,
+    explorer::structs::BodyType, materials::Material, mining::MiningMaterial, EliteRustClient,
 };
 >>>>>>> 0208ae9 (basic body info implementations)
 
@@ -122,12 +119,22 @@ struct App<'a> {
     pub carrier_list_state: ListState,
     pub carrier_list_index: usize,
     pub carrier_search: Search,
+    pub station_list_state: ListState,
+    pub station_list_index: usize,
+    pub station_search: Search,
 }
 
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
-            titles: vec!["Explorer", "Mining", "Materials", "Carrier", "About"],
+            titles: vec![
+                "Explorer",
+                "Mining",
+                "Materials",
+                "Carrier",
+                "Station",
+                "About",
+            ],
             tab_index: 0,
             body_list_state: ListState::default(),
             prospector_list_state: ListState::default(),
@@ -142,6 +149,9 @@ impl<'a> App<'a> {
             carrier_list_state: ListState::default(),
             carrier_list_index: 0,
             carrier_search: Search::new(),
+            station_list_state: ListState::default(),
+            station_list_index: 0,
+            station_search: Search::new(),
         }
     }
 
@@ -308,6 +318,22 @@ impl<'a> App<'a> {
         }
     }
 
+    //stations
+    pub fn next_station(&mut self, client: &mut EliteRustClient) {
+        if !client.station.stations.is_empty() {
+            self.station_list_index = (self.station_list_index + 1) % client.station.stations.len();
+        }
+    }
+
+    pub fn previous_station(&mut self, client: &mut EliteRustClient) {
+        if !client.station.stations.is_empty() {
+            if self.station_list_index > 0 {
+                self.station_list_index -= 1
+            } else {
+                self.station_list_index = client.carrier.carriers.len() - 1;
+            }
+        }
+    }
     // TODO: add functions for cursor navigation through signals lists
 }
 
@@ -374,6 +400,7 @@ fn run_app<B: Backend>(
                                 1 => app.next_cargo(&client),
                                 2 => app.next_material(&mut client),
                                 3 => app.next_carrier(&mut client),
+                                4 => app.next_station(&mut client),
                                 _ => {}
                             },
                             KeyCode::Up => match app.tab_index {
@@ -381,11 +408,13 @@ fn run_app<B: Backend>(
                                 1 => app.previous_cargo(&client),
                                 2 => app.previous_material(&mut client),
                                 3 => app.previous_carrier(&mut client),
+                                4 => app.previous_station(&mut client),
                                 _ => {}
                             },
                             KeyCode::Char('i') => match app.tab_index {
                                 2 => app.search_input_mode = InputMode::Editing,
                                 3 => app.search_input_mode = InputMode::Editing,
+                                4 => app.search_input_mode = InputMode::Editing,
                                 _ => {}
                             },
                             _ => {}
@@ -394,26 +423,32 @@ fn run_app<B: Backend>(
                             KeyCode::Char(to_insert) => match app.tab_index {
                                 2 => app.material_search.enter_char(to_insert),
                                 3 => app.carrier_search.enter_char(to_insert),
+                                4 => app.station_search.enter_char(to_insert),
                                 _ => {}
                             },
                             KeyCode::Backspace => match app.tab_index {
                                 2 => app.material_search.delete_char(),
                                 3 => app.carrier_search.delete_char(),
+                                4 => app.station_search.delete_char(),
+
                                 _ => {}
                             },
                             KeyCode::Left => match app.tab_index {
                                 2 => app.material_search.move_cursor_left(),
                                 3 => app.carrier_search.move_cursor_left(),
+                                4 => app.station_search.move_cursor_left(),
                                 _ => {}
                             },
                             KeyCode::Right => match app.tab_index {
                                 2 => app.material_search.move_cursor_right(),
                                 3 => app.carrier_search.move_cursor_right(),
+                                4 => app.station_search.move_cursor_right(),
                                 _ => {}
                             },
                             KeyCode::Esc => match app.tab_index {
                                 2 => app.search_input_mode = InputMode::Normal,
                                 3 => app.search_input_mode = InputMode::Normal,
+                                4 => app.search_input_mode = InputMode::Normal,
                                 _ => {}
                             },
                             _ => {}
@@ -460,7 +495,8 @@ fn ui(f: &mut Frame, app: &mut App, client: &EliteRustClient) {
         1 => tab_mining(chunks[1], f, client, app),
         2 => tab_materials(chunks[1], f, client, app),
         3 => tab_carrier(chunks[1], f, client, app),
-        4 => tab_about(chunks[1], f),
+        4 => tab_station(chunks[1], f, client, app),
+        5 => tab_about(chunks[1], f),
         _ => unreachable!(),
     };
 }
@@ -1650,7 +1686,7 @@ fn tab_materials(
     // Layout definitions
     let layout_materials = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(45), Constraint::Fill(1)])
+        .constraints([Constraint::Length(46), Constraint::Fill(1)])
         .split(chunk);
 
     let layout_materials_search_list = Layout::default()
@@ -1660,7 +1696,7 @@ fn tab_materials(
 
     let layout_materials_list = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(36), Constraint::Fill(1)])
+        .constraints([Constraint::Fill(1), Constraint::Length(7)])
         .split(layout_materials_search_list[1]);
 
     let layout_materials_info = Layout::default()
@@ -1801,62 +1837,64 @@ fn tab_carrier(
 
         data_carrier_list_selected = app.carrier_search.filter_by_input(data_carrier_list);
 
-        match app
-            .carrier_list_index
-            .cmp(&data_carrier_list_selected.len())
-        {
-            Ordering::Greater => app.carrier_list_index = data_carrier_list_selected.len() - 1, // thats no good, store selected list or its length in app.
-            Ordering::Equal => app.carrier_list_index = 0,
-            _ => {}
-        };
+        if !data_carrier_list_selected.is_empty() {
+            match app
+                .carrier_list_index
+                .cmp(&data_carrier_list_selected.len())  //thats fucked up but it works
+            {
+                Ordering::Greater => app.carrier_list_index = data_carrier_list_selected.len() - 1,
+                Ordering::Equal => app.carrier_list_index = 0,
+                _ => {}
+            }
 
-        data_carrier_info_location = [
-            client.carrier.carriers[app.carrier_list_index]
-                .current_system
-                .to_string(),
-            client.carrier.carriers[app.carrier_list_index]
-                .current_body
-                .to_string(),
-        ]
-        .join(" - ");
+            data_carrier_info_location = [
+                client.carrier.carriers[app.carrier_list_index]
+                    .current_system
+                    .to_string(),
+                client.carrier.carriers[app.carrier_list_index]
+                    .current_body
+                    .to_string(),
+            ]
+            .join(" - ");
 
-        data_carrier_info_destination = [
-            client.carrier.carriers[app.carrier_list_index]
-                .next_system
-                .to_string(),
-            " - ".to_string(),
-            client.carrier.carriers[app.carrier_list_index]
-                .next_body
-                .to_string(),
-            "\n".to_string(),
-            client.carrier.carriers[app.carrier_list_index]
-                .departure
-                .to_string(),
-        ]
-        .join("");
+            data_carrier_info_destination = [
+                client.carrier.carriers[app.carrier_list_index]
+                    .next_system
+                    .to_string(),
+                " - ".to_string(),
+                client.carrier.carriers[app.carrier_list_index]
+                    .next_body
+                    .to_string(),
+                "\n".to_string(),
+                client.carrier.carriers[app.carrier_list_index]
+                    .departure
+                    .to_string(),
+            ]
+            .join("");
 
-        data_carrier_info_modules = client.carrier.carriers[app.carrier_list_index]
-            .services
-            .split(',')
-            .map(|f| f.to_string())
-            .collect::<Vec<String>>();
+            data_carrier_info_modules = client.carrier.carriers[app.carrier_list_index]
+                .services
+                .split(',')
+                .map(|f| f.to_string())
+                .collect::<Vec<String>>();
 
-        data_carrier_info_other = [
-            "Allow notorious:".to_string(),
-            client.carrier.carriers[app.carrier_list_index]
-                .allow_notorious
-                .to_string(),
-            "\nDocking Access:".to_string(),
-            client.carrier.carriers[app.carrier_list_index]
-                .docking_access
-                .to_string(),
-        ]
-        .join(" ");
+            data_carrier_info_other = [
+                "Allow notorious:".to_string(),
+                client.carrier.carriers[app.carrier_list_index]
+                    .allow_notorious
+                    .to_string(),
+                "\nDocking Access:".to_string(),
+                client.carrier.carriers[app.carrier_list_index]
+                    .docking_access
+                    .to_string(),
+            ]
+            .join(" ");
+        }
     }
 
     let layout_carrier = Layout::default()
         .direction(Direction::Horizontal)
-        .constraints([Constraint::Length(45), Constraint::Fill(1)])
+        .constraints([Constraint::Length(46), Constraint::Fill(1)])
         .split(chunk);
 
     let layout_carrier_search_list = Layout::default()
@@ -1867,7 +1905,7 @@ fn tab_carrier(
     let layout_carrier_info = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(4),                                          // Location
+            Constraint::Length(3),                                          // Location
             Constraint::Length(4),                                          // Destination
             Constraint::Length(data_carrier_info_modules.len() as u16 + 2), // Modules
             Constraint::Fill(1),                                            // Other
@@ -1947,6 +1985,171 @@ fn tab_carrier(
                 layout_carrier_search_list[0].x + 1 + app.carrier_search.cursor_position as u16,
                 // Move one line down, from the border to the input line
                 layout_carrier_search_list[0].y + 1,
+            )
+        }
+    }
+}
+
+fn tab_station(
+    chunk: ratatui::layout::Rect,
+    f: &mut ratatui::Frame,
+    client: &EliteRustClient,
+    app: &mut App,
+) {
+    app.station_list_state.select(Some(app.station_list_index));
+
+    let mut data_station_list: Vec<String> = vec!["no data".to_string()];
+    let mut data_station_list_selected: Vec<String> = data_station_list;
+    let mut data_station_info: Vec<Row> = vec![Row::new(vec!["no data"])];
+    let mut data_station_info_services: Vec<String> = vec!["no data".to_string()];
+    let mut data_station_info_pads: Vec<String> = vec!["no data".to_string()];
+
+    if !client.station.stations.is_empty() {
+        data_station_list = client
+            .station
+            .stations
+            .iter()
+            .map(|station| [station.system_name.to_string(), station.name.to_string()].join(" - "))
+            .collect::<Vec<String>>();
+
+        data_station_list_selected = app.station_search.filter_by_input(data_station_list);
+
+        if !data_station_list_selected.is_empty() {
+            match app.station_list_index
+                .cmp(&data_station_list_selected.len())  //thats fucked up but it works
+            {
+                Ordering::Greater => app.station_list_index = data_station_list_selected.len() - 1,
+                Ordering::Equal => app.station_list_index = 0,
+                _ => {}
+            }
+
+            data_station_info = vec![
+                Row::new(vec![
+                    "Last Update".to_string(),
+                    client.station.stations[app.station_list_index]
+                        .timestamp
+                        .to_string(),
+                ]),
+                //Row::new(vec!["Distance".to_string(), (client.station.stations[app.station_list_index].distance).to_string()]),
+                Row::new(vec![
+                    "Type".to_string(),
+                    client.station.stations[app.station_list_index]
+                        ._type
+                        .to_string(),
+                ]),
+                Row::new(vec![
+                    "Economy".to_string(),
+                    client.station.stations[app.station_list_index]
+                        .economy
+                        .to_string(),
+                ]),
+                Row::new(vec![
+                    "Government".to_string(),
+                    client.station.stations[app.station_list_index]
+                        .government
+                        .to_string(),
+                ]),
+            ];
+
+            data_station_info_services = client.station.stations[app.station_list_index]
+                .services
+                .split(',')
+                .map(|f| f.to_string())
+                .collect();
+            data_station_info_pads = vec![client.station.stations[app.station_list_index]
+                .landingpads
+                .to_string()];
+        }
+    }
+
+    let layout_station = Layout::default()
+        .direction(Direction::Horizontal)
+        .constraints([Constraint::Length(46), Constraint::Fill(1)])
+        .split(chunk);
+
+    let layout_station_search_list = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([Constraint::Length(2), Constraint::Fill(1)])
+        .split(layout_station[0]);
+
+    let layout_station_info = Layout::default()
+        .direction(Direction::Vertical)
+        .constraints([
+            Constraint::Length(data_station_info.len() as u16 + 2),
+            Constraint::Length(data_station_info_services.len() as u16 + 2),
+            Constraint::Fill(1),
+        ])
+        .split(layout_station[1]);
+
+    // Widget definitions
+    let widget_station_search = Paragraph::new(app.station_search.input.clone()).block(
+        Block::default()
+            .borders(Borders::TOP | Borders::LEFT)
+            .white()
+            .title(" Search "),
+    );
+
+    let widget_station_list = List::new(data_station_list_selected)
+        .block(
+            Block::default()
+                .title(" Known Stations ")
+                .borders(Borders::TOP | Borders::LEFT)
+                .white(),
+        )
+        .highlight_style(Style::default().bold().white().on_dark_gray());
+
+    let widget_station_info = Table::new(
+        data_station_info,
+        vec![Constraint::Length(20), Constraint::Fill(1)],
+    )
+    .block(
+        Block::default()
+            .title(" Station Info ")
+            .bold()
+            .borders(Borders::TOP | Borders::LEFT),
+    );
+
+    let widget_station_info_services = List::new(data_station_info_services).block(
+        Block::default()
+            .title(" Services ")
+            .borders(Borders::TOP | Borders::LEFT)
+            .white(),
+    );
+
+    let widget_station_info_pads = List::new(data_station_info_pads).block(
+        Block::default()
+            .title(" Landing Pads ")
+            .borders(Borders::TOP | Borders::LEFT)
+            .white(),
+    );
+
+    // Render calls
+    f.render_widget(widget_station_search, layout_station_search_list[0]);
+    f.render_stateful_widget(
+        widget_station_list,
+        layout_station_search_list[1],
+        &mut app.station_list_state,
+    );
+
+    f.render_widget(widget_station_info, layout_station_info[0]);
+    f.render_widget(widget_station_info_services, layout_station_info[1]);
+    f.render_widget(widget_station_info_pads, layout_station_info[2]);
+
+    // make cursor visible for input
+    match app.search_input_mode {
+        InputMode::Normal =>
+            // Hide the cursor. `Frame` does this by default, so we don't need to do anything here
+            {}
+
+        InputMode::Editing => {
+            // Make the cursor visible and ask ratatui to put it at the specified coordinates after
+            // rendering
+            f.set_cursor(
+                // Draw the cursor at the current position in the input field.
+                // This position is can be controlled via the left and right arrow key
+                layout_station_search_list[0].x + 1 + app.station_search.cursor_position as u16,
+                // Move one line down, from the border to the input line
+                layout_station_search_list[0].y + 1,
             )
         }
     }
