@@ -1565,7 +1565,7 @@ fn tab_materials(
     if !material_vec_selected_sorted.is_empty() {
         // check if pointer is out of bounds for list you are switching to. Set to list.len()-1 if it is.
         if app.material_index >= material_vec_selected_sorted.len() {
-            app.material_index = material_vec_selected_sorted.len() - 1;
+            app.material_index %= material_vec_selected_sorted.len();
         }
 
         // bc the map is sorted, i can map index to key directly
@@ -1771,6 +1771,8 @@ fn tab_carrier(
     client: &EliteRustClient,
     app: &mut App,
 ) {
+    app.carrier_list_state.select(Some(app.carrier_list_index));
+
     let mut data_carrier_list: Vec<String> = vec!["no data".to_string()];
     let mut data_carrier_list_selected: Vec<String> = data_carrier_list;
     let mut data_carrier_info_location = "no data".to_string();
@@ -1778,13 +1780,7 @@ fn tab_carrier(
     let mut data_carrier_info_modules: Vec<String> = vec!["no data".to_string()];
     let mut data_carrier_info_other = "no data".to_string();
 
-    app.carrier_list_state.select(Some(app.carrier_list_index));
-
     if !client.carrier.carriers.is_empty() {
-        if app.carrier_list_index >= data_carrier_list_selected.len() {
-            app.carrier_list_index = data_carrier_list_selected.len() - 1;
-        }
-
         data_carrier_list_selected.clear();
         data_carrier_list = client
             .carrier
@@ -1800,6 +1796,10 @@ fn tab_carrier(
             {
                 data_carrier_list_selected.push(carrier_value);
             }
+        }
+
+        if app.carrier_list_index >= data_carrier_list_selected.len() {
+            app.carrier_list_index %= data_carrier_list_selected.len();
         }
 
         data_carrier_info_location = [
