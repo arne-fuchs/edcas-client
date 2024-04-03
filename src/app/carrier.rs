@@ -37,14 +37,31 @@ impl App for CarrierState {
             });
             ui.end_row();
 
+            let search = self.search.to_ascii_lowercase();
+
             egui::ScrollArea::vertical().show(ui, |ui| {
                 for carrier in &self.carriers {
-                    if carrier.name.contains(self.search.as_str())
-                        || carrier.callsign.contains(self.search.as_str())
-                        || carrier.next_system.contains(self.search.as_str())
-                        || carrier.next_body.contains(self.search.as_str())
-                        || carrier.current_system.contains(self.search.as_str())
-                        || carrier.current_body.contains(self.search.as_str())
+                    if carrier.name.contains(search.as_str())
+                        || carrier
+                            .callsign
+                            .to_ascii_lowercase()
+                            .contains(search.as_str())
+                        || carrier
+                            .next_system
+                            .to_ascii_lowercase()
+                            .contains(search.as_str())
+                        || carrier
+                            .next_body
+                            .to_ascii_lowercase()
+                            .contains(search.as_str())
+                        || carrier
+                            .current_system
+                            .to_ascii_lowercase()
+                            .contains(search.as_str())
+                        || carrier
+                            .current_body
+                            .to_ascii_lowercase()
+                            .contains(search.as_str())
                     {
                         let id = ui.make_persistent_id(carrier.callsign.clone());
                         CollapsingState::load_with_default_open(ui.ctx(), id, false)

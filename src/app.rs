@@ -18,7 +18,10 @@ use json::JsonValue;
 use log::info;
 
 use crate::app::materials::MaterialState;
-use crate::app::State::{About, CarrierPage, Explorer, MaterialInventory, Mining, News, Settings};
+use crate::app::station::StationState;
+use crate::app::State::{
+    About, CarrierPage, Explorer, MaterialInventory, Mining, News, Settings, StationPage,
+};
 use crate::egui::Context;
 
 mod about;
@@ -35,10 +38,12 @@ pub mod materials;
 pub mod mining;
 mod news;
 mod settings;
+mod station;
 
 pub struct EliteRustClient {
     pub about: about::About,
     pub explorer: explorer::Explorer,
+    pub station: StationState,
     pub carrier: CarrierState,
     pub state: State,
     pub materials: MaterialState,
@@ -71,6 +76,9 @@ impl EliteRustClient {
                 match update {
                     EvmUpdate::CarrierListUpdate(carriers) => {
                         self.carrier.carriers = carriers;
+                    }
+                    EvmUpdate::StationListUpdate(stations) => {
+                        self.station.stations = stations;
                     }
                 }
             }
@@ -144,6 +152,11 @@ impl Default for EliteRustClient {
         Self {
             news: news::News::default(),
             about: about::About::default(),
+            station: StationState {
+                stations: vec![],
+                search: "".to_string(),
+                settings: settings_pointer.clone(),
+            },
             carrier: CarrierState {
                 carriers: vec![],
                 search: "".to_string(),
@@ -170,6 +183,7 @@ impl Default for EliteRustClient {
 pub enum State {
     News,
     About,
+    StationPage,
     CarrierPage,
     Settings,
     Explorer,
@@ -226,6 +240,10 @@ impl App for EliteRustClient {
                 if materials_button.clicked() {
                     self.state = MaterialInventory;
                 }
+                let station_button = menu_bar.button("Stations");
+                if station_button.clicked() {
+                    self.state = StationPage;
+                }
                 let carrier_button = menu_bar.button("Carriers");
                 if carrier_button.clicked() {
                     self.state = CarrierPage;
@@ -248,6 +266,9 @@ impl App for EliteRustClient {
                     }
                     About => {
                         about_button.highlight();
+                    }
+                    StationPage => {
+                        station_button.highlight();
                     }
                     CarrierPage => {
                         carrier_button.highlight();
@@ -273,6 +294,7 @@ impl App for EliteRustClient {
         egui::CentralPanel::default().show(ctx, |_ui| match self.state {
             News => self.news.update(ctx, frame),
             About => self.about.update(ctx, frame),
+            StationPage => self.station.update(ctx, frame),
             CarrierPage => self.carrier.update(ctx, frame),
             Settings => self.settings.update(ctx, frame),
             Explorer => self.explorer.update(ctx, frame),
