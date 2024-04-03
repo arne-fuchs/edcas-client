@@ -1,5 +1,5 @@
 use core::f64;
-use std::{error::Error, io};
+use std::{cmp::Ordering, error::Error, io};
 
 use crossterm::{
     event::{self, Event::Key, KeyCode},
@@ -93,6 +93,16 @@ impl Search {
 
     fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
         new_cursor_pos.clamp(0, self.input.len())
+    }
+
+    fn filter_by_input(&mut self, list: Vec<String>) -> Vec<String> {
+        let mut list_selected: Vec<String> = vec![];
+        for value in list {
+            if value.to_lowercase().contains(&self.input.to_lowercase()) {
+                list_selected.push(value);
+            }
+        }
+        list_selected
     }
 }
 
@@ -1530,6 +1540,7 @@ fn tab_materials(
         _ => unreachable!(),
     };
 
+    // do the search with Search::filter_by_input
     for material_value in data_materials_dataset {
         if material_value
             .name_localised
@@ -1781,7 +1792,6 @@ fn tab_carrier(
     let mut data_carrier_info_other = "no data".to_string();
 
     if !client.carrier.carriers.is_empty() {
-        data_carrier_list_selected.clear();
         data_carrier_list = client
             .carrier
             .carriers
@@ -1789,18 +1799,16 @@ fn tab_carrier(
             .map(|carrier| [carrier.name.to_string(), carrier.callsign.to_string()].join(" - "))
             .collect::<Vec<String>>();
 
-        for carrier_value in data_carrier_list {
-            if carrier_value
-                .to_lowercase()
-                .contains(&app.carrier_search.input.to_lowercase())
-            {
-                data_carrier_list_selected.push(carrier_value);
-            }
-        }
+        data_carrier_list_selected = app.carrier_search.filter_by_input(data_carrier_list);
 
-        if app.carrier_list_index >= data_carrier_list_selected.len() {
-            app.carrier_list_index %= data_carrier_list_selected.len();
-        }
+        match app
+            .carrier_list_index
+            .cmp(&data_carrier_list_selected.len())
+        {
+            Ordering::Greater => app.carrier_list_index = data_carrier_list_selected.len() - 1, // thats no good, store selected list or its length in app.
+            Ordering::Equal => app.carrier_list_index = 0,
+            _ => {}
+        };
 
         data_carrier_info_location = [
             client.carrier.carriers[app.carrier_list_index]
