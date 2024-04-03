@@ -324,14 +324,18 @@ impl<'a> App<'a> {
 
     // carriers
     pub fn next_carrier(&mut self, client: &mut EliteRustClient) {
-        self.carrier_list_index = (self.carrier_list_index + 1) % client.carrier.carriers.len();
+        if !client.carrier.carriers.is_empty() {
+            self.carrier_list_index = (self.carrier_list_index + 1) % client.carrier.carriers.len();
+        }
     }
 
     pub fn previous_carrier(&mut self, client: &mut EliteRustClient) {
-        if self.carrier_list_index > 0 {
-            self.carrier_list_index = 1
-        } else {
-            self.carrier_list_index = client.carrier.carriers.len() - 1;
+        if !client.carrier.carriers.is_empty() {
+            if self.carrier_list_index > 0 {
+                self.carrier_list_index -= 1
+            } else {
+                self.carrier_list_index = client.carrier.carriers.len() - 1;
+            }
         }
     }
 
@@ -1818,6 +1822,10 @@ fn tab_carrier(
     app.carrier_list_state.select(Some(app.carrier_list_index));
 
     if !client.carrier.carriers.is_empty() {
+        if app.carrier_list_index >= data_carrier_list_selected.len() {
+            app.carrier_list_index = data_carrier_list_selected.len() - 1;
+        }
+
         data_carrier_list_selected.clear();
         data_carrier_list = client
             .carrier
