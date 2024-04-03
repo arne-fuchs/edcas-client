@@ -91,16 +91,6 @@ impl Search {
     fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
         new_cursor_pos.clamp(0, self.input.len())
     }
-
-    fn filter_by_input(&mut self, list: Vec<String>) -> Vec<String> {
-        let mut list_selected: Vec<String> = vec![];
-        for value in list {
-            if value.to_lowercase().contains(&self.input.to_lowercase()) {
-                list_selected.push(value);
-            }
-        }
-        list_selected
-    }
 }
 
 struct App<'a> {
@@ -1820,22 +1810,44 @@ fn tab_carrier(
 ) {
     app.carrier_list_state.select(Some(app.carrier_list_index));
 
-    let mut data_carrier_list: Vec<String> = vec!["no data".to_string()];
-    let mut data_carrier_list_selected: Vec<String> = data_carrier_list;
+    let mut dataset_carrier_list_selected: Vec<_> = vec![];
+
+    let mut data_carrier_list_selected: Vec<String> = vec!["no data".to_string()];
     let mut data_carrier_info_location = "no data".to_string();
     let mut data_carrier_info_destination = "no data".to_string();
     let mut data_carrier_info_modules: Vec<String> = vec!["no data".to_string()];
     let mut data_carrier_info_other = "no data".to_string();
 
+    /*
+    fn filter_by_input(&mut self, list: Vec<String>) -> Vec<String> {
+        let mut list_selected: Vec<String> = vec![];
+        for value in list {
+            if value.to_lowercase().contains(&self.input.to_lowercase()) {
+                list_selected.push(value);
+            }
+        }
+        list_selected
+    }*/
+
     if !client.carrier.carriers.is_empty() {
-        data_carrier_list = client
-            .carrier
-            .carriers
+        for carrier in &client.carrier.carriers {
+            if carrier
+                .name
+                .to_lowercase()
+                .contains(&app.carrier_search.input.to_lowercase())
+                || carrier
+                    .callsign
+                    .to_lowercase()
+                    .contains(&app.carrier_search.input.to_lowercase())
+            {
+                dataset_carrier_list_selected.push(carrier);
+            }
+        }
+
+        data_carrier_list_selected = dataset_carrier_list_selected
             .iter()
             .map(|carrier| [carrier.name.to_string(), carrier.callsign.to_string()].join(" - "))
             .collect::<Vec<String>>();
-
-        data_carrier_list_selected = app.carrier_search.filter_by_input(data_carrier_list);
 
         if !data_carrier_list_selected.is_empty() {
             match app
@@ -1848,31 +1860,31 @@ fn tab_carrier(
             }
 
             data_carrier_info_location = [
-                client.carrier.carriers[app.carrier_list_index]
+                dataset_carrier_list_selected[app.carrier_list_index]
                     .current_system
                     .to_string(),
-                client.carrier.carriers[app.carrier_list_index]
+                dataset_carrier_list_selected[app.carrier_list_index]
                     .current_body
                     .to_string(),
             ]
             .join(" - ");
 
             data_carrier_info_destination = [
-                client.carrier.carriers[app.carrier_list_index]
+                dataset_carrier_list_selected[app.carrier_list_index]
                     .next_system
                     .to_string(),
                 " - ".to_string(),
-                client.carrier.carriers[app.carrier_list_index]
+                dataset_carrier_list_selected[app.carrier_list_index]
                     .next_body
                     .to_string(),
                 "\n".to_string(),
-                client.carrier.carriers[app.carrier_list_index]
+                dataset_carrier_list_selected[app.carrier_list_index]
                     .departure
                     .to_string(),
             ]
             .join("");
 
-            data_carrier_info_modules = client.carrier.carriers[app.carrier_list_index]
+            data_carrier_info_modules = dataset_carrier_list_selected[app.carrier_list_index]
                 .services
                 .split(',')
                 .map(|f| f.to_string())
@@ -1880,11 +1892,11 @@ fn tab_carrier(
 
             data_carrier_info_other = [
                 "Allow notorious:".to_string(),
-                client.carrier.carriers[app.carrier_list_index]
+                dataset_carrier_list_selected[app.carrier_list_index]
                     .allow_notorious
                     .to_string(),
                 "\nDocking Access:".to_string(),
-                client.carrier.carriers[app.carrier_list_index]
+                dataset_carrier_list_selected[app.carrier_list_index]
                     .docking_access
                     .to_string(),
             ]
@@ -1998,21 +2010,31 @@ fn tab_station(
 ) {
     app.station_list_state.select(Some(app.station_list_index));
 
-    let mut data_station_list: Vec<String> = vec!["no data".to_string()];
-    let mut data_station_list_selected: Vec<String> = data_station_list;
+    let mut dataset_station_list_selected: Vec<_> = vec![];
+    let mut data_station_list_selected: Vec<String> = vec!["no data".to_string()];
     let mut data_station_info: Vec<Row> = vec![Row::new(vec!["no data"])];
     let mut data_station_info_services: Vec<String> = vec!["no data".to_string()];
     let mut data_station_info_pads: Vec<String> = vec!["no data".to_string()];
 
     if !client.station.stations.is_empty() {
-        data_station_list = client
-            .station
-            .stations
+        for station in &client.station.stations {
+            if station
+                .name
+                .to_lowercase()
+                .contains(&app.station_search.input.to_lowercase())
+                || station
+                    .system_name
+                    .to_lowercase()
+                    .contains(&app.station_search.input.to_lowercase())
+            {
+                dataset_station_list_selected.push(station);
+            }
+        }
+
+        data_station_list_selected = dataset_station_list_selected
             .iter()
             .map(|station| [station.system_name.to_string(), station.name.to_string()].join(" - "))
             .collect::<Vec<String>>();
-
-        data_station_list_selected = app.station_search.filter_by_input(data_station_list);
 
         if !data_station_list_selected.is_empty() {
             match app.station_list_index
@@ -2026,17 +2048,17 @@ fn tab_station(
             data_station_info = vec![
                 Row::new(vec![
                     "Last Update".to_string(),
-                    client.station.stations[app.station_list_index]
+                    dataset_station_list_selected[app.station_list_index]
                         .timestamp
                         .to_string(),
                 ]),
                 Row::new(vec!["Distance".to_string(), {
-                    let mut distance = client.station.stations[app.station_list_index]
+                    let mut distance = dataset_station_list_selected[app.station_list_index]
                         .distance
                         .decimal
                         .to_string();
                     distance.insert(
-                        client.station.stations[app.station_list_index]
+                        dataset_station_list_selected[app.station_list_index]
                             .distance
                             .floating_point as usize
                             - 1,
@@ -2046,30 +2068,30 @@ fn tab_station(
                 }]),
                 Row::new(vec![
                     "Type".to_string(),
-                    client.station.stations[app.station_list_index]
+                    dataset_station_list_selected[app.station_list_index]
                         ._type
                         .to_string(),
                 ]),
                 Row::new(vec![
                     "Economy".to_string(),
-                    client.station.stations[app.station_list_index]
+                    dataset_station_list_selected[app.station_list_index]
                         .economy
                         .to_string(),
                 ]),
                 Row::new(vec![
                     "Government".to_string(),
-                    client.station.stations[app.station_list_index]
+                    dataset_station_list_selected[app.station_list_index]
                         .government
                         .to_string(),
                 ]),
             ];
 
-            data_station_info_services = client.station.stations[app.station_list_index]
+            data_station_info_services = dataset_station_list_selected[app.station_list_index]
                 .services
                 .split(',')
                 .map(|f| f.to_string())
                 .collect();
-            data_station_info_pads = vec![client.station.stations[app.station_list_index]
+            data_station_info_pads = vec![dataset_station_list_selected[app.station_list_index]
                 .landingpads
                 .to_string()];
         }
