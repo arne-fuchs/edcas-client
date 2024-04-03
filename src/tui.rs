@@ -82,24 +82,24 @@ impl<'a> App<'a> {
     }
 
     //Search Input materials
-    fn move_cursor_left(&mut self) {
+    fn material_move_cursor_left(&mut self) {
         let cursor_moved_left = self.materials_search_cursor_position.saturating_sub(1);
-        self.materials_search_cursor_position = self.clamp_cursor(cursor_moved_left);
+        self.materials_search_cursor_position = self.material_clamp_cursor(cursor_moved_left);
     }
 
-    fn move_cursor_right(&mut self) {
+    fn material_move_cursor_right(&mut self) {
         let cursor_moved_right = self.materials_search_cursor_position.saturating_add(1);
-        self.materials_search_cursor_position = self.clamp_cursor(cursor_moved_right);
+        self.materials_search_cursor_position = self.material_clamp_cursor(cursor_moved_right);
     }
 
-    fn enter_char(&mut self, new_char: char) {
+    fn material_enter_char(&mut self, new_char: char) {
         self.materials_search_input
             .insert(self.materials_search_cursor_position, new_char);
 
-        self.move_cursor_right();
+        self.material_move_cursor_right();
     }
 
-    fn delete_char(&mut self) {
+    fn material_delete_char(&mut self) {
         let is_not_cursor_leftmost = self.materials_search_cursor_position != 0;
         if is_not_cursor_leftmost {
             // Method "remove" is not used on the saved text for deleting the selected char.
@@ -121,15 +121,25 @@ impl<'a> App<'a> {
             // By leaving the selected one out, it is forgotten and therefore deleted.
             self.materials_search_input =
                 before_char_to_delete.chain(after_char_to_delete).collect();
-            self.move_cursor_left();
+            self.material_move_cursor_left();
         }
     }
 
-    fn clamp_cursor(&self, new_cursor_pos: usize) -> usize {
-        new_cursor_pos.clamp(0, self.materials_search_input.len())
+    fn material_clamp_cursor(&self, new_cursor_pos: usize) -> usize {
+        new_cursor_pos.clamp(
+            0,
+            self.materials_search_input.len(),
+            /* definitely something like this
+            match self.tab_index {
+                2 => self.materials_search_input.len(),
+                3 => self.carrier_search_input.len(),
+                _ => unreachable!(),
+            },*/
+        )
     }
 
     //Search Input carriers
+    // Definitely shouldnt do it this way, but im too lazy to think about that
     fn carrier_move_cursor_left(&mut self) {
         let cursor_moved_left = self.carrier_search_cursor_position.saturating_sub(1);
         self.carrier_search_cursor_position = self.carrier_clamp_cursor(cursor_moved_left);
@@ -423,22 +433,22 @@ fn run_app<B: Backend>(
                         },
                         InputMode::Editing => match key.code {
                             KeyCode::Char(to_insert) => match app.tab_index {
-                                2 => app.enter_char(to_insert),
+                                2 => app.material_enter_char(to_insert),
                                 3 => app.carrier_enter_char(to_insert),
                                 _ => {}
                             },
                             KeyCode::Backspace => match app.tab_index {
-                                2 => app.delete_char(),
+                                2 => app.material_delete_char(),
                                 3 => app.carrier_delete_char(),
                                 _ => {}
                             },
                             KeyCode::Left => match app.tab_index {
-                                2 => app.move_cursor_left(),
+                                2 => app.material_move_cursor_left(),
                                 3 => app.carrier_move_cursor_left(),
                                 _ => {}
                             },
                             KeyCode::Right => match app.tab_index {
-                                2 => app.move_cursor_right(),
+                                2 => app.material_move_cursor_right(),
                                 3 => app.carrier_move_cursor_right(),
                                 _ => {}
                             },
