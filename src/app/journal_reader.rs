@@ -1,10 +1,12 @@
 use std::fs::{DirEntry, File};
 use std::io::{BufRead, BufReader};
+use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::thread::sleep;
 use std::time::Duration;
 use std::{fs, process};
 
+use crate::app::evm_updater::EvmRequest;
 use bus::Bus;
 use chrono::NaiveDateTime;
 use json::JsonValue;
@@ -15,10 +17,14 @@ use crate::app::settings::{ActionAtShutdownSignal, Settings};
 pub struct JournalReader {
     pub reader: BufReader<File>,
     index: usize,
+    evm_request_writer: Sender<EvmRequest>,
     settings: Arc<Settings>,
 }
 
-pub fn initialize(settings: Arc<Settings>) -> JournalReader {
+pub fn initialize(
+    evm_request_writer: Sender<EvmRequest>,
+    settings: Arc<Settings>,
+) -> JournalReader {
     let mut reader = get_journal_log_by_index(
         settings.journal_reader_settings.journal_directory.clone(),
         0,
@@ -65,6 +71,7 @@ pub fn initialize(settings: Arc<Settings>) -> JournalReader {
             settings.journal_reader_settings.journal_directory.clone(),
             0,
         ),
+        evm_request_writer,
         index: 0,
         settings,
     }

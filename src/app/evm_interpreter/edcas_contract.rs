@@ -18,6 +18,85 @@ pub mod edcas {
             }),
             functions: ::core::convert::From::from([
                 (
+                    ::std::borrow::ToOwned::to_owned("CommodityListeningMap"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned(
+                                "CommodityListeningMap",
+                            ),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("marketID"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint64"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("commodity"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string"),
+                                    ),
+                                },
+                            ],
+                            outputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("buy_price"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint32"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("sell_price"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint32"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("mean_price"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint32"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("demand"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint32"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("demand_bracket"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint32"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("stock"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint32"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("stock_bracket"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint32"),
+                                    ),
+                                },
+                            ],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
+                        },
+                    ],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("cancel_carrier_jump"),
                     ::std::vec![
                         ::ethers::core::abi::ethabi::Function {
@@ -179,6 +258,64 @@ pub mod edcas {
                     ],
                 ),
                 (
+                    ::std::borrow::ToOwned::to_owned("commodities"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned("commodities"),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::string::String::new(),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(
+                                        256usize,
+                                    ),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint256"),
+                                    ),
+                                },
+                            ],
+                            outputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::string::String::new(),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string"),
+                                    ),
+                                },
+                            ],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
+                        },
+                    ],
+                ),
+                (
+                    ::std::borrow::ToOwned::to_owned("commodityMap"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned("commodityMap"),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("commodity"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string"),
+                                    ),
+                                },
+                            ],
+                            outputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("id"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint32"),
+                                    ),
+                                },
+                            ],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
+                        },
+                    ],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("emit_carrier_jump"),
                     ::std::vec![
                         ::ethers::core::abi::ethabi::Function {
@@ -246,6 +383,30 @@ pub mod edcas {
                     ],
                 ),
                 (
+                    ::std::borrow::ToOwned::to_owned("get_commodities"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned("get_commodities"),
+                            inputs: ::std::vec![],
+                            outputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::string::String::new(),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Array(
+                                        ::std::boxed::Box::new(
+                                            ::ethers::core::abi::ethabi::ParamType::String,
+                                        ),
+                                    ),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string[]"),
+                                    ),
+                                },
+                            ],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
+                        },
+                    ],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("get_stations"),
                     ::std::vec![
                         ::ethers::core::abi::ethabi::Function {
@@ -256,11 +417,17 @@ pub mod edcas {
                                     name: ::std::string::String::new(),
                                     kind: ::ethers::core::abi::ethabi::ParamType::Array(
                                         ::std::boxed::Box::new(
-                                            ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                            ::ethers::core::abi::ethabi::ParamType::Tuple(
+                                                ::std::vec![
+                                                    ::ethers::core::abi::ethabi::ParamType::String,
+                                                    ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                                    ::ethers::core::abi::ethabi::ParamType::String,
+                                                ],
+                                            ),
                                         ),
                                     ),
                                     internal_type: ::core::option::Option::Some(
-                                        ::std::borrow::ToOwned::to_owned("uint64[]"),
+                                        ::std::borrow::ToOwned::to_owned("struct StationIdentity[]"),
                                     ),
                                 },
                             ],
@@ -285,36 +452,6 @@ pub mod edcas {
                                     ),
                                     internal_type: ::core::option::Option::Some(
                                         ::std::borrow::ToOwned::to_owned("string[]"),
-                                    ),
-                                },
-                            ],
-                            constant: ::core::option::Option::None,
-                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
-                        },
-                    ],
-                ),
-                (
-                    ::std::borrow::ToOwned::to_owned("markedIDs"),
-                    ::std::vec![
-                        ::ethers::core::abi::ethabi::Function {
-                            name: ::std::borrow::ToOwned::to_owned("markedIDs"),
-                            inputs: ::std::vec![
-                                ::ethers::core::abi::ethabi::Param {
-                                    name: ::std::string::String::new(),
-                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(
-                                        256usize,
-                                    ),
-                                    internal_type: ::core::option::Option::Some(
-                                        ::std::borrow::ToOwned::to_owned("uint256"),
-                                    ),
-                                },
-                            ],
-                            outputs: ::std::vec![
-                                ::ethers::core::abi::ethabi::Param {
-                                    name: ::std::string::String::new(),
-                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
-                                    internal_type: ::core::option::Option::Some(
-                                        ::std::borrow::ToOwned::to_owned("uint64"),
                                     ),
                                 },
                             ],
@@ -561,6 +698,54 @@ pub mod edcas {
                                     ),
                                     internal_type: ::core::option::Option::Some(
                                         ::std::borrow::ToOwned::to_owned("uint256"),
+                                    ),
+                                },
+                            ],
+                            outputs: ::std::vec![],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::NonPayable,
+                        },
+                    ],
+                ),
+                (
+                    ::std::borrow::ToOwned::to_owned("register_commodity_listening"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned(
+                                "register_commodity_listening",
+                            ),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("marketID"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint64"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("commodity"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("listening"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Tuple(
+                                        ::std::vec![
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(32usize),
+                                        ],
+                                    ),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned(
+                                            "struct CommodityListening",
+                                        ),
                                     ),
                                 },
                             ],
@@ -1225,6 +1410,50 @@ pub mod edcas {
                     ],
                 ),
                 (
+                    ::std::borrow::ToOwned::to_owned("stationIds"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned("stationIds"),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::string::String::new(),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(
+                                        256usize,
+                                    ),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint256"),
+                                    ),
+                                },
+                            ],
+                            outputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("name"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("market_id"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint64"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("_type"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string"),
+                                    ),
+                                },
+                            ],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
+                        },
+                    ],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("stationMap"),
                     ::std::vec![
                         ::ethers::core::abi::ethabi::Function {
@@ -1253,20 +1482,6 @@ pub mod edcas {
                                     ),
                                     internal_type: ::core::option::Option::Some(
                                         ::std::borrow::ToOwned::to_owned("uint256"),
-                                    ),
-                                },
-                                ::ethers::core::abi::ethabi::Param {
-                                    name: ::std::borrow::ToOwned::to_owned("name"),
-                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
-                                    internal_type: ::core::option::Option::Some(
-                                        ::std::borrow::ToOwned::to_owned("string"),
-                                    ),
-                                },
-                                ::ethers::core::abi::ethabi::Param {
-                                    name: ::std::borrow::ToOwned::to_owned("_type"),
-                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
-                                    internal_type: ::core::option::Option::Some(
-                                        ::std::borrow::ToOwned::to_owned("string"),
                                     ),
                                 },
                                 ::ethers::core::abi::ethabi::Param {
@@ -1333,34 +1548,6 @@ pub mod edcas {
                                     kind: ::ethers::core::abi::ethabi::ParamType::String,
                                     internal_type: ::core::option::Option::Some(
                                         ::std::borrow::ToOwned::to_owned("string"),
-                                    ),
-                                },
-                            ],
-                            constant: ::core::option::Option::None,
-                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
-                        },
-                    ],
-                ),
-                (
-                    ::std::borrow::ToOwned::to_owned("stationNameMap"),
-                    ::std::vec![
-                        ::ethers::core::abi::ethabi::Function {
-                            name: ::std::borrow::ToOwned::to_owned("stationNameMap"),
-                            inputs: ::std::vec![
-                                ::ethers::core::abi::ethabi::Param {
-                                    name: ::std::borrow::ToOwned::to_owned("stationName"),
-                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
-                                    internal_type: ::core::option::Option::Some(
-                                        ::std::borrow::ToOwned::to_owned("string"),
-                                    ),
-                                },
-                            ],
-                            outputs: ::std::vec![
-                                ::ethers::core::abi::ethabi::Param {
-                                    name: ::std::string::String::new(),
-                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
-                                    internal_type: ::core::option::Option::Some(
-                                        ::std::borrow::ToOwned::to_owned("uint64"),
                                     ),
                                 },
                             ],
@@ -1600,6 +1787,29 @@ pub mod edcas {
                     ],
                 ),
                 (
+                    ::std::borrow::ToOwned::to_owned("CommodityListeningUpdate"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Event {
+                            name: ::std::borrow::ToOwned::to_owned(
+                                "CommodityListeningUpdate",
+                            ),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::EventParam {
+                                    name: ::std::borrow::ToOwned::to_owned("marketID"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                    indexed: false,
+                                },
+                                ::ethers::core::abi::ethabi::EventParam {
+                                    name: ::std::borrow::ToOwned::to_owned("commodity"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    indexed: false,
+                                },
+                            ],
+                            anonymous: false,
+                        },
+                    ],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("StarRegistration"),
                     ::std::vec![
                         ::ethers::core::abi::ethabi::Event {
@@ -1712,6 +1922,19 @@ pub mod edcas {
                 ),
             )
         }
+        ///Calls the contract's `CommodityListeningMap` (0x874893bc) function
+        pub fn commodity_listening_map(
+            &self,
+            market_id: u64,
+            commodity: ::std::string::String,
+        ) -> ::ethers::contract::builders::ContractCall<
+            M,
+            (u32, u32, u32, u32, u32, u32, u32),
+        > {
+            self.0
+                .method_hash([135, 72, 147, 188], (market_id, commodity))
+                .expect("method not found (this should never happen)")
+        }
         ///Calls the contract's `cancel_carrier_jump` (0x0096afdc) function
         pub fn cancel_carrier_jump(
             &self,
@@ -1755,6 +1978,24 @@ pub mod edcas {
                 .method_hash([44, 89, 78, 91], carrier_id)
                 .expect("method not found (this should never happen)")
         }
+        ///Calls the contract's `commodities` (0xfcfd84e2) function
+        pub fn commodities(
+            &self,
+            p0: ::ethers::core::types::U256,
+        ) -> ::ethers::contract::builders::ContractCall<M, ::std::string::String> {
+            self.0
+                .method_hash([252, 253, 132, 226], p0)
+                .expect("method not found (this should never happen)")
+        }
+        ///Calls the contract's `commodityMap` (0x30280c85) function
+        pub fn commodity_map(
+            &self,
+            commodity: ::std::string::String,
+        ) -> ::ethers::contract::builders::ContractCall<M, u32> {
+            self.0
+                .method_hash([48, 40, 12, 133], commodity)
+                .expect("method not found (this should never happen)")
+        }
         ///Calls the contract's `emit_carrier_jump` (0x06294ee9) function
         pub fn emit_carrier_jump(
             &self,
@@ -1778,10 +2019,24 @@ pub mod edcas {
                 .method_hash([135, 188, 244, 117], ())
                 .expect("method not found (this should never happen)")
         }
+        ///Calls the contract's `get_commodities` (0x9a26bb4b) function
+        pub fn get_commodities(
+            &self,
+        ) -> ::ethers::contract::builders::ContractCall<
+            M,
+            ::std::vec::Vec<::std::string::String>,
+        > {
+            self.0
+                .method_hash([154, 38, 187, 75], ())
+                .expect("method not found (this should never happen)")
+        }
         ///Calls the contract's `get_stations` (0x6d08ca64) function
         pub fn get_stations(
             &self,
-        ) -> ::ethers::contract::builders::ContractCall<M, ::std::vec::Vec<u64>> {
+        ) -> ::ethers::contract::builders::ContractCall<
+            M,
+            ::std::vec::Vec<StationIdentity>,
+        > {
             self.0
                 .method_hash([109, 8, 202, 100], ())
                 .expect("method not found (this should never happen)")
@@ -1795,15 +2050,6 @@ pub mod edcas {
         > {
             self.0
                 .method_hash([191, 234, 58, 30], ())
-                .expect("method not found (this should never happen)")
-        }
-        ///Calls the contract's `markedIDs` (0xfa268af2) function
-        pub fn marked_i_ds(
-            &self,
-            p0: ::ethers::core::types::U256,
-        ) -> ::ethers::contract::builders::ContractCall<M, u64> {
-            self.0
-                .method_hash([250, 38, 138, 242], p0)
                 .expect("method not found (this should never happen)")
         }
         ///Calls the contract's `planetMap` (0x63544387) function
@@ -1851,6 +2097,17 @@ pub mod edcas {
                         timestamp,
                     ),
                 )
+                .expect("method not found (this should never happen)")
+        }
+        ///Calls the contract's `register_commodity_listening` (0xe13d326f) function
+        pub fn register_commodity_listening(
+            &self,
+            market_id: u64,
+            commodity: ::std::string::String,
+            listening: CommodityListening,
+        ) -> ::ethers::contract::builders::ContractCall<M, ()> {
+            self.0
+                .method_hash([225, 61, 50, 111], (market_id, commodity, listening))
                 .expect("method not found (this should never happen)")
         }
         ///Calls the contract's `register_planet` (0x6b037f4e) function
@@ -2006,6 +2263,18 @@ pub mod edcas {
                 .method_hash([152, 203, 87, 0], (address, p1))
                 .expect("method not found (this should never happen)")
         }
+        ///Calls the contract's `stationIds` (0xe391daf9) function
+        pub fn station_ids(
+            &self,
+            p0: ::ethers::core::types::U256,
+        ) -> ::ethers::contract::builders::ContractCall<
+            M,
+            (::std::string::String, u64, ::std::string::String),
+        > {
+            self.0
+                .method_hash([227, 145, 218, 249], p0)
+                .expect("method not found (this should never happen)")
+        }
         ///Calls the contract's `stationMap` (0xad62c24d) function
         pub fn station_map(
             &self,
@@ -2015,8 +2284,6 @@ pub mod edcas {
             (
                 bool,
                 ::ethers::core::types::U256,
-                ::std::string::String,
-                ::std::string::String,
                 u64,
                 ::std::string::String,
                 Faction,
@@ -2029,15 +2296,6 @@ pub mod edcas {
         > {
             self.0
                 .method_hash([173, 98, 194, 77], market_id)
-                .expect("method not found (this should never happen)")
-        }
-        ///Calls the contract's `stationNameMap` (0x5f17c3b7) function
-        pub fn station_name_map(
-            &self,
-            station_name: ::std::string::String,
-        ) -> ::ethers::contract::builders::ContractCall<M, u64> {
-            self.0
-                .method_hash([95, 23, 195, 183], station_name)
                 .expect("method not found (this should never happen)")
         }
         ///Calls the contract's `systemIdMap` (0x01bbf489) function
@@ -2135,6 +2393,16 @@ pub mod edcas {
             ::std::sync::Arc<M>,
             M,
             CarrierUpdateFilter,
+        > {
+            self.0.event()
+        }
+        ///Gets the contract's `CommodityListeningUpdate` event
+        pub fn commodity_listening_update_filter(
+            &self,
+        ) -> ::ethers::contract::builders::Event<
+            ::std::sync::Arc<M>,
+            M,
+            CommodityListeningUpdateFilter,
         > {
             self.0.event()
         }
@@ -2285,6 +2553,24 @@ pub mod edcas {
         Eq,
         Hash
     )]
+    #[ethevent(
+        name = "CommodityListeningUpdate",
+        abi = "CommodityListeningUpdate(uint64,string)"
+    )]
+    pub struct CommodityListeningUpdateFilter {
+        pub market_id: u64,
+        pub commodity: ::std::string::String,
+    }
+    #[derive(
+        Clone,
+        ::ethers::contract::EthEvent,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
     #[ethevent(name = "StarRegistration", abi = "StarRegistration(uint64)")]
     pub struct StarRegistrationFilter {
         pub system_address: u64,
@@ -2340,6 +2626,7 @@ pub mod edcas {
         CarrierLocationFilter(CarrierLocationFilter),
         CarrierRegistrationFilter(CarrierRegistrationFilter),
         CarrierUpdateFilter(CarrierUpdateFilter),
+        CommodityListeningUpdateFilter(CommodityListeningUpdateFilter),
         StarRegistrationFilter(StarRegistrationFilter),
         StationRegistrationFilter(StationRegistrationFilter),
         StationUpdateFilter(StationUpdateFilter),
@@ -2366,6 +2653,9 @@ pub mod edcas {
             }
             if let Ok(decoded) = CarrierUpdateFilter::decode_log(log) {
                 return Ok(EDCASEvents::CarrierUpdateFilter(decoded));
+            }
+            if let Ok(decoded) = CommodityListeningUpdateFilter::decode_log(log) {
+                return Ok(EDCASEvents::CommodityListeningUpdateFilter(decoded));
             }
             if let Ok(decoded) = StarRegistrationFilter::decode_log(log) {
                 return Ok(EDCASEvents::StarRegistrationFilter(decoded));
@@ -2399,6 +2689,9 @@ pub mod edcas {
                     ::core::fmt::Display::fmt(element, f)
                 }
                 Self::CarrierUpdateFilter(element) => {
+                    ::core::fmt::Display::fmt(element, f)
+                }
+                Self::CommodityListeningUpdateFilter(element) => {
                     ::core::fmt::Display::fmt(element, f)
                 }
                 Self::StarRegistrationFilter(element) => {
@@ -2446,6 +2739,11 @@ pub mod edcas {
             Self::CarrierUpdateFilter(value)
         }
     }
+    impl ::core::convert::From<CommodityListeningUpdateFilter> for EDCASEvents {
+        fn from(value: CommodityListeningUpdateFilter) -> Self {
+            Self::CommodityListeningUpdateFilter(value)
+        }
+    }
     impl ::core::convert::From<StarRegistrationFilter> for EDCASEvents {
         fn from(value: StarRegistrationFilter) -> Self {
             Self::StarRegistrationFilter(value)
@@ -2465,6 +2763,25 @@ pub mod edcas {
         fn from(value: SystemRegistrationFilter) -> Self {
             Self::SystemRegistrationFilter(value)
         }
+    }
+    ///Container type for all input parameters for the `CommodityListeningMap` function with signature `CommodityListeningMap(uint64,string)` and selector `0x874893bc`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(
+        name = "CommodityListeningMap",
+        abi = "CommodityListeningMap(uint64,string)"
+    )]
+    pub struct CommodityListeningMapCall {
+        pub market_id: u64,
+        pub commodity: ::std::string::String,
     }
     ///Container type for all input parameters for the `cancel_carrier_jump` function with signature `cancel_carrier_jump(uint64)` and selector `0x0096afdc`
     #[derive(
@@ -2509,6 +2826,34 @@ pub mod edcas {
     pub struct CarrierMapCall {
         pub carrier_id: u64,
     }
+    ///Container type for all input parameters for the `commodities` function with signature `commodities(uint256)` and selector `0xfcfd84e2`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(name = "commodities", abi = "commodities(uint256)")]
+    pub struct CommoditiesCall(pub ::ethers::core::types::U256);
+    ///Container type for all input parameters for the `commodityMap` function with signature `commodityMap(string)` and selector `0x30280c85`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(name = "commodityMap", abi = "commodityMap(string)")]
+    pub struct CommodityMapCall {
+        pub commodity: ::std::string::String,
+    }
     ///Container type for all input parameters for the `emit_carrier_jump` function with signature `emit_carrier_jump(uint64,string,string,uint256)` and selector `0x06294ee9`
     #[derive(
         Clone,
@@ -2543,6 +2888,19 @@ pub mod edcas {
     )]
     #[ethcall(name = "get_carrier_ids", abi = "get_carrier_ids()")]
     pub struct GetCarrierIdsCall;
+    ///Container type for all input parameters for the `get_commodities` function with signature `get_commodities()` and selector `0x9a26bb4b`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(name = "get_commodities", abi = "get_commodities()")]
+    pub struct GetCommoditiesCall;
     ///Container type for all input parameters for the `get_stations` function with signature `get_stations()` and selector `0x6d08ca64`
     #[derive(
         Clone,
@@ -2569,19 +2927,6 @@ pub mod edcas {
     )]
     #[ethcall(name = "get_systems", abi = "get_systems()")]
     pub struct GetSystemsCall;
-    ///Container type for all input parameters for the `markedIDs` function with signature `markedIDs(uint256)` and selector `0xfa268af2`
-    #[derive(
-        Clone,
-        ::ethers::contract::EthCall,
-        ::ethers::contract::EthDisplay,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash
-    )]
-    #[ethcall(name = "markedIDs", abi = "markedIDs(uint256)")]
-    pub struct MarkedIDsCall(pub ::ethers::core::types::U256);
     ///Container type for all input parameters for the `planetMap` function with signature `planetMap(uint64,uint256)` and selector `0x63544387`
     #[derive(
         Clone,
@@ -2621,6 +2966,26 @@ pub mod edcas {
         pub docking_access: ::std::string::String,
         pub allow_notorious: bool,
         pub timestamp: ::ethers::core::types::U256,
+    }
+    ///Container type for all input parameters for the `register_commodity_listening` function with signature `register_commodity_listening(uint64,string,(uint32,uint32,uint32,uint32,uint32,uint32,uint32))` and selector `0xe13d326f`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(
+        name = "register_commodity_listening",
+        abi = "register_commodity_listening(uint64,string,(uint32,uint32,uint32,uint32,uint32,uint32,uint32))"
+    )]
+    pub struct RegisterCommodityListeningCall {
+        pub market_id: u64,
+        pub commodity: ::std::string::String,
+        pub listening: CommodityListening,
     }
     ///Container type for all input parameters for the `register_planet` function with signature `register_planet(uint64,uint8,string,bool,bool,(string,string,bool,string,string,bool,(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),((int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),uint256)` and selector `0x6b037f4e`
     #[derive(Clone, ::ethers::contract::EthCall, ::ethers::contract::EthDisplay)]
@@ -2754,6 +3119,19 @@ pub mod edcas {
         pub address: u64,
         pub p1: ::ethers::core::types::U256,
     }
+    ///Container type for all input parameters for the `stationIds` function with signature `stationIds(uint256)` and selector `0xe391daf9`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(name = "stationIds", abi = "stationIds(uint256)")]
+    pub struct StationIdsCall(pub ::ethers::core::types::U256);
     ///Container type for all input parameters for the `stationMap` function with signature `stationMap(uint64)` and selector `0xad62c24d`
     #[derive(
         Clone,
@@ -2768,21 +3146,6 @@ pub mod edcas {
     #[ethcall(name = "stationMap", abi = "stationMap(uint64)")]
     pub struct StationMapCall {
         pub market_id: u64,
-    }
-    ///Container type for all input parameters for the `stationNameMap` function with signature `stationNameMap(string)` and selector `0x5f17c3b7`
-    #[derive(
-        Clone,
-        ::ethers::contract::EthCall,
-        ::ethers::contract::EthDisplay,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash
-    )]
-    #[ethcall(name = "stationNameMap", abi = "stationNameMap(string)")]
-    pub struct StationNameMapCall {
-        pub station_name: ::std::string::String,
     }
     ///Container type for all input parameters for the `systemIdMap` function with signature `systemIdMap(string)` and selector `0x01bbf489`
     #[derive(
@@ -2830,24 +3193,28 @@ pub mod edcas {
     ///Container type for all of the contract's call
     #[derive(Clone, ::ethers::contract::EthAbiType)]
     pub enum EDCASCalls {
+        CommodityListeningMap(CommodityListeningMapCall),
         CancelCarrierJump(CancelCarrierJumpCall),
         CarrierIDs(CarrierIDsCall),
         CarrierMap(CarrierMapCall),
+        Commodities(CommoditiesCall),
+        CommodityMap(CommodityMapCall),
         EmitCarrierJump(EmitCarrierJumpCall),
         GetCarrierIds(GetCarrierIdsCall),
+        GetCommodities(GetCommoditiesCall),
         GetStations(GetStationsCall),
         GetSystems(GetSystemsCall),
-        MarkedIDs(MarkedIDsCall),
         PlanetMap(PlanetMapCall),
         RegisterCarrier(RegisterCarrierCall),
+        RegisterCommodityListening(RegisterCommodityListeningCall),
         RegisterPlanet(RegisterPlanetCall),
         RegisterStar(RegisterStarCall),
         RegisterStation(RegisterStationCall),
         RegisterSystem(RegisterSystemCall),
         ReportCarrierLocation(ReportCarrierLocationCall),
         StarMap(StarMapCall),
+        StationIds(StationIdsCall),
         StationMap(StationMapCall),
-        StationNameMap(StationNameMapCall),
         SystemIdMap(SystemIdMapCall),
         SystemMap(SystemMapCall),
         Systems(SystemsCall),
@@ -2857,6 +3224,11 @@ pub mod edcas {
             data: impl AsRef<[u8]>,
         ) -> ::core::result::Result<Self, ::ethers::core::abi::AbiError> {
             let data = data.as_ref();
+            if let Ok(decoded) = <CommodityListeningMapCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::CommodityListeningMap(decoded));
+            }
             if let Ok(decoded) = <CancelCarrierJumpCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
             ) {
@@ -2872,6 +3244,16 @@ pub mod edcas {
             ) {
                 return Ok(Self::CarrierMap(decoded));
             }
+            if let Ok(decoded) = <CommoditiesCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::Commodities(decoded));
+            }
+            if let Ok(decoded) = <CommodityMapCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::CommodityMap(decoded));
+            }
             if let Ok(decoded) = <EmitCarrierJumpCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
             ) {
@@ -2881,6 +3263,11 @@ pub mod edcas {
                 data,
             ) {
                 return Ok(Self::GetCarrierIds(decoded));
+            }
+            if let Ok(decoded) = <GetCommoditiesCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::GetCommodities(decoded));
             }
             if let Ok(decoded) = <GetStationsCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
@@ -2892,11 +3279,6 @@ pub mod edcas {
             ) {
                 return Ok(Self::GetSystems(decoded));
             }
-            if let Ok(decoded) = <MarkedIDsCall as ::ethers::core::abi::AbiDecode>::decode(
-                data,
-            ) {
-                return Ok(Self::MarkedIDs(decoded));
-            }
             if let Ok(decoded) = <PlanetMapCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
             ) {
@@ -2906,6 +3288,11 @@ pub mod edcas {
                 data,
             ) {
                 return Ok(Self::RegisterCarrier(decoded));
+            }
+            if let Ok(decoded) = <RegisterCommodityListeningCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::RegisterCommodityListening(decoded));
             }
             if let Ok(decoded) = <RegisterPlanetCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
@@ -2937,15 +3324,15 @@ pub mod edcas {
             ) {
                 return Ok(Self::StarMap(decoded));
             }
+            if let Ok(decoded) = <StationIdsCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::StationIds(decoded));
+            }
             if let Ok(decoded) = <StationMapCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
             ) {
                 return Ok(Self::StationMap(decoded));
-            }
-            if let Ok(decoded) = <StationNameMapCall as ::ethers::core::abi::AbiDecode>::decode(
-                data,
-            ) {
-                return Ok(Self::StationNameMap(decoded));
             }
             if let Ok(decoded) = <SystemIdMapCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
@@ -2968,6 +3355,9 @@ pub mod edcas {
     impl ::ethers::core::abi::AbiEncode for EDCASCalls {
         fn encode(self) -> Vec<u8> {
             match self {
+                Self::CommodityListeningMap(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
                 Self::CancelCarrierJump(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
@@ -2977,10 +3367,19 @@ pub mod edcas {
                 Self::CarrierMap(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
+                Self::Commodities(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
+                Self::CommodityMap(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
                 Self::EmitCarrierJump(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::GetCarrierIds(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
+                Self::GetCommodities(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::GetStations(element) => {
@@ -2989,13 +3388,13 @@ pub mod edcas {
                 Self::GetSystems(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
-                Self::MarkedIDs(element) => {
-                    ::ethers::core::abi::AbiEncode::encode(element)
-                }
                 Self::PlanetMap(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::RegisterCarrier(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
+                Self::RegisterCommodityListening(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::RegisterPlanet(element) => {
@@ -3014,10 +3413,10 @@ pub mod edcas {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::StarMap(element) => ::ethers::core::abi::AbiEncode::encode(element),
-                Self::StationMap(element) => {
+                Self::StationIds(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
-                Self::StationNameMap(element) => {
+                Self::StationMap(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::SystemIdMap(element) => {
@@ -3033,16 +3432,24 @@ pub mod edcas {
     impl ::core::fmt::Display for EDCASCalls {
         fn fmt(&self, f: &mut ::core::fmt::Formatter<'_>) -> ::core::fmt::Result {
             match self {
+                Self::CommodityListeningMap(element) => {
+                    ::core::fmt::Display::fmt(element, f)
+                }
                 Self::CancelCarrierJump(element) => ::core::fmt::Display::fmt(element, f),
                 Self::CarrierIDs(element) => ::core::fmt::Display::fmt(element, f),
                 Self::CarrierMap(element) => ::core::fmt::Display::fmt(element, f),
+                Self::Commodities(element) => ::core::fmt::Display::fmt(element, f),
+                Self::CommodityMap(element) => ::core::fmt::Display::fmt(element, f),
                 Self::EmitCarrierJump(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetCarrierIds(element) => ::core::fmt::Display::fmt(element, f),
+                Self::GetCommodities(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetStations(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetSystems(element) => ::core::fmt::Display::fmt(element, f),
-                Self::MarkedIDs(element) => ::core::fmt::Display::fmt(element, f),
                 Self::PlanetMap(element) => ::core::fmt::Display::fmt(element, f),
                 Self::RegisterCarrier(element) => ::core::fmt::Display::fmt(element, f),
+                Self::RegisterCommodityListening(element) => {
+                    ::core::fmt::Display::fmt(element, f)
+                }
                 Self::RegisterPlanet(element) => ::core::fmt::Display::fmt(element, f),
                 Self::RegisterStar(element) => ::core::fmt::Display::fmt(element, f),
                 Self::RegisterStation(element) => ::core::fmt::Display::fmt(element, f),
@@ -3051,12 +3458,17 @@ pub mod edcas {
                     ::core::fmt::Display::fmt(element, f)
                 }
                 Self::StarMap(element) => ::core::fmt::Display::fmt(element, f),
+                Self::StationIds(element) => ::core::fmt::Display::fmt(element, f),
                 Self::StationMap(element) => ::core::fmt::Display::fmt(element, f),
-                Self::StationNameMap(element) => ::core::fmt::Display::fmt(element, f),
                 Self::SystemIdMap(element) => ::core::fmt::Display::fmt(element, f),
                 Self::SystemMap(element) => ::core::fmt::Display::fmt(element, f),
                 Self::Systems(element) => ::core::fmt::Display::fmt(element, f),
             }
+        }
+    }
+    impl ::core::convert::From<CommodityListeningMapCall> for EDCASCalls {
+        fn from(value: CommodityListeningMapCall) -> Self {
+            Self::CommodityListeningMap(value)
         }
     }
     impl ::core::convert::From<CancelCarrierJumpCall> for EDCASCalls {
@@ -3074,6 +3486,16 @@ pub mod edcas {
             Self::CarrierMap(value)
         }
     }
+    impl ::core::convert::From<CommoditiesCall> for EDCASCalls {
+        fn from(value: CommoditiesCall) -> Self {
+            Self::Commodities(value)
+        }
+    }
+    impl ::core::convert::From<CommodityMapCall> for EDCASCalls {
+        fn from(value: CommodityMapCall) -> Self {
+            Self::CommodityMap(value)
+        }
+    }
     impl ::core::convert::From<EmitCarrierJumpCall> for EDCASCalls {
         fn from(value: EmitCarrierJumpCall) -> Self {
             Self::EmitCarrierJump(value)
@@ -3082,6 +3504,11 @@ pub mod edcas {
     impl ::core::convert::From<GetCarrierIdsCall> for EDCASCalls {
         fn from(value: GetCarrierIdsCall) -> Self {
             Self::GetCarrierIds(value)
+        }
+    }
+    impl ::core::convert::From<GetCommoditiesCall> for EDCASCalls {
+        fn from(value: GetCommoditiesCall) -> Self {
+            Self::GetCommodities(value)
         }
     }
     impl ::core::convert::From<GetStationsCall> for EDCASCalls {
@@ -3094,11 +3521,6 @@ pub mod edcas {
             Self::GetSystems(value)
         }
     }
-    impl ::core::convert::From<MarkedIDsCall> for EDCASCalls {
-        fn from(value: MarkedIDsCall) -> Self {
-            Self::MarkedIDs(value)
-        }
-    }
     impl ::core::convert::From<PlanetMapCall> for EDCASCalls {
         fn from(value: PlanetMapCall) -> Self {
             Self::PlanetMap(value)
@@ -3107,6 +3529,11 @@ pub mod edcas {
     impl ::core::convert::From<RegisterCarrierCall> for EDCASCalls {
         fn from(value: RegisterCarrierCall) -> Self {
             Self::RegisterCarrier(value)
+        }
+    }
+    impl ::core::convert::From<RegisterCommodityListeningCall> for EDCASCalls {
+        fn from(value: RegisterCommodityListeningCall) -> Self {
+            Self::RegisterCommodityListening(value)
         }
     }
     impl ::core::convert::From<RegisterPlanetCall> for EDCASCalls {
@@ -3139,14 +3566,14 @@ pub mod edcas {
             Self::StarMap(value)
         }
     }
+    impl ::core::convert::From<StationIdsCall> for EDCASCalls {
+        fn from(value: StationIdsCall) -> Self {
+            Self::StationIds(value)
+        }
+    }
     impl ::core::convert::From<StationMapCall> for EDCASCalls {
         fn from(value: StationMapCall) -> Self {
             Self::StationMap(value)
-        }
-    }
-    impl ::core::convert::From<StationNameMapCall> for EDCASCalls {
-        fn from(value: StationNameMapCall) -> Self {
-            Self::StationNameMap(value)
         }
     }
     impl ::core::convert::From<SystemIdMapCall> for EDCASCalls {
@@ -3163,6 +3590,26 @@ pub mod edcas {
         fn from(value: SystemsCall) -> Self {
             Self::Systems(value)
         }
+    }
+    ///Container type for all return fields from the `CommodityListeningMap` function with signature `CommodityListeningMap(uint64,string)` and selector `0x874893bc`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct CommodityListeningMapReturn {
+        pub buy_price: u32,
+        pub sell_price: u32,
+        pub mean_price: u32,
+        pub demand: u32,
+        pub demand_bracket: u32,
+        pub stock: u32,
+        pub stock_bracket: u32,
     }
     ///Container type for all return fields from the `carrierIDs` function with signature `carrierIDs(uint256)` and selector `0x4dc33122`
     #[derive(
@@ -3201,6 +3648,32 @@ pub mod edcas {
         pub body_a: ::std::string::String,
         pub jump_timestamp: ::ethers::core::types::U256,
     }
+    ///Container type for all return fields from the `commodities` function with signature `commodities(uint256)` and selector `0xfcfd84e2`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct CommoditiesReturn(pub ::std::string::String);
+    ///Container type for all return fields from the `commodityMap` function with signature `commodityMap(string)` and selector `0x30280c85`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct CommodityMapReturn {
+        pub id: u32,
+    }
     ///Container type for all return fields from the `get_carrier_ids` function with signature `get_carrier_ids()` and selector `0x87bcf475`
     #[derive(
         Clone,
@@ -3213,6 +3686,18 @@ pub mod edcas {
         Hash
     )]
     pub struct GetCarrierIdsReturn(pub ::std::vec::Vec<u64>);
+    ///Container type for all return fields from the `get_commodities` function with signature `get_commodities()` and selector `0x9a26bb4b`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct GetCommoditiesReturn(pub ::std::vec::Vec<::std::string::String>);
     ///Container type for all return fields from the `get_stations` function with signature `get_stations()` and selector `0x6d08ca64`
     #[derive(
         Clone,
@@ -3224,7 +3709,7 @@ pub mod edcas {
         Eq,
         Hash
     )]
-    pub struct GetStationsReturn(pub ::std::vec::Vec<u64>);
+    pub struct GetStationsReturn(pub ::std::vec::Vec<StationIdentity>);
     ///Container type for all return fields from the `get_systems` function with signature `get_systems()` and selector `0xbfea3a1e`
     #[derive(
         Clone,
@@ -3237,18 +3722,6 @@ pub mod edcas {
         Hash
     )]
     pub struct GetSystemsReturn(pub ::std::vec::Vec<::std::string::String>);
-    ///Container type for all return fields from the `markedIDs` function with signature `markedIDs(uint256)` and selector `0xfa268af2`
-    #[derive(
-        Clone,
-        ::ethers::contract::EthAbiType,
-        ::ethers::contract::EthAbiCodec,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash
-    )]
-    pub struct MarkedIDsReturn(pub u64);
     ///Container type for all return fields from the `planetMap` function with signature `planetMap(uint64,uint256)` and selector `0x63544387`
     #[derive(Clone, ::ethers::contract::EthAbiType, ::ethers::contract::EthAbiCodec)]
     pub struct PlanetMapReturn {
@@ -3280,6 +3753,22 @@ pub mod edcas {
         pub star_properties: StarProperties,
         pub body_properties: BodyProperties,
     }
+    ///Container type for all return fields from the `stationIds` function with signature `stationIds(uint256)` and selector `0xe391daf9`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct StationIdsReturn {
+        pub name: ::std::string::String,
+        pub market_id: u64,
+        pub type_: ::std::string::String,
+    }
     ///Container type for all return fields from the `stationMap` function with signature `stationMap(uint64)` and selector `0xad62c24d`
     #[derive(
         Clone,
@@ -3294,8 +3783,6 @@ pub mod edcas {
     pub struct StationMapReturn {
         pub registered: bool,
         pub timestamp: ::ethers::core::types::U256,
-        pub name: ::std::string::String,
-        pub type_: ::std::string::String,
         pub system_address: u64,
         pub system_name: ::std::string::String,
         pub faction: Faction,
@@ -3305,18 +3792,6 @@ pub mod edcas {
         pub distance: Floating,
         pub landingpads: ::std::string::String,
     }
-    ///Container type for all return fields from the `stationNameMap` function with signature `stationNameMap(string)` and selector `0x5f17c3b7`
-    #[derive(
-        Clone,
-        ::ethers::contract::EthAbiType,
-        ::ethers::contract::EthAbiCodec,
-        Default,
-        Debug,
-        PartialEq,
-        Eq,
-        Hash
-    )]
-    pub struct StationNameMapReturn(pub u64);
     ///Container type for all return fields from the `systemIdMap` function with signature `systemIdMap(string)` and selector `0x01bbf489`
     #[derive(
         Clone,
@@ -3378,6 +3853,26 @@ pub mod edcas {
         pub axial_tilt: Floating,
         pub rotation_period: Floating,
         pub surface_temperature: Floating,
+    }
+    ///`CommodityListening(uint32,uint32,uint32,uint32,uint32,uint32,uint32)`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct CommodityListening {
+        pub buy_price: u32,
+        pub sell_price: u32,
+        pub mean_price: u32,
+        pub demand: u32,
+        pub demand_bracket: u32,
+        pub stock: u32,
+        pub stock_bracket: u32,
     }
     ///`Faction(string,string)`
     #[derive(
@@ -3441,6 +3936,22 @@ pub mod edcas {
         pub luminosity: ::std::string::String,
         pub stellar_mass: Floating,
         pub absolute_magnitude: Floating,
+    }
+    ///`StationIdentity(string,uint64,string)`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct StationIdentity {
+        pub name: ::std::string::String,
+        pub market_id: u64,
+        pub type_: ::std::string::String,
     }
     ///`Floating(int128,uint8)`
     #[derive(

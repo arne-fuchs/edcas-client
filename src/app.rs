@@ -1,5 +1,7 @@
+use std::cmp::Ordering;
 use std::path::PathBuf;
-use std::sync::{Arc, Mutex};
+use std::sync::mpsc::{Receiver, Sender};
+use std::sync::{mpsc, Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
 use std::{env, fs, thread};
@@ -9,16 +11,17 @@ use chrono::Local;
 use eframe::egui;
 use eframe::egui::TextStyle;
 use eframe::App;
-use ethers::prelude::{Http, LocalWallet, Provider};
+use ethers::prelude::{LocalWallet, Provider};
 
 use crate::app::cargo_reader::CargoReader;
-use crate::app::carrier::{Carrier, CarrierState};
-use crate::app::evm_updater::EvmUpdate;
+use crate::app::carrier::CarrierState;
+use crate::app::evm_interpreter::edcas_contract::StationIdentity;
+use crate::app::evm_updater::{EvmRequest, EvmUpdate};
 use json::JsonValue;
 use log::info;
 
 use crate::app::materials::MaterialState;
-use crate::app::station::StationState;
+use crate::app::station::{Station, StationState};
 use crate::app::State::{
     About, CarrierPage, Explorer, MaterialInventory, Mining, News, Settings, StationPage,
 };
@@ -78,11 +81,52 @@ impl EliteRustClient {
                         self.carrier.carriers = carriers;
                     }
                     EvmUpdate::StationListUpdate(stations) => {
-                        self.station.stations = stations;
+                        for station_identity in stations {
+                            //List is sorted by name -> If name exceeds alphabetic order, it is not in the list and can be added
+                            if !self.is_station_registered(&station_identity) {
+                                self.station.stations.push(Station {
+                                    market_id: station_identity.market_id,
+                                    name: station_identity.name,
+                                    _type: station_identity.type_,
+                                    requested_meta_data: false,
+                                    requested_market: false,
+                                    meta_data: None,
+                                    market: None,
+                                })
+                            }
+                        }
+                        self.station.stations.sort_by_key(|a| a.name.clone());
+                    }
+                    EvmUpdate::StationMetaDataUpdate(market_id, metaData) => {
+                        for station in &mut self.station.stations {
+                            if station.market_id == market_id {
+                                station.meta_data = Some(metaData);
+                                break;
+                            }
+                        }
+                    }
+                    EvmUpdate::StationCommodityListeningUpdate(market_id, listenings) => {
+                        todo!("Implement");
+                    }
+                    EvmUpdate::SystemMetaDataUpdate(_, _) => {
+                        todo!("Implement");
                     }
                 }
             }
         }
+    }
+
+    fn is_station_registered(&self, station_identity: &StationIdentity) -> bool {
+        for station in &self.station.stations {
+            if station.market_id == station_identity.market_id {
+                return true;
+            }
+            //List is sorted. If Ordering is greater, the station is not in the list
+            if let Ordering::Less = station_identity.name.cmp(&station.name) {
+                return false;
+            }
+        }
+        false
     }
 }
 impl Default for EliteRustClient {
@@ -98,13 +142,32 @@ impl Default for EliteRustClient {
         let materials = MaterialState::default();
 
         info!("Starting threads");
+        info!("Starting Evm Updater");
+        let (evm_request_writer, evm_request_receiver) = mpsc::channel::<EvmRequest>();
+
+        let mut evm_update_bus: Bus<EvmUpdate> = Bus::new(1);
+        let evm_update_reader = evm_update_bus.add_rx();
+        let settings_pointer_clone = settings_pointer.clone();
+        thread::spawn(move || {
+            let mut evm_updater = evm_updater::initialize(
+                evm_update_bus,
+                evm_request_receiver,
+                settings_pointer_clone,
+            );
+            loop {
+                evm_updater.run_update();
+                sleep(Duration::from_secs(3));
+            }
+        });
         info!("Starting Journal reader");
         let mut journal_bus: Bus<JsonValue> = Bus::new(100);
         let journal_bus_reader = journal_bus.add_rx();
         let tangle_journal_bus_reader = journal_bus.add_rx();
         let settings_pointer_clone = settings_pointer.clone();
+        let evm_request_writer_clone = evm_request_writer.clone();
         thread::spawn(move || {
-            let mut j_reader = journal_reader::initialize(settings_pointer_clone);
+            let mut j_reader =
+                journal_reader::initialize(evm_request_writer_clone, settings_pointer_clone);
             loop {
                 //Sleep needed, because too frequent reads can lead to read the file while being written to it -> exception from json parser because json is not complete
                 sleep(Duration::from_millis(100));
@@ -128,17 +191,6 @@ impl Default for EliteRustClient {
                 }
             });
         }
-        info!("Starting Evm Updater");
-        let mut evm_update_bus: Bus<EvmUpdate> = Bus::new(1);
-        let evm_update_reader = evm_update_bus.add_rx();
-        let settings_pointer_clone = settings_pointer.clone();
-        thread::spawn(move || {
-            let mut evm_updater = evm_updater::initialize(evm_update_bus, settings_pointer_clone);
-            loop {
-                evm_updater.run_update();
-                sleep(Duration::from_secs(3));
-            }
-        });
         info!("Done starting threads");
 
         let cargo_reader = Arc::new(Mutex::new(cargo_reader::initialize(
@@ -155,6 +207,7 @@ impl Default for EliteRustClient {
             station: StationState {
                 stations: vec![],
                 search: "".to_string(),
+                evm_request_writer: evm_request_writer.clone(),
                 settings: settings_pointer.clone(),
             },
             carrier: CarrierState {
