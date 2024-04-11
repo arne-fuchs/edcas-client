@@ -6,7 +6,7 @@ fn main() {
         .unwrap()
         .generate()
         .unwrap()
-        .write_to_file("src/app/evm_interpreter/edcas_contract.rs")
+        .write_to_file("src/edcas/backend/edcas_contract.rs")
         .unwrap();
     println!("Done!");
 }

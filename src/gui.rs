@@ -1,1 +1,9 @@
+mod about;
 mod body;
+mod carrier;
+mod explorer;
+mod materials;
+mod mining;
+mod news;
+mod settings;
+mod station;

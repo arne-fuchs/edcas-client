@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use crate::app::explorer::body::Parent;
-use crate::app::explorer::planet::AsteroidRing;
-use crate::app::settings::Settings;
+use crate::edcas::explorer::body::Parent;
+use crate::edcas::explorer::planet::AsteroidRing;
+use crate::edcas::settings::Settings;
 #[derive(Clone)]
 pub struct Star {
     pub timestamp: String,

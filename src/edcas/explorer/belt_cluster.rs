@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
-use crate::app::explorer::body::Parent;
-use crate::app::settings::Settings;
+use crate::edcas::explorer::body::Parent;
+use crate::edcas::settings::Settings;
 
 #[derive(Clone)]
 pub struct BeltCluster {

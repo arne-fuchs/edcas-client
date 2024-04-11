@@ -6,9 +6,9 @@ use std::env;
 use std::str::FromStr;
 use std::sync::Arc;
 
-use crate::app::EliteRustClient;
+use crate::edcas::EliteRustClient;
 
-mod app;
+mod edcas;
 mod gui;
 #[cfg(feature = "tui")]
 mod tui;

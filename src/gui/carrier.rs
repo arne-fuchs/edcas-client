@@ -1,34 +1,8 @@
-use std::sync::Arc;
-
-use chrono::{DateTime, Utc};
 use eframe::egui::collapsing_header::CollapsingState;
 use eframe::egui::Context;
 use eframe::{egui, App, Frame};
 
-use crate::app::settings::Settings;
-
-pub struct CarrierState {
-    pub carriers: Vec<Carrier>,
-    pub search: String,
-    pub settings: Arc<Settings>,
-}
-
-#[derive(Clone)]
-pub struct Carrier {
-    pub timestamp: DateTime<Utc>,
-    pub name: String,
-    pub callsign: String,
-    pub services: String,
-    pub docking_access: String,
-    pub allow_notorious: bool,
-    pub current_system: String,
-    pub current_body: String,
-    pub next_system: String,
-    pub next_body: String,
-    pub departure: DateTime<Utc>,
-}
-
-impl App for CarrierState {
+impl App for crate::edcas::carrier::CarrierState {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.horizontal_top(|ui| {

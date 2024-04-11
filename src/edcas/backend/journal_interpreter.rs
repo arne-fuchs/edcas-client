@@ -5,14 +5,14 @@ use std::time::Instant;
 use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
 
-use crate::app::explorer::belt_cluster::BeltCluster;
-use crate::app::explorer::body::{BodyType, Parent, Signal};
-use crate::app::explorer::planet::Planet;
-use crate::app::explorer::system::{PlanetSignals, System, SystemSignal};
-use crate::app::explorer::{body, Explorer};
-use crate::app::materials::{Material, MaterialState};
-use crate::app::mining::{Mining, MiningMaterial, Prospector};
-use crate::app::settings::Settings;
+use crate::edcas::explorer::belt_cluster::BeltCluster;
+use crate::edcas::explorer::body::{BodyType, Parent, Signal};
+use crate::edcas::explorer::planet::Planet;
+use crate::edcas::explorer::system::{PlanetSignals, System, SystemSignal};
+use crate::edcas::explorer::{body, Explorer};
+use crate::edcas::materials::{Material, MaterialState};
+use crate::edcas::mining::{Mining, MiningMaterial, Prospector};
+use crate::edcas::settings::Settings;
 
 pub fn interpret_json(
     json: JsonValue,
@@ -102,7 +102,7 @@ pub fn interpret_json(
                             }
                         }
 
-                        system.insert_body(BodyType::Star(crate::app::explorer::star::Star {
+                        system.insert_body(BodyType::Star(crate::edcas::explorer::star::Star {
                             timestamp: "".to_string(),
                             event: "API".to_string(),
                             scan_type: "API".to_string(),

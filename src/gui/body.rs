@@ -1,8 +1,8 @@
-use crate::app::explorer::belt_cluster::BeltCluster;
-use crate::app::explorer::body::BodyType;
-use crate::app::explorer::planet::{get_body_class_from_body, get_profit_from_body, Planet};
-use crate::app::explorer::ring::Ring;
-use crate::app::explorer::star::Star;
+use crate::edcas::explorer::belt_cluster::BeltCluster;
+use crate::edcas::explorer::body::BodyType;
+use crate::edcas::explorer::planet::{get_body_class_from_body, get_profit_from_body, Planet};
+use crate::edcas::explorer::ring::Ring;
+use crate::edcas::explorer::star::Star;
 use eframe::egui::Ui;
 use num_format::{Locale, ToFormattedString};
 

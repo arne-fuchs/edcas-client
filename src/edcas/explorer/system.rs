@@ -4,8 +4,8 @@ use std::sync::Arc;
 use eframe::egui;
 use eframe::emath::Numeric;
 
-use crate::app::explorer::body::{BodyType, Signal};
-use crate::app::settings::Settings;
+use crate::edcas::explorer::body::{BodyType, Signal};
+use crate::edcas::settings::Settings;
 
 #[derive(Clone)]
 pub struct System {

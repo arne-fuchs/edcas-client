@@ -1,6 +1,5 @@
 use std::cmp::Ordering;
 use std::path::PathBuf;
-use std::sync::mpsc::Sender;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
@@ -11,37 +10,35 @@ use chrono::Local;
 use eframe::egui;
 use eframe::egui::TextStyle;
 use eframe::App;
-use ethers::prelude::Provider;
 
-use crate::app::cargo_reader::CargoReader;
-use crate::app::carrier::CarrierState;
-use crate::app::evm_interpreter::edcas_contract::StationIdentity;
-use crate::app::evm_updater::{EvmRequest, EvmUpdate};
+use crate::edcas::backend::cargo_reader::CargoReader;
+use crate::edcas::carrier::CarrierState;
+use crate::edcas::backend::edcas_contract::StationIdentity;
+use crate::edcas::backend::evm_updater::{EvmRequest, EvmUpdate};
+use crate::edcas::backend::{cargo_reader, evm_interpreter, evm_updater};
+use crate::edcas::backend::journal_interpreter;
+use crate::edcas::backend::journal_reader;
+
 use json::JsonValue;
 use log::info;
 
-use crate::app::materials::MaterialState;
-use crate::app::station::{Station, StationState};
-use crate::app::State::{
+use crate::edcas::materials::MaterialState;
+use crate::edcas::station::{Station, StationState};
+use crate::edcas::State::{
     About, CarrierPage, Explorer, MaterialInventory, Mining, News, Settings, StationPage,
 };
 use crate::egui::Context;
 
-mod about;
-mod cargo_reader;
-
-mod evm_interpreter;
 pub mod explorer;
 
-mod carrier;
-mod evm_updater;
-mod journal_interpreter;
-mod journal_reader;
+pub(crate) mod about;
+pub(crate) mod carrier;
 pub mod materials;
 pub mod mining;
-mod news;
-mod settings;
-mod station;
+pub(crate) mod news;
+pub(crate) mod settings;
+pub(crate) mod station;
+pub(crate) mod backend;
 
 pub struct EliteRustClient {
     pub about: about::About,
@@ -77,10 +74,10 @@ impl EliteRustClient {
         {
             if let Ok(update) = self.evm_update_reader.try_recv() {
                 match update {
-                    EvmUpdate::CarrierListUpdate(carriers) => {
+                    EvmUpdate::CarrierList(carriers) => {
                         self.carrier.carriers = carriers;
                     }
-                    EvmUpdate::StationListUpdate(stations) => {
+                    EvmUpdate::StationList(stations) => {
                         for station_identity in stations {
                             //List is sorted by name -> If name exceeds alphabetic order, it is not in the list and can be added
                             if !self.is_station_registered(&station_identity) {
@@ -97,7 +94,7 @@ impl EliteRustClient {
                         }
                         self.station.stations.sort_by_key(|a| a.name.clone());
                     }
-                    EvmUpdate::StationMetaDataUpdate(market_id, meta_data) => {
+                    EvmUpdate::StationMetaData(market_id, meta_data) => {
                         for station in &mut self.station.stations {
                             if station.market_id == market_id {
                                 station.meta_data = Some(meta_data);
@@ -105,7 +102,7 @@ impl EliteRustClient {
                             }
                         }
                     }
-                    EvmUpdate::StationCommodityListeningUpdate(market_id, listenings) => {
+                    EvmUpdate::StationCommodityListening(_market_id, _listenings) => {
                         todo!("Implement");
                     }
                 }

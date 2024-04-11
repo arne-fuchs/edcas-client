@@ -7,7 +7,7 @@ use crossterm::{
 use ratatui::{prelude::*, style::Stylize, widgets::*};
 use std::{error::Error, io};
 
-use crate::app::{materials::Material, mining::MiningMaterial, EliteRustClient};
+use crate::edcas::{materials::Material, mining::MiningMaterial, EliteRustClient};
 
 // TODO: DONE signals_scanned/all_signals (gauge and text)
 // TODO: DONE signal threat (in system_signals)
@@ -249,7 +249,7 @@ pub fn draw_tui(client: EliteRustClient) -> Result<(), Box<dyn Error>> {
     let backend = CrosstermBackend::new(stdout);
     let mut terminal = Terminal::new(backend)?;
 
-    // create app and run it
+    // create edcas and run it
     let app = App::new();
     let res = run_app(&mut terminal, app, client);
 
@@ -817,7 +817,7 @@ fn tab_mining(
                 &prosp.remaining,
             ))
         }
-        //*app.prospector_list_state.offset_mut() = app.prospector_index;
+        //*edcas.prospector_list_state.offset_mut() = edcas.prospector_index;
         app.prospector_list_state.select(Some(app.prospector_index));
         // would rather update it near cargo_table_state, but dont want to write another if  specifically for it
     }

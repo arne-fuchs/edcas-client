@@ -3,8 +3,8 @@ use std::sync::Arc;
 use json::JsonValue;
 use log::debug;
 
-use crate::app::explorer::planet::AsteroidRing;
-use crate::app::settings::Settings;
+use crate::edcas::explorer::planet::AsteroidRing;
+use crate::edcas::settings::Settings;
 
 pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType {
     //TODO Parents implementation
@@ -41,7 +41,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
 
     if json["StarType"].is_null() {
         if json["BodyName"].to_string().contains("Belt Cluster") {
-            BodyType::BeltCluster(crate::app::explorer::belt_cluster::BeltCluster {
+            BodyType::BeltCluster(crate::edcas::explorer::belt_cluster::BeltCluster {
                 timestamp: json["Timestamp"].to_string(),
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
@@ -57,7 +57,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
             })
         } else if json["BodyName"].to_string().contains("Ring") {
             //{"timestamp":"2023-07-17T18:18:37Z","event":"Scan","ScanType":"AutoScan","BodyName":"Scheau Blao BB-W b57-45 1 B Ring","BodyID":7,"Parents":[{"Planet":5},{"Star":0}],"StarSystem":"Scheau Blao BB-W b57-45","SystemAddress":99684979268081,"DistanceFromArrivalLS":535.932803,"SemiMajorAxis":208998668.193817,"Eccentricity":0,"OrbitalInclination":0,"Periapsis":0,"OrbitalPeriod":44426.782131,"AscendingNode":0,"MeanAnomaly":190.333503,"WasDiscovered":false,"WasMapped":false}
-            BodyType::Ring(crate::app::explorer::ring::Ring {
+            BodyType::Ring(crate::edcas::explorer::ring::Ring {
                 timestamp: json["Timestamp"].to_string(),
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
@@ -94,7 +94,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
             // "AscendingNode":-4.262981, "MeanAnomaly":78.392818, "RotationPeriod":101857.106605, "AxialTilt":-0.011263,
             // "Rings":[ { "Name":"Phaa Chroa YL-B b5-4 A 9 A Ring", "RingClass":"eRingClass_Rocky", "MassMT":2.501e+09, "InnerRad":2.166e+07, "OuterRad":2.3866e+07 }, { "Name":"Phaa Chroa YL-B b5-4 A 9 B Ring", "RingClass":"eRingClass_Icy", "MassMT":9.0988e+10, "InnerRad":2.3966e+07, "OuterRad":6.2742e+07 } ],
             // "ReserveLevel":"PristineResources", "WasDiscovered":false, "WasMapped":false }
-            BodyType::Planet(crate::app::explorer::planet::Planet {
+            BodyType::Planet(crate::edcas::explorer::planet::Planet {
                 timestamp: json["Timestamp"].to_string(),
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
@@ -138,7 +138,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
         }
     } else {
         //{ "timestamp":"2023-07-12T21:52:23Z", "event":"Scan", "ScanType":"AutoScan", "BodyName":"Lasao DX-Z b43-37 A", "BodyID":1, "Parents":[ {"Null":0} ], "StarSystem":"Lasao DX-Z b43-37", "SystemAddress":82108367853945, "DistanceFromArrivalLS":0.000000, "StarType":"M", "Subclass":7, "StellarMass":0.285156, "Radius":307783360.000000, "AbsoluteMagnitude":10.356186, "Age_MY":3076, "SurfaceTemperature":2434.000000, "Luminosity":"Va", "SemiMajorAxis":514860939979.553223, "Eccentricity":0.153621, "OrbitalInclination":2.176175, "Periapsis":6.939240, "OrbitalPeriod":4139431655.406952, "AscendingNode":-133.798577, "MeanAnomaly":169.548183, "RotationPeriod":118438.397553, "AxialTilt":0.000000, "Rings":[ { "Name":"Lasao DX-Z b43-37 A A Belt", "RingClass":"eRingClass_Rocky", "MassMT":7.2313e+13, "InnerRad":5.0784e+08, "OuterRad":1.6453e+09 } ], "WasDiscovered":false, "WasMapped":false }
-        BodyType::Star(crate::app::explorer::star::Star {
+        BodyType::Star(crate::edcas::explorer::star::Star {
             timestamp: json["Timestamp"].to_string(),
             event: json["event"].to_string(),
             scan_type: json["ScanType"].to_string(),
@@ -175,10 +175,10 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
 
 #[derive(Clone)]
 pub(crate) enum BodyType {
-    Star(crate::app::explorer::star::Star),
-    Planet(crate::app::explorer::planet::Planet),
-    Ring(crate::app::explorer::ring::Ring),
-    BeltCluster(crate::app::explorer::belt_cluster::BeltCluster),
+    Star(crate::edcas::explorer::star::Star),
+    Planet(crate::edcas::explorer::planet::Planet),
+    Ring(crate::edcas::explorer::ring::Ring),
+    BeltCluster(crate::edcas::explorer::belt_cluster::BeltCluster),
 }
 
 impl BodyType {

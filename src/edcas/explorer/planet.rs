@@ -1,17 +1,16 @@
 use std::sync::Arc;
 
 use log::warn;
-use num_format::ToFormattedString;
 
-use crate::app::explorer::body::{Parent, Signal};
-use crate::app::explorer::planet::BodyClass::{
+use crate::edcas::explorer::body::{Parent, Signal};
+use crate::edcas::explorer::planet::BodyClass::{
     AmmoniaWorld, ClassIGasGiant, ClassIIGasGiant, ClassIIIGasGiant, ClassIVGasGiant,
     ClassVGasGiant, EarthlikeWorld, GasGiantwithAmmoniabasedLife, GasGiantwithWaterbasedLife,
     HeliumRichGasGiant, HighMetalContentPlanet, HighMetalContentTerraformablePlanet, IcyBody,
     MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown,
     WaterGiant, WaterWorld, WaterWorldTerraformable,
 };
-use crate::app::settings::Settings;
+use crate::edcas::settings::Settings;
 
 //{ "timestamp":"2023-07-19T17:19:51Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Phaa Chroa YL-B b5-4 A 9",
 // "BodyID":36, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Phaa Chroa YL-B b5-4", "SystemAddress":9544091982377,
@@ -159,7 +158,7 @@ pub fn get_body_class_from_body(planet: &Planet) -> BodyClass {
                 return Star;
             }
             //FIXME If stars come as child, their "Planet Class" cannot be determined
-            //[src/app/journal_reader.rs:75] &line = "{ \"timestamp\":\"2022-10-31T00:20:41Z\", \"event\":\"Scan\", \"ScanType\":\"AutoScan\", \"BodyName\":\"Kyloall UO-A e147 A 5\", \"BodyID\":28, \"Parents\":[ {\"Star\":1}, {\"Null\":0} ], \"StarSystem\":\"Kyloall UO-A e147\", \"SystemAddress\":632435992772, \"DistanceFromArrivalLS\":3039.256581, \"StarType\":\"Y\", \"Subclass\":0, \"StellarMass\":0.031250, \"Radius\":85388072.000000, \"AbsoluteMagnitude\":18.674301, \"Age_MY\":308, \"SurfaceTemperature\":646.000000, \"Luminosity\":\"V\", \"SemiMajorAxis\":912356770038.604736, \"Eccentricity\":0.001826, \"OrbitalInclination\":0.081750, \"Periapsis\":334.272320, \"OrbitalPeriod\":236886096.000671, \"AscendingNode\":-58.389303, \"MeanAnomaly\":43.307253, \"RotationPeriod\":322169.147143, \"AxialTilt\":-1.353121, \"WasDiscovered\":false, \"WasMapped\":false }\r\n"
+            //[src/edcas/journal_reader.rs:75] &line = "{ \"timestamp\":\"2022-10-31T00:20:41Z\", \"event\":\"Scan\", \"ScanType\":\"AutoScan\", \"BodyName\":\"Kyloall UO-A e147 A 5\", \"BodyID\":28, \"Parents\":[ {\"Star\":1}, {\"Null\":0} ], \"StarSystem\":\"Kyloall UO-A e147\", \"SystemAddress\":632435992772, \"DistanceFromArrivalLS\":3039.256581, \"StarType\":\"Y\", \"Subclass\":0, \"StellarMass\":0.031250, \"Radius\":85388072.000000, \"AbsoluteMagnitude\":18.674301, \"Age_MY\":308, \"SurfaceTemperature\":646.000000, \"Luminosity\":\"V\", \"SemiMajorAxis\":912356770038.604736, \"Eccentricity\":0.001826, \"OrbitalInclination\":0.081750, \"Periapsis\":334.272320, \"OrbitalPeriod\":236886096.000671, \"AscendingNode\":-58.389303, \"MeanAnomaly\":43.307253, \"RotationPeriod\":322169.147143, \"AxialTilt\":-1.353121, \"WasDiscovered\":false, \"WasMapped\":false }\r\n"
             warn!(
                 "Couldn't find planet class: {}",
                 &planet.planet_class.as_str()
@@ -318,26 +317,6 @@ pub fn get_profit_from_body(class: BodyClass, discovered: bool) -> (i32, i32) {
                 (1734, 8019)
             }
         }
-        Ring => {
-            if discovered {
-                (0, 0)
-            } else {
-                (0, 0)
-            }
-        }
-        Star => {
-            if discovered {
-                (0, 0)
-            } else {
-                (0, 0)
-            }
-        }
-        Unknown => {
-            if discovered {
-                (0, 0)
-            } else {
-                (0, 0)
-            }
-        }
+        Ring | Star | Unknown => (0, 0),
     }
 }

@@ -1,26 +1,8 @@
-use std::sync::Arc;
-
+use crate::edcas::explorer::body::{BodyType, Parent};
+use crate::edcas::explorer::Explorer;
 use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
 use eframe::egui::{Align, Context, Layout};
 use eframe::{egui, App, Frame};
-
-use crate::app::explorer::body::{BodyType, Parent};
-use crate::app::explorer::system::System;
-use crate::app::settings::Settings;
-
-pub mod belt_cluster;
-pub mod body;
-pub mod planet;
-pub(crate) mod ring;
-pub mod star;
-pub mod system;
-
-pub struct Explorer {
-    pub systems: Vec<System>,
-    pub index: usize,
-    pub body_list_index: Option<usize>,
-    pub settings: Arc<Settings>,
-}
 
 impl App for Explorer {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {

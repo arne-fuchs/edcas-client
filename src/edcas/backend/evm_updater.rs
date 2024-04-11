@@ -1,9 +1,9 @@
-use crate::app::carrier::Carrier;
-use crate::app::evm_interpreter::edcas_contract::{Faction, Floating, StationIdentity};
-use crate::app::evm_interpreter::Edcas;
-use crate::app::evm_updater::EvmUpdate::{CarrierListUpdate, StationListUpdate};
-use crate::app::settings::Settings;
-use crate::app::station::{CommodityListening, StationMetaData};
+use crate::edcas::carrier::Carrier;
+use crate::edcas::backend::edcas_contract::{Faction, Floating, StationIdentity};
+use crate::edcas::evm_interpreter::Edcas;
+use crate::edcas::evm_updater::EvmUpdate::{CarrierList, StationList};
+use crate::edcas::settings::Settings;
+use crate::edcas::station::{CommodityListening, StationMetaData};
 use bus::Bus;
 use chrono::DateTime;
 use ethers::contract::ContractCall;
@@ -15,17 +15,17 @@ use std::sync::Arc;
 
 #[derive(Clone)]
 pub enum EvmUpdate {
-    CarrierListUpdate(Vec<Carrier>),
-    StationListUpdate(Vec<StationIdentity>),
-    StationMetaDataUpdate(u64, StationMetaData),
-    StationCommodityListeningUpdate(u64, Vec<CommodityListening>),
+    CarrierList(Vec<Carrier>),
+    StationList(Vec<StationIdentity>),
+    StationMetaData(u64, StationMetaData),
+    StationCommodityListening(u64, Vec<CommodityListening>),
 }
 
 #[derive(Clone)]
 pub enum EvmRequest {
-    StationMetaDataRequest(u64),
-    StationCommodityListenerRequest(u64),
-    SystemMetaDataRequest(u64),
+    StationMetaData(u64),
+    StationCommodityListener(u64),
+    SystemMetaData(u64),
 }
 
 pub struct EvmUpdater {
@@ -58,7 +58,7 @@ impl EvmUpdater {
                     {
                         if let Ok(request) = self.receiver.try_recv() {
                             match request {
-                                EvmRequest::StationMetaDataRequest(market_id) => {
+                                EvmRequest::StationMetaData(market_id) => {
                                     let function_call: ContractCall<
                                         SignerMiddleware<Provider<Http>, LocalWallet>,
                                         (
@@ -76,7 +76,7 @@ impl EvmUpdater {
                                     > = contract.station_map(market_id);
                                     match function_call.legacy().call().await {
                                         Ok(result) => {
-                                            self.writer.broadcast(EvmUpdate::StationMetaDataUpdate(
+                                            self.writer.broadcast(EvmUpdate::StationMetaData(
                                                 market_id,
                                                 StationMetaData {
                                                     timestamp: DateTime::from_timestamp(
@@ -99,7 +99,7 @@ impl EvmUpdater {
                                         }
                                     }
                                 }
-                                EvmRequest::StationCommodityListenerRequest(market_id) => {
+                                EvmRequest::StationCommodityListener(market_id) => {
                                     todo!("Implement");
                                     let function_call: ContractCall<
                                         SignerMiddleware<Provider<Http>, LocalWallet>,
@@ -112,7 +112,7 @@ impl EvmUpdater {
                                         }
                                     }
                                 }
-                                EvmRequest::SystemMetaDataRequest(system_address) => {
+                                EvmRequest::SystemMetaData(system_address) => {
                                     todo!("Implement");
                                 }
                             }
@@ -139,7 +139,7 @@ impl EvmUpdater {
                             }
                         }
                         if !carriers.is_empty() {
-                            self.writer.broadcast(CarrierListUpdate(carriers));
+                            self.writer.broadcast(CarrierList(carriers));
                         }
                     }
 
@@ -153,7 +153,7 @@ impl EvmUpdater {
                             Ok(mut results) => {
                                 if !results.is_empty() {
                                     results.sort_by_key(|a| a.name.clone());
-                                    self.writer.broadcast(StationListUpdate(results));
+                                    self.writer.broadcast(StationList(results));
                                 }
                             }
                             Err(err) => {

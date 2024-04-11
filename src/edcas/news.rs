@@ -1,11 +1,11 @@
 use eframe::egui;
-use eframe::egui::{ColorImage, TextureHandle};
+use eframe::egui::ColorImage;
 use log::error;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
 
 pub struct News {
-    articles: Vec<Article>,
+    pub(crate) articles: Vec<Article>,
     pub logo: ColorImage,
 }
 
@@ -78,48 +78,7 @@ impl Default for News {
 }
 
 pub struct Article {
-    title: String,
-    date: String,
-    text: String,
-}
-
-impl News {
-    pub fn update(&self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::CentralPanel::default().show(ctx, |ui| {
-            egui::ScrollArea::vertical().show(ui, |ui| {
-                let texture: TextureHandle =
-                    ui.ctx()
-                        .load_texture("logo", self.logo.clone(), egui::TextureOptions::LINEAR);
-                let image = egui::Image::new(&texture).max_width(512.0).rounding(10.0);
-                ui.vertical_centered(|ui| {
-                    ui.add(image);
-                    ui.heading("Galnet News");
-                });
-
-                ui.separator();
-                ui.end_row();
-                for news in &self.articles {
-                    ui.vertical_centered(|ui| {
-                        ui.end_row();
-                        ui.separator();
-                        ui.heading(&news.title);
-                        ui.separator();
-                        ui.heading(&news.date);
-                    });
-                    ui.separator();
-                    egui::Grid::new(&news.title)
-                        .num_columns(3)
-                        .min_col_width(200.0)
-                        .max_col_width(1000.0)
-                        .show(ui, |ui| {
-                            ui.label("");
-                            ui.label(&news.text.replace('\n', "\n\n"));
-                            ui.label("");
-                            ui.end_row();
-                        });
-                    ui.separator();
-                }
-            });
-        });
-    }
+    pub(crate) title: String,
+    pub(crate) date: String,
+    pub(crate) text: String,
 }

@@ -3,7 +3,7 @@ use std::sync::Arc;
 use json::{JsonValue, Null};
 use log::{debug, error};
 
-use crate::app::settings::Settings;
+use crate::edcas::settings::Settings;
 
 pub struct CargoReader {
     directory_path: String,

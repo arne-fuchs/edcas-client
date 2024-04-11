@@ -6,13 +6,13 @@ use std::thread::sleep;
 use std::time::Duration;
 use std::{fs, process};
 
-use crate::app::evm_updater::EvmRequest;
+use crate::edcas::evm_updater::EvmRequest;
 use bus::Bus;
 use chrono::NaiveDateTime;
 use json::JsonValue;
 use log::{debug, error, info};
 
-use crate::app::settings::{ActionAtShutdownSignal, Settings};
+use crate::edcas::settings::{ActionAtShutdownSignal, Settings};
 
 pub struct JournalReader {
     pub reader: BufReader<File>,
