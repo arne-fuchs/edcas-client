@@ -1,8 +1,5 @@
 use std::sync::Arc;
 
-use eframe::egui::Ui;
-use num_format::{Locale, ToFormattedString};
-
 use crate::app::explorer::body::{Parent, Signal};
 use crate::app::settings::Settings;
 #[derive(Clone)]

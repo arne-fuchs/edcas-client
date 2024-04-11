@@ -1,6 +1,6 @@
 use std::cmp::Ordering;
 use std::path::PathBuf;
-use std::sync::mpsc::{Receiver, Sender};
+use std::sync::mpsc::Sender;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
@@ -11,7 +11,7 @@ use chrono::Local;
 use eframe::egui;
 use eframe::egui::TextStyle;
 use eframe::App;
-use ethers::prelude::{LocalWallet, Provider};
+use ethers::prelude::Provider;
 
 use crate::app::cargo_reader::CargoReader;
 use crate::app::carrier::CarrierState;

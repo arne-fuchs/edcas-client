@@ -6,7 +6,6 @@ use bus::BusReader;
 use chrono::DateTime;
 use ethers::core::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
-use ethers::utils::hex::hex;
 use json::JsonValue;
 use log::{error, info};
 

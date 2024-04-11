@@ -80,7 +80,7 @@ impl App for StationState {
                                                         error!("Error sending StationMetaDataRequest: {err}");
                                                     }
                                                     station.requested_meta_data = true;
-                                                }else { 
+                                                }else {
                                                     ui.label("Fetching...");
                                                 }
                                             }

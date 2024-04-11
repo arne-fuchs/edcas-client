@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use chrono::{DateTime, Utc};
-use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
+use eframe::egui::collapsing_header::CollapsingState;
 use eframe::egui::Context;
 use eframe::{egui, App, Frame};
 

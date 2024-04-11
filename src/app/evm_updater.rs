@@ -2,7 +2,6 @@ use crate::app::carrier::Carrier;
 use crate::app::evm_interpreter::edcas_contract::{Faction, Floating, StationIdentity};
 use crate::app::evm_interpreter::Edcas;
 use crate::app::evm_updater::EvmUpdate::{CarrierListUpdate, StationListUpdate};
-use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
 use crate::app::station::{CommodityListening, StationMetaData};
 use bus::Bus;

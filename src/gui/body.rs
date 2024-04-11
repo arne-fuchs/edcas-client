@@ -1,10 +1,10 @@
+use crate::app::explorer::belt_cluster::BeltCluster;
+use crate::app::explorer::body::BodyType;
 use crate::app::explorer::planet::{get_body_class_from_body, get_profit_from_body, Planet};
 use crate::app::explorer::ring::Ring;
 use crate::app::explorer::star::Star;
-use crate::app::explorer::body::BodyType;
 use eframe::egui::Ui;
 use num_format::{Locale, ToFormattedString};
-use crate::app::explorer::belt_cluster::BeltCluster;
 
 impl BodyType {
     pub fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
@@ -12,7 +12,9 @@ impl BodyType {
             BodyType::Star(star) => star.print_header_content(ui, system_index, body_index),
             BodyType::Planet(planet) => planet.print_header_content(ui, system_index, body_index),
             BodyType::Ring(ring) => ring.print_header_content(ui, system_index, body_index),
-            BodyType::BeltCluster(cluster) => cluster.print_header_content(ui, system_index, body_index),
+            BodyType::BeltCluster(cluster) => {
+                cluster.print_header_content(ui, system_index, body_index)
+            }
         }
     }
     pub fn print_side_panel_information(&self, ui: &mut Ui) {

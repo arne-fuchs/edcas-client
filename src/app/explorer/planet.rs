@@ -1,9 +1,9 @@
 use std::sync::Arc;
 
-use eframe::egui::Ui;
 use log::warn;
-use num_format::{Locale, ToFormattedString};
+use num_format::ToFormattedString;
 
+use crate::app::explorer::body::{Parent, Signal};
 use crate::app::explorer::planet::BodyClass::{
     AmmoniaWorld, ClassIGasGiant, ClassIIGasGiant, ClassIIIGasGiant, ClassIVGasGiant,
     ClassVGasGiant, EarthlikeWorld, GasGiantwithAmmoniabasedLife, GasGiantwithWaterbasedLife,
@@ -11,7 +11,6 @@ use crate::app::explorer::planet::BodyClass::{
     MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown,
     WaterGiant, WaterWorld, WaterWorldTerraformable,
 };
-use crate::app::explorer::body::{Parent, Signal};
 use crate::app::settings::Settings;
 
 //{ "timestamp":"2023-07-19T17:19:51Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Phaa Chroa YL-B b5-4 A 9",

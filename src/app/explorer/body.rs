@@ -3,7 +3,7 @@ use std::sync::Arc;
 use json::JsonValue;
 use log::debug;
 
-use crate::app::explorer::planet::{AsteroidRing};
+use crate::app::explorer::planet::AsteroidRing;
 use crate::app::settings::Settings;
 
 pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType {
@@ -209,28 +209,36 @@ impl BodyType {
             BodyType::BeltCluster(body) => body.body_name.clone(),
         }
     }
-    
-    pub(crate) fn set_signals(&mut self, signals: Vec<Signal>){
+
+    pub(crate) fn set_signals(&mut self, signals: Vec<Signal>) {
         match self {
-            BodyType::Star(_) => {unreachable!("Stars cannot have signals")}
+            BodyType::Star(_) => {
+                unreachable!("Stars cannot have signals")
+            }
             BodyType::Planet(body) => body.planet_signals = signals,
             BodyType::Ring(body) => body.ring_signals = signals,
-            BodyType::BeltCluster(_) => {unreachable!("BeltClusters cannot have signals")}
+            BodyType::BeltCluster(_) => {
+                unreachable!("BeltClusters cannot have signals")
+            }
         }
     }
 
-    pub(crate) fn get_signals(&self) -> Vec<Signal>{
+    pub(crate) fn get_signals(&self) -> Vec<Signal> {
         //FIXME Work with references if possible
         match self {
-            BodyType::Star(_) => {unreachable!("Stars cannot have signals")}
+            BodyType::Star(_) => {
+                unreachable!("Stars cannot have signals")
+            }
             BodyType::Planet(body) => body.planet_signals.clone(),
             BodyType::Ring(body) => body.ring_signals.clone(),
-            BodyType::BeltCluster(_) => {unreachable!("BeltClusters cannot have signals")}
+            BodyType::BeltCluster(_) => {
+                unreachable!("BeltClusters cannot have signals")
+            }
         }
     }
 }
 
-impl PartialEq for BodyType{
+impl PartialEq for BodyType {
     fn eq(&self, other: &Self) -> bool {
         self.get_id() == other.get_id()
     }

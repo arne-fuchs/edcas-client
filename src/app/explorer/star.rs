@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use crate::app::explorer::body::Parent;
 use crate::app::explorer::planet::AsteroidRing;
-use crate::app::explorer::body::{Parent};
 use crate::app::settings::Settings;
 #[derive(Clone)]
 pub struct Star {

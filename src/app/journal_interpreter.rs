@@ -6,8 +6,8 @@ use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
 
 use crate::app::explorer::belt_cluster::BeltCluster;
-use crate::app::explorer::planet::Planet;
 use crate::app::explorer::body::{BodyType, Parent, Signal};
+use crate::app::explorer::planet::Planet;
 use crate::app::explorer::system::{PlanetSignals, System, SystemSignal};
 use crate::app::explorer::{body, Explorer};
 use crate::app::materials::{Material, MaterialState};
@@ -114,57 +114,57 @@ pub fn interpret_json(
                             distance_from_arrival_ls: f64::from_str(
                                 star_json["distance_from_arrival_ls"].to_string().as_str(),
                             )
-                                .unwrap(),
+                            .unwrap(),
                             star_type: star_json["star_type"].to_string(),
                             subclass: i64::from_str(star_json["subclass"].to_string().as_str())
                                 .unwrap(),
                             stellar_mass: f64::from_str(
                                 star_json["stellar_mass"].to_string().as_str(),
                             )
-                                .unwrap(),
+                            .unwrap(),
                             radius: f64::from_str(star_json["radius"].to_string().as_str())
                                 .unwrap(),
                             absolute_magnitude: f64::from_str(
                                 star_json["absolute_magnitude"].to_string().as_str(),
                             )
-                                .unwrap(),
+                            .unwrap(),
                             age_my: i64::from_str(star_json["age_my"].to_string().as_str())
                                 .unwrap(),
                             surface_temperature: f64::from_str(
                                 star_json["surface_temperature"].to_string().as_str(),
                             )
-                                .unwrap(),
+                            .unwrap(),
                             luminosity: star_json["luminosity"].to_string(),
                             semi_major_axis: f64::from_str(
                                 star_json["semi_major_axis"].to_string().as_str(),
                             )
-                                .ok(),
+                            .ok(),
                             eccentricity: f64::from_str(
                                 star_json["eccentricity"].to_string().as_str(),
                             )
-                                .ok(),
+                            .ok(),
                             orbital_inclination: f64::from_str(
                                 star_json["orbital_inclination"].to_string().as_str(),
                             )
-                                .ok(),
+                            .ok(),
                             periapsis: f64::from_str(star_json["periapsis"].to_string().as_str())
                                 .ok(),
                             orbital_period: f64::from_str(
                                 star_json["orbital_period"].to_string().as_str(),
                             )
-                                .ok(),
+                            .ok(),
                             ascending_node: f64::from_str(
                                 star_json["ascending_node"].to_string().as_str(),
                             )
-                                .ok(),
+                            .ok(),
                             mean_anomaly: f64::from_str(
                                 star_json["mean_anomaly"].to_string().as_str(),
                             )
-                                .ok(),
+                            .ok(),
                             rotation_period: f64::from_str(
                                 star_json["rotation_period"].to_string().as_str(),
                             )
-                                .unwrap(),
+                            .unwrap(),
                             axial_tilt: f64::from_str(star_json["axial_tilt"].to_string().as_str())
                                 .unwrap(),
                             was_discovered: star_json["was_discovered"].as_bool().unwrap(),
@@ -205,7 +205,7 @@ pub fn interpret_json(
                                 distance_from_arrival_ls: f64::from_str(
                                     planet_json["distance_from_arrival_ls"].to_string().as_str(),
                                 )
-                                    .unwrap(),
+                                .unwrap(),
                                 was_discovered: planet_json["was_discovered"].as_bool().unwrap(),
                                 was_mapped: planet_json["was_mapped"].as_bool().unwrap(),
                                 settings: settings.clone(),

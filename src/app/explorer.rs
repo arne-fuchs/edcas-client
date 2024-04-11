@@ -9,10 +9,10 @@ use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
 
 pub mod belt_cluster;
+pub mod body;
 pub mod planet;
 pub(crate) mod ring;
 pub mod star;
-pub mod body;
 pub mod system;
 
 pub struct Explorer {
