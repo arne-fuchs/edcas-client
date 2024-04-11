@@ -4,7 +4,7 @@ use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
 use eframe::egui::{Align, Context, Layout};
 use eframe::{egui, App, Frame};
 
-use crate::app::explorer::body::{BodyImplementation, BodyType, Parent};
+use crate::app::explorer::body::{BodyType, Parent};
 use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
 

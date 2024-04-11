@@ -1,6 +1,5 @@
 use std::sync::Arc;
 
-use eframe::egui;
 use json::JsonValue;
 use log::debug;
 
@@ -174,18 +173,6 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
     }
 }
 
-pub trait BodyImplementation {
-    fn print_side_panel_information(&self, ui: &mut egui::Ui);
-    fn print_header_content(&self, ui: &mut egui::Ui, system_index: &mut usize, body_index: usize);
-    fn get_name(&self) -> &str;
-    fn get_id(&self) -> i64;
-    fn get_signals(&self) -> Vec<Signal> {
-        vec![]
-    }
-    fn set_signals(&mut self, _signals: Vec<Signal>) {}
-    fn get_parents(&self) -> Vec<Parent>;
-    fn get_body(&self) -> BodyType;
-}
 #[derive(Clone)]
 pub(crate) enum BodyType {
     Star(crate::app::explorer::star::Star),
@@ -244,12 +231,6 @@ impl BodyType {
 }
 
 impl PartialEq for BodyType{
-    fn eq(&self, other: &Self) -> bool {
-        self.get_id() == other.get_id()
-    }
-}
-
-impl PartialEq for dyn BodyImplementation {
     fn eq(&self, other: &Self) -> bool {
         self.get_id() == other.get_id()
     }

@@ -4,7 +4,7 @@ use std::sync::Arc;
 use eframe::egui;
 use eframe::emath::Numeric;
 
-use crate::app::explorer::body::{BodyImplementation, BodyType, Signal};
+use crate::app::explorer::body::{BodyType, Signal};
 use crate::app::settings::Settings;
 
 #[derive(Clone)]

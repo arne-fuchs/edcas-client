@@ -97,10 +97,10 @@ impl EliteRustClient {
                         }
                         self.station.stations.sort_by_key(|a| a.name.clone());
                     }
-                    EvmUpdate::StationMetaDataUpdate(market_id, metaData) => {
+                    EvmUpdate::StationMetaDataUpdate(market_id, meta_data) => {
                         for station in &mut self.station.stations {
                             if station.market_id == market_id {
-                                station.meta_data = Some(metaData);
+                                station.meta_data = Some(meta_data);
                                 break;
                             }
                         }
