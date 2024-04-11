@@ -4,9 +4,9 @@ use eframe::egui::Ui;
 use num_format::{Locale, ToFormattedString};
 
 use crate::app::explorer::planet::AsteroidRing;
-use crate::app::explorer::structs::{BodyImplementation, Parent};
+use crate::app::explorer::body::{BodyImplementation, Parent};
 use crate::app::settings::Settings;
-
+#[derive(Clone)]
 pub struct Star {
     pub timestamp: String,
     pub event: String,
@@ -154,9 +154,8 @@ impl BodyImplementation for Star {
         self.parents.clone()
     }
 
-    fn get_body(&self) -> crate::app::explorer::structs::BodyType {
-        crate::app::explorer::structs::BodyType::Star(self)
+    fn get_body(&self) -> crate::app::explorer::body::BodyType {
+        //FIXME Inefficient
+        crate::app::explorer::body::BodyType::Star(self.clone())
     }
 }
-
-//TODO Get new icons from star type

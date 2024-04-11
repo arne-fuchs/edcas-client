@@ -14,7 +14,6 @@ use eframe::egui::{vec2, Color32, Context, RichText, Window};
 use eframe::epaint::ahash::HashMap;
 use eframe::{egui, App, Frame};
 use ethers::addressbook::Address;
-use ethers::middleware::signer::SignerMiddlewareError;
 use ethers::middleware::SignerMiddleware;
 use ethers::prelude::*;
 use ethers::utils::hex;

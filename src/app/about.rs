@@ -52,7 +52,7 @@ impl About {
                 ui.horizontal(|ui| {
                     ui.spacing_mut().item_spacing.x = 0.0;
                     ui.label("powered by ");
-                    ui.hyperlink_to("egui", "https://github.com/emilk/egui");
+                    ui.hyperlink_to("gui", "https://github.com/emilk/egui");
                     ui.label(" and ");
                     ui.hyperlink_to(
                         "eframe",

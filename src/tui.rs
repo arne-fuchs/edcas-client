@@ -538,10 +538,10 @@ fn tab_explorer(
                     if i < body.get_parents().len() - 1 {
                         space_string.push_str("│  ")
                     } else {
-                        space_string.push_str("│  "); //├
+                        space_string.push_str("│  ");
                     }
                 }
-                space_string.push_str(body.get_name());
+                space_string.push_str(body.get_name().as_str());
                 let signals_type_string: Vec<String> = body
                     .get_signals()
                     .iter()

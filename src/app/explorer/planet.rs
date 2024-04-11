@@ -11,7 +11,7 @@ use crate::app::explorer::planet::BodyClass::{
     MetalRichBody, Ring, RockyBody, RockyBodyTerraformable, RockyIceBody, Star, Unknown,
     WaterGiant, WaterWorld, WaterWorldTerraformable,
 };
-use crate::app::explorer::structs::{BodyImplementation, Parent, Signal};
+use crate::app::explorer::body::{BodyImplementation, Parent, Signal};
 use crate::app::settings::Settings;
 
 //{ "timestamp":"2023-07-19T17:19:51Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Phaa Chroa YL-B b5-4 A 9",
@@ -26,7 +26,7 @@ use crate::app::settings::Settings;
 // "AscendingNode":-4.262981, "MeanAnomaly":78.392818, "RotationPeriod":101857.106605, "AxialTilt":-0.011263,
 // "Rings":[ { "Name":"Phaa Chroa YL-B b5-4 A 9 A Ring", "RingClass":"eRingClass_Rocky", "MassMT":2.501e+09, "InnerRad":2.166e+07, "OuterRad":2.3866e+07 }, { "Name":"Phaa Chroa YL-B b5-4 A 9 B Ring", "RingClass":"eRingClass_Icy", "MassMT":9.0988e+10, "InnerRad":2.3966e+07, "OuterRad":6.2742e+07 } ],
 // "ReserveLevel":"PristineResources", "WasDiscovered":false, "WasMapped":false }
-
+#[derive(Clone)]
 pub struct AsteroidRing {
     pub name: String,
     pub ring_class: String,
@@ -34,17 +34,17 @@ pub struct AsteroidRing {
     pub inner_rad: f64,
     pub outer_rad: f64,
 }
-
+#[derive(Clone)]
 pub struct Composition {
     pub name: String,
     pub percentage: f64,
 }
-
+#[derive(Clone)]
 pub struct AtmosphereComposition {
     pub name: String,
     pub percent: f64,
 }
-
+#[derive(Clone)]
 pub struct Planet {
     pub timestamp: String,
     pub event: String,
@@ -345,8 +345,9 @@ impl BodyImplementation for Planet {
         self.parents.clone()
     }
 
-    fn get_body(&self) -> crate::app::explorer::structs::BodyType {
-        crate::app::explorer::structs::BodyType::Planet(self)
+    fn get_body(&self) -> crate::app::explorer::body::BodyType {
+        //FIXME Inefficient
+        crate::app::explorer::body::BodyType::Planet(self.clone())
     }
 }
 

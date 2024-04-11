@@ -9,6 +9,7 @@ use std::sync::Arc;
 use crate::app::EliteRustClient;
 
 mod app;
+mod gui;
 #[cfg(feature = "tui")]
 mod tui;
 

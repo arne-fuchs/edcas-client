@@ -7,10 +7,9 @@ use log::{debug, error, info, warn};
 
 use crate::app::explorer::belt_cluster::BeltCluster;
 use crate::app::explorer::planet::Planet;
-use crate::app::explorer::star::Star;
-use crate::app::explorer::structs::{Parent, Signal};
+use crate::app::explorer::body::{BodyType, Parent, Signal};
 use crate::app::explorer::system::{PlanetSignals, System, SystemSignal};
-use crate::app::explorer::{structs, Explorer};
+use crate::app::explorer::{body, Explorer};
 use crate::app::materials::{Material, MaterialState};
 use crate::app::mining::{Mining, MiningMaterial, Prospector};
 use crate::app::settings::Settings;
@@ -103,7 +102,7 @@ pub fn interpret_json(
                             }
                         }
 
-                        system.insert_body(Box::new(Star {
+                        system.insert_body(BodyType::Star(crate::app::explorer::star::Star {
                             timestamp: "".to_string(),
                             event: "API".to_string(),
                             scan_type: "API".to_string(),
@@ -115,57 +114,57 @@ pub fn interpret_json(
                             distance_from_arrival_ls: f64::from_str(
                                 star_json["distance_from_arrival_ls"].to_string().as_str(),
                             )
-                            .unwrap(),
+                                .unwrap(),
                             star_type: star_json["star_type"].to_string(),
                             subclass: i64::from_str(star_json["subclass"].to_string().as_str())
                                 .unwrap(),
                             stellar_mass: f64::from_str(
                                 star_json["stellar_mass"].to_string().as_str(),
                             )
-                            .unwrap(),
+                                .unwrap(),
                             radius: f64::from_str(star_json["radius"].to_string().as_str())
                                 .unwrap(),
                             absolute_magnitude: f64::from_str(
                                 star_json["absolute_magnitude"].to_string().as_str(),
                             )
-                            .unwrap(),
+                                .unwrap(),
                             age_my: i64::from_str(star_json["age_my"].to_string().as_str())
                                 .unwrap(),
                             surface_temperature: f64::from_str(
                                 star_json["surface_temperature"].to_string().as_str(),
                             )
-                            .unwrap(),
+                                .unwrap(),
                             luminosity: star_json["luminosity"].to_string(),
                             semi_major_axis: f64::from_str(
                                 star_json["semi_major_axis"].to_string().as_str(),
                             )
-                            .ok(),
+                                .ok(),
                             eccentricity: f64::from_str(
                                 star_json["eccentricity"].to_string().as_str(),
                             )
-                            .ok(),
+                                .ok(),
                             orbital_inclination: f64::from_str(
                                 star_json["orbital_inclination"].to_string().as_str(),
                             )
-                            .ok(),
+                                .ok(),
                             periapsis: f64::from_str(star_json["periapsis"].to_string().as_str())
                                 .ok(),
                             orbital_period: f64::from_str(
                                 star_json["orbital_period"].to_string().as_str(),
                             )
-                            .ok(),
+                                .ok(),
                             ascending_node: f64::from_str(
                                 star_json["ascending_node"].to_string().as_str(),
                             )
-                            .ok(),
+                                .ok(),
                             mean_anomaly: f64::from_str(
                                 star_json["mean_anomaly"].to_string().as_str(),
                             )
-                            .ok(),
+                                .ok(),
                             rotation_period: f64::from_str(
                                 star_json["rotation_period"].to_string().as_str(),
                             )
-                            .unwrap(),
+                                .unwrap(),
                             axial_tilt: f64::from_str(star_json["axial_tilt"].to_string().as_str())
                                 .unwrap(),
                             was_discovered: star_json["was_discovered"].as_bool().unwrap(),
@@ -194,7 +193,7 @@ pub fn interpret_json(
                             .unwrap()
                             .contains("Belt Cluster")
                         {
-                            system.insert_body(Box::new(BeltCluster {
+                            system.insert_body(BodyType::BeltCluster(BeltCluster {
                                 timestamp: "".to_string(),
                                 event: "API".to_string(),
                                 scan_type: "API".to_string(),
@@ -206,7 +205,7 @@ pub fn interpret_json(
                                 distance_from_arrival_ls: f64::from_str(
                                     planet_json["distance_from_arrival_ls"].to_string().as_str(),
                                 )
-                                .unwrap(),
+                                    .unwrap(),
                                 was_discovered: planet_json["was_discovered"].as_bool().unwrap(),
                                 was_mapped: planet_json["was_mapped"].as_bool().unwrap(),
                                 settings: settings.clone(),
@@ -295,7 +294,7 @@ pub fn interpret_json(
                                 settings: settings.clone(),
                             };
                             if planet.surface_gravity != -1.0 {
-                                system.insert_body(Box::new(planet));
+                                system.insert_body(BodyType::Planet(planet));
                             }
                         }
                     }
@@ -431,7 +430,7 @@ pub fn interpret_json(
             //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435, "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant", "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ], "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730, "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734, "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320, "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
             info!("Body found: {}", json["BodyName"].to_string());
             if !explorer.systems.is_empty() {
-                let mut body = structs::generate_from_json(json.clone(), settings.clone());
+                let mut body = body::generate_from_json(json.clone(), settings.clone());
 
                 let len = explorer.systems.len() - 1;
 

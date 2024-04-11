@@ -4,9 +4,10 @@ use std::sync::Arc;
 use eframe::egui;
 use eframe::emath::Numeric;
 
-use crate::app::explorer::structs::{BodyImplementation, Signal};
+use crate::app::explorer::body::{BodyImplementation, BodyType, Signal};
 use crate::app::settings::Settings;
 
+#[derive(Clone)]
 pub struct System {
     pub name: String,
     pub address: String,
@@ -19,12 +20,13 @@ pub struct System {
     pub body_count: String,
     pub non_body_count: String,
     pub signal_list: Vec<SystemSignal>,
-    pub body_list: Vec<Box<dyn BodyImplementation>>,
+    pub body_list: Vec<BodyType>,
     pub planet_signals: Vec<PlanetSignals>,
     pub index: usize,
     pub settings: Arc<Settings>,
 }
 
+#[derive(Clone)]
 pub struct PlanetSignals {
     pub body_name: String,
     pub body_id: i64,
@@ -219,7 +221,7 @@ impl System {
             });
     }
 
-    pub fn insert_body(&mut self, body: Box<dyn BodyImplementation>) -> usize {
+    pub fn insert_body(&mut self, body: BodyType) -> usize {
         let id = body.get_id();
         self.body_list.push(body);
 

@@ -2,24 +2,24 @@ use crate::app::carrier::Carrier;
 use crate::app::evm_interpreter::edcas_contract::{Faction, Floating, StationIdentity};
 use crate::app::evm_interpreter::Edcas;
 use crate::app::evm_updater::EvmUpdate::{CarrierListUpdate, StationListUpdate};
+use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
 use crate::app::station::{CommodityListening, StationMetaData};
-use bus::{Bus};
+use bus::Bus;
 use chrono::DateTime;
 use ethers::contract::ContractCall;
 use ethers::middleware::SignerMiddleware;
 use ethers::prelude::{Http, LocalWallet, Provider, U256};
 use log::error;
-use std::sync::mpsc::{Receiver};
+use std::sync::mpsc::Receiver;
 use std::sync::Arc;
-use crate::app::explorer::system::System;
 
+#[derive(Clone)]
 pub enum EvmUpdate {
     CarrierListUpdate(Vec<Carrier>),
     StationListUpdate(Vec<StationIdentity>),
     StationMetaDataUpdate(u64, StationMetaData),
     StationCommodityListeningUpdate(u64, Vec<CommodityListening>),
-    SystemMetaDataUpdate(u64,System),
 }
 
 #[derive(Clone)]
@@ -28,6 +28,7 @@ pub enum EvmRequest {
     StationCommodityListenerRequest(u64),
     SystemMetaDataRequest(u64),
 }
+
 pub struct EvmUpdater {
     writer: Bus<EvmUpdate>,
     receiver: Receiver<EvmRequest>,

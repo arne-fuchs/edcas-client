@@ -1,19 +1,18 @@
 use std::sync::Arc;
 
 use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
-use eframe::egui::{Align, Layout};
+use eframe::egui::{Align, Context, Layout};
 use eframe::{egui, App, Frame};
 
-use crate::app::explorer::structs::{BodyImplementation, Parent};
+use crate::app::explorer::body::{BodyImplementation, BodyType, Parent};
 use crate::app::explorer::system::System;
 use crate::app::settings::Settings;
-use crate::egui::Context;
 
 pub mod belt_cluster;
 pub mod planet;
-mod ring;
+pub(crate) mod ring;
 pub mod star;
-pub mod structs;
+pub mod body;
 pub mod system;
 
 pub struct Explorer {
@@ -130,7 +129,7 @@ impl App for Explorer {
 }
 
 fn build_tree(
-    body_list: &mut Vec<Box<dyn BodyImplementation>>,
+    body_list: &mut Vec<BodyType>,
     system_index: &mut usize,
     current_parent: Parent,
     ui: &mut egui::Ui,

@@ -108,9 +108,6 @@ impl EliteRustClient {
                     EvmUpdate::StationCommodityListeningUpdate(market_id, listenings) => {
                         todo!("Implement");
                     }
-                    EvmUpdate::SystemMetaDataUpdate(_, _) => {
-                        todo!("Implement");
-                    }
                 }
             }
         }

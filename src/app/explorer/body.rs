@@ -4,13 +4,10 @@ use eframe::egui;
 use json::JsonValue;
 use log::debug;
 
-use crate::app::explorer::belt_cluster::BeltCluster;
-use crate::app::explorer::planet::{AsteroidRing, Planet};
-use crate::app::explorer::ring::Ring;
-use crate::app::explorer::star::Star;
+use crate::app::explorer::planet::{AsteroidRing};
 use crate::app::settings::Settings;
 
-pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn BodyImplementation> {
+pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType {
     //TODO Parents implementation
     //TODO Atmosphere Composition implementation
     //TODO Materials?
@@ -45,7 +42,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
 
     if json["StarType"].is_null() {
         if json["BodyName"].to_string().contains("Belt Cluster") {
-            Box::new(BeltCluster {
+            BodyType::BeltCluster(crate::app::explorer::belt_cluster::BeltCluster {
                 timestamp: json["Timestamp"].to_string(),
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
@@ -61,7 +58,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
             })
         } else if json["BodyName"].to_string().contains("Ring") {
             //{"timestamp":"2023-07-17T18:18:37Z","event":"Scan","ScanType":"AutoScan","BodyName":"Scheau Blao BB-W b57-45 1 B Ring","BodyID":7,"Parents":[{"Planet":5},{"Star":0}],"StarSystem":"Scheau Blao BB-W b57-45","SystemAddress":99684979268081,"DistanceFromArrivalLS":535.932803,"SemiMajorAxis":208998668.193817,"Eccentricity":0,"OrbitalInclination":0,"Periapsis":0,"OrbitalPeriod":44426.782131,"AscendingNode":0,"MeanAnomaly":190.333503,"WasDiscovered":false,"WasMapped":false}
-            Box::new(Ring {
+            BodyType::Ring(crate::app::explorer::ring::Ring {
                 timestamp: json["Timestamp"].to_string(),
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
@@ -98,7 +95,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
             // "AscendingNode":-4.262981, "MeanAnomaly":78.392818, "RotationPeriod":101857.106605, "AxialTilt":-0.011263,
             // "Rings":[ { "Name":"Phaa Chroa YL-B b5-4 A 9 A Ring", "RingClass":"eRingClass_Rocky", "MassMT":2.501e+09, "InnerRad":2.166e+07, "OuterRad":2.3866e+07 }, { "Name":"Phaa Chroa YL-B b5-4 A 9 B Ring", "RingClass":"eRingClass_Icy", "MassMT":9.0988e+10, "InnerRad":2.3966e+07, "OuterRad":6.2742e+07 } ],
             // "ReserveLevel":"PristineResources", "WasDiscovered":false, "WasMapped":false }
-            Box::new(Planet {
+            BodyType::Planet(crate::app::explorer::planet::Planet {
                 timestamp: json["Timestamp"].to_string(),
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
@@ -142,7 +139,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> Box<dyn B
         }
     } else {
         //{ "timestamp":"2023-07-12T21:52:23Z", "event":"Scan", "ScanType":"AutoScan", "BodyName":"Lasao DX-Z b43-37 A", "BodyID":1, "Parents":[ {"Null":0} ], "StarSystem":"Lasao DX-Z b43-37", "SystemAddress":82108367853945, "DistanceFromArrivalLS":0.000000, "StarType":"M", "Subclass":7, "StellarMass":0.285156, "Radius":307783360.000000, "AbsoluteMagnitude":10.356186, "Age_MY":3076, "SurfaceTemperature":2434.000000, "Luminosity":"Va", "SemiMajorAxis":514860939979.553223, "Eccentricity":0.153621, "OrbitalInclination":2.176175, "Periapsis":6.939240, "OrbitalPeriod":4139431655.406952, "AscendingNode":-133.798577, "MeanAnomaly":169.548183, "RotationPeriod":118438.397553, "AxialTilt":0.000000, "Rings":[ { "Name":"Lasao DX-Z b43-37 A A Belt", "RingClass":"eRingClass_Rocky", "MassMT":7.2313e+13, "InnerRad":5.0784e+08, "OuterRad":1.6453e+09 } ], "WasDiscovered":false, "WasMapped":false }
-        Box::new(Star {
+        BodyType::Star(crate::app::explorer::star::Star {
             timestamp: json["Timestamp"].to_string(),
             event: json["event"].to_string(),
             scan_type: json["ScanType"].to_string(),
@@ -189,11 +186,67 @@ pub trait BodyImplementation {
     fn get_parents(&self) -> Vec<Parent>;
     fn get_body(&self) -> BodyType;
 }
-pub(crate) enum BodyType<'a> {
-    Star(&'a Star),
-    Planet(&'a Planet),
-    Ring(&'a Ring),
-    BeltCluster(&'a BeltCluster),
+#[derive(Clone)]
+pub(crate) enum BodyType {
+    Star(crate::app::explorer::star::Star),
+    Planet(crate::app::explorer::planet::Planet),
+    Ring(crate::app::explorer::ring::Ring),
+    BeltCluster(crate::app::explorer::belt_cluster::BeltCluster),
+}
+
+impl BodyType {
+    pub(crate) fn get_id(&self) -> i64 {
+        match self {
+            BodyType::Star(body) => body.body_id,
+            BodyType::Planet(body) => body.body_id,
+            BodyType::Ring(body) => body.body_id,
+            BodyType::BeltCluster(body) => body.body_id,
+        }
+    }
+
+    pub(crate) fn get_parents(&self) -> &Vec<Parent> {
+        match self {
+            BodyType::Star(body) => &body.parents,
+            BodyType::Planet(body) => &body.parents,
+            BodyType::Ring(body) => &body.parents,
+            BodyType::BeltCluster(body) => &body.parents,
+        }
+    }
+
+    pub(crate) fn get_name(&self) -> String {
+        //FIXME Work with references if possible
+        match self {
+            BodyType::Star(body) => body.body_name.clone(),
+            BodyType::Planet(body) => body.body_name.clone(),
+            BodyType::Ring(body) => body.body_name.clone(),
+            BodyType::BeltCluster(body) => body.body_name.clone(),
+        }
+    }
+    
+    pub(crate) fn set_signals(&mut self, signals: Vec<Signal>){
+        match self {
+            BodyType::Star(_) => {unreachable!("Stars cannot have signals")}
+            BodyType::Planet(body) => body.planet_signals = signals,
+            BodyType::Ring(body) => body.ring_signals = signals,
+            BodyType::BeltCluster(_) => {unreachable!("BeltClusters cannot have signals")}
+        }
+    }
+
+    pub(crate) fn get_signals(&self) -> Vec<Signal>{
+        //FIXME Work with references if possible
+        match self {
+            BodyType::Star(_) => {unreachable!("Stars cannot have signals")}
+            BodyType::Planet(body) => body.planet_signals.clone(),
+            BodyType::Ring(body) => body.ring_signals.clone(),
+            BodyType::BeltCluster(_) => {unreachable!("BeltClusters cannot have signals")}
+        }
+    }
+}
+
+impl PartialEq for BodyType{
+    fn eq(&self, other: &Self) -> bool {
+        self.get_id() == other.get_id()
+    }
 }
 
 impl PartialEq for dyn BodyImplementation {

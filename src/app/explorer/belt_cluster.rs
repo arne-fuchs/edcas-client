@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use eframe::egui::Ui;
 
-use crate::app::explorer::structs::{BodyImplementation, Parent};
+use crate::app::explorer::body::{BodyImplementation, Parent};
 use crate::app::settings::Settings;
-
+#[derive(Clone)]
 pub struct BeltCluster {
     pub timestamp: String,
     pub event: String,
@@ -21,9 +21,6 @@ pub struct BeltCluster {
 }
 
 impl BodyImplementation for BeltCluster {
-    fn get_body(&self) -> crate::app::explorer::structs::BodyType {
-        crate::app::explorer::structs::BodyType::BeltCluster(self)
-    }
     fn print_side_panel_information(&self, ui: &mut Ui) {
         ui.heading(&self.body_name);
         ui.end_row();
@@ -33,7 +30,6 @@ impl BodyImplementation for BeltCluster {
         ui.label("Distance in LS");
         ui.label(&self.distance_from_arrival_ls.to_string());
     }
-
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
         if self.settings.icons.get("belt_cluster").unwrap().enabled {
             ui.label(
@@ -80,5 +76,10 @@ impl BodyImplementation for BeltCluster {
 
     fn get_parents(&self) -> Vec<Parent> {
         self.parents.clone()
+    }
+
+    fn get_body(&self) -> crate::app::explorer::body::BodyType {
+        //FIXME Inefficient
+        crate::app::explorer::body::BodyType::BeltCluster(self.clone())
     }
 }
