@@ -106,12 +106,9 @@ struct App<'a> {
     pub material_list_index: usize,       //
     pub search_input_mode: InputMode,     // user input
     pub material_search: Search,
-    pub carrier_list_state: ListState,
-    pub carrier_list_index: usize,
-    pub carrier_search: Search,
-    pub station_list_state: ListState,
-    pub station_list_index: usize,
-    pub station_search: Search,
+    pub dockable_list_state: ListState,
+    pub dockable_list_index: usize,
+    pub dockable_search: Search,
 }
 
 impl<'a> App<'a> {
@@ -136,12 +133,9 @@ impl<'a> App<'a> {
             material_list_index: 0,
             material_search: Search::new(),
             search_input_mode: InputMode::Normal,
-            carrier_list_state: ListState::default(),
-            carrier_list_index: 0,
-            carrier_search: Search::new(),
-            station_list_state: ListState::default(),
-            station_list_index: 0,
-            station_search: Search::new(),
+            dockable_list_state: ListState::default(),
+            dockable_list_index: 0,
+            dockable_search: Search::new(),
         }
     }
 
@@ -292,35 +286,19 @@ impl<'a> App<'a> {
     }
 
     // carriers
-    pub fn next_carrier(&mut self, client: &mut EliteRustClient) {
+    pub fn next_dockable(&mut self, client: &mut EliteRustClient) {
         if !client.carrier.carriers.is_empty() {
-            self.carrier_list_index = (self.carrier_list_index + 1) % client.carrier.carriers.len();
+            self.dockable_list_index =
+                (self.dockable_list_index + 1) % client.carrier.carriers.len();
         }
     }
 
-    pub fn previous_carrier(&mut self, client: &mut EliteRustClient) {
+    pub fn previous_dockable(&mut self, client: &mut EliteRustClient) {
         if !client.carrier.carriers.is_empty() {
-            if self.carrier_list_index > 0 {
-                self.carrier_list_index -= 1
+            if self.dockable_list_index > 0 {
+                self.dockable_list_index -= 1
             } else {
-                self.carrier_list_index = client.carrier.carriers.len() - 1;
-            }
-        }
-    }
-
-    //stations
-    pub fn next_station(&mut self, client: &mut EliteRustClient) {
-        if !client.station.stations.is_empty() {
-            self.station_list_index = (self.station_list_index + 1) % client.station.stations.len();
-        }
-    }
-
-    pub fn previous_station(&mut self, client: &mut EliteRustClient) {
-        if !client.station.stations.is_empty() {
-            if self.station_list_index > 0 {
-                self.station_list_index -= 1
-            } else {
-                self.station_list_index = client.carrier.carriers.len() - 1;
+                self.dockable_list_index = client.carrier.carriers.len() - 1;
             }
         }
     }
@@ -389,22 +367,19 @@ fn run_app<B: Backend>(
                                 0 => app.next_body(&mut client),
                                 1 => app.next_cargo(&client),
                                 2 => app.next_material(&mut client),
-                                3 => app.next_carrier(&mut client),
-                                4 => app.next_station(&mut client),
+                                3 => app.next_dockable(&mut client),
                                 _ => {}
                             },
                             KeyCode::Up => match app.tab_index {
                                 0 => app.previous_body(&mut client),
                                 1 => app.previous_cargo(&client),
                                 2 => app.previous_material(&mut client),
-                                3 => app.previous_carrier(&mut client),
-                                4 => app.previous_station(&mut client),
+                                3 => app.previous_dockable(&mut client),
                                 _ => {}
                             },
                             KeyCode::Char('i') => match app.tab_index {
                                 2 => app.search_input_mode = InputMode::Editing,
                                 3 => app.search_input_mode = InputMode::Editing,
-                                4 => app.search_input_mode = InputMode::Editing,
                                 _ => {}
                             },
                             _ => {}
@@ -412,33 +387,28 @@ fn run_app<B: Backend>(
                         InputMode::Editing => match key.code {
                             KeyCode::Char(to_insert) => match app.tab_index {
                                 2 => app.material_search.enter_char(to_insert),
-                                3 => app.carrier_search.enter_char(to_insert),
-                                4 => app.station_search.enter_char(to_insert),
+                                3 => app.dockable_search.enter_char(to_insert),
                                 _ => {}
                             },
                             KeyCode::Backspace => match app.tab_index {
                                 2 => app.material_search.delete_char(),
-                                3 => app.carrier_search.delete_char(),
-                                4 => app.station_search.delete_char(),
+                                3 => app.dockable_search.delete_char(),
 
                                 _ => {}
                             },
                             KeyCode::Left => match app.tab_index {
                                 2 => app.material_search.move_cursor_left(),
-                                3 => app.carrier_search.move_cursor_left(),
-                                4 => app.station_search.move_cursor_left(),
+                                3 => app.dockable_search.move_cursor_left(),
                                 _ => {}
                             },
                             KeyCode::Right => match app.tab_index {
                                 2 => app.material_search.move_cursor_right(),
-                                3 => app.carrier_search.move_cursor_right(),
-                                4 => app.station_search.move_cursor_right(),
+                                3 => app.dockable_search.move_cursor_right(),
                                 _ => {}
                             },
                             KeyCode::Esc => match app.tab_index {
                                 2 => app.search_input_mode = InputMode::Normal,
                                 3 => app.search_input_mode = InputMode::Normal,
-                                4 => app.search_input_mode = InputMode::Normal,
                                 _ => {}
                             },
                             _ => {}
@@ -485,8 +455,7 @@ fn ui(f: &mut Frame, app: &mut App, client: &EliteRustClient) {
         1 => tab_mining(chunks[1], f, client, app),
         2 => tab_materials(chunks[1], f, client, app),
         3 => tab_carrier(chunks[1], f, client, app),
-        4 => tab_station(chunks[1], f, client, app),
-        5 => tab_about(chunks[1], f),
+        4 => tab_about(chunks[1], f),
         _ => unreachable!(),
     };
 }
@@ -1808,15 +1777,16 @@ fn tab_carrier(
     client: &EliteRustClient,
     app: &mut App,
 ) {
-    app.carrier_list_state.select(Some(app.carrier_list_index));
+    app.dockable_list_state
+        .select(Some(app.dockable_list_index));
 
-    let mut dataset_carrier_list_selected: Vec<_> = vec![];
+    let mut dataset_dockable_list_selected: Vec<_> = vec![];
 
-    let mut data_carrier_list_selected: Vec<String> = vec!["no data".to_string()];
-    let mut data_carrier_info_location = "no data".to_string();
-    let mut data_carrier_info_destination = "no data".to_string();
-    let mut data_carrier_info_modules: Vec<String> = vec!["no data".to_string()];
-    let mut data_carrier_info_other = "no data".to_string();
+    let mut data_dockable_list_selected: Vec<String> = vec!["no data".to_string()];
+    let mut data_dockable_info_location = "no data".to_string();
+    let mut data_dockable_info_destination = "no data".to_string();
+    let mut data_dockable_info_modules: Vec<String> = vec!["no data".to_string()];
+    let mut data_dockable_info_other = "no data".to_string();
 
     /*
     fn filter_by_input(&mut self, list: Vec<String>) -> Vec<String> {
@@ -1834,69 +1804,69 @@ fn tab_carrier(
             if carrier
                 .name
                 .to_lowercase()
-                .contains(&app.carrier_search.input.to_lowercase())
+                .contains(&app.dockable_search.input.to_lowercase())
                 || carrier
                     .callsign
                     .to_lowercase()
-                    .contains(&app.carrier_search.input.to_lowercase())
+                    .contains(&app.dockable_search.input.to_lowercase())
             {
-                dataset_carrier_list_selected.push(carrier);
+                dataset_dockable_list_selected.push(carrier);
             }
         }
 
-        data_carrier_list_selected = dataset_carrier_list_selected
+        data_dockable_list_selected = dataset_dockable_list_selected
             .iter()
             .map(|carrier| [carrier.name.to_string(), carrier.callsign.to_string()].join(" - "))
             .collect::<Vec<String>>();
 
-        if !data_carrier_list_selected.is_empty() {
+        if !data_dockable_list_selected.is_empty() {
             match app
-                .carrier_list_index
-                .cmp(&data_carrier_list_selected.len())  //thats fucked up but it works
+                .dockable_list_index
+                .cmp(&data_dockable_list_selected.len())  //thats fucked up but it works
             {
-                Ordering::Greater => app.carrier_list_index = data_carrier_list_selected.len() - 1,
-                Ordering::Equal => app.carrier_list_index = 0,
+                Ordering::Greater => app.dockable_list_index = data_dockable_list_selected.len() - 1,
+                Ordering::Equal => app.dockable_list_index = 0,
                 _ => {}
             }
 
-            data_carrier_info_location = [
-                dataset_carrier_list_selected[app.carrier_list_index]
+            data_dockable_info_location = [
+                dataset_dockable_list_selected[app.dockable_list_index]
                     .current_system
                     .to_string(),
-                dataset_carrier_list_selected[app.carrier_list_index]
+                dataset_dockable_list_selected[app.dockable_list_index]
                     .current_body
                     .to_string(),
             ]
             .join(" - ");
 
-            data_carrier_info_destination = [
-                dataset_carrier_list_selected[app.carrier_list_index]
+            data_dockable_info_destination = [
+                dataset_dockable_list_selected[app.dockable_list_index]
                     .next_system
                     .to_string(),
                 " - ".to_string(),
-                dataset_carrier_list_selected[app.carrier_list_index]
+                dataset_dockable_list_selected[app.dockable_list_index]
                     .next_body
                     .to_string(),
                 "\n".to_string(),
-                dataset_carrier_list_selected[app.carrier_list_index]
+                dataset_dockable_list_selected[app.dockable_list_index]
                     .departure
                     .to_string(),
             ]
             .join("");
 
-            data_carrier_info_modules = dataset_carrier_list_selected[app.carrier_list_index]
+            data_dockable_info_modules = dataset_dockable_list_selected[app.dockable_list_index]
                 .services
                 .split(',')
                 .map(|f| f.to_string())
                 .collect::<Vec<String>>();
 
-            data_carrier_info_other = [
+            data_dockable_info_other = [
                 "Allow notorious:".to_string(),
-                dataset_carrier_list_selected[app.carrier_list_index]
+                dataset_dockable_list_selected[app.dockable_list_index]
                     .allow_notorious
                     .to_string(),
                 "\nDocking Access:".to_string(),
-                dataset_carrier_list_selected[app.carrier_list_index]
+                dataset_dockable_list_selected[app.dockable_list_index]
                     .docking_access
                     .to_string(),
             ]
@@ -1909,30 +1879,30 @@ fn tab_carrier(
         .constraints([Constraint::Length(46), Constraint::Fill(1)])
         .split(chunk);
 
-    let layout_carrier_search_list = Layout::default()
+    let layout_dockable_search_list = Layout::default()
         .direction(Direction::Vertical)
         .constraints([Constraint::Length(2), Constraint::Fill(1)])
         .split(layout_carrier[0]);
 
-    let layout_carrier_info = Layout::default()
+    let layout_dockable_info = Layout::default()
         .direction(Direction::Vertical)
         .constraints([
-            Constraint::Length(3),                                          // Location
-            Constraint::Length(4),                                          // Destination
-            Constraint::Length(data_carrier_info_modules.len() as u16 + 2), // Modules
-            Constraint::Fill(1),                                            // Other
+            Constraint::Length(3),                                           // Location
+            Constraint::Length(4),                                           // Destination
+            Constraint::Length(data_dockable_info_modules.len() as u16 + 2), // Modules
+            Constraint::Fill(1),                                             // Other
         ])
         .split(layout_carrier[1]);
 
     // Widget definitions
-    let widget_carrier_search = Paragraph::new(app.carrier_search.input.clone()).block(
+    let widget_dockable_search = Paragraph::new(app.dockable_search.input.clone()).block(
         Block::default()
             .borders(Borders::TOP | Borders::LEFT)
             .white()
             .title(" Search "),
     );
 
-    let widget_carrier_list = List::new(data_carrier_list_selected)
+    let widget_dockable_list = List::new(data_dockable_list_selected)
         .block(
             Block::default()
                 .title(" Known Carriers ")
@@ -1941,7 +1911,7 @@ fn tab_carrier(
         )
         .highlight_style(Style::default().bold().white().on_dark_gray());
 
-    let widget_carrier_info_location = Paragraph::new(data_carrier_info_location)
+    let widget_dockable_info_location = Paragraph::new(data_dockable_info_location)
         .wrap(Wrap { trim: true })
         .block(
             Block::default()
@@ -1949,7 +1919,7 @@ fn tab_carrier(
                 .bold()
                 .borders(Borders::TOP | Borders::LEFT),
         );
-    let widget_carrier_info_destination = Paragraph::new(data_carrier_info_destination)
+    let widget_dockable_info_destination = Paragraph::new(data_dockable_info_destination)
         .wrap(Wrap { trim: true })
         .block(
             Block::default()
@@ -1957,13 +1927,13 @@ fn tab_carrier(
                 .bold()
                 .borders(Borders::TOP | Borders::LEFT),
         );
-    let widget_carrier_info_modules = List::new(data_carrier_info_modules).block(
+    let widget_dockable_info_modules = List::new(data_dockable_info_modules).block(
         Block::default()
             .title(" Available Services ")
             .bold()
             .borders(Borders::TOP | Borders::LEFT),
     );
-    let widget_carrier_info_other = Paragraph::new(data_carrier_info_other).block(
+    let widget_dockable_info_other = Paragraph::new(data_dockable_info_other).block(
         Block::default()
             .title(" Other ")
             .bold()
@@ -1971,17 +1941,17 @@ fn tab_carrier(
     );
 
     // Render calls
-    f.render_widget(widget_carrier_search, layout_carrier_search_list[0]);
+    f.render_widget(widget_dockable_search, layout_dockable_search_list[0]);
     f.render_stateful_widget(
-        widget_carrier_list,
-        layout_carrier_search_list[1],
-        &mut app.carrier_list_state,
+        widget_dockable_list,
+        layout_dockable_search_list[1],
+        &mut app.dockable_list_state,
     );
 
-    f.render_widget(widget_carrier_info_location, layout_carrier_info[0]);
-    f.render_widget(widget_carrier_info_destination, layout_carrier_info[1]);
-    f.render_widget(widget_carrier_info_modules, layout_carrier_info[2]);
-    f.render_widget(widget_carrier_info_other, layout_carrier_info[3]);
+    f.render_widget(widget_dockable_info_location, layout_dockable_info[0]);
+    f.render_widget(widget_dockable_info_destination, layout_dockable_info[1]);
+    f.render_widget(widget_dockable_info_modules, layout_dockable_info[2]);
+    f.render_widget(widget_dockable_info_other, layout_dockable_info[3]);
     // make cursor visible for input
     match app.search_input_mode {
         InputMode::Normal =>
@@ -1994,9 +1964,9 @@ fn tab_carrier(
             f.set_cursor(
                 // Draw the cursor at the current position in the input field.
                 // This position is can be controlled via the left and right arrow key
-                layout_carrier_search_list[0].x + 1 + app.carrier_search.cursor_position as u16,
+                layout_dockable_search_list[0].x + 1 + app.dockable_search.cursor_position as u16,
                 // Move one line down, from the border to the input line
-                layout_carrier_search_list[0].y + 1,
+                layout_dockable_search_list[0].y + 1,
             )
         }
     }
