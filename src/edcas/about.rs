@@ -1,5 +1,5 @@
 use eframe::egui::ColorImage;
-
+//TODO remove egui dependency
 pub struct About {
     pub(crate) github_url: String,
     pub(crate) logo: ColorImage,
