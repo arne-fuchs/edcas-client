@@ -1,5 +1,5 @@
+use std::collections::HashMap;
 use crate::edcas::materials::{Material, MaterialState};
-use eframe::egui::ahash::HashMap;
 use eframe::egui::{vec2, Color32, Context, Ui, Widget, Window};
 use eframe::{egui, App, Frame};
 

@@ -1,4 +1,3 @@
-use eframe::egui;
 use eframe::egui::ColorImage;
 use log::error;
 use select::document::Document;
@@ -78,7 +77,7 @@ impl Default for News {
 }
 
 pub struct Article {
-    pub(crate) title: String,
-    pub(crate) date: String,
-    pub(crate) text: String,
+    pub title: String,
+    pub date: String,
+    pub text: String,
 }
