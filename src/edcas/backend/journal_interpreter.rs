@@ -33,7 +33,7 @@ pub fn interpret_json(
         "FSDJump" | "Location" | "CarrierJump" => {
             let mut system = System {
                 name: json["StarSystem"].to_string(),
-                address: json["SystemAddress"].to_string(),
+                address: json["SystemAddress"].as_u64().unwrap(),
                 allegiance: json["SystemAllegiance"].to_string(),
                 economy_localised: json["SystemEconomy_Localised"].to_string(),
                 second_economy_localised: json["SystemSecondEconomy_Localised"].to_string(),
@@ -110,7 +110,7 @@ pub fn interpret_json(
                             body_id: star_json["body_id"].as_i64().unwrap(),
                             parents,
                             star_system: system.name.clone(),
-                            system_address: i64::from_str(address.as_str()).unwrap(),
+                            system_address: address as i64,
                             distance_from_arrival_ls: f64::from_str(
                                 star_json["distance_from_arrival_ls"].to_string().as_str(),
                             )
@@ -201,7 +201,7 @@ pub fn interpret_json(
                                 body_id: planet_json["body_id"].as_i64().unwrap(),
                                 parents,
                                 star_system: system.name.clone(),
-                                system_address: i64::from_str(address.as_str()).unwrap(),
+                                system_address: address as i64,
                                 distance_from_arrival_ls: f64::from_str(
                                     planet_json["distance_from_arrival_ls"].to_string().as_str(),
                                 )
@@ -219,7 +219,7 @@ pub fn interpret_json(
                                 body_id: planet_json["body_id"].as_i64().unwrap(),
                                 parents,
                                 star_system: system.name.clone(),
-                                system_address: i64::from_str(address.as_str()).unwrap(),
+                                system_address: address as i64,
                                 distance_from_arrival_ls: f64::from_str(
                                     planet_json["distance_from_arrival_ls"].to_string().as_str(),
                                 )

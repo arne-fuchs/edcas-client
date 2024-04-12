@@ -10,7 +10,7 @@ use crate::edcas::settings::Settings;
 #[derive(Clone)]
 pub struct System {
     pub name: String,
-    pub address: String,
+    pub address: u64,
     pub allegiance: String,
     pub economy_localised: String,
     pub second_economy_localised: String,

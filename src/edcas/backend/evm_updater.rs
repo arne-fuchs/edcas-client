@@ -20,7 +20,11 @@ pub enum EvmUpdate {
     StationMetaData(u64, StationMetaData),
     StationCommodityListening(u64, Vec<CommodityListening>),
 }
-
+/**
++ StationMetaData(u64): MarketId from station
+* StationCommodityListener(u64): MarketId from station
+* SystemMetaData(u64): SystemAddress from system
+*/
 #[derive(Clone)]
 pub enum EvmRequest {
     StationMetaData(u64),

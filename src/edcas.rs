@@ -7,9 +7,6 @@ use std::{env, fs, thread};
 
 use bus::{Bus, BusReader};
 use chrono::Local;
-use eframe::egui;
-use eframe::egui::TextStyle;
-use eframe::App;
 
 use crate::edcas::backend::cargo_reader::CargoReader;
 use crate::edcas::backend::edcas_contract::StationIdentity;
@@ -27,7 +24,6 @@ use crate::edcas::station::{Station, StationState};
 use crate::edcas::State::{
     About, CarrierPage, Explorer, MaterialInventory, Mining, News, Settings, StationPage,
 };
-use crate::egui::Context;
 
 pub mod explorer;
 

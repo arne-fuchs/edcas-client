@@ -2,6 +2,7 @@ use eframe::egui::collapsing_header::CollapsingState;
 use eframe::egui::Context;
 use eframe::{egui, App, Frame};
 use log::error;
+use crate::edcas::backend::evm_updater::EvmRequest;
 
 impl App for crate::edcas::station::StationState {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
@@ -30,7 +31,7 @@ impl App for crate::edcas::station::StationState {
                                         match &station.meta_data {
                                             None => {
                                                 if !station.requested_meta_data {
-                                                    if let Err(err) = self.evm_request_writer.send(crate::edcas::backend::evm_updater::EvmRequest::StationMetaData(station.market_id)){
+                                                    if let Err(err) = self.evm_request_writer.send(EvmRequest::StationMetaData(station.market_id)){
                                                         error!("Error sending StationMetaDataRequest: {err}");
                                                     }
                                                     station.requested_meta_data = true;
