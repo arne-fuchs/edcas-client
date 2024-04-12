@@ -9,17 +9,17 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{env, fs};
 
-use crate::edcas::backend::{edcas_contract};
+use crate::edcas::backend::edcas_contract;
+use crate::edcas::backend::evm_interpreter::Edcas;
+use eframe::egui;
 use eframe::egui::{Color32, RichText};
 use eframe::epaint::ahash::HashMap;
-use eframe::{egui};
 use ethers::addressbook::Address;
 use ethers::middleware::SignerMiddleware;
 use ethers::prelude::*;
 use ethers::utils::hex;
 use log::{error, info, warn};
 use serde_json::json;
-use crate::edcas::backend::evm_interpreter::Edcas;
 
 use crate::edcas::settings::ActionAtShutdownSignal::{Continue, Exit, Nothing};
 

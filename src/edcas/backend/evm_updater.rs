@@ -1,5 +1,5 @@
-use crate::edcas::carrier::Carrier;
 use crate::edcas::backend::edcas_contract::{Faction, Floating, StationIdentity};
+use crate::edcas::carrier::Carrier;
 use crate::edcas::evm_interpreter::Edcas;
 use crate::edcas::evm_updater::EvmUpdate::{CarrierList, StationList};
 use crate::edcas::settings::Settings;

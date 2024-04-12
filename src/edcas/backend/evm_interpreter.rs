@@ -9,8 +9,8 @@ use ethers::prelude::*;
 use json::JsonValue;
 use log::{error, info};
 
-use crate::edcas::backend::edcas_contract;
 use super::edcas_contract::{BodyProperties, PlanetProperties, StarProperties};
+use crate::edcas::backend::edcas_contract;
 
 use crate::edcas::evm_interpreter::SendError::{NonRepeatableError, RepeatableError};
 use crate::edcas::settings::Settings;
