@@ -8,20 +8,18 @@ use crossterm::{
 };
 use ratatui::{prelude::*, style::Stylize, widgets::*};
 
-<<<<<<< HEAD
 use crate::edcas::{materials::Material, mining::MiningMaterial, EliteRustClient};
-=======
-use crate::app::{
-    explorer::structs::BodyType, materials::Material, mining::MiningMaterial, EliteRustClient,
-};
->>>>>>> 0208ae9 (basic body info implementations)
+use crate::tui::about::tab_about;
+use crate::tui::dockables::tab_dockables;
+use crate::tui::explorer::tab_explorer;
+use crate::tui::materials::tab_materials;
+use crate::tui::mining::tab_mining;
 
-// TODO: DONE signals_scanned/all_signals (gauge and text)
-// TODO: DONE signal threat (in system_signals)
-// TODO: DONE body signal count (in body_signals)
-// TODO: DONE Body signals in system tree
-// TODO: styling (probably rewrite everything to use Span, Line and Text)
-// TODO: body info (the api for that is not ready yet)
+mod about;
+mod dockables;
+mod explorer;
+mod materials;
+mod mining;
 
 enum InputMode {
     Normal,
@@ -114,14 +112,7 @@ struct App<'a> {
 impl<'a> App<'a> {
     fn new() -> App<'a> {
         App {
-            titles: vec![
-                "Explorer",
-                "Mining",
-                "Materials",
-                "Carrier",
-                "Station",
-                "About",
-            ],
+            titles: vec!["Explorer", "Mining", "Materials", "Dockables", "About"],
             tab_index: 0,
             body_list_state: ListState::default(),
             prospector_list_state: ListState::default(),
@@ -454,11 +445,12 @@ fn ui(f: &mut Frame, app: &mut App, client: &EliteRustClient) {
         0 => tab_explorer(chunks[1], f, client, app),
         1 => tab_mining(chunks[1], f, client, app),
         2 => tab_materials(chunks[1], f, client, app),
-        3 => tab_carrier(chunks[1], f, client, app),
+        3 => tab_dockables(chunks[1], f, client, app),
         4 => tab_about(chunks[1], f),
         _ => unreachable!(),
     };
 }
+<<<<<<< HEAD
 
 // ======== Tabs functions =========
 
@@ -2213,3 +2205,5 @@ fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
     f.render_widget(widget_about_github, layout_about[1]);
     f.render_widget(widget_about_version, layout_about[2]);
 }
+=======
+>>>>>>> 550796d (split tui in separate files)
