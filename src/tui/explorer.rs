@@ -199,9 +199,8 @@ pub fn tab_explorer(
 
             data_body_list.reverse();
 
-            data_body_info = match client.explorer.systems[client.explorer.index].body_list
+            data_body_info = match &client.explorer.systems[client.explorer.index].body_list
                 [client.explorer.systems[client.explorer.index].index]
-                .get_body()
             {
                 BodyType::Star(star_body) => {
                     data_body_name = Span::from(star_body.body_name.to_string());
