@@ -1,4 +1,4 @@
-use crate::app::{mining::MiningMaterial, EliteRustClient};
+use crate::edcas::{mining::MiningMaterial, EliteRustClient};
 use crate::tui::App;
 use core::f64;
 use ratatui::{prelude::*, style::Stylize, widgets::*};

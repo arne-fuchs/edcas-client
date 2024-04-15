@@ -1,4 +1,4 @@
-use crate::app::{materials::Material, EliteRustClient};
+use crate::edcas::{materials::Material, EliteRustClient};
 use crate::tui::App;
 use crate::tui::InputMode;
 use ratatui::{prelude::*, style::Stylize, widgets::*};

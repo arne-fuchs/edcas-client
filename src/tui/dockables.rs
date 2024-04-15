@@ -1,4 +1,4 @@
-use crate::app::EliteRustClient;
+use crate::edcas::EliteRustClient;
 use crate::tui::{App, InputMode};
 use ratatui::{prelude::*, style::Stylize, widgets::*};
 use std::cmp::Ordering;

@@ -1,6 +1,7 @@
-use crate::app::{explorer::structs::BodyType, EliteRustClient};
+use crate::edcas::{explorer::body::BodyType, EliteRustClient};
 use crate::tui::{round_to_2, round_to_4, App};
 use core::f64;
+use eframe::egui::TextBuffer;
 use ratatui::{prelude::*, style::Stylize, widgets::*};
 
 pub fn tab_explorer(
@@ -174,7 +175,7 @@ pub fn tab_explorer(
                         space_string.push_str("│  "); //├
                     }
                 }
-                space_string.push_str(body.get_name());
+                space_string.push_str(body.get_name().as_str());
                 let signals_type_string: Vec<String> = body
                     .get_signals()
                     .iter()
