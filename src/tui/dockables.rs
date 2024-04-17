@@ -1,4 +1,4 @@
-use crate::edcas::EliteRustClient;
+use crate::edcas::{station, EliteRustClient};
 use crate::tui::{App, InputMode};
 use ratatui::{prelude::*, style::Stylize, widgets::*};
 use std::cmp::Ordering;
@@ -12,14 +12,14 @@ pub fn tab_dockables(
     app.dockable_list_state
         .select(Some(app.dockable_list_index));
 
-    let mut dataset_dockable_list_selected: Vec<_> = vec![];
+    let mut dataset_carriers_list_selected: Vec<_> = vec![];
+    let mut dataset_stations_list_selected: Vec<_> = vec![];
 
     let mut data_dockable_list_selected: Vec<String> = vec!["no data".to_string()];
     let mut data_dockable_info_location = "no data".to_string();
     let mut data_dockable_info_destination = "no data".to_string();
     let mut data_dockable_info_modules: Vec<String> = vec!["no data".to_string()];
     let mut data_dockable_info_other = "no data".to_string();
-
     /*
     fn filter_by_input(&mut self, list: Vec<String>) -> Vec<String> {
         let mut list_selected: Vec<String> = vec![];
@@ -31,28 +31,32 @@ pub fn tab_dockables(
         list_selected
     }*/
 
-    if !client.carrier.carriers.is_empty() {
-        for carrier in &client.carrier.carriers {
-            if carrier
-                .name
-                .to_lowercase()
-                .contains(&app.dockable_search.input.to_lowercase())
-                || carrier
-                    .callsign
-                    .to_lowercase()
-                    .contains(&app.dockable_search.input.to_lowercase())
-            {
-                dataset_dockable_list_selected.push(carrier);
-            }
-        }
+    match app.dockable_mode {
+        super::DockableMode::Carriers => {
+            if !client.carrier.carriers.is_empty() {
+                for carrier in &client.carrier.carriers {
+                    if carrier
+                        .name
+                        .to_lowercase()
+                        .contains(&app.dockable_search.input.to_lowercase())
+                        || carrier
+                            .callsign
+                            .to_lowercase()
+                            .contains(&app.dockable_search.input.to_lowercase())
+                    {
+                        dataset_carriers_list_selected.push(carrier);
+                    }
+                }
 
-        data_dockable_list_selected = dataset_dockable_list_selected
-            .iter()
-            .map(|carrier| [carrier.name.to_string(), carrier.callsign.to_string()].join(" - "))
-            .collect::<Vec<String>>();
+                data_dockable_list_selected = dataset_carriers_list_selected
+                    .iter()
+                    .map(|carrier| {
+                        [carrier.name.to_string(), carrier.callsign.to_string()].join(" - ")
+                    })
+                    .collect::<Vec<String>>();
 
-        if !data_dockable_list_selected.is_empty() {
-            match app
+                if !data_dockable_list_selected.is_empty() {
+                    match app
                 .dockable_list_index
                 .cmp(&data_dockable_list_selected.len())  //thats fucked up but it works
             {
@@ -61,48 +65,131 @@ pub fn tab_dockables(
                 _ => {}
             }
 
-            data_dockable_info_location = [
-                dataset_dockable_list_selected[app.dockable_list_index]
-                    .current_system
-                    .to_string(),
-                dataset_dockable_list_selected[app.dockable_list_index]
-                    .current_body
-                    .to_string(),
-            ]
-            .join(" - ");
+                    data_dockable_info_location = [
+                        dataset_carriers_list_selected[app.dockable_list_index]
+                            .current_system
+                            .to_string(),
+                        dataset_carriers_list_selected[app.dockable_list_index]
+                            .current_body
+                            .to_string(),
+                    ]
+                    .join(" - ");
 
-            data_dockable_info_destination = [
-                dataset_dockable_list_selected[app.dockable_list_index]
-                    .next_system
-                    .to_string(),
-                " - ".to_string(),
-                dataset_dockable_list_selected[app.dockable_list_index]
-                    .next_body
-                    .to_string(),
-                "\n".to_string(),
-                dataset_dockable_list_selected[app.dockable_list_index]
-                    .departure
-                    .to_string(),
-            ]
-            .join("");
+                    data_dockable_info_destination = [
+                        dataset_carriers_list_selected[app.dockable_list_index]
+                            .next_system
+                            .to_string(),
+                        " - ".to_string(),
+                        dataset_carriers_list_selected[app.dockable_list_index]
+                            .next_body
+                            .to_string(),
+                        "\n".to_string(),
+                        dataset_carriers_list_selected[app.dockable_list_index]
+                            .departure
+                            .to_string(),
+                    ]
+                    .join("");
 
-            data_dockable_info_modules = dataset_dockable_list_selected[app.dockable_list_index]
-                .services
-                .split(',')
-                .map(|f| f.to_string())
-                .collect::<Vec<String>>();
+                    data_dockable_info_modules = dataset_carriers_list_selected
+                        [app.dockable_list_index]
+                        .services
+                        .split(',')
+                        .map(|f| f.to_string())
+                        .collect::<Vec<String>>();
 
-            data_dockable_info_other = [
-                "Allow notorious:".to_string(),
-                dataset_dockable_list_selected[app.dockable_list_index]
-                    .allow_notorious
-                    .to_string(),
-                "\nDocking Access:".to_string(),
-                dataset_dockable_list_selected[app.dockable_list_index]
-                    .docking_access
-                    .to_string(),
-            ]
-            .join(" ");
+                    data_dockable_info_other = [
+                        "Allow notorious:".to_string(),
+                        dataset_carriers_list_selected[app.dockable_list_index]
+                            .allow_notorious
+                            .to_string(),
+                        "\nDocking Access:".to_string(),
+                        dataset_carriers_list_selected[app.dockable_list_index]
+                            .docking_access
+                            .to_string(),
+                    ]
+                    .join(" ");
+                }
+            }
+        }
+        super::DockableMode::Stations => {
+            if !client.station.stations.is_empty() {
+                for station in &client.station.stations {
+                    if station
+                        .name
+                        .to_lowercase()
+                        .contains(&app.dockable_search.input.to_lowercase())
+                    {
+                        dataset_stations_list_selected.push(station);
+                    }
+                }
+
+                data_dockable_list_selected = dataset_stations_list_selected
+                    .iter()
+                    .map(|station| station.name.to_string())
+                    .collect::<Vec<String>>();
+
+                if !data_dockable_list_selected.is_empty() {
+                    match app
+                .dockable_list_index
+                .cmp(&data_dockable_list_selected.len())  //thats fucked up but it works
+            {
+                Ordering::Greater => app.dockable_list_index = data_dockable_list_selected.len() - 1,
+                Ordering::Equal => app.dockable_list_index = 0,
+                _ => {}
+            }
+
+                    // only set data variables if an entry is selected, dont request all the data
+                    // at once
+                    // station.request_metadata is for asking for metadata, should be checked if
+                    // the data is available first
+                    // stations.metadata has the requested metadata, you dont need to save it again
+                    /*
+                    data_dockable_info_location = [
+                        dataset_stations_list_selected[app.dockable_list_index]
+                            .current_system
+                            .to_string(),
+                        dataset_stations_list_selected[app.dockable_list_index]
+                            .current_body
+                            .to_string(),
+                    ]
+                    .join(" - ");
+
+                    data_dockable_info_destination = [
+                        dataset_stations_list_selected[app.dockable_list_index]
+                            .next_system
+                            .to_string(),
+                        " - ".to_string(),
+                        dataset_stations_list_selected[app.dockable_list_index]
+                            .next_body
+                            .to_string(),
+                        "\n".to_string(),
+                        dataset_stations_list_selected[app.dockable_list_index]
+                            .departure
+                            .to_string(),
+                    ]
+                    .join("");
+
+                    data_dockable_info_modules = dataset_stations_list_selected
+                        [app.dockable_list_index]
+                        .services
+                        .split(',')
+                        .map(|f| f.to_string())
+                        .collect::<Vec<String>>();
+
+                    data_dockable_info_other = [
+                        "Allow notorious:".to_string(),
+                        dataset_dockable_list_selected[app.dockable_list_index]
+                            .allow_notorious
+                            .to_string(),
+                        "\nDocking Access:".to_string(),
+                        dataset_dockable_list_selected[app.dockable_list_index]
+                            .docking_access
+                            .to_string(),
+                    ]
+                    .join(" ");
+                    */
+                }
+            }
         }
     }
 

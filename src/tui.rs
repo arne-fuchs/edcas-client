@@ -26,6 +26,11 @@ enum InputMode {
     Editing,
 }
 
+enum DockableMode {
+    Carriers,
+    Stations,
+}
+
 fn round_to_2(input: f64) -> f64 {
     (input * 100.0).round() / 100.0
 }
@@ -107,6 +112,7 @@ struct App<'a> {
     pub dockable_list_state: ListState,
     pub dockable_list_index: usize,
     pub dockable_search: Search,
+    pub dockable_mode: DockableMode,
 }
 
 impl<'a> App<'a> {
@@ -127,6 +133,7 @@ impl<'a> App<'a> {
             dockable_list_state: ListState::default(),
             dockable_list_index: 0,
             dockable_search: Search::new(),
+            dockable_mode: DockableMode::Carriers,
         }
     }
 
