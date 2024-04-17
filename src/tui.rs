@@ -363,7 +363,7 @@ fn run_app<B: Backend>(
     loop {
         client.update_values();
 
-        terminal.draw(|f| ui(f, &mut app, &client))?;
+        terminal.draw(|f| ui(f, &mut app, &mut client))?;
 
         if event::poll(std::time::Duration::from_millis(33))? {
             if let Key(key) = event::read()? {
@@ -444,7 +444,7 @@ fn run_app<B: Backend>(
     }
 }
 
-fn ui(f: &mut Frame, app: &mut App, client: &EliteRustClient) {
+fn ui(f: &mut Frame, app: &mut App, client: &mut EliteRustClient) {
     let size = f.size();
     //definition of general layout
     let chunks = ratatui::prelude::Layout::default()

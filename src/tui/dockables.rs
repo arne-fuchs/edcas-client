@@ -7,7 +7,7 @@ use std::cmp::Ordering;
 pub fn tab_dockables(
     chunk: ratatui::layout::Rect,
     f: &mut ratatui::Frame,
-    client: &EliteRustClient,
+    client: &mut EliteRustClient,
     app: &mut App,
 ) {
     app.dockable_list_state
@@ -21,7 +21,7 @@ pub fn tab_dockables(
     let mut data_carrier_info_destination = "no data".to_string();
     let mut data_dockable_info_modules: Vec<String> = vec!["no data".to_string()];
     let mut data_dockable_info_other = "no data".to_string();
-    let mut data_station_info = vec![];
+    let mut data_station_info = vec![Row::new(vec!["no data".to_string()])];
 
     //common layout definitions
     let layout_carrier = Layout::default()
@@ -113,7 +113,10 @@ pub fn tab_dockables(
                     ]
                     .join(" ");
                 }
+            } else {
+                app.dockable_list_index = 0;
             }
+
             let layout_dockable_info = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
@@ -203,30 +206,58 @@ pub fn tab_dockables(
                                     ]
                                     .join(" ");
                                 }
+                                dataset_stations_list_selected[app.dockable_list_index]
+                                    .requested_meta_data = true;
+                            } else {
+                                data_station_info = vec![Row::new(vec!["Fetching".to_string()])]
                             }
                         }
                         Some(station_metadata) => {
-                            data_station_info = vec![Row::new(vec![
-                                "Economy".to_string(),
-                                station_metadata.economy.to_string(),
-                            ])];
-                            data_dockable_info_location = station_metadata.system_name.to_string();
+                            data_station_info = vec![
+                                Row::new(vec![
+                                    "Last update".to_string(),
+                                    station_metadata.timestamp.to_string(),
+                                ]),
+                                Row::new(vec![
+                                    "Location".to_string(),
+                                    station_metadata.system_name.to_string(),
+                                ]),
+                                Row::new(vec!["Distance".to_string(), {
+                                    let mut distance =
+                                        station_metadata.distance.decimal.to_string();
+                                    distance.insert(
+                                        station_metadata.distance.floating_point as usize - 1,
+                                        '.',
+                                    );
+                                    distance
+                                }]),
+                                Row::new(vec![
+                                    "Economy".to_string(),
+                                    station_metadata.economy.to_string(),
+                                ]),
+                                Row::new(vec![
+                                    "Government".to_string(),
+                                    station_metadata.government.to_string(),
+                                ]),
+                                //Row::new(vec![]),
+                            ];
                             data_dockable_info_modules = station_metadata
                                 .services
                                 .split(',')
                                 .map(|f| f.to_string())
                                 .collect::<Vec<String>>();
-                            data_dockable_info_other = "test".to_string();
+                            data_dockable_info_other = station_metadata.landingpads.to_string();
                         }
                     }
                 }
+            } else {
+                app.dockable_list_index = 0;
             }
 
             let layout_dockable_info = Layout::default()
                 .direction(Direction::Vertical)
                 .constraints([
-                    Constraint::Length(10),                                          // info table
-                    Constraint::Length(4),                                           // location
+                    Constraint::Length(data_station_info.len() as u16 + 2),
                     Constraint::Length(data_dockable_info_modules.len() as u16 + 2), // services
                     Constraint::Fill(1),                                             // other
                 ])
@@ -242,12 +273,6 @@ pub fn tab_dockables(
                     .bold()
                     .borders(Borders::TOP | Borders::LEFT),
             );
-            let widget_dockable_info_location = Paragraph::new(data_dockable_info_location).block(
-                Block::default()
-                    .title(" Location ")
-                    .bold()
-                    .borders(Borders::TOP | Borders::LEFT),
-            );
 
             let widget_dockable_info_modules = List::new(data_dockable_info_modules).block(
                 Block::default()
@@ -257,15 +282,14 @@ pub fn tab_dockables(
             );
             let widget_dockable_info_other = Paragraph::new(data_dockable_info_other).block(
                 Block::default()
-                    .title(" Other ")
+                    .title(" Landing Pads ")
                     .bold()
                     .borders(Borders::TOP | Borders::LEFT),
             );
 
             f.render_widget(widget_dockable_info_table, layout_dockable_info[0]);
-            f.render_widget(widget_dockable_info_location, layout_dockable_info[1]);
-            f.render_widget(widget_dockable_info_modules, layout_dockable_info[2]);
-            f.render_widget(widget_dockable_info_other, layout_dockable_info[3]);
+            f.render_widget(widget_dockable_info_modules, layout_dockable_info[1]);
+            f.render_widget(widget_dockable_info_other, layout_dockable_info[2]);
         }
     }
 
