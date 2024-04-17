@@ -30,6 +30,14 @@ enum DockableMode {
     Carriers,
     Stations,
 }
+impl DockableMode {
+    pub fn to_string(&mut self) -> String {
+        match self {
+            DockableMode::Stations => "Stations".to_string(),
+            DockableMode::Carriers => "Carriers".to_string(),
+        }
+    }
+}
 
 fn round_to_2(input: f64) -> f64 {
     (input * 100.0).round() / 100.0
@@ -285,19 +293,35 @@ impl<'a> App<'a> {
 
     // carriers
     pub fn next_dockable(&mut self, client: &mut EliteRustClient) {
-        if !client.carrier.carriers.is_empty() {
-            self.dockable_list_index =
-                (self.dockable_list_index + 1) % client.carrier.carriers.len();
+        let selected_list_len = match self.dockable_mode {
+            DockableMode::Carriers => client.carrier.carriers.len(),
+            DockableMode::Stations => client.station.stations.len(),
+        };
+
+        if selected_list_len != 0 {
+            self.dockable_list_index = (self.dockable_list_index + 1) % selected_list_len;
         }
     }
 
     pub fn previous_dockable(&mut self, client: &mut EliteRustClient) {
-        if !client.carrier.carriers.is_empty() {
+        let selected_list_len = match self.dockable_mode {
+            DockableMode::Carriers => client.carrier.carriers.len(),
+            DockableMode::Stations => client.station.stations.len(),
+        };
+
+        if selected_list_len != 0 {
             if self.dockable_list_index > 0 {
                 self.dockable_list_index -= 1
             } else {
-                self.dockable_list_index = client.carrier.carriers.len() - 1;
+                self.dockable_list_index = selected_list_len - 1;
             }
+        }
+    }
+
+    pub fn change_dockable_state(&mut self) {
+        match self.dockable_mode {
+            DockableMode::Carriers => self.dockable_mode = DockableMode::Stations,
+            DockableMode::Stations => self.dockable_mode = DockableMode::Carriers,
         }
     }
     // TODO: add functions for cursor navigation through signals lists
@@ -353,12 +377,14 @@ fn run_app<B: Backend>(
                                 0 => app.next_system(&mut client),
                                 1 => app.next_prospector(&client),
                                 2 => app.next_material_list(),
+                                3 => app.change_dockable_state(),
                                 _ => {}
                             },
                             KeyCode::Left => match app.tab_index {
                                 0 => app.previous_system(&mut client),
                                 1 => app.previous_prospector(&client),
                                 2 => app.previous_material_list(),
+                                3 => app.change_dockable_state(),
                                 _ => {}
                             },
                             KeyCode::Down => match app.tab_index {
