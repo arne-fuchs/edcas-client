@@ -4,8 +4,8 @@ pub fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
     // data here if needed
     let data_controls_list = vec![
         "Quit: Q, Change Tabs: q and e",
-        "Change System/Material List/Prospector: Left and Right arrows",
-        "Change Body/Material/Cargo Item selection: Up and Down arrows",
+        "System/Material List/Prospector/Dockables List selection: Left and Right arrows",
+        "Body/Cargo/Materials/Dockables selection: Up and Down arrows",
         "Search: i",
         "Quit Search: esc",
     ];
@@ -16,7 +16,7 @@ pub fn tab_about(chunk: ratatui::layout::Rect, f: &mut ratatui::Frame) {
     let layout_about = ratatui::prelude::Layout::default()
         .direction(ratatui::prelude::Direction::Vertical)
         .constraints(vec![
-            Constraint::Length(data_controls_list_size), // TODO: hardcode correct value
+            Constraint::Length(data_controls_list_size), // TODO: hardcode correct value?
             Constraint::Length(3),
             Constraint::Length(3),
         ])

@@ -31,7 +31,7 @@ enum DockableMode {
     Stations,
 }
 impl DockableMode {
-    pub fn to_string(&mut self) -> String {
+    pub fn non_display_to_string(&self) -> String {
         match self {
             DockableMode::Stations => "Stations".to_string(),
             DockableMode::Carriers => "Carriers".to_string(),

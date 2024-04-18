@@ -13,8 +13,8 @@ pub fn tab_dockables(
     app.dockable_list_state
         .select(Some(app.dockable_list_index));
 
-    let mut dataset_carriers_list_selected: Vec<_> = vec![];
-    let mut dataset_stations_list_selected: Vec<_> = vec![];
+    let dataset_carriers_list_selected: Vec<_>;
+    let dataset_stations_list_selected: Vec<_>;
 
     let mut data_dockable_list_selected: Vec<String> = vec!["no data".to_string()];
     let mut data_dockable_info_location = "no data".to_string();
@@ -38,6 +38,21 @@ pub fn tab_dockables(
     match app.dockable_mode {
         super::DockableMode::Carriers => {
             if !client.carrier.carriers.is_empty() {
+                dataset_carriers_list_selected = client
+                    .carrier
+                    .carriers
+                    .iter()
+                    .filter(|f| {
+                        f.name
+                            .to_lowercase()
+                            .contains(&app.dockable_search.input.to_lowercase())
+                            || f.callsign
+                                .to_lowercase()
+                                .contains(&app.dockable_search.input.to_lowercase())
+                    })
+                    .collect::<Vec<_>>();
+
+                /*
                 for carrier in &client.carrier.carriers {
                     if carrier
                         .name
@@ -51,6 +66,7 @@ pub fn tab_dockables(
                         dataset_carriers_list_selected.push(carrier);
                     }
                 }
+                */
 
                 data_dockable_list_selected = dataset_carriers_list_selected
                     .iter()
@@ -164,6 +180,18 @@ pub fn tab_dockables(
 
         super::DockableMode::Stations => {
             if !client.station.stations.is_empty() {
+                dataset_stations_list_selected = client
+                    .station
+                    .stations
+                    .iter()
+                    .filter(|f| {
+                        f.name
+                            .to_lowercase()
+                            .contains(&app.dockable_search.input.to_lowercase())
+                    })
+                    .collect::<Vec<_>>();
+
+                /*
                 for station in &client.station.stations {
                     if station
                         .name
@@ -173,6 +201,7 @@ pub fn tab_dockables(
                         dataset_stations_list_selected.push(station);
                     }
                 }
+                */
 
                 data_dockable_list_selected = dataset_stations_list_selected
                     .iter()
@@ -244,11 +273,13 @@ pub fn tab_dockables(
                                 }]),
                                 Row::new(vec![
                                     "Economy".to_string(),
-                                    station_metadata.economy.to_string(),
+                                    station_metadata.economy.split('_').collect::<Vec<_>>()[1]
+                                        .to_string(),
                                 ]),
                                 Row::new(vec![
                                     "Government".to_string(),
-                                    station_metadata.government.to_string(),
+                                    station_metadata.government.split('_').collect::<Vec<_>>()[1]
+                                        .to_string(),
                                 ]),
                                 //Row::new(vec![]),
                             ];
@@ -318,7 +349,7 @@ pub fn tab_dockables(
                 .title(
                     [
                         " Known ".to_string(),
-                        app.dockable_mode.to_string(),
+                        app.dockable_mode.non_display_to_string(),
                         " ".to_string(),
                     ]
                     .join(""),
