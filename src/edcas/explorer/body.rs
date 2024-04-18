@@ -227,12 +227,12 @@ impl BodyType {
         //FIXME Work with references if possible
         match self {
             BodyType::Star(_) => {
-                unreachable!("Stars cannot have signals")
+                vec![]
             }
             BodyType::Planet(body) => body.planet_signals.clone(),
             BodyType::Ring(body) => body.ring_signals.clone(),
             BodyType::BeltCluster(_) => {
-                unreachable!("BeltClusters cannot have signals")
+                vec![]
             }
         }
     }
