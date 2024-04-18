@@ -348,9 +348,9 @@ pub fn tab_dockables(
             Block::default()
                 .title(
                     [
-                        " Known ".to_string(),
+                        " ◁ Known ".to_string(),
                         app.dockable_mode.non_display_to_string(),
-                        " ".to_string(),
+                        " ▷ ".to_string(),
                     ]
                     .join(""),
                 )

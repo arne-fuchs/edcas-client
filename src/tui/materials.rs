@@ -191,7 +191,7 @@ pub fn tab_materials(
     let widget_materials_list_names = List::new(data_materials_list_names)
         .block(
             Block::default()
-                .title([" Materials: ", data_materials_dataset_name, " "].join(""))
+                .title([" ◁ Materials: ", data_materials_dataset_name, " ▷ "].join(""))
                 .borders(Borders::TOP | Borders::LEFT)
                 .white(),
         )
