@@ -1,8 +1,6 @@
 use crate::edcas::backend::evm_updater::EvmRequest;
-use crate::edcas::station::Station;
-use crate::edcas::{station, EliteRustClient};
+use crate::edcas::EliteRustClient;
 use crate::tui::{App, InputMode};
-use crossterm::cursor::position;
 use ratatui::{prelude::*, style::Stylize, widgets::*};
 use std::cmp::Ordering;
 

@@ -1,7 +1,6 @@
 use crate::edcas::{explorer::body::BodyType, EliteRustClient};
 use crate::tui::{round_to_2, round_to_4, App};
 use core::f64;
-use eframe::egui::TextBuffer;
 use ratatui::{prelude::*, style::Stylize, widgets::*};
 
 pub fn tab_explorer(
