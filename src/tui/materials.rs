@@ -28,6 +28,22 @@ pub fn tab_materials(
     };
 
     // do the search with Search::filter_by_input
+    /*
+    material_vec_selected_sorted = data_materials_dataset
+        .iter()
+        .filter(|material_value| {
+            material_value
+                .name_localised
+                .to_lowercase()
+                .contains(&app.material_search.input.to_lowercase())
+                || material_value
+                    .name
+                    .to_lowercase()
+                    .contains(&app.material_search.input.to_lowercase())
+        })
+        .collect::<Vec<_>>();
+        */
+
     for material_value in data_materials_dataset {
         if material_value
             .name_localised
