@@ -1,6 +1,8 @@
 use crate::edcas::backend::evm_updater::EvmRequest;
-use crate::edcas::EliteRustClient;
+use crate::edcas::station::Station;
+use crate::edcas::{station, EliteRustClient};
 use crate::tui::{App, InputMode};
+use crossterm::cursor::position;
 use ratatui::{prelude::*, style::Stylize, widgets::*};
 use std::cmp::Ordering;
 
@@ -206,8 +208,19 @@ pub fn tab_dockables(
                                     ]
                                     .join(" ");
                                 }
-                                dataset_stations_list_selected[app.dockable_list_index]
-                                    .requested_meta_data = true;
+
+                                let market_id_index = client
+                                    .station
+                                    .stations
+                                    .iter()
+                                    .position(|station| {
+                                        station.market_id
+                                            == dataset_stations_list_selected
+                                                [app.dockable_list_index]
+                                                .market_id
+                                    })
+                                    .unwrap();
+                                client.station.stations[market_id_index].requested_meta_data = true;
                             } else {
                                 data_station_info = vec![Row::new(vec!["Fetching".to_string()])]
                             }
