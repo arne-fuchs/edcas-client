@@ -130,7 +130,7 @@ and add this to your processes:
 ```json
 "processes": [
         {
-          "fileName": "/PATHTOPROJECT/edcas-client/start.sh",
+          "fileName": "/PATHTOEDCAS/edcas-client",
           "arguments": ""
         }
     ],
