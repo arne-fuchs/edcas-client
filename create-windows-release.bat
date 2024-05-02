@@ -30,7 +30,6 @@ copy settings-example.json "%folder_name%\settings-example.json"
 copy settings-example.json "%folder_name%\settings.json"
 copy materials.json "%folder_name%\materials.json"
 copy graphics "%folder_name%\"
-copy start.bat "%folder_name%\"
 copy target\release\edcas-client.exe "%folder_name%\"
 
 rem Create ZIP archive
