@@ -67,7 +67,6 @@ makepkg -i
 | --maximized  | Opens the guis maximized                                 |                    |
 | --tui        | Starts EDCAS in terminal mode (ignores window arguments) |                    |
 
-
 # Build it yourself
 
 ## Build Requirements

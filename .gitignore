@@ -1,3 +1,4 @@
+.gitignore
 /target
 settings.json
 /edcas-client
