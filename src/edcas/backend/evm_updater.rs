@@ -269,9 +269,9 @@ impl EvmUpdater {
                                                     scan_type: "N/A".to_string(),
                                                     body_name: result.2,
                                                     body_id: result.1 as i64,
-                                                    parents: vec![Parent{
+                                                    parents: vec![Parent {
                                                         name: "Unknown".into(),
-                                                        id: result.5.parent_id.into()
+                                                        id: result.5.parent_id.into(),
                                                     }], //TODO Implement parents
                                                     star_system: "".to_string(), //TODO Insert Star System
                                                     system_address: system_address as i64, //TODO Convert to u64
