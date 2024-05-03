@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
 use std::path::PathBuf;
+use std::sync::mpsc::Sender;
 use std::sync::{mpsc, Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
@@ -16,6 +17,7 @@ use crate::edcas::backend::journal_reader;
 use crate::edcas::backend::{cargo_reader, evm_interpreter, evm_updater};
 use crate::edcas::carrier::CarrierState;
 
+use crate::edcas::explorer::body::BodyType;
 use json::JsonValue;
 use log::info;
 
@@ -49,6 +51,7 @@ pub struct EliteRustClient {
     pub cargo_reader: Arc<Mutex<CargoReader>>,
     pub journal_log_bus_reader: BusReader<JsonValue>,
     pub evm_update_reader: BusReader<EvmUpdate>,
+    pub evm_request_writer: Sender<EvmRequest>,
     pub timestamp: String,
 }
 
@@ -58,6 +61,7 @@ impl EliteRustClient {
             self.timestamp = json["timestamp"].to_string();
             journal_interpreter::interpret_json(
                 json.clone(),
+                &self.evm_request_writer,
                 &mut self.explorer,
                 &mut self.materials,
                 &mut self.mining,
@@ -100,6 +104,34 @@ impl EliteRustClient {
                     }
                     EvmUpdate::StationCommodityListening(_market_id, _listenings) => {
                         todo!("Implement");
+                    }
+                    EvmUpdate::SystemMetaData(system_address, system_meta_data) => {
+                        let length = self.explorer.systems.len();
+                        for i in 0..length {
+                            if self.explorer.systems[i].address == system_address {
+                                self.explorer.systems[i].name = system_meta_data.name.clone();
+                                self.explorer.systems[i].allegiance =
+                                    system_meta_data.allegiance.clone();
+                                self.explorer.systems[i].government_localised =
+                                    system_meta_data.government.clone();
+                                self.explorer.systems[i].economy_localised =
+                                    system_meta_data.economy.clone();
+                                self.explorer.systems[i].second_economy_localised =
+                                    system_meta_data.second_economy.clone();
+                                self.explorer.systems[i].security_localised =
+                                    system_meta_data.security.clone();
+                                self.explorer.systems[i].population =
+                                    system_meta_data.population.clone();
+                            }
+                        }
+                    }
+                    EvmUpdate::PlanetList(system_address, planet_list) => {
+                        let length = self.explorer.systems.len();
+                        for i in 0..length {
+                            if self.explorer.systems[i].address == system_address {
+                                self.explorer.systems[i].body_list = planet_list.clone();
+                            }
+                        }
                     }
                 }
             }
@@ -214,6 +246,7 @@ impl Default for EliteRustClient {
             state: News,
             cargo_reader,
             journal_log_bus_reader: journal_bus_reader,
+            evm_request_writer,
             evm_update_reader,
             materials,
             settings,

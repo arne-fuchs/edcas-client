@@ -1,8 +1,8 @@
+use crate::edcas::backend::evm_updater::EvmRequest;
 use eframe::egui::collapsing_header::CollapsingState;
 use eframe::egui::Context;
 use eframe::{egui, App, Frame};
 use log::error;
-use crate::edcas::backend::evm_updater::EvmRequest;
 
 impl App for crate::edcas::station::StationState {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {

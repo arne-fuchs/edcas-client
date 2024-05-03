@@ -13,6 +13,7 @@ use super::edcas_contract::{BodyProperties, PlanetProperties, StarProperties};
 use crate::edcas::backend::edcas_contract;
 
 use crate::edcas::evm_interpreter::SendError::{NonRepeatableError, RepeatableError};
+use crate::edcas::explorer::body::Parent;
 use crate::edcas::settings::Settings;
 
 pub type Edcas = edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>;
@@ -60,6 +61,7 @@ impl EvmInterpreter {
                                 > = contract.register_system(
                                     json["SystemAddress"].as_u64().unwrap(),
                                     json["StarSystem"].to_string(),
+                                    json["SystemGovernment"].to_string(),
                                     json["SystemAllegiance"].to_string(),
                                     json["SystemEconomy"].to_string(),
                                     json["SystemSecondEconomy"].to_string(),
@@ -524,6 +526,15 @@ pub async fn get_contract(
 }
 
 fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
+    let mut parent_id = 0;
+    for i in 0..json["Parents"].len() {
+        let parent = &json["Parents"][i];
+        for entry in parent.entries() {
+            if entry.1.as_u8().unwrap() > parent_id {
+                parent_id = entry.1.as_u8().unwrap();
+            }
+        }
+    }
     PlanetProperties {
         atmosphere: json["Atmosphere"].to_string(),
         class: json["PlanetClass"].to_string(),
@@ -533,6 +544,7 @@ fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
         tidal_lock: json["TidalLock"]
             .as_bool()
             .unwrap_or_else(|| panic!("Tidal Lock not parseable {}", json)),
+        parent_id,
         mass_em: edcas_contract::Floating {
             decimal: json["MassEM"].to_string().replace('.', "").parse().unwrap(),
             floating_point: json["MassEM"]
@@ -904,6 +916,7 @@ fn process_jump(
                 > = contract.register_system(
                     json["SystemAddress"].as_u64().unwrap(),
                     json["StarSystem"].to_string(),
+                    json["SystemGovernment"].to_string(),
                     json["SystemAllegiance"].to_string(),
                     json["SystemEconomy"].to_string(),
                     json["SystemSecondEconomy"].to_string(),

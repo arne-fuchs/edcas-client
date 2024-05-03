@@ -531,6 +531,7 @@ pub mod edcas {
                                             ::ethers::core::abi::ethabi::ParamType::String,
                                             ::ethers::core::abi::ethabi::ParamType::String,
                                             ::ethers::core::abi::ethabi::ParamType::Bool,
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
                                             ::ethers::core::abi::ethabi::ParamType::Tuple(
                                                 ::std::vec![
                                                     ::ethers::core::abi::ethabi::ParamType::Int(128usize),
@@ -806,6 +807,7 @@ pub mod edcas {
                                             ::ethers::core::abi::ethabi::ParamType::String,
                                             ::ethers::core::abi::ethabi::ParamType::String,
                                             ::ethers::core::abi::ethabi::ParamType::Bool,
+                                            ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
                                             ::ethers::core::abi::ethabi::ParamType::Tuple(
                                                 ::std::vec![
                                                     ::ethers::core::abi::ethabi::ParamType::Int(128usize),
@@ -1175,6 +1177,13 @@ pub mod edcas {
                                 },
                                 ::ethers::core::abi::ethabi::Param {
                                     name: ::std::borrow::ToOwned::to_owned("name"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("government"),
                                     kind: ::ethers::core::abi::ethabi::ParamType::String,
                                     internal_type: ::core::option::Option::Some(
                                         ::std::borrow::ToOwned::to_owned("string"),
@@ -1617,6 +1626,13 @@ pub mod edcas {
                                 },
                                 ::ethers::core::abi::ethabi::Param {
                                     name: ::std::borrow::ToOwned::to_owned("allegiance"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::String,
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("string"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("government"),
                                     kind: ::ethers::core::abi::ethabi::ParamType::String,
                                     internal_type: ::core::option::Option::Some(
                                         ::std::borrow::ToOwned::to_owned("string"),
@@ -2110,7 +2126,7 @@ pub mod edcas {
                 .method_hash([225, 61, 50, 111], (market_id, commodity, listening))
                 .expect("method not found (this should never happen)")
         }
-        ///Calls the contract's `register_planet` (0x6b037f4e) function
+        ///Calls the contract's `register_planet` (0x2c974f6e) function
         pub fn register_planet(
             &self,
             system_address: u64,
@@ -2124,7 +2140,7 @@ pub mod edcas {
         ) -> ::ethers::contract::builders::ContractCall<M, ()> {
             self.0
                 .method_hash(
-                    [107, 3, 127, 78],
+                    [44, 151, 79, 110],
                     (
                         system_address,
                         id,
@@ -2202,11 +2218,12 @@ pub mod edcas {
                 )
                 .expect("method not found (this should never happen)")
         }
-        ///Calls the contract's `register_system` (0x441f1e88) function
+        ///Calls the contract's `register_system` (0x0890b31a) function
         pub fn register_system(
             &self,
             system_address: u64,
             name: ::std::string::String,
+            government: ::std::string::String,
             allegiance: ::std::string::String,
             economy: ::std::string::String,
             second_economy: ::std::string::String,
@@ -2216,10 +2233,11 @@ pub mod edcas {
         ) -> ::ethers::contract::builders::ContractCall<M, ()> {
             self.0
                 .method_hash(
-                    [68, 31, 30, 136],
+                    [8, 144, 179, 26],
                     (
                         system_address,
                         name,
+                        government,
                         allegiance,
                         economy,
                         second_economy,
@@ -2315,6 +2333,7 @@ pub mod edcas {
             M,
             (
                 ::ethers::core::types::U256,
+                ::std::string::String,
                 ::std::string::String,
                 ::std::string::String,
                 ::std::string::String,
@@ -2987,11 +3006,11 @@ pub mod edcas {
         pub commodity: ::std::string::String,
         pub listening: CommodityListening,
     }
-    ///Container type for all input parameters for the `register_planet` function with signature `register_planet(uint64,uint8,string,bool,bool,(string,string,bool,string,string,bool,(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),((int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),uint256)` and selector `0x6b037f4e`
+    ///Container type for all input parameters for the `register_planet` function with signature `register_planet(uint64,uint8,string,bool,bool,(string,string,bool,string,string,bool,uint8,(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),((int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),uint256)` and selector `0x2c974f6e`
     #[derive(Clone, ::ethers::contract::EthCall, ::ethers::contract::EthDisplay)]
     #[ethcall(
         name = "register_planet",
-        abi = "register_planet(uint64,uint8,string,bool,bool,(string,string,bool,string,string,bool,(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),((int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),uint256)"
+        abi = "register_planet(uint64,uint8,string,bool,bool,(string,string,bool,string,string,bool,uint8,(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),((int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),uint256)"
     )]
     pub struct RegisterPlanetCall {
         pub system_address: u64,
@@ -3057,7 +3076,7 @@ pub mod edcas {
         pub landingpads: ::std::string::String,
         pub timestamp: ::ethers::core::types::U256,
     }
-    ///Container type for all input parameters for the `register_system` function with signature `register_system(uint64,string,string,string,string,string,uint64,uint256)` and selector `0x441f1e88`
+    ///Container type for all input parameters for the `register_system` function with signature `register_system(uint64,string,string,string,string,string,string,uint64,uint256)` and selector `0x0890b31a`
     #[derive(
         Clone,
         ::ethers::contract::EthCall,
@@ -3070,11 +3089,12 @@ pub mod edcas {
     )]
     #[ethcall(
         name = "register_system",
-        abi = "register_system(uint64,string,string,string,string,string,uint64,uint256)"
+        abi = "register_system(uint64,string,string,string,string,string,string,uint64,uint256)"
     )]
     pub struct RegisterSystemCall {
         pub system_address: u64,
         pub name: ::std::string::String,
+        pub government: ::std::string::String,
         pub allegiance: ::std::string::String,
         pub economy: ::std::string::String,
         pub second_economy: ::std::string::String,
@@ -3819,6 +3839,7 @@ pub mod edcas {
         pub timestamp: ::ethers::core::types::U256,
         pub name: ::std::string::String,
         pub allegiance: ::std::string::String,
+        pub government: ::std::string::String,
         pub economy: ::std::string::String,
         pub second_economy: ::std::string::String,
         pub security: ::std::string::String,
@@ -3889,7 +3910,7 @@ pub mod edcas {
         pub name: ::std::string::String,
         pub state: ::std::string::String,
     }
-    ///`PlanetProperties(string,string,bool,string,string,bool,(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8))`
+    ///`PlanetProperties(string,string,bool,string,string,bool,uint8,(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8))`
     #[derive(
         Clone,
         ::ethers::contract::EthAbiType,
@@ -3907,6 +3928,7 @@ pub mod edcas {
         pub terraform_state: ::std::string::String,
         pub volcanism: ::std::string::String,
         pub tidal_lock: bool,
+        pub parent_id: u8,
         pub mass_em: Floating,
         pub surface_gravity: Floating,
         pub surface_pressure: Floating,

@@ -1,7 +1,7 @@
-use std::collections::HashMap;
 use crate::edcas::materials::{Material, MaterialState};
 use eframe::egui::{vec2, Color32, Context, Ui, Widget, Window};
 use eframe::{egui, App, Frame};
+use std::collections::HashMap;
 
 impl App for MaterialState {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
