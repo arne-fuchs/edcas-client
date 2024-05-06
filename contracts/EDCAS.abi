@@ -461,6 +461,25 @@
           "internalType": "uint64",
           "name": "system_address",
           "type": "uint64"
+        }
+      ],
+      "name": "get_highest_body_id_from_system",
+      "outputs": [
+        {
+          "internalType": "uint8",
+          "name": "",
+          "type": "uint8"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "system_address",
+          "type": "uint64"
         },
         {
           "internalType": "uint8",

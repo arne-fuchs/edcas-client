@@ -129,9 +129,14 @@ impl EliteRustClient {
                                 self.explorer.systems[i]
                                     .population
                                     .clone_from(&system_meta_data.population);
-                                self.explorer.systems[i]
-                                    .body_count
-                                    .clone_from(&system_meta_data.body_count.to_string());
+                                if self.explorer.systems[i]
+                                    .body_count.is_empty() || self.explorer.systems[i]
+                                    .body_count == "n/v" {
+                                    self.explorer.systems[i]
+                                        .body_count
+                                        .clone_from(&system_meta_data.body_count.to_string());
+                                }
+
                                 self.explorer.systems[i].x.clone_from(&system_meta_data.x);
                                 self.explorer.systems[i].y.clone_from(&system_meta_data.y);
                                 self.explorer.systems[i].z.clone_from(&system_meta_data.z);
@@ -203,7 +208,7 @@ impl Default for EliteRustClient {
         info!("Starting Evm Updater");
         let (evm_request_writer, evm_request_receiver) = mpsc::channel::<EvmRequest>();
 
-        let mut evm_update_bus: Bus<EvmUpdate> = Bus::new(1);
+        let mut evm_update_bus: Bus<EvmUpdate> = Bus::new(100);
         let evm_update_reader = evm_update_bus.add_rx();
         let settings_pointer_clone = settings_pointer.clone();
         thread::Builder::new()
@@ -216,13 +221,13 @@ impl Default for EliteRustClient {
                 );
                 loop {
                     evm_updater.run_update();
-                    sleep(Duration::from_secs(3));
+                    sleep(Duration::from_secs(1));
                 }
             })
             .expect("Failed to create thread jevm-handler");
 
         info!("Starting Journal reader");
-        let mut journal_bus: Bus<JsonValue> = Bus::new(100);
+        let mut journal_bus: Bus<JsonValue> = Bus::new(1000);
         let journal_bus_reader = journal_bus.add_rx();
         let tangle_journal_bus_reader = journal_bus.add_rx();
         let settings_pointer_clone = settings_pointer.clone();

@@ -60,30 +60,34 @@ impl EvmInterpreter {
                             });
                     }
                     "FSSDiscoveryScan" => {
-                        tokio::runtime::Builder::new_multi_thread()
-                            .enable_all()
-                            .build()
-                            .unwrap()
-                            .block_on(async move {
-                                let contract = self.contract.clone();
-                                debug!("Call set_body_count");
-                                let function_call: FunctionCall<
-                                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
-                                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-                                    (),
-                                > = contract.set_body_count(
-                                    json["SystemAddress"].as_u64().unwrap(),
-                                    json["BodyCount"].as_u8().unwrap(),
-                                    DateTime::parse_from_rfc3339(
-                                        json["timestamp"].as_str().unwrap(),
-                                    )
-                                    .unwrap()
-                                    .timestamp()
-                                    .into(),
-                                );
-                                //execute_send(function_call).await;
-                                let _ = execute_send_repeatable(function_call).await;
-                            });
+                        let contract = self.contract.clone();
+                        thread::spawn(|| {
+                            tokio::runtime::Builder::new_multi_thread()
+                                .enable_all()
+                                .build()
+                                .unwrap()
+                                .block_on(async move {
+                                    let system_address = json["SystemAddress"].as_u64().unwrap();
+                                    let body_count = json["BodyCount"].as_u8().unwrap();
+                                    debug!("Call set_body_count: {system_address}-{body_count}");
+                                    let function_call: FunctionCall<
+                                        Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                        SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                        (),
+                                    > = contract.set_body_count(
+                                        system_address,
+                                        body_count,
+                                        DateTime::parse_from_rfc3339(
+                                            json["timestamp"].as_str().unwrap(),
+                                        )
+                                            .unwrap()
+                                            .timestamp()
+                                            .into(),
+                                    );
+                                    //execute_send(function_call).await;
+                                    let _ = execute_send_repeatable(function_call).await;
+                                });
+                        });
                     }
                     "Scan" => {
                         tokio::runtime::Builder::new_multi_thread()
@@ -178,47 +182,49 @@ impl EvmInterpreter {
                     //{ "timestamp":"2022-07-07T20:58:06Z", "event":"SAASignalsFound", "BodyName":"IC 2391 Sector YE-A d103 B 1", "SystemAddress":3549631072611, "BodyID":15, "Signals":[ { "Type":"$SAA_SignalType_Guardian;", "Type_Localised":"Guardian", "Count":1 }, { "Type":"$SAA_SignalType_Human;", "Type_Localised":"Menschlich", "Count":9 } ] }
                     //{ "timestamp":"2022-09-07T17:50:41Z", "event":"FSSBodySignals", "BodyName":"Synuefe EN-H d11-106 6 a", "BodyID":31, "SystemAddress":3652777380195, "Signals":[ { "Type":"$SAA_SignalType_Biological;", "Type_Localised":"Biologisch", "Count":1 }, { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geologisch", "Count":3 } ] }
                     "FSSBodySignals" | "SAASignalsFound" => {
-                        tokio::runtime::Builder::new_multi_thread()
-                            .enable_all()
-                            .build()
-                            .unwrap()
-                            .block_on(async move {
-                                let system_address = json["SystemAddress"].as_u64().unwrap();
-                                let body_id = json["BodyID"].as_u8().unwrap();
-                                let contract = self.contract.clone();
-                                for i in 0..json["Signals"].len() {
-                                    let type_ = {
-                                        //enum PlanetSignalType {
-                                        //     unknown,geo,xeno,bio,human
-                                        // }
-                                        match json["Signals"][i]["Type"].as_str().unwrap() {
-                                            "$SAA_SignalType_Human;" => 4,
-                                            "$SAA_SignalType_Biological;" => 3,
-                                            "$SAA_SignalType_Xenological;" => 2,
-                                            "$SAA_SignalType_Geological;" => 1,
-                                            &_ => 0,
-                                        }
-                                    };
-                                    debug!("Call register_planet_signal: {system_address}-{body_id}-{type_}");
-                                    let function_call: FunctionCall<
-                                        Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
-                                        SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-                                        (),
-                                    > = contract.register_planet_signal(
-                                        system_address,
-                                        body_id,
-                                        type_,
-                                        json["Signals"][i]["Count"].as_u8().unwrap(),
-                                        DateTime::parse_from_rfc3339(
-                                            json["timestamp"].as_str().unwrap(),
-                                        )
-                                        .unwrap()
-                                        .timestamp()
-                                        .into(),
-                                    );
-                                    let _ = execute_send_repeatable(function_call).await;
-                                }
-                            });
+                        let contract = self.contract.clone();
+                        thread::spawn(|| {
+                            tokio::runtime::Builder::new_multi_thread()
+                                .enable_all()
+                                .build()
+                                .unwrap()
+                                .block_on(async move {
+                                    let system_address = json["SystemAddress"].as_u64().unwrap();
+                                    let body_id = json["BodyID"].as_u8().unwrap();
+                                    for i in 0..json["Signals"].len() {
+                                        let type_ = {
+                                            //enum PlanetSignalType {
+                                            //     unknown,geo,xeno,bio,human
+                                            // }
+                                            match json["Signals"][i]["Type"].as_str().unwrap() {
+                                                "$SAA_SignalType_Human;" => 4,
+                                                "$SAA_SignalType_Biological;" => 3,
+                                                "$SAA_SignalType_Xenological;" => 2,
+                                                "$SAA_SignalType_Geological;" => 1,
+                                                &_ => 0,
+                                            }
+                                        };
+                                        debug!("Call register_planet_signal: {system_address}-{body_id}-{type_}");
+                                        let function_call: FunctionCall<
+                                            Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                            SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                            (),
+                                        > = contract.register_planet_signal(
+                                            system_address,
+                                            body_id,
+                                            type_,
+                                            json["Signals"][i]["Count"].as_u8().unwrap(),
+                                            DateTime::parse_from_rfc3339(
+                                                json["timestamp"].as_str().unwrap(),
+                                            )
+                                                .unwrap()
+                                                .timestamp()
+                                                .into(),
+                                        );
+                                        let _ = execute_send_repeatable(function_call).await;
+                                    }
+                                });
+                        });
                     }
                     //Carrier
                     "CarrierJumpRequest" => {

@@ -407,6 +407,36 @@ pub mod edcas {
                     ],
                 ),
                 (
+                    ::std::borrow::ToOwned::to_owned("get_highest_body_id_from_system"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned(
+                                "get_highest_body_id_from_system",
+                            ),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("system_address"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint64"),
+                                    ),
+                                },
+                            ],
+                            outputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::string::String::new(),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint8"),
+                                    ),
+                                },
+                            ],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
+                        },
+                    ],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("get_planet_signals"),
                     ::std::vec![
                         ::ethers::core::abi::ethabi::Function {
@@ -2374,6 +2404,15 @@ pub mod edcas {
                 .method_hash([154, 38, 187, 75], ())
                 .expect("method not found (this should never happen)")
         }
+        ///Calls the contract's `get_highest_body_id_from_system` (0x9b2e55cc) function
+        pub fn get_highest_body_id_from_system(
+            &self,
+            system_address: u64,
+        ) -> ::ethers::contract::builders::ContractCall<M, u8> {
+            self.0
+                .method_hash([155, 46, 85, 204], system_address)
+                .expect("method not found (this should never happen)")
+        }
         ///Calls the contract's `get_planet_signals` (0xc60864d9) function
         pub fn get_planet_signals(
             &self,
@@ -3394,6 +3433,24 @@ pub mod edcas {
     )]
     #[ethcall(name = "get_commodities", abi = "get_commodities()")]
     pub struct GetCommoditiesCall;
+    ///Container type for all input parameters for the `get_highest_body_id_from_system` function with signature `get_highest_body_id_from_system(uint64)` and selector `0x9b2e55cc`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(
+        name = "get_highest_body_id_from_system",
+        abi = "get_highest_body_id_from_system(uint64)"
+    )]
+    pub struct GetHighestBodyIdFromSystemCall {
+        pub system_address: u64,
+    }
     ///Container type for all input parameters for the `get_planet_signals` function with signature `get_planet_signals(uint64,uint8)` and selector `0xc60864d9`
     #[derive(
         Clone,
@@ -3771,6 +3828,7 @@ pub mod edcas {
         EmitCarrierJump(EmitCarrierJumpCall),
         GetCarrierIds(GetCarrierIdsCall),
         GetCommodities(GetCommoditiesCall),
+        GetHighestBodyIdFromSystem(GetHighestBodyIdFromSystemCall),
         GetPlanetSignals(GetPlanetSignalsCall),
         GetStations(GetStationsCall),
         GetSystems(GetSystemsCall),
@@ -3841,6 +3899,11 @@ pub mod edcas {
                 data,
             ) {
                 return Ok(Self::GetCommodities(decoded));
+            }
+            if let Ok(decoded) = <GetHighestBodyIdFromSystemCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::GetHighestBodyIdFromSystem(decoded));
             }
             if let Ok(decoded) = <GetPlanetSignalsCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
@@ -3975,6 +4038,9 @@ pub mod edcas {
                 Self::GetCommodities(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
+                Self::GetHighestBodyIdFromSystem(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
                 Self::GetPlanetSignals(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
@@ -4048,6 +4114,9 @@ pub mod edcas {
                 Self::EmitCarrierJump(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetCarrierIds(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetCommodities(element) => ::core::fmt::Display::fmt(element, f),
+                Self::GetHighestBodyIdFromSystem(element) => {
+                    ::core::fmt::Display::fmt(element, f)
+                }
                 Self::GetPlanetSignals(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetStations(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetSystems(element) => ::core::fmt::Display::fmt(element, f),
@@ -4120,6 +4189,11 @@ pub mod edcas {
     impl ::core::convert::From<GetCommoditiesCall> for EDCASCalls {
         fn from(value: GetCommoditiesCall) -> Self {
             Self::GetCommodities(value)
+        }
+    }
+    impl ::core::convert::From<GetHighestBodyIdFromSystemCall> for EDCASCalls {
+        fn from(value: GetHighestBodyIdFromSystemCall) -> Self {
+            Self::GetHighestBodyIdFromSystem(value)
         }
     }
     impl ::core::convert::From<GetPlanetSignalsCall> for EDCASCalls {
@@ -4329,6 +4403,18 @@ pub mod edcas {
         Hash
     )]
     pub struct GetCommoditiesReturn(pub ::std::vec::Vec<::std::string::String>);
+    ///Container type for all return fields from the `get_highest_body_id_from_system` function with signature `get_highest_body_id_from_system(uint64)` and selector `0x9b2e55cc`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct GetHighestBodyIdFromSystemReturn(pub u8);
     ///Container type for all return fields from the `get_planet_signals` function with signature `get_planet_signals(uint64,uint8)` and selector `0xc60864d9`
     #[derive(
         Clone,

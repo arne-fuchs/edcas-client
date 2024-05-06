@@ -89,6 +89,22 @@ impl Star {
     fn print_side_panel_information(&self, ui: &mut Ui) {
         ui.heading(&self.body_name);
         ui.end_row();
+        #[cfg(debug_assertions)]
+        {
+            ui.label("ID");
+            ui.label(&self.body_id.to_string());
+            ui.end_row();
+            ui.label("Event");
+            ui.label(&self.event);
+            ui.end_row();
+            ui.label("Parents");
+            ui.vertical(|ui|{
+                self.parents.iter().for_each(|parent| {
+                    ui.label(format!("{}-{}\n", parent.id, parent.name));
+                });
+            });
+            ui.end_row();
+        }
         ui.label("Type");
         ui.label(&self.star_type);
         ui.end_row();
@@ -297,8 +313,10 @@ impl Planet {
             ui.label(&self.event);
             ui.end_row();
             ui.label("Parents");
-            self.parents.iter().for_each(|parent| {
-                ui.label(format!("{}-{}\n", parent.id, parent.name));
+            ui.vertical(|ui|{
+                self.parents.iter().for_each(|parent| {
+                    ui.label(format!("{}-{}\n", parent.id, parent.name));
+                });
             });
             ui.end_row();
         }

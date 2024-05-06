@@ -195,28 +195,15 @@ impl EvmUpdater {
                                 }
                                 EvmRequest::SystemPlanetData(system_address) => {
                                     //TODO Stars and Belt Cluster
-                                    debug!("Call system_map: {system_address}");
+                                    debug!("Call get_highest_body_id_from_system: {system_address}");
                                     let function_call: ContractCall<
                                         SignerMiddleware<Provider<Http>, LocalWallet>,
-                                        (
-                                            U256,
-                                            String,
-                                            String,
-                                            String,
-                                            String,
-                                            String,
-                                            String,
-                                            u64,
-                                            u8,
-                                            Floating,
-                                            Floating,
-                                            Floating,
-                                        ),
-                                    > = contract.system_map(system_address);
-                                    let body_count = match function_call.legacy().call().await {
+                                        u8,
+                                    > = contract.get_highest_body_id_from_system(system_address);
+                                    let highest_id = match function_call.legacy().call().await {
                                         Ok(result) => {
-                                            debug!("Body count received: {}", result.8);
-                                            result.8
+                                            debug!("highest_id received: {}", result);
+                                            result
                                         }
                                         Err(_) => 0,
                                     };
@@ -224,10 +211,9 @@ impl EvmUpdater {
                                     let mut planet_list = vec![];
 
                                     let mut timestamp: U256 = U256::max_value();
-                                    let mut index = 0;
-                                    while index < body_count
-                                        || (body_count == 0 && timestamp != U256::from(0))
-                                    {
+                                    let mut index = 1;
+                                    while index <= highest_id
+                                        || (highest_id == 0 && timestamp != U256::from(0)) {
                                         debug!("Call star_map: {system_address}-{index}");
                                         let function_call: ContractCall<
                                             SignerMiddleware<Provider<Http>, LocalWallet>,
@@ -253,16 +239,16 @@ impl EvmUpdater {
                                                     star_system: "".to_string(), //TODO Insert Star System
                                                     system_address: system_address as i64, //TODO Convert to u64
                                                     distance_from_arrival_ls:
-                                                        backend::floating::floating_to_f64(
-                                                            result
-                                                                .6
-                                                                .distance_from_arrival_ls
-                                                                .decimal,
-                                                            result
-                                                                .6
-                                                                .distance_from_arrival_ls
-                                                                .floating_point,
-                                                        ),
+                                                    backend::floating::floating_to_f64(
+                                                        result
+                                                            .6
+                                                            .distance_from_arrival_ls
+                                                            .decimal,
+                                                        result
+                                                            .6
+                                                            .distance_from_arrival_ls
+                                                            .floating_point,
+                                                    ),
                                                     star_type: result.5.type_,
                                                     subclass: result.5.subclass as i64,
                                                     stellar_mass: result.5.age_my as f64,
@@ -271,22 +257,22 @@ impl EvmUpdater {
                                                         result.6.radius.floating_point,
                                                     ),
                                                     absolute_magnitude:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.absolute_magnitude.decimal,
-                                                            result
-                                                                .5
-                                                                .absolute_magnitude
-                                                                .floating_point,
-                                                        ),
+                                                    backend::floating::floating_to_f64(
+                                                        result.5.absolute_magnitude.decimal,
+                                                        result
+                                                            .5
+                                                            .absolute_magnitude
+                                                            .floating_point,
+                                                    ),
                                                     age_my: result.5.age_my as i64,
                                                     surface_temperature:
-                                                        backend::floating::floating_to_f64(
-                                                            result.6.surface_temperature.decimal,
-                                                            result
-                                                                .6
-                                                                .surface_temperature
-                                                                .floating_point,
-                                                        ),
+                                                    backend::floating::floating_to_f64(
+                                                        result.6.surface_temperature.decimal,
+                                                        result
+                                                            .6
+                                                            .surface_temperature
+                                                            .floating_point,
+                                                    ),
                                                     luminosity: result.5.luminosity,
                                                     semi_major_axis: None, //TODO
                                                     eccentricity: None,    //TODO
@@ -296,10 +282,10 @@ impl EvmUpdater {
                                                     ascending_node: None,  //TODO
                                                     mean_anomaly: None,    //TODO
                                                     rotation_period:
-                                                        backend::floating::floating_to_f64(
-                                                            result.6.rotation_period.decimal,
-                                                            result.6.rotation_period.floating_point,
-                                                        ),
+                                                    backend::floating::floating_to_f64(
+                                                        result.6.rotation_period.decimal,
+                                                        result.6.rotation_period.floating_point,
+                                                    ),
                                                     axial_tilt: backend::floating::floating_to_f64(
                                                         result.6.axial_tilt.decimal,
                                                         result.6.axial_tilt.floating_point,
@@ -311,185 +297,179 @@ impl EvmUpdater {
                                                 }))
                                             }
                                             Err(err) => {
-                                                timestamp = U256::from(0);
                                                 error!("Error getting star data: {err}");
-                                            }
-                                        }
-                                        index += 1;
-                                    }
 
-                                    let mut timestamp: U256 = U256::max_value();
-                                    let mut index = 0;
-                                    while timestamp != U256::from(0) {
-                                        debug!("Call get_planet_signals: {system_address}-{index}");
-                                        let function_call: ContractCall<
-                                            SignerMiddleware<Provider<Http>, LocalWallet>,
-                                            Vec<PlanetSignal>,
-                                        > = contract.get_planet_signals(system_address, index);
-                                        let planet_signals: Vec<Signal> = function_call
-                                            .legacy()
-                                            .call()
-                                            .await
-                                            .unwrap_or_else(|err| {
-                                                error!("Error getting planet signal data: {err}");
-                                                vec![]
-                                            })
-                                            .iter()
-                                            .map(|planet_signal| {
-                                                let r#type: String = match planet_signal.type_ {
-                                                    4 => "$SAA_SignalType_Human;".into(),
-                                                    3 => "$SAA_SignalType_Biological;".into(),
-                                                    2 => "$SAA_SignalType_Xenological;".into(),
-                                                    1 => "$SAA_SignalType_Geological;".into(),
-                                                    _ => "Unknown".into(),
-                                                };
-                                                let type_localised = r#type
-                                                    .split('_')
-                                                    .last()
-                                                    .unwrap_or("Unknown;")
-                                                    .replace(";", "")
-                                                    .to_string();
-                                                Signal {
-                                                    r#type,
-                                                    type_localised,
-                                                    count: planet_signal.count as u64,
+                                                debug!("Call get_planet_signals: {system_address}-{index}");
+                                                let function_call: ContractCall<
+                                                    SignerMiddleware<Provider<Http>, LocalWallet>,
+                                                    Vec<PlanetSignal>,
+                                                > = contract.get_planet_signals(system_address, index);
+                                                let planet_signals: Vec<Signal> = function_call
+                                                    .legacy()
+                                                    .call()
+                                                    .await
+                                                    .unwrap_or_else(|err| {
+                                                        error!("Error getting planet signal data: {err}");
+                                                        vec![]
+                                                    })
+                                                    .iter()
+                                                    .map(|planet_signal| {
+                                                        let r#type: String = match planet_signal.type_ {
+                                                            4 => "$SAA_SignalType_Human;".into(),
+                                                            3 => "$SAA_SignalType_Biological;".into(),
+                                                            2 => "$SAA_SignalType_Xenological;".into(),
+                                                            1 => "$SAA_SignalType_Geological;".into(),
+                                                            _ => "Unknown".into(),
+                                                        };
+                                                        let type_localised = r#type
+                                                            .split('_')
+                                                            .last()
+                                                            .unwrap_or("Unknown;")
+                                                            .replace(";", "")
+                                                            .to_string();
+                                                        Signal {
+                                                            r#type,
+                                                            type_localised,
+                                                            count: planet_signal.count as u64,
+                                                        }
+                                                    })
+                                                    .collect();
+                                                debug!("Call planet_map: {system_address}-{index}");
+                                                let function_call: ContractCall<
+                                                    SignerMiddleware<Provider<Http>, LocalWallet>,
+                                                    (
+                                                        U256,
+                                                        u8,
+                                                        String,
+                                                        bool,
+                                                        bool,
+                                                        PlanetProperties,
+                                                        BodyProperties,
+                                                    ),
+                                                > = contract.planet_map(system_address, index.into());
+                                                match function_call.legacy().call().await {
+                                                    Ok(result) => {
+                                                        planet_list.push(BodyType::Planet(Planet {
+                                                            timestamp: result.0.to_string(),
+                                                            event: "EVM".to_string(),
+                                                            scan_type: "N/A".to_string(),
+                                                            body_name: result.2,
+                                                            body_id: result.1 as u64,
+                                                            parents: vec![Parent {
+                                                                name: "Unknown".into(),
+                                                                id: result.5.parent_id.into(),
+                                                            }], //TODO Implement parents
+                                                            star_system: "".to_string(), //TODO Insert Star System
+                                                            system_address: system_address as i64, //TODO Convert to u64
+                                                            distance_from_arrival_ls:
+                                                            backend::floating::floating_to_f64(
+                                                                result
+                                                                    .6
+                                                                    .distance_from_arrival_ls
+                                                                    .decimal,
+                                                                result
+                                                                    .6
+                                                                    .distance_from_arrival_ls
+                                                                    .floating_point,
+                                                            ),
+                                                            tidal_lock: result.5.tidal_lock,
+                                                            terraform_state: result.5.terraform_state,
+                                                            planet_class: result.5.class,
+                                                            atmosphere: result.5.atmosphere,
+                                                            atmosphere_type: "".to_string(), //TODO Implement Atmosphere Type
+                                                            atmosphere_composition: vec![], //TODO Implement Atmosphere Composition
+                                                            volcanism: result.5.volcanism,
+                                                            mass_em: backend::floating::floating_to_f64(
+                                                                result.5.mass_em.decimal,
+                                                                result.5.mass_em.floating_point,
+                                                            ),
+                                                            radius: backend::floating::floating_to_f64(
+                                                                result.6.radius.decimal,
+                                                                result.6.radius.floating_point,
+                                                            ),
+                                                            surface_gravity:
+                                                            backend::floating::floating_to_f64(
+                                                                result.5.surface_gravity.decimal,
+                                                                result.5.surface_gravity.floating_point,
+                                                            ),
+                                                            surface_temperature:
+                                                            backend::floating::floating_to_f64(
+                                                                result.6.surface_temperature.decimal,
+                                                                result
+                                                                    .6
+                                                                    .surface_temperature
+                                                                    .floating_point,
+                                                            ),
+                                                            surface_pressure:
+                                                            backend::floating::floating_to_f64(
+                                                                result.5.surface_pressure.decimal,
+                                                                result
+                                                                    .5
+                                                                    .surface_pressure
+                                                                    .floating_point,
+                                                            ),
+                                                            landable: result.5.landable,
+                                                            materials: vec![], //TODO Implement Materials
+                                                            composition: vec![], //TODO Implement Composition
+                                                            semi_major_axis:
+                                                            backend::floating::floating_to_f64(
+                                                                result.5.semi_major_axis.decimal,
+                                                                result.5.semi_major_axis.floating_point,
+                                                            ),
+                                                            eccentricity:
+                                                            backend::floating::floating_to_f64(
+                                                                result.5.eccentricity.decimal,
+                                                                result.5.eccentricity.floating_point,
+                                                            ),
+                                                            orbital_inclination:
+                                                            backend::floating::floating_to_f64(
+                                                                result.5.orbital_inclination.decimal,
+                                                                result
+                                                                    .5
+                                                                    .orbital_inclination
+                                                                    .floating_point,
+                                                            ),
+                                                            periapsis: backend::floating::floating_to_f64(
+                                                                result.5.periapsis.decimal,
+                                                                result.5.periapsis.floating_point,
+                                                            ),
+                                                            orbital_period:
+                                                            backend::floating::floating_to_f64(
+                                                                result.5.orbital_period.decimal,
+                                                                result.5.orbital_period.floating_point,
+                                                            ),
+                                                            ascending_node:
+                                                            backend::floating::floating_to_f64(
+                                                                result.5.ascending_node.decimal,
+                                                                result.5.ascending_node.floating_point,
+                                                            ),
+                                                            mean_anomaly:
+                                                            backend::floating::floating_to_f64(
+                                                                result.5.mean_anomaly.decimal,
+                                                                result.5.mean_anomaly.floating_point,
+                                                            ),
+                                                            rotation_period:
+                                                            backend::floating::floating_to_f64(
+                                                                result.6.rotation_period.decimal,
+                                                                result.6.rotation_period.floating_point,
+                                                            ),
+                                                            axial_tilt: backend::floating::floating_to_f64(
+                                                                result.6.axial_tilt.decimal,
+                                                                result.6.axial_tilt.floating_point,
+                                                            ),
+                                                            was_discovered: result.3,
+                                                            was_mapped: result.4,
+                                                            reserve_level: "".to_string(), //What?
+                                                            asteroid_rings: vec![], //TODO Implement Asteroid Rings
+                                                            planet_signals,
+                                                            settings: self.settings.clone(),
+                                                        }))
+                                                    }
+                                                    Err(err) => {
+                                                        timestamp = U256::from(0);
+                                                        error!("Error getting planet data: {err}");
+                                                    }
                                                 }
-                                            })
-                                            .collect();
-                                        debug!("Call planet_map: {system_address}-{index}");
-                                        let function_call: ContractCall<
-                                            SignerMiddleware<Provider<Http>, LocalWallet>,
-                                            (
-                                                U256,
-                                                u8,
-                                                String,
-                                                bool,
-                                                bool,
-                                                PlanetProperties,
-                                                BodyProperties,
-                                            ),
-                                        > = contract.planet_map(system_address, index.into());
-                                        match function_call.legacy().call().await {
-                                            Ok(result) => {
-                                                planet_list.push(BodyType::Planet(Planet {
-                                                    timestamp: result.0.to_string(),
-                                                    event: "EVM".to_string(),
-                                                    scan_type: "N/A".to_string(),
-                                                    body_name: result.2,
-                                                    body_id: result.1 as u64,
-                                                    parents: vec![Parent {
-                                                        name: "Unknown".into(),
-                                                        id: result.5.parent_id.into(),
-                                                    }], //TODO Implement parents
-                                                    star_system: "".to_string(), //TODO Insert Star System
-                                                    system_address: system_address as i64, //TODO Convert to u64
-                                                    distance_from_arrival_ls:
-                                                        backend::floating::floating_to_f64(
-                                                            result
-                                                                .6
-                                                                .distance_from_arrival_ls
-                                                                .decimal,
-                                                            result
-                                                                .6
-                                                                .distance_from_arrival_ls
-                                                                .floating_point,
-                                                        ),
-                                                    tidal_lock: result.5.tidal_lock,
-                                                    terraform_state: result.5.terraform_state,
-                                                    planet_class: result.5.class,
-                                                    atmosphere: result.5.atmosphere,
-                                                    atmosphere_type: "".to_string(), //TODO Implement Atmosphere Type
-                                                    atmosphere_composition: vec![], //TODO Implement Atmosphere Composition
-                                                    volcanism: result.5.volcanism,
-                                                    mass_em: backend::floating::floating_to_f64(
-                                                        result.5.mass_em.decimal,
-                                                        result.5.mass_em.floating_point,
-                                                    ),
-                                                    radius: backend::floating::floating_to_f64(
-                                                        result.6.radius.decimal,
-                                                        result.6.radius.floating_point,
-                                                    ),
-                                                    surface_gravity:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.surface_gravity.decimal,
-                                                            result.5.surface_gravity.floating_point,
-                                                        ),
-                                                    surface_temperature:
-                                                        backend::floating::floating_to_f64(
-                                                            result.6.surface_temperature.decimal,
-                                                            result
-                                                                .6
-                                                                .surface_temperature
-                                                                .floating_point,
-                                                        ),
-                                                    surface_pressure:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.surface_pressure.decimal,
-                                                            result
-                                                                .5
-                                                                .surface_pressure
-                                                                .floating_point,
-                                                        ),
-                                                    landable: result.5.landable,
-                                                    materials: vec![], //TODO Implement Materials
-                                                    composition: vec![], //TODO Implement Composition
-                                                    semi_major_axis:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.semi_major_axis.decimal,
-                                                            result.5.semi_major_axis.floating_point,
-                                                        ),
-                                                    eccentricity:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.eccentricity.decimal,
-                                                            result.5.eccentricity.floating_point,
-                                                        ),
-                                                    orbital_inclination:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.orbital_inclination.decimal,
-                                                            result
-                                                                .5
-                                                                .orbital_inclination
-                                                                .floating_point,
-                                                        ),
-                                                    periapsis: backend::floating::floating_to_f64(
-                                                        result.5.periapsis.decimal,
-                                                        result.5.periapsis.floating_point,
-                                                    ),
-                                                    orbital_period:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.orbital_period.decimal,
-                                                            result.5.orbital_period.floating_point,
-                                                        ),
-                                                    ascending_node:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.ascending_node.decimal,
-                                                            result.5.ascending_node.floating_point,
-                                                        ),
-                                                    mean_anomaly:
-                                                        backend::floating::floating_to_f64(
-                                                            result.5.mean_anomaly.decimal,
-                                                            result.5.mean_anomaly.floating_point,
-                                                        ),
-                                                    rotation_period:
-                                                        backend::floating::floating_to_f64(
-                                                            result.6.rotation_period.decimal,
-                                                            result.6.rotation_period.floating_point,
-                                                        ),
-                                                    axial_tilt: backend::floating::floating_to_f64(
-                                                        result.6.axial_tilt.decimal,
-                                                        result.6.axial_tilt.floating_point,
-                                                    ),
-                                                    was_discovered: result.3,
-                                                    was_mapped: result.4,
-                                                    reserve_level: "".to_string(), //What?
-                                                    asteroid_rings: vec![], //TODO Implement Asteroid Rings
-                                                    planet_signals,
-                                                    settings: self.settings.clone(),
-                                                }))
-                                            }
-                                            Err(err) => {
-                                                timestamp = U256::from(0);
-                                                error!("Error getting planet data: {err}");
                                             }
                                         }
                                         index += 1;

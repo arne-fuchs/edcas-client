@@ -11,7 +11,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
     //TODO Atmosphere Composition implementation
     //TODO Materials?
     //TODO Rings
-    debug!("Generate from json: {}", json);
+    //debug!("Generate from json: {}", json);
 
     //"Parents":[{"Planet":5},{"Star":0}]
     let mut parents: Vec<Parent> = vec![];
