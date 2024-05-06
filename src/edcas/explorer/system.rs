@@ -21,19 +21,19 @@ pub struct System {
     pub non_body_count: String,
     pub signal_list: Vec<SystemSignal>,
     pub body_list: Vec<BodyType>,
-    pub planet_signals: Vec<PlanetSignals>,
+    pub planet_signals: Vec<PlanetSignal>,
     pub index: usize,
     pub settings: Arc<Settings>,
 }
 
 #[derive(Clone)]
-pub struct PlanetSignals {
+pub struct PlanetSignal {
     pub body_name: String,
-    pub body_id: i64,
+    pub body_id: u64,
     pub signals: Vec<Signal>,
 }
 
-impl PartialEq for PlanetSignals {
+impl PartialEq for PlanetSignal {
     fn eq(&self, other: &Self) -> bool {
         self.body_id == other.body_id
     }

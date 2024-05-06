@@ -107,6 +107,37 @@
         {
           "indexed": false,
           "internalType": "uint64",
+          "name": "system_address",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "enum PlanetSignalType",
+          "name": "_type",
+          "type": "uint8"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "count",
+          "type": "uint8"
+        }
+      ],
+      "name": "PlanetSignalRegister",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
           "name": "systemAddress",
           "type": "uint64"
         }
@@ -400,6 +431,47 @@
           "internalType": "string[]",
           "name": "",
           "type": "string[]"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "system_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        }
+      ],
+      "name": "get_planet_signals",
+      "outputs": [
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "timestamp",
+              "type": "uint256"
+            },
+            {
+              "internalType": "enum PlanetSignalType",
+              "name": "_type",
+              "type": "uint8"
+            },
+            {
+              "internalType": "uint8",
+              "name": "count",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct PlanetSignal[]",
+          "name": "",
+          "type": "tuple[]"
         }
       ],
       "stateMutability": "view",
@@ -1237,6 +1309,39 @@
         }
       ],
       "name": "register_planet",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "system_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "id",
+          "type": "uint8"
+        },
+        {
+          "internalType": "enum PlanetSignalType",
+          "name": "_type",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "count",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "register_planet_signal",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"

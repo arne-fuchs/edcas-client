@@ -9,23 +9,22 @@ use std::{env, fs, thread};
 use bus::{Bus, BusReader};
 use chrono::Local;
 
+use crate::edcas::backend::cargo_reader;
 use crate::edcas::backend::cargo_reader::CargoReader;
-use crate::edcas::backend::edcas_contract::StationIdentity;
-use crate::edcas::backend::evm_updater::{EvmRequest, EvmUpdate};
-use crate::edcas::backend::journal_interpreter;
+use crate::edcas::backend::evm::request_handler;
+use crate::edcas::backend::evm::request_handler::{EvmRequest, EvmUpdate};
 use crate::edcas::backend::journal_reader;
-use crate::edcas::backend::{cargo_reader, evm_interpreter, evm_updater};
 use crate::edcas::carrier::CarrierState;
 
-use crate::edcas::explorer::body::BodyType;
+use crate::edcas::backend::evm::edcas_contract::StationIdentity;
+use crate::edcas::explorer::system::PlanetSignal;
 use json::JsonValue;
 use log::info;
+use num_format::Locale::fo;
 
 use crate::edcas::materials::MaterialState;
 use crate::edcas::station::{Station, StationState};
-use crate::edcas::State::{
-    About, CarrierPage, Explorer, MaterialInventory, Mining, News, Settings, StationPage,
-};
+use crate::edcas::State::News;
 
 pub mod explorer;
 
@@ -59,7 +58,7 @@ impl EliteRustClient {
     pub fn update_values(&mut self) {
         if let Ok(json) = self.journal_log_bus_reader.try_recv() {
             self.timestamp = json["timestamp"].to_string();
-            journal_interpreter::interpret_json(
+            backend::journal_interpreter::interpret_json(
                 json.clone(),
                 &self.evm_request_writer,
                 &mut self.explorer,
@@ -109,19 +108,27 @@ impl EliteRustClient {
                         let length = self.explorer.systems.len();
                         for i in 0..length {
                             if self.explorer.systems[i].address == system_address {
-                                self.explorer.systems[i].name = system_meta_data.name.clone();
-                                self.explorer.systems[i].allegiance =
-                                    system_meta_data.allegiance.clone();
-                                self.explorer.systems[i].government_localised =
-                                    system_meta_data.government.clone();
-                                self.explorer.systems[i].economy_localised =
-                                    system_meta_data.economy.clone();
-                                self.explorer.systems[i].second_economy_localised =
-                                    system_meta_data.second_economy.clone();
-                                self.explorer.systems[i].security_localised =
-                                    system_meta_data.security.clone();
-                                self.explorer.systems[i].population =
-                                    system_meta_data.population.clone();
+                                self.explorer.systems[i]
+                                    .name
+                                    .clone_from(&system_meta_data.name);
+                                self.explorer.systems[i]
+                                    .allegiance
+                                    .clone_from(&system_meta_data.allegiance);
+                                self.explorer.systems[i]
+                                    .government_localised
+                                    .clone_from(&system_meta_data.government);
+                                self.explorer.systems[i]
+                                    .economy_localised
+                                    .clone_from(&system_meta_data.economy);
+                                self.explorer.systems[i]
+                                    .second_economy_localised
+                                    .clone_from(&system_meta_data.second_economy);
+                                self.explorer.systems[i]
+                                    .security_localised
+                                    .clone_from(&system_meta_data.security);
+                                self.explorer.systems[i]
+                                    .population
+                                    .clone_from(&system_meta_data.population);
                             }
                         }
                     }
@@ -129,7 +136,27 @@ impl EliteRustClient {
                         let length = self.explorer.systems.len();
                         for i in 0..length {
                             if self.explorer.systems[i].address == system_address {
-                                self.explorer.systems[i].body_list = planet_list.clone();
+                                for body in &planet_list {
+                                    if !body.get_signals().is_empty() {
+                                        //Insert fresh body signals in system's planet signals
+                                        let mut found = false;
+                                        for signal in &self.explorer.systems[i].planet_signals {
+                                            if signal.body_id == body.get_id() {
+                                                found = true;
+                                            }
+                                        }
+                                        if !found {
+                                            self.explorer.systems[i].planet_signals.push(
+                                                PlanetSignal {
+                                                    body_name: body.get_name(),
+                                                    body_id: body.get_id(),
+                                                    signals: body.get_signals(),
+                                                },
+                                            );
+                                        }
+                                    }
+                                }
+                                self.explorer.systems[i].body_list.clone_from(&planet_list);
                             }
                         }
                     }
@@ -170,32 +197,36 @@ impl Default for EliteRustClient {
         let mut evm_update_bus: Bus<EvmUpdate> = Bus::new(1);
         let evm_update_reader = evm_update_bus.add_rx();
         let settings_pointer_clone = settings_pointer.clone();
-        thread::spawn(move || {
-            let mut evm_updater = evm_updater::initialize(
-                evm_update_bus,
-                evm_request_receiver,
-                settings_pointer_clone,
-            );
-            loop {
-                evm_updater.run_update();
-                sleep(Duration::from_secs(3));
-            }
-        });
+        thread::Builder::new()
+            .name("edcas-evm-handler".into())
+            .spawn(move || {
+                let mut evm_updater = request_handler::initialize(
+                    evm_update_bus,
+                    evm_request_receiver,
+                    settings_pointer_clone,
+                );
+                loop {
+                    evm_updater.run_update();
+                    sleep(Duration::from_secs(3));
+                }
+            })
+            .expect("Failed to create thread jevm-handler");
         info!("Starting Journal reader");
         let mut journal_bus: Bus<JsonValue> = Bus::new(100);
         let journal_bus_reader = journal_bus.add_rx();
         let tangle_journal_bus_reader = journal_bus.add_rx();
         let settings_pointer_clone = settings_pointer.clone();
-        let evm_request_writer_clone = evm_request_writer.clone();
-        thread::spawn(move || {
-            let mut j_reader =
-                journal_reader::initialize(evm_request_writer_clone, settings_pointer_clone);
-            loop {
-                //Sleep needed, because too frequent reads can lead to read the file while being written to it -> exception from json parser because json is not complete
-                sleep(Duration::from_millis(100));
-                j_reader.run(&mut journal_bus);
-            }
-        });
+        thread::Builder::new()
+            .name("edcas-journal-reader".into())
+            .spawn(move || {
+                let mut j_reader = journal_reader::initialize(settings_pointer_clone);
+                loop {
+                    //Sleep needed, because too frequent reads can lead to read the file while being written to it -> exception from json parser because json is not complete
+                    sleep(Duration::from_millis(100));
+                    j_reader.run(&mut journal_bus);
+                }
+            })
+            .expect("Failed to create thread journal-reader");
         let settings_pointer_clone = settings_pointer.clone();
         info!(
             "Allow to share data over edcas: {}",
@@ -205,13 +236,18 @@ impl Default for EliteRustClient {
             info!("Starting Evm Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
             let settings_pointer = settings_pointer_clone;
-            thread::spawn(move || {
-                let mut tangle_interpreter =
-                    evm_interpreter::initialize(tangle_journal_bus_reader, settings_pointer);
-                loop {
-                    tangle_interpreter.run();
-                }
-            });
+            thread::Builder::new()
+                .name("edcas-evm-interpreter".into())
+                .spawn(move || {
+                    let mut tangle_interpreter = backend::evm::journal_interpreter::initialize(
+                        tangle_journal_bus_reader,
+                        settings_pointer,
+                    );
+                    loop {
+                        tangle_interpreter.run();
+                    }
+                })
+                .expect("Failed to create thread evm-interpreter");
         }
         info!("Done starting threads");
 
@@ -279,7 +315,7 @@ fn initialize_logger() {
 
     let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H-%M"));
 
-    let log_path = log_directory.join(&log_filename);
+    let log_path = log_directory.join(log_filename);
     //let log_path = log_file_path_buf.strip_prefix(&log_directory).unwrap_or(&log_file_path_buf);
 
     if let Ok(entries) = fs::read_dir(&log_directory) {
@@ -321,6 +357,7 @@ fn initialize_logger() {
             "reqwest",
             "tree_builder",
             "html5ever",
+            "ethers_providers",
         ])
         .level_filter(level);
 

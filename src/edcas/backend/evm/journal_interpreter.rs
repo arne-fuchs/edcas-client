@@ -7,13 +7,16 @@ use chrono::DateTime;
 use ethers::core::k256::ecdsa::SigningKey;
 use ethers::prelude::*;
 use json::JsonValue;
-use log::{error, info};
+use log::{debug, error, info};
 
-use super::edcas_contract::{BodyProperties, PlanetProperties, StarProperties};
-use crate::edcas::backend::edcas_contract;
+use crate::edcas::backend::evm::edcas_contract;
+use crate::edcas::backend::evm::edcas_contract::{
+    BodyProperties, PlanetProperties, StarProperties,
+};
+use crate::edcas::backend::evm::journal_interpreter::SendError::{
+    NonRepeatableError, RepeatableError,
+};
 
-use crate::edcas::evm_interpreter::SendError::{NonRepeatableError, RepeatableError};
-use crate::edcas::explorer::body::Parent;
 use crate::edcas::settings::Settings;
 
 pub type Edcas = edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>;
@@ -43,17 +46,17 @@ impl EvmInterpreter {
                 //let json = json.clone();
                 let event = json["event"].as_str().unwrap();
 
-                info!("EVM event received: {}", event);
+                debug!("EVM event received: {}", event);
 
                 match event {
                     "FSDJump" => {
-                        //TODO Learn tokio
                         tokio::runtime::Builder::new_multi_thread()
                             .enable_all()
                             .build()
                             .unwrap()
                             .block_on(async move {
                                 let contract = self.contract.clone();
+                                debug!("Call register_system");
                                 let function_call: FunctionCall<
                                     Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
                                     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -79,8 +82,6 @@ impl EvmInterpreter {
                             });
                     }
                     "Scan" => {
-                        //TODO Learn tokio
-
                         tokio::runtime::Builder::new_multi_thread()
                             .enable_all()
                             .build()
@@ -102,6 +103,7 @@ impl EvmInterpreter {
                                         // "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734,
                                         // "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320,
                                         // "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
+                                        debug!("Call register_planet");
                                         let function_call: FunctionCall<
                                             Arc<
                                                 SignerMiddleware<
@@ -134,6 +136,7 @@ impl EvmInterpreter {
                                         // "StarPos":[12.1875,-74.90625,-120.5],"StarSystem":"Hyades Sector BB-N b7-5","StarType":"M","StellarMass":0.394531,"Subclass":1,
                                         // "SurfaceTemperature":3367.0,"SystemAddress":11666070513017,"WasDiscovered":true,"WasMapped":false,"event":"Scan","horizons":true,
                                         // "odyssey":true,"timestamp":"2024-03-26T21:27:53Z"}
+                                        debug!("Call register_star");
                                         let function_call: FunctionCall<
                                             Arc<
                                                 SignerMiddleware<
@@ -165,6 +168,51 @@ impl EvmInterpreter {
                                 }
                             });
                     }
+                    //{ "timestamp":"2022-07-07T20:58:06Z", "event":"SAASignalsFound", "BodyName":"IC 2391 Sector YE-A d103 B 1", "SystemAddress":3549631072611, "BodyID":15, "Signals":[ { "Type":"$SAA_SignalType_Guardian;", "Type_Localised":"Guardian", "Count":1 }, { "Type":"$SAA_SignalType_Human;", "Type_Localised":"Menschlich", "Count":9 } ] }
+                    //{ "timestamp":"2022-09-07T17:50:41Z", "event":"FSSBodySignals", "BodyName":"Synuefe EN-H d11-106 6 a", "BodyID":31, "SystemAddress":3652777380195, "Signals":[ { "Type":"$SAA_SignalType_Biological;", "Type_Localised":"Biologisch", "Count":1 }, { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geologisch", "Count":3 } ] }
+                    "FSSBodySignals" | "SAASignalsFound" => {
+                        tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap()
+                            .block_on(async move {
+                                let system_address = json["SystemAddress"].as_u64().unwrap();
+                                let body_id = json["BodyID"].as_u8().unwrap();
+                                let contract = self.contract.clone();
+                                for i in 0..json["Signals"].len() {
+                                    let type_ = {
+                                        //enum PlanetSignalType {
+                                        //     unknown,geo,xeno,bio,human
+                                        // }
+                                        match json["Signals"][i]["Type"].as_str().unwrap() {
+                                            "$SAA_SignalType_Human;" => 4,
+                                            "$SAA_SignalType_Biological;" => 3,
+                                            "$SAA_SignalType_Xenological;" => 2,
+                                            "$SAA_SignalType_Geological;" => 1,
+                                            &_ => 0,
+                                        }
+                                    };
+                                    debug!("Call register_planet_signal: {system_address}-{body_id}-{type_}");
+                                    let function_call: FunctionCall<
+                                        Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                        SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                        (),
+                                    > = contract.register_planet_signal(
+                                        system_address,
+                                        body_id,
+                                        type_,
+                                        json["Signals"][i]["Count"].as_u8().unwrap(),
+                                        DateTime::parse_from_rfc3339(
+                                            json["timestamp"].as_str().unwrap(),
+                                        )
+                                        .unwrap()
+                                        .timestamp()
+                                        .into(),
+                                    );
+                                    execute_send_repeatable(function_call).await;
+                                }
+                            });
+                    }
                     //Carrier
                     "CarrierJumpRequest" => {
                         //{
@@ -184,6 +232,7 @@ impl EvmInterpreter {
                             .unwrap()
                             .block_on(async move {
                                 let contract = self.contract.clone();
+                                debug!("Call emit_carrier_jump");
                                 let function_call: FunctionCall<
                                     Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
                                     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -210,6 +259,7 @@ impl EvmInterpreter {
                             .unwrap()
                             .block_on(async move {
                                 let contract = self.contract.clone();
+                                debug!("Call cancel_carrier_jump");
                                 let function_call: FunctionCall<
                                     Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
                                     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -263,6 +313,7 @@ impl EvmInterpreter {
                                 }
 
                                 let contract = self.contract.clone();
+                                debug!("Call register_carrier");
                                 let function_call: FunctionCall<
                                     Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
                                     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -320,7 +371,7 @@ impl EvmInterpreter {
                                 }
 
                                 let contract = self.contract.clone();
-
+                                debug!("Call register_carrier");
                                 let function_call: FunctionCall<
                                     Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
                                     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -384,6 +435,7 @@ impl EvmInterpreter {
                                         );
                                     }
                                     if json["StationType"].as_str().unwrap() == "FleetCarrier" {
+                                        debug!("Call register_carrier");
                                         let function_call: ContractCall = contract
                                             .register_carrier(
                                                 json["MarketID"].as_u64().unwrap(),
@@ -401,7 +453,7 @@ impl EvmInterpreter {
                                             );
                                         //execute_send(function_call).await;
                                         execute_send_repeatable(function_call).await;
-
+                                        debug!("Call report_carrier_location");
                                         let function_call: ContractCall = contract
                                             .report_carrier_location(
                                                 json["MarketID"].as_u64().unwrap(),
@@ -417,6 +469,7 @@ impl EvmInterpreter {
                                         //execute_send(function_call).await;
                                         execute_send_repeatable(function_call).await;
                                     } else {
+                                        debug!("Call register_station");
                                         let function_call: ContractCall = contract
                                             .register_station(
                                                 json["MarketID"].as_u64().unwrap(),
@@ -810,7 +863,7 @@ async fn execute_send(
             Ok(receipt) => {
                 if let Some(receipt) = receipt {
                     if let Some(hash) = receipt.block_hash {
-                        info!("{:?}", hash);
+                        info!("Success calling function: {:?}", hash);
                         Ok(hash)
                     } else {
                         Err(NonRepeatableError("Receipt without hash".into()))
@@ -909,6 +962,7 @@ fn process_jump(
             .build()
             .unwrap()
             .block_on(async move {
+                debug!("Call register_system");
                 let function_call: FunctionCall<
                     Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
                     SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,

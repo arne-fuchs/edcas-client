@@ -1,8 +1,8 @@
 use std::sync::mpsc::Sender;
 use std::sync::Arc;
 
-use crate::edcas::backend::edcas_contract;
-use crate::edcas::evm_updater::EvmRequest;
+use crate::edcas::backend::evm::edcas_contract;
+use crate::edcas::request_handler::EvmRequest;
 use chrono::{DateTime, Utc};
 
 use crate::edcas::settings::Settings;

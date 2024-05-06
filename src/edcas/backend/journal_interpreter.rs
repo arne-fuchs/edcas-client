@@ -2,12 +2,12 @@ use std::sync::mpsc::Sender;
 use std::sync::Arc;
 use std::time::Instant;
 
-use crate::edcas::backend::evm_updater::EvmRequest;
+use crate::edcas::backend::evm::request_handler::EvmRequest;
 use json::{JsonValue, Null};
 use log::{debug, error, info, warn};
 
 use crate::edcas::explorer::body::Signal;
-use crate::edcas::explorer::system::{PlanetSignals, System, SystemSignal};
+use crate::edcas::explorer::system::{PlanetSignal, System, SystemSignal};
 use crate::edcas::explorer::{body, Explorer};
 use crate::edcas::materials::{Material, MaterialState};
 use crate::edcas::mining::{Mining, MiningMaterial, Prospector};
@@ -99,9 +99,8 @@ pub fn interpret_json(
             }
         } //Honk
         //{ "timestamp":"2022-07-07T20:58:06Z", "event":"SAASignalsFound", "BodyName":"IC 2391 Sector YE-A d103 B 1", "SystemAddress":3549631072611, "BodyID":15, "Signals":[ { "Type":"$SAA_SignalType_Guardian;", "Type_Localised":"Guardian", "Count":1 }, { "Type":"$SAA_SignalType_Human;", "Type_Localised":"Menschlich", "Count":9 } ] }
+        //{ "timestamp":"2022-09-07T17:50:41Z", "event":"FSSBodySignals", "BodyName":"Synuefe EN-H d11-106 6 a", "BodyID":31, "SystemAddress":3652777380195, "Signals":[ { "Type":"$SAA_SignalType_Biological;", "Type_Localised":"Biologisch", "Count":1 }, { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geologisch", "Count":3 } ] }
         "FSSBodySignals" | "SAASignalsFound" => {
-            //TODO Implement NFT
-            //{ "timestamp":"2022-09-07T17:50:41Z", "event":"FSSBodySignals", "BodyName":"Synuefe EN-H d11-106 6 a", "BodyID":31, "SystemAddress":3652777380195, "Signals":[ { "Type":"$SAA_SignalType_Biological;", "Type_Localised":"Biologisch", "Count":1 }, { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geologisch", "Count":3 } ] }
             if !explorer.systems.is_empty() {
                 let mut signals: Vec<Signal> = Vec::new();
 
@@ -109,13 +108,13 @@ pub fn interpret_json(
                     signals.push(Signal {
                         r#type: json["Signals"][i]["Type"].to_string(),
                         type_localised: json["Signals"][i]["Type_Localised"].to_string(),
-                        count: json["Signals"][i]["Count"].as_i64().unwrap_or(-1),
+                        count: json["Signals"][i]["Count"].as_u64().unwrap_or(0),
                     })
                 }
 
-                let planet_signals = PlanetSignals {
+                let planet_signals = PlanetSignal {
                     body_name: json["BodyName"].to_string(),
-                    body_id: json["BodyID"].as_i64().unwrap(),
+                    body_id: json["BodyID"].as_u64().unwrap(),
                     signals: signals.clone(),
                 };
 

@@ -9,8 +9,8 @@ use std::sync::Arc;
 use std::time::Duration;
 use std::{env, fs};
 
-use crate::edcas::backend::edcas_contract;
-use crate::edcas::backend::evm_interpreter::Edcas;
+use crate::edcas::backend::evm::edcas_contract;
+use crate::edcas::backend::evm::journal_interpreter::Edcas;
 use eframe::egui;
 use eframe::egui::{Color32, RichText};
 use eframe::epaint::ahash::HashMap;

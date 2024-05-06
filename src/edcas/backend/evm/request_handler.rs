@@ -1,12 +1,10 @@
-use crate::edcas::backend::edcas_contract::{
-    BodyProperties, Faction, Floating, PlanetProperties, StarProperties, StationIdentity,
-};
+use crate::edcas::backend::evm::edcas_contract::*;
+use crate::edcas::backend::evm::journal_interpreter::Edcas;
 use crate::edcas::carrier::Carrier;
-use crate::edcas::evm_interpreter::Edcas;
-use crate::edcas::evm_updater::EvmUpdate::{CarrierList, StationList};
-use crate::edcas::explorer::body::{BodyType, Parent};
+use crate::edcas::explorer::body::{BodyType, Parent, Signal};
 use crate::edcas::explorer::planet::Planet;
 use crate::edcas::explorer::star::Star;
+use crate::edcas::request_handler::EvmUpdate::{CarrierList, StationList};
 use crate::edcas::settings::Settings;
 use crate::edcas::station::{CommodityListening, StationMetaData};
 use bus::Bus;
@@ -14,7 +12,7 @@ use chrono::DateTime;
 use ethers::contract::ContractCall;
 use ethers::middleware::SignerMiddleware;
 use ethers::prelude::{Http, LocalWallet, Provider, U256};
-use log::error;
+use log::{debug, error};
 use std::str::FromStr;
 use std::sync::mpsc::Receiver;
 use std::sync::Arc;
@@ -27,6 +25,7 @@ pub enum EvmUpdate {
     StationCommodityListening(u64, Vec<CommodityListening>),
     SystemMetaData(u64, SystemMetaData),
     PlanetList(u64, Vec<BodyType>),
+    //System address, body id, signal
 }
 /**
 + StationMetaData(u64): MarketId from station
@@ -124,14 +123,15 @@ impl EvmUpdater {
                                         }
                                     }
                                 }
-                                EvmRequest::StationCommodityListener(market_id) => {
+                                EvmRequest::StationCommodityListener(_market_id) => {
                                     todo!("Implement");
                                     let function_call: ContractCall<
                                         SignerMiddleware<Provider<Http>, LocalWallet>,
                                         (u32, u32, u32, u32, u32, u32, u32),
-                                    > = contract.commodity_listening_map(market_id, "".to_string());
+                                    > = contract
+                                        .commodity_listening_map(_market_id, "".to_string());
                                     match function_call.legacy().call().await {
-                                        Ok(result) => {}
+                                        Ok(_result) => {}
                                         Err(err) => {
                                             error!("Error getting station metadata: {err}");
                                         }
@@ -189,7 +189,7 @@ impl EvmUpdater {
                                                     event: "EVM".to_string(),
                                                     scan_type: "N/A".to_string(),
                                                     body_name: result.2,
-                                                    body_id: result.1 as i64,
+                                                    body_id: result.1 as u64,
                                                     parents: vec![], //TODO Implement Parents
                                                     star_system: "".to_string(), //TODO Insert Star System
                                                     system_address: system_address as i64, //TODO Convert to u64
@@ -240,7 +240,7 @@ impl EvmUpdater {
                                             }
                                             Err(err) => {
                                                 timestamp = U256::from(0);
-                                                error!("Error getting planet data: {err}");
+                                                error!("Error getting star data: {err}");
                                             }
                                         }
                                         index += 1;
@@ -249,6 +249,41 @@ impl EvmUpdater {
                                     let mut timestamp: U256 = U256::max_value();
                                     let mut index = 0;
                                     while timestamp != U256::from(0) {
+                                        debug!("Call get_planet_signals: {system_address}-{index}");
+                                        let function_call: ContractCall<
+                                            SignerMiddleware<Provider<Http>, LocalWallet>,
+                                            Vec<PlanetSignal>,
+                                        > = contract.get_planet_signals(system_address, index);
+                                        let planet_signals: Vec<Signal> = function_call
+                                            .legacy()
+                                            .call()
+                                            .await
+                                            .unwrap_or_else(|err| {
+                                                error!("Error getting planet signal data: {err}");
+                                                vec![]
+                                            })
+                                            .iter()
+                                            .map(|planet_signal| {
+                                                let r#type: String = match planet_signal.type_ {
+                                                    4 => "$SAA_SignalType_Human;".into(),
+                                                    3 => "$SAA_SignalType_Biological;".into(),
+                                                    2 => "$SAA_SignalType_Xenological;".into(),
+                                                    1 => "$SAA_SignalType_Geological;".into(),
+                                                    _ => "Unknown".into(),
+                                                };
+                                                let type_localised = r#type
+                                                    .split('_')
+                                                    .last()
+                                                    .unwrap_or("Unknown;")
+                                                    .replace(";", "")
+                                                    .to_string();
+                                                Signal {
+                                                    r#type,
+                                                    type_localised,
+                                                    count: planet_signal.count as u64,
+                                                }
+                                            })
+                                            .collect();
                                         let function_call: ContractCall<
                                             SignerMiddleware<Provider<Http>, LocalWallet>,
                                             (
@@ -268,7 +303,7 @@ impl EvmUpdater {
                                                     event: "EVM".to_string(),
                                                     scan_type: "N/A".to_string(),
                                                     body_name: result.2,
-                                                    body_id: result.1 as i64,
+                                                    body_id: result.1 as u64,
                                                     parents: vec![Parent {
                                                         name: "Unknown".into(),
                                                         id: result.5.parent_id.into(),
@@ -352,7 +387,7 @@ impl EvmUpdater {
                                                     was_mapped: result.4,
                                                     reserve_level: "".to_string(), //What?
                                                     asteroid_rings: vec![], //TODO Implement Asteroid Rings
-                                                    planet_signals: vec![], //TODO Implement Planet Signals
+                                                    planet_signals,
                                                     settings: self.settings.clone(),
                                                 }))
                                             }
@@ -363,6 +398,7 @@ impl EvmUpdater {
                                         }
                                         index += 1;
                                     }
+                                    planet_list.sort_by_key(|planet_a| planet_a.get_id());
                                     self.writer.broadcast(EvmUpdate::PlanetList(
                                         system_address,
                                         planet_list,

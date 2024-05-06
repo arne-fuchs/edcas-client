@@ -1,7 +1,7 @@
 extern crate core;
 
 use eframe::egui::{IconData, Pos2, ViewportBuilder};
-use eframe::{egui, HardwareAcceleration};
+use eframe::HardwareAcceleration;
 use std::env;
 use std::str::FromStr;
 use std::sync::Arc;

@@ -115,9 +115,9 @@ fn build_tree(
     system_index: &mut usize,
     current_parent: Parent,
     ui: &mut egui::Ui,
-    parent_ids: Vec<i64>,
-) -> Vec<i64> {
-    let mut finished_bodies = vec![];
+    parent_ids: Vec<u64>,
+) -> Vec<u64> {
+    let mut finished_bodies: Vec<u64> = vec![];
     for i in 0..body_list.len() {
         //look what the largest body id in parents is. If is the current parent, print the header
         let mut largest_parent_id = 0;
@@ -147,7 +147,7 @@ fn build_tree(
                 };
                 let mut this_parents = parent_ids.clone();
                 this_parents.push(largest_parent_id);
-                let finished_ids =
+                let finished_ids: Vec<u64> =
                     build_tree(body_list, system_index, this_as_parent, ui, this_parents);
                 for finished_body_id in finished_ids {
                     if !finished_bodies.contains(&finished_body_id) {

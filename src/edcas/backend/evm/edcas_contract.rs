@@ -407,6 +407,51 @@ pub mod edcas {
                     ],
                 ),
                 (
+                    ::std::borrow::ToOwned::to_owned("get_planet_signals"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned("get_planet_signals"),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("system_address"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint64"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("id"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint8"),
+                                    ),
+                                },
+                            ],
+                            outputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::string::String::new(),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Array(
+                                        ::std::boxed::Box::new(
+                                            ::ethers::core::abi::ethabi::ParamType::Tuple(
+                                                ::std::vec![
+                                                    ::ethers::core::abi::ethabi::ParamType::Uint(256usize),
+                                                    ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                                    ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                                ],
+                                            ),
+                                        ),
+                                    ),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("struct PlanetSignal[]"),
+                                    ),
+                                },
+                            ],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::View,
+                        },
+                    ],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("get_stations"),
                     ::std::vec![
                         ::ethers::core::abi::ethabi::Function {
@@ -912,6 +957,58 @@ pub mod edcas {
                                     ),
                                     internal_type: ::core::option::Option::Some(
                                         ::std::borrow::ToOwned::to_owned("struct BodyProperties"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("timestamp"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(
+                                        256usize,
+                                    ),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint256"),
+                                    ),
+                                },
+                            ],
+                            outputs: ::std::vec![],
+                            constant: ::core::option::Option::None,
+                            state_mutability: ::ethers::core::abi::ethabi::StateMutability::NonPayable,
+                        },
+                    ],
+                ),
+                (
+                    ::std::borrow::ToOwned::to_owned("register_planet_signal"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Function {
+                            name: ::std::borrow::ToOwned::to_owned(
+                                "register_planet_signal",
+                            ),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("system_address"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint64"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("id"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint8"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("_type"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("enum PlanetSignalType"),
+                                    ),
+                                },
+                                ::ethers::core::abi::ethabi::Param {
+                                    name: ::std::borrow::ToOwned::to_owned("count"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                    internal_type: ::core::option::Option::Some(
+                                        ::std::borrow::ToOwned::to_owned("uint8"),
                                     ),
                                 },
                                 ::ethers::core::abi::ethabi::Param {
@@ -1826,6 +1923,39 @@ pub mod edcas {
                     ],
                 ),
                 (
+                    ::std::borrow::ToOwned::to_owned("PlanetSignalRegister"),
+                    ::std::vec![
+                        ::ethers::core::abi::ethabi::Event {
+                            name: ::std::borrow::ToOwned::to_owned(
+                                "PlanetSignalRegister",
+                            ),
+                            inputs: ::std::vec![
+                                ::ethers::core::abi::ethabi::EventParam {
+                                    name: ::std::borrow::ToOwned::to_owned("system_address"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(64usize),
+                                    indexed: false,
+                                },
+                                ::ethers::core::abi::ethabi::EventParam {
+                                    name: ::std::borrow::ToOwned::to_owned("id"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                    indexed: false,
+                                },
+                                ::ethers::core::abi::ethabi::EventParam {
+                                    name: ::std::borrow::ToOwned::to_owned("_type"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                    indexed: false,
+                                },
+                                ::ethers::core::abi::ethabi::EventParam {
+                                    name: ::std::borrow::ToOwned::to_owned("count"),
+                                    kind: ::ethers::core::abi::ethabi::ParamType::Uint(8usize),
+                                    indexed: false,
+                                },
+                            ],
+                            anonymous: false,
+                        },
+                    ],
+                ),
+                (
                     ::std::borrow::ToOwned::to_owned("StarRegistration"),
                     ::std::vec![
                         ::ethers::core::abi::ethabi::Event {
@@ -2046,6 +2176,19 @@ pub mod edcas {
                 .method_hash([154, 38, 187, 75], ())
                 .expect("method not found (this should never happen)")
         }
+        ///Calls the contract's `get_planet_signals` (0xc60864d9) function
+        pub fn get_planet_signals(
+            &self,
+            system_address: u64,
+            id: u8,
+        ) -> ::ethers::contract::builders::ContractCall<
+            M,
+            ::std::vec::Vec<PlanetSignal>,
+        > {
+            self.0
+                .method_hash([198, 8, 100, 217], (system_address, id))
+                .expect("method not found (this should never happen)")
+        }
         ///Calls the contract's `get_stations` (0x6d08ca64) function
         pub fn get_stations(
             &self,
@@ -2151,6 +2294,22 @@ pub mod edcas {
                         body_properties,
                         timestamp,
                     ),
+                )
+                .expect("method not found (this should never happen)")
+        }
+        ///Calls the contract's `register_planet_signal` (0x0cf9d3fa) function
+        pub fn register_planet_signal(
+            &self,
+            system_address: u64,
+            id: u8,
+            type_: u8,
+            count: u8,
+            timestamp: ::ethers::core::types::U256,
+        ) -> ::ethers::contract::builders::ContractCall<M, ()> {
+            self.0
+                .method_hash(
+                    [12, 249, 211, 250],
+                    (system_address, id, type_, count, timestamp),
                 )
                 .expect("method not found (this should never happen)")
         }
@@ -2425,6 +2584,16 @@ pub mod edcas {
         > {
             self.0.event()
         }
+        ///Gets the contract's `PlanetSignalRegister` event
+        pub fn planet_signal_register_filter(
+            &self,
+        ) -> ::ethers::contract::builders::Event<
+            ::std::sync::Arc<M>,
+            M,
+            PlanetSignalRegisterFilter,
+        > {
+            self.0.event()
+        }
         ///Gets the contract's `StarRegistration` event
         pub fn star_registration_filter(
             &self,
@@ -2590,6 +2759,26 @@ pub mod edcas {
         Eq,
         Hash
     )]
+    #[ethevent(
+        name = "PlanetSignalRegister",
+        abi = "PlanetSignalRegister(uint64,uint8,uint8,uint8)"
+    )]
+    pub struct PlanetSignalRegisterFilter {
+        pub system_address: u64,
+        pub id: u8,
+        pub type_: u8,
+        pub count: u8,
+    }
+    #[derive(
+        Clone,
+        ::ethers::contract::EthEvent,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
     #[ethevent(name = "StarRegistration", abi = "StarRegistration(uint64)")]
     pub struct StarRegistrationFilter {
         pub system_address: u64,
@@ -2646,6 +2835,7 @@ pub mod edcas {
         CarrierRegistrationFilter(CarrierRegistrationFilter),
         CarrierUpdateFilter(CarrierUpdateFilter),
         CommodityListeningUpdateFilter(CommodityListeningUpdateFilter),
+        PlanetSignalRegisterFilter(PlanetSignalRegisterFilter),
         StarRegistrationFilter(StarRegistrationFilter),
         StationRegistrationFilter(StationRegistrationFilter),
         StationUpdateFilter(StationUpdateFilter),
@@ -2675,6 +2865,9 @@ pub mod edcas {
             }
             if let Ok(decoded) = CommodityListeningUpdateFilter::decode_log(log) {
                 return Ok(EDCASEvents::CommodityListeningUpdateFilter(decoded));
+            }
+            if let Ok(decoded) = PlanetSignalRegisterFilter::decode_log(log) {
+                return Ok(EDCASEvents::PlanetSignalRegisterFilter(decoded));
             }
             if let Ok(decoded) = StarRegistrationFilter::decode_log(log) {
                 return Ok(EDCASEvents::StarRegistrationFilter(decoded));
@@ -2711,6 +2904,9 @@ pub mod edcas {
                     ::core::fmt::Display::fmt(element, f)
                 }
                 Self::CommodityListeningUpdateFilter(element) => {
+                    ::core::fmt::Display::fmt(element, f)
+                }
+                Self::PlanetSignalRegisterFilter(element) => {
                     ::core::fmt::Display::fmt(element, f)
                 }
                 Self::StarRegistrationFilter(element) => {
@@ -2761,6 +2957,11 @@ pub mod edcas {
     impl ::core::convert::From<CommodityListeningUpdateFilter> for EDCASEvents {
         fn from(value: CommodityListeningUpdateFilter) -> Self {
             Self::CommodityListeningUpdateFilter(value)
+        }
+    }
+    impl ::core::convert::From<PlanetSignalRegisterFilter> for EDCASEvents {
+        fn from(value: PlanetSignalRegisterFilter) -> Self {
+            Self::PlanetSignalRegisterFilter(value)
         }
     }
     impl ::core::convert::From<StarRegistrationFilter> for EDCASEvents {
@@ -2920,6 +3121,22 @@ pub mod edcas {
     )]
     #[ethcall(name = "get_commodities", abi = "get_commodities()")]
     pub struct GetCommoditiesCall;
+    ///Container type for all input parameters for the `get_planet_signals` function with signature `get_planet_signals(uint64,uint8)` and selector `0xc60864d9`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(name = "get_planet_signals", abi = "get_planet_signals(uint64,uint8)")]
+    pub struct GetPlanetSignalsCall {
+        pub system_address: u64,
+        pub id: u8,
+    }
     ///Container type for all input parameters for the `get_stations` function with signature `get_stations()` and selector `0x6d08ca64`
     #[derive(
         Clone,
@@ -3020,6 +3237,28 @@ pub mod edcas {
         pub mapped: bool,
         pub planet_properties: PlanetProperties,
         pub body_properties: BodyProperties,
+        pub timestamp: ::ethers::core::types::U256,
+    }
+    ///Container type for all input parameters for the `register_planet_signal` function with signature `register_planet_signal(uint64,uint8,uint8,uint8,uint256)` and selector `0x0cf9d3fa`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthCall,
+        ::ethers::contract::EthDisplay,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    #[ethcall(
+        name = "register_planet_signal",
+        abi = "register_planet_signal(uint64,uint8,uint8,uint8,uint256)"
+    )]
+    pub struct RegisterPlanetSignalCall {
+        pub system_address: u64,
+        pub id: u8,
+        pub type_: u8,
+        pub count: u8,
         pub timestamp: ::ethers::core::types::U256,
     }
     ///Container type for all input parameters for the `register_star` function with signature `register_star(uint64,uint8,string,bool,bool,(uint8,uint16,string,string,(int128,uint8),(int128,uint8)),((int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8),(int128,uint8)),uint256)` and selector `0x44143959`
@@ -3222,12 +3461,14 @@ pub mod edcas {
         EmitCarrierJump(EmitCarrierJumpCall),
         GetCarrierIds(GetCarrierIdsCall),
         GetCommodities(GetCommoditiesCall),
+        GetPlanetSignals(GetPlanetSignalsCall),
         GetStations(GetStationsCall),
         GetSystems(GetSystemsCall),
         PlanetMap(PlanetMapCall),
         RegisterCarrier(RegisterCarrierCall),
         RegisterCommodityListening(RegisterCommodityListeningCall),
         RegisterPlanet(RegisterPlanetCall),
+        RegisterPlanetSignal(RegisterPlanetSignalCall),
         RegisterStar(RegisterStarCall),
         RegisterStation(RegisterStationCall),
         RegisterSystem(RegisterSystemCall),
@@ -3289,6 +3530,11 @@ pub mod edcas {
             ) {
                 return Ok(Self::GetCommodities(decoded));
             }
+            if let Ok(decoded) = <GetPlanetSignalsCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::GetPlanetSignals(decoded));
+            }
             if let Ok(decoded) = <GetStationsCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
             ) {
@@ -3318,6 +3564,11 @@ pub mod edcas {
                 data,
             ) {
                 return Ok(Self::RegisterPlanet(decoded));
+            }
+            if let Ok(decoded) = <RegisterPlanetSignalCall as ::ethers::core::abi::AbiDecode>::decode(
+                data,
+            ) {
+                return Ok(Self::RegisterPlanetSignal(decoded));
             }
             if let Ok(decoded) = <RegisterStarCall as ::ethers::core::abi::AbiDecode>::decode(
                 data,
@@ -3402,6 +3653,9 @@ pub mod edcas {
                 Self::GetCommodities(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
+                Self::GetPlanetSignals(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
                 Self::GetStations(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
@@ -3418,6 +3672,9 @@ pub mod edcas {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::RegisterPlanet(element) => {
+                    ::ethers::core::abi::AbiEncode::encode(element)
+                }
+                Self::RegisterPlanetSignal(element) => {
                     ::ethers::core::abi::AbiEncode::encode(element)
                 }
                 Self::RegisterStar(element) => {
@@ -3463,6 +3720,7 @@ pub mod edcas {
                 Self::EmitCarrierJump(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetCarrierIds(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetCommodities(element) => ::core::fmt::Display::fmt(element, f),
+                Self::GetPlanetSignals(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetStations(element) => ::core::fmt::Display::fmt(element, f),
                 Self::GetSystems(element) => ::core::fmt::Display::fmt(element, f),
                 Self::PlanetMap(element) => ::core::fmt::Display::fmt(element, f),
@@ -3471,6 +3729,9 @@ pub mod edcas {
                     ::core::fmt::Display::fmt(element, f)
                 }
                 Self::RegisterPlanet(element) => ::core::fmt::Display::fmt(element, f),
+                Self::RegisterPlanetSignal(element) => {
+                    ::core::fmt::Display::fmt(element, f)
+                }
                 Self::RegisterStar(element) => ::core::fmt::Display::fmt(element, f),
                 Self::RegisterStation(element) => ::core::fmt::Display::fmt(element, f),
                 Self::RegisterSystem(element) => ::core::fmt::Display::fmt(element, f),
@@ -3531,6 +3792,11 @@ pub mod edcas {
             Self::GetCommodities(value)
         }
     }
+    impl ::core::convert::From<GetPlanetSignalsCall> for EDCASCalls {
+        fn from(value: GetPlanetSignalsCall) -> Self {
+            Self::GetPlanetSignals(value)
+        }
+    }
     impl ::core::convert::From<GetStationsCall> for EDCASCalls {
         fn from(value: GetStationsCall) -> Self {
             Self::GetStations(value)
@@ -3559,6 +3825,11 @@ pub mod edcas {
     impl ::core::convert::From<RegisterPlanetCall> for EDCASCalls {
         fn from(value: RegisterPlanetCall) -> Self {
             Self::RegisterPlanet(value)
+        }
+    }
+    impl ::core::convert::From<RegisterPlanetSignalCall> for EDCASCalls {
+        fn from(value: RegisterPlanetSignalCall) -> Self {
+            Self::RegisterPlanetSignal(value)
         }
     }
     impl ::core::convert::From<RegisterStarCall> for EDCASCalls {
@@ -3718,6 +3989,18 @@ pub mod edcas {
         Hash
     )]
     pub struct GetCommoditiesReturn(pub ::std::vec::Vec<::std::string::String>);
+    ///Container type for all return fields from the `get_planet_signals` function with signature `get_planet_signals(uint64,uint8)` and selector `0xc60864d9`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct GetPlanetSignalsReturn(pub ::std::vec::Vec<PlanetSignal>);
     ///Container type for all return fields from the `get_stations` function with signature `get_stations()` and selector `0x6d08ca64`
     #[derive(
         Clone,
@@ -3939,6 +4222,22 @@ pub mod edcas {
         pub orbital_period: Floating,
         pub periapsis: Floating,
         pub semi_major_axis: Floating,
+    }
+    ///`PlanetSignal(uint256,uint8,uint8)`
+    #[derive(
+        Clone,
+        ::ethers::contract::EthAbiType,
+        ::ethers::contract::EthAbiCodec,
+        Default,
+        Debug,
+        PartialEq,
+        Eq,
+        Hash
+    )]
+    pub struct PlanetSignal {
+        pub timestamp: ::ethers::core::types::U256,
+        pub type_: u8,
+        pub count: u8,
     }
     ///`StarProperties(uint8,uint16,string,string,(int128,uint8),(int128,uint8))`
     #[derive(

@@ -8,7 +8,7 @@ pub struct Ring {
     pub event: String,
     pub scan_type: String,
     pub body_name: String,
-    pub body_id: i64,
+    pub body_id: u64,
     pub parents: Vec<Parent>,
     pub star_system: String,
     pub system_address: i64,

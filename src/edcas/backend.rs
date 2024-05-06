@@ -1,6 +1,4 @@
 pub mod cargo_reader;
-pub mod edcas_contract;
-pub mod evm_interpreter;
-pub mod evm_updater;
+pub mod evm;
 pub mod journal_interpreter;
 pub mod journal_reader;

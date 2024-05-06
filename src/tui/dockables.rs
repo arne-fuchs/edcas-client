@@ -1,4 +1,4 @@
-use crate::edcas::backend::evm_updater::EvmRequest;
+use crate::edcas::backend::evm::request_handler::EvmRequest;
 use crate::edcas::EliteRustClient;
 use crate::tui::{App, InputMode};
 use ratatui::{prelude::*, style::Stylize, widgets::*};

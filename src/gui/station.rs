@@ -1,4 +1,4 @@
-use crate::edcas::backend::evm_updater::EvmRequest;
+use crate::edcas::backend::evm::request_handler::EvmRequest;
 use eframe::egui::collapsing_header::CollapsingState;
 use eframe::egui::Context;
 use eframe::{egui, App, Frame};

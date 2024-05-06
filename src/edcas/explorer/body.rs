@@ -20,7 +20,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
         for entry in parent.entries() {
             parents.push(Parent {
                 name: entry.0.to_string(),
-                id: entry.1.as_i64().unwrap(),
+                id: entry.1.as_u64().unwrap(),
             })
         }
     }
@@ -46,7 +46,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
                 body_name: json["BodyName"].to_string(),
-                body_id: json["BodyID"].as_i64().unwrap(),
+                body_id: json["BodyID"].as_u64().unwrap(),
                 parents,
                 star_system: json["StarSystem"].to_string(),
                 system_address: json["SystemAddress"].as_i64().unwrap(),
@@ -62,7 +62,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
                 body_name: json["BodyName"].to_string(),
-                body_id: json["BodyID"].as_i64().unwrap(),
+                body_id: json["BodyID"].as_u64().unwrap(),
                 parents,
                 star_system: json["StarSystem"].to_string(),
                 system_address: json["SystemAddress"].as_i64().unwrap(),
@@ -99,7 +99,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
                 event: json["event"].to_string(),
                 scan_type: json["ScanType"].to_string(),
                 body_name: json["BodyName"].to_string(),
-                body_id: json["BodyID"].as_i64().unwrap(),
+                body_id: json["BodyID"].as_u64().unwrap(),
                 parents,
                 star_system: json["StarSystem"].to_string(),
                 system_address: json["SystemAddress"].as_i64().unwrap(),
@@ -143,7 +143,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType 
             event: json["event"].to_string(),
             scan_type: json["ScanType"].to_string(),
             body_name: json["BodyName"].to_string(),
-            body_id: json["BodyID"].as_i64().unwrap(),
+            body_id: json["BodyID"].as_u64().unwrap(),
             parents,
             star_system: json["StarSystem"].to_string(),
             system_address: json["SystemAddress"].as_i64().unwrap(),
@@ -182,7 +182,7 @@ pub(crate) enum BodyType {
 }
 
 impl BodyType {
-    pub(crate) fn get_id(&self) -> i64 {
+    pub(crate) fn get_id(&self) -> u64 {
         match self {
             BodyType::Star(body) => body.body_id,
             BodyType::Planet(body) => body.body_id,
@@ -223,6 +223,19 @@ impl BodyType {
         }
     }
 
+    pub(crate) fn add_signal(&mut self, signal: Signal) {
+        match self {
+            BodyType::Star(_) => {
+                unreachable!("Stars cannot have signals")
+            }
+            BodyType::Planet(body) => body.planet_signals.push(signal),
+            BodyType::Ring(body) => body.ring_signals.push(signal),
+            BodyType::BeltCluster(_) => {
+                unreachable!("BeltClusters cannot have signals")
+            }
+        }
+    }
+
     pub(crate) fn get_signals(&self) -> Vec<Signal> {
         //FIXME Work with references if possible
         match self {
@@ -247,14 +260,14 @@ impl PartialEq for BodyType {
 #[derive(Clone)]
 pub struct Parent {
     pub name: String,
-    pub id: i64,
+    pub id: u64,
 }
 
 #[derive(Clone)]
 pub struct Signal {
     pub r#type: String,
     pub type_localised: String,
-    pub count: i64,
+    pub count: u64,
 }
 
 impl Default for Signal {
