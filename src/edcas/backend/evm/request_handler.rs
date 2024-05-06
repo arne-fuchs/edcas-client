@@ -215,9 +215,9 @@ impl EvmUpdater {
                                     > = contract.system_map(system_address);
                                     let body_count = match function_call.legacy().call().await {
                                         Ok(result) => {
-                                            debug!("Body count received: {}",result.8);
+                                            debug!("Body count received: {}", result.8);
                                             result.8
-                                        },
+                                        }
                                         Err(_) => 0,
                                     };
 

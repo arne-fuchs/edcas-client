@@ -31,7 +31,6 @@ impl App for crate::edcas::about::About {
                     });
                 });
             });
-            
         });
     }
 }

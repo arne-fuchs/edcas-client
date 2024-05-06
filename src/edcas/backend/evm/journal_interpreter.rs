@@ -59,6 +59,32 @@ impl EvmInterpreter {
                                 let _ = process_jump(json, self.contract.clone()).await;
                             });
                     }
+                    "FSSDiscoveryScan" => {
+                        tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap()
+                            .block_on(async move {
+                                let contract = self.contract.clone();
+                                debug!("Call set_body_count");
+                                let function_call: FunctionCall<
+                                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                    (),
+                                > = contract.set_body_count(
+                                    json["SystemAddress"].as_u64().unwrap(),
+                                    json["BodyCount"].as_u8().unwrap(),
+                                    DateTime::parse_from_rfc3339(
+                                        json["timestamp"].as_str().unwrap(),
+                                    )
+                                    .unwrap()
+                                    .timestamp()
+                                    .into(),
+                                );
+                                //execute_send(function_call).await;
+                                let _ = execute_send_repeatable(function_call).await;
+                            });
+                    }
                     "Scan" => {
                         tokio::runtime::Builder::new_multi_thread()
                             .enable_all()
@@ -82,7 +108,8 @@ impl EvmInterpreter {
                                         // "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320,
                                         // "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
                                         let body_id = json["BodyID"].as_u8().unwrap();
-                                        let system_address = json["SystemAddress"].as_u64().unwrap();
+                                        let system_address =
+                                            json["SystemAddress"].as_u64().unwrap();
                                         debug!("Call register_planet: {system_address}-{body_id}");
                                         let function_call: FunctionCall<
                                             Arc<
@@ -531,9 +558,7 @@ pub async fn get_contract(
     edcas_contract::EDCAS::new(edcas_address, Arc::new(client.clone()))
 }
 
-pub async fn get_client(
-    settings: &Arc<Settings>,
-) -> SignerMiddleware<Provider<Http>, LocalWallet> {
+pub async fn get_client(settings: &Arc<Settings>) -> SignerMiddleware<Provider<Http>, LocalWallet> {
     info!("Loading wallet");
 
     let node_url = settings.evm_settings.url.as_str();
@@ -634,11 +659,11 @@ async fn execute_send_repeatable(
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
         (),
     >,
-) -> Result<TransactionReceipt,String>{
-    while let Err(err) =  match execute_send(function_call.clone()).await {
+) -> Result<TransactionReceipt, String> {
+    while let Err(err) = match execute_send(function_call.clone()).await {
         Ok(receipt) => return Ok(receipt),
-        Err(err) => Err::<(), SendError>(err)
-    }{
+        Err(err) => Err::<(), SendError>(err),
+    } {
         match err {
             RepeatableError(_) => {
                 tokio::time::sleep(Duration::from_secs(
@@ -647,7 +672,7 @@ async fn execute_send_repeatable(
                         .parse()
                         .unwrap_or(5),
                 ))
-                    .await;
+                .await;
             }
             NonRepeatableError(err) => return Err(err),
         }
@@ -758,7 +783,7 @@ async fn execute_send(
 async fn process_jump(
     json: JsonValue,
     contract: edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>,
-) -> Result<TransactionReceipt,String>{
+) -> Result<TransactionReceipt, String> {
     debug!("Call register_system");
     let function_call: FunctionCall<
         Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,

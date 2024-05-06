@@ -297,7 +297,9 @@ impl Planet {
             ui.label(&self.event);
             ui.end_row();
             ui.label("Parents");
-            self.parents.iter().for_each(|parent| {ui.label(format!("{}-{}\n",parent.id,parent.name));});
+            self.parents.iter().for_each(|parent| {
+                ui.label(format!("{}-{}\n", parent.id, parent.name));
+            });
             ui.end_row();
         }
         ui.label("Class");

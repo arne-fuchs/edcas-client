@@ -132,15 +132,9 @@ impl EliteRustClient {
                                 self.explorer.systems[i]
                                     .body_count
                                     .clone_from(&system_meta_data.body_count.to_string());
-                                self.explorer.systems[i]
-                                    .x
-                                    .clone_from(&system_meta_data.x);
-                                self.explorer.systems[i]
-                                    .y
-                                    .clone_from(&system_meta_data.y);
-                                self.explorer.systems[i]
-                                    .z
-                                    .clone_from(&system_meta_data.z);
+                                self.explorer.systems[i].x.clone_from(&system_meta_data.x);
+                                self.explorer.systems[i].y.clone_from(&system_meta_data.y);
+                                self.explorer.systems[i].z.clone_from(&system_meta_data.z);
                             }
                         }
                     }
@@ -193,7 +187,10 @@ impl EliteRustClient {
 impl Default for EliteRustClient {
     fn default() -> Self {
         let log_path = initialize_logger();
-        let settings = settings::Settings { log_path, ..Default::default() };
+        let settings = settings::Settings {
+            log_path,
+            ..Default::default()
+        };
         let settings_pointer = Arc::new(settings.clone());
 
         info!("Starting...");
@@ -223,7 +220,7 @@ impl Default for EliteRustClient {
                 }
             })
             .expect("Failed to create thread jevm-handler");
-        
+
         info!("Starting Journal reader");
         let mut journal_bus: Bus<JsonValue> = Bus::new(100);
         let journal_bus_reader = journal_bus.add_rx();
@@ -241,7 +238,7 @@ impl Default for EliteRustClient {
             })
             .expect("Failed to create thread journal-reader");
         let settings_pointer_clone = settings_pointer.clone();
-        
+
         info!(
             "Allow to share data over edcas: {}",
             settings_pointer.evm_settings.allow_share_data
