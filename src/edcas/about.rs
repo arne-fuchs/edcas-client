@@ -25,7 +25,7 @@ impl Default for About {
         let pixels = image_buffer.as_flat_samples();
         let color_image = ColorImage::from_rgba_unmultiplied(size, pixels.as_slice());
         Self {
-            github_url: "https://github.com/arne-fuchs".to_owned(),
+            github_url: "https://github.com/arne-fuchs/edcas-client".to_owned(),
             logo: color_image,
         }
     }

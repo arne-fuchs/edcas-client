@@ -24,6 +24,9 @@ pub struct System {
     pub planet_signals: Vec<PlanetSignal>,
     pub index: usize,
     pub settings: Arc<Settings>,
+    pub x: f64,
+    pub y: f64,
+    pub z: f64
 }
 
 #[derive(Clone)]
@@ -127,6 +130,12 @@ impl System {
     }
 
     fn draw_system_details(&self, ui: &mut egui::Ui) {
+        #[cfg(debug_assertions)]
+        {
+            ui.label("Address");
+            ui.label(&self.address.to_string());
+            ui.end_row();
+        }
         ui.label("Allegiance");
         ui.label(&self.allegiance);
         ui.end_row();

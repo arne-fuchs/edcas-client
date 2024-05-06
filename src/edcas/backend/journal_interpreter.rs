@@ -47,6 +47,9 @@ pub fn interpret_json(
                 planet_signals: vec![],
                 index: 0,
                 settings: settings.clone(),
+                x: json["StarPos"][0].as_f64().unwrap_or(0.0),
+                y: json["StarPos"][1].as_f64().unwrap_or(0.0),
+                z: json["StarPos"][2].as_f64().unwrap_or(0.0),
             };
 
             evm_request_writer

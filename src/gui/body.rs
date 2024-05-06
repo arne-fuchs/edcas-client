@@ -288,6 +288,18 @@ impl Planet {
         let profit = get_profit_from_body(get_body_class_from_body(self), self.was_discovered);
         ui.heading(&self.body_name);
         ui.end_row();
+        #[cfg(debug_assertions)]
+        {
+            ui.label("ID");
+            ui.label(&self.body_id.to_string());
+            ui.end_row();
+            ui.label("Event");
+            ui.label(&self.event);
+            ui.end_row();
+            ui.label("Parents");
+            self.parents.iter().for_each(|parent| {ui.label(format!("{}-{}\n",parent.id,parent.name));});
+            ui.end_row();
+        }
         ui.label("Class");
         ui.label(&self.planet_class);
         ui.end_row();

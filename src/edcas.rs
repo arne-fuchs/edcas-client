@@ -129,6 +129,18 @@ impl EliteRustClient {
                                 self.explorer.systems[i]
                                     .population
                                     .clone_from(&system_meta_data.population);
+                                self.explorer.systems[i]
+                                    .body_count
+                                    .clone_from(&system_meta_data.body_count.to_string());
+                                self.explorer.systems[i]
+                                    .x
+                                    .clone_from(&system_meta_data.x);
+                                self.explorer.systems[i]
+                                    .y
+                                    .clone_from(&system_meta_data.y);
+                                self.explorer.systems[i]
+                                    .z
+                                    .clone_from(&system_meta_data.z);
                             }
                         }
                     }
@@ -180,8 +192,8 @@ impl EliteRustClient {
 }
 impl Default for EliteRustClient {
     fn default() -> Self {
-        initialize_logger();
-        let settings = settings::Settings::default();
+        let log_path = initialize_logger();
+        let settings = settings::Settings { log_path, ..Default::default() };
         let settings_pointer = Arc::new(settings.clone());
 
         info!("Starting...");
@@ -211,6 +223,7 @@ impl Default for EliteRustClient {
                 }
             })
             .expect("Failed to create thread jevm-handler");
+        
         info!("Starting Journal reader");
         let mut journal_bus: Bus<JsonValue> = Bus::new(100);
         let journal_bus_reader = journal_bus.add_rx();
@@ -228,6 +241,7 @@ impl Default for EliteRustClient {
             })
             .expect("Failed to create thread journal-reader");
         let settings_pointer_clone = settings_pointer.clone();
+        
         info!(
             "Allow to share data over edcas: {}",
             settings_pointer.evm_settings.allow_share_data
@@ -303,7 +317,7 @@ pub enum State {
     Mining,
 }
 
-fn initialize_logger() {
+fn initialize_logger() -> String {
     let mut log_directory = env::current_dir().unwrap().join("logs");
     if std::path::Path::new("/tmp/").exists() {
         log_directory = std::path::Path::new("/tmp/edcas-client/").to_path_buf();
@@ -370,4 +384,5 @@ fn initialize_logger() {
         .with_output(logger_output_config)
         .finish();
     fern_logger::logger_init(config).unwrap();
+    log_path.to_str().unwrap().to_string()
 }

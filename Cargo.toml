@@ -50,3 +50,6 @@ ethers = {version = "2.0.14"}
 [features]
 default = ["tui"]
 tui = ["dep:ratatui","dep:crossterm"]
+
+[diagnostics]
+# Ensure that Cargo does not ignore unused items that are never constructed.

@@ -16,6 +16,7 @@ use crate::edcas::backend::evm::edcas_contract::{
 use crate::edcas::backend::evm::journal_interpreter::SendError::{
     NonRepeatableError, RepeatableError,
 };
+use crate::edcas::backend::floating;
 
 use crate::edcas::settings::Settings;
 
@@ -55,30 +56,7 @@ impl EvmInterpreter {
                             .build()
                             .unwrap()
                             .block_on(async move {
-                                let contract = self.contract.clone();
-                                debug!("Call register_system");
-                                let function_call: FunctionCall<
-                                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
-                                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-                                    (),
-                                > = contract.register_system(
-                                    json["SystemAddress"].as_u64().unwrap(),
-                                    json["StarSystem"].to_string(),
-                                    json["SystemGovernment"].to_string(),
-                                    json["SystemAllegiance"].to_string(),
-                                    json["SystemEconomy"].to_string(),
-                                    json["SystemSecondEconomy"].to_string(),
-                                    json["SystemSecurity"].to_string(),
-                                    json["Population"].as_u64().unwrap_or(0),
-                                    DateTime::parse_from_rfc3339(
-                                        json["timestamp"].as_str().unwrap(),
-                                    )
-                                    .unwrap()
-                                    .timestamp()
-                                    .into(),
-                                );
-                                //execute_send(function_call).await;
-                                execute_send_repeatable(function_call).await;
+                                let _ = process_jump(json, self.contract.clone()).await;
                             });
                     }
                     "Scan" => {
@@ -103,7 +81,9 @@ impl EvmInterpreter {
                                         // "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734,
                                         // "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320,
                                         // "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
-                                        debug!("Call register_planet");
+                                        let body_id = json["BodyID"].as_u8().unwrap();
+                                        let system_address = json["SystemAddress"].as_u64().unwrap();
+                                        debug!("Call register_planet: {system_address}-{body_id}");
                                         let function_call: FunctionCall<
                                             Arc<
                                                 SignerMiddleware<
@@ -114,8 +94,8 @@ impl EvmInterpreter {
                                             SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
                                             (),
                                         > = contract.register_planet(
-                                            json["SystemAddress"].as_u64().unwrap(),
-                                            json["BodyID"].as_u8().unwrap(),
+                                            system_address,
+                                            body_id,
                                             json["BodyName"].to_string(),
                                             json["WasDiscovered"].as_bool().unwrap(),
                                             json["WasMapped"].as_bool().unwrap(),
@@ -128,7 +108,7 @@ impl EvmInterpreter {
                                             .timestamp()
                                             .into(),
                                         );
-                                        execute_send_repeatable(function_call).await;
+                                        let _ = execute_send_repeatable(function_call).await;
                                     } else {
                                         //Star
                                         //{"AbsoluteMagnitude":8.518448,"Age_MY":446,"AxialTilt":0,"BodyID":0,"BodyName":"Hyades Sector BB-N b7-5",
@@ -161,7 +141,7 @@ impl EvmInterpreter {
                                             .timestamp()
                                             .into(),
                                         );
-                                        execute_send_repeatable(function_call).await;
+                                        let _ = execute_send_repeatable(function_call).await;
                                     }
                                 } else {
                                     //TODO Interpret Belt Cluster and Ring
@@ -209,7 +189,7 @@ impl EvmInterpreter {
                                         .timestamp()
                                         .into(),
                                     );
-                                    execute_send_repeatable(function_call).await;
+                                    let _ = execute_send_repeatable(function_call).await;
                                 }
                             });
                     }
@@ -249,7 +229,7 @@ impl EvmInterpreter {
                                     .into(),
                                 );
                                 //execute_send(function_call).await;
-                                execute_send_repeatable(function_call).await;
+                                let _ = execute_send_repeatable(function_call).await;
                             });
                     }
                     "CarrierJumpCancelled" => {
@@ -267,7 +247,7 @@ impl EvmInterpreter {
                                 > = contract
                                     .cancel_carrier_jump(json["CarrierID"].as_u64().unwrap());
                                 //execute_send(function_call).await;
-                                execute_send_repeatable(function_call).await;
+                                let _ = execute_send_repeatable(function_call).await;
                             });
                     }
                     "CarrierJump" => {
@@ -280,7 +260,13 @@ impl EvmInterpreter {
                         // "SystemEconomy":"$economy_None;", "SystemEconomy_Localised":"n/v", "SystemSecondEconomy":"$economy_None;", "SystemSecondEconomy_Localised":"n/v",
                         // "SystemGovernment":"$government_None;", "SystemGovernment_Localised":"n/v", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;",
                         // "SystemSecurity_Localised":"Anarchie", "Population":0, "Body":"Plio Broae ML-D c2", "BodyID":0, "BodyType":"Star" }
-                        process_jump(json.clone(), self.contract.clone());
+                        tokio::runtime::Builder::new_multi_thread()
+                            .enable_all()
+                            .build()
+                            .unwrap()
+                            .block_on(async move {
+                                let _ = process_jump(json.clone(), self.contract.clone()).await;
+                            });
                     }
                     "CarrierBuy" => {
                         //{
@@ -304,7 +290,7 @@ impl EvmInterpreter {
                                 for entry in 0..json["Crew"].len() {
                                     if json["Crew"][entry]["Activated"].as_bool().unwrap_or(false) {
                                         if !services.is_empty() {
-                                            services.push_str(",");
+                                            services.push(',');
                                         }
                                         services.push_str(
                                             json["Crew"][entry]["CrewRole"].to_string().as_str(),
@@ -333,7 +319,7 @@ impl EvmInterpreter {
                                     .into(),
                                 );
                                 //execute_send(function_call).await;
-                                execute_send_repeatable(function_call).await;
+                                let _ = execute_send_repeatable(function_call).await;
                             });
                     }
                     "CarrierDecommission" => {
@@ -391,7 +377,7 @@ impl EvmInterpreter {
                                     .into(),
                                 );
                                 //execute_send(function_call).await;
-                                execute_send_repeatable(function_call).await;
+                                let _ = execute_send_repeatable(function_call).await;
                             });
                     }
                     "CarrierTradeOrder" => {}
@@ -452,7 +438,7 @@ impl EvmInterpreter {
                                                 .into(),
                                             );
                                         //execute_send(function_call).await;
-                                        execute_send_repeatable(function_call).await;
+                                        let _ = execute_send_repeatable(function_call).await;
                                         debug!("Call report_carrier_location");
                                         let function_call: ContractCall = contract
                                             .report_carrier_location(
@@ -467,7 +453,7 @@ impl EvmInterpreter {
                                                 .into(),
                                             );
                                         //execute_send(function_call).await;
-                                        execute_send_repeatable(function_call).await;
+                                        let _ = execute_send_repeatable(function_call).await;
                                     } else {
                                         debug!("Call register_station");
                                         let function_call: ContractCall = contract
@@ -496,20 +482,9 @@ impl EvmInterpreter {
                                                     .unwrap()
                                                     .to_string(),
                                                 services,
-                                                edcas_contract::Floating {
-                                                    decimal: json["DistFromStarLS"]
-                                                        .to_string()
-                                                        .replace('.', "")
-                                                        .parse()
-                                                        .unwrap(),
-                                                    floating_point: json["DistFromStarLS"]
-                                                        .to_string()
-                                                        .split('.')
-                                                        .nth(1)
-                                                        .unwrap_or("")
-                                                        .len()
-                                                        as u8,
-                                                },
+                                                floating::generate_floating_from_string(
+                                                    json["DistFromStarLS"].to_string(),
+                                                ),
                                                 json["LandingPads"].to_string(),
                                                 DateTime::parse_from_rfc3339(
                                                     json["timestamp"].as_str().unwrap(),
@@ -519,7 +494,7 @@ impl EvmInterpreter {
                                                 .into(),
                                             );
                                         //execute_send(function_call).await;
-                                        execute_send_repeatable(function_call).await;
+                                        let _ = execute_send_repeatable(function_call).await;
                                     }
                                 });
                         });
@@ -547,13 +522,24 @@ pub fn initialize(bus_reader: BusReader<JsonValue>, settings: Arc<Settings>) -> 
 pub async fn get_contract(
     settings: &Arc<Settings>,
 ) -> edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>> {
+    let sc_address = settings.evm_settings.smart_contract_address.as_str();
+
+    let client: SignerMiddleware<Provider<Http>, LocalWallet> = get_client(settings).await;
+
+    let edcas_address = sc_address.parse::<Address>().unwrap();
+
+    edcas_contract::EDCAS::new(edcas_address, Arc::new(client.clone()))
+}
+
+pub async fn get_client(
+    settings: &Arc<Settings>,
+) -> SignerMiddleware<Provider<Http>, LocalWallet> {
     info!("Loading wallet");
 
     let node_url = settings.evm_settings.url.as_str();
     let private = settings.evm_settings.private_key.as_str();
     let retry = settings.evm_settings.n_attempts;
     let timeout = settings.evm_settings.n_timeout;
-    let sc_address = settings.evm_settings.smart_contract_address.as_str();
 
     info!("Using URL:{}", &node_url);
 
@@ -570,12 +556,7 @@ pub async fn get_contract(
         tokio::time::sleep(Duration::from_secs(timeout)).await;
         result = SignerMiddleware::new_with_provider_chain(provider.clone(), wallet.clone()).await;
     }
-
-    let client: SignerMiddleware<Provider<Http>, LocalWallet> = result.unwrap();
-
-    let edcas_address = sc_address.parse::<Address>().unwrap();
-
-    edcas_contract::EDCAS::new(edcas_address, Arc::new(client.clone()))
+    result.unwrap()
 }
 
 fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
@@ -598,132 +579,22 @@ fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
             .as_bool()
             .unwrap_or_else(|| panic!("Tidal Lock not parseable {}", json)),
         parent_id,
-        mass_em: edcas_contract::Floating {
-            decimal: json["MassEM"].to_string().replace('.', "").parse().unwrap(),
-            floating_point: json["MassEM"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        surface_gravity: edcas_contract::Floating {
-            decimal: json["SurfaceGravity"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["SurfaceGravity"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        surface_pressure: edcas_contract::Floating {
-            decimal: json["SurfacePressure"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["SurfacePressure"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        ascending_node: edcas_contract::Floating {
-            decimal: json["AscendingNode"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap_or(0),
-            floating_point: json["AscendingNode"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        eccentricity: edcas_contract::Floating {
-            decimal: json["Eccentricity"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap_or_else(|_| panic!("Eccentricity invalid parse: {}", json)),
-            floating_point: json["Eccentricity"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        mean_anomaly: edcas_contract::Floating {
-            decimal: json["MeanAnomaly"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap_or(0),
-            floating_point: json["MeanAnomaly"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        orbital_inclination: edcas_contract::Floating {
-            decimal: json["OrbitalInclination"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["OrbitalInclination"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        orbital_period: edcas_contract::Floating {
-            decimal: json["OrbitalPeriod"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["OrbitalPeriod"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        periapsis: edcas_contract::Floating {
-            decimal: json["Periapsis"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["Periapsis"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        semi_major_axis: edcas_contract::Floating {
-            decimal: json["SemiMajorAxis"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["SemiMajorAxis"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
+        mass_em: floating::generate_floating_from_string(json["MassEM"].to_string()),
+        surface_gravity: floating::generate_floating_from_string(
+            json["SurfaceGravity"].to_string(),
+        ),
+        surface_pressure: floating::generate_floating_from_string(
+            json["SurfacePressure"].to_string(),
+        ),
+        ascending_node: floating::generate_floating_from_string(json["AscendingNode"].to_string()),
+        eccentricity: floating::generate_floating_from_string(json["Eccentricity"].to_string()),
+        mean_anomaly: floating::generate_floating_from_string(json["MeanAnomaly"].to_string()),
+        orbital_inclination: floating::generate_floating_from_string(
+            json["OrbitalInclination"].to_string(),
+        ),
+        orbital_period: floating::generate_floating_from_string(json["OrbitalPeriod"].to_string()),
+        periapsis: floating::generate_floating_from_string(json["Periapsis"].to_string()),
+        semi_major_axis: floating::generate_floating_from_string(json["SemiMajorAxis"].to_string()),
     }
 }
 fn extract_star_properties(json: &JsonValue) -> StarProperties {
@@ -732,97 +603,25 @@ fn extract_star_properties(json: &JsonValue) -> StarProperties {
         age_my: json["Age_MY"].as_u16().unwrap(),
         type_: json["StarType"].to_string(),
         luminosity: json["Luminosity"].to_string(),
-        stellar_mass: edcas_contract::Floating {
-            decimal: json["StellarMass"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["StellarMass"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        absolute_magnitude: edcas_contract::Floating {
-            decimal: json["AbsoluteMagnitude"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap_or_else(|_| panic!("AbsoluteMagnitude parse error: {}", json)),
-            floating_point: json["AbsoluteMagnitude"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
+        stellar_mass: floating::generate_floating_from_string(json["StellarMass"].to_string()),
+        absolute_magnitude: floating::generate_floating_from_string(
+            json["AbsoluteMagnitude"].to_string(),
+        ),
     }
 }
 fn extract_body_properties(json: &JsonValue) -> BodyProperties {
     BodyProperties {
-        radius: edcas_contract::Floating {
-            decimal: json["Radius"].to_string().replace('.', "").parse().unwrap(),
-            floating_point: json["Radius"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        distance_from_arrival_ls: edcas_contract::Floating {
-            decimal: json["DistanceFromArrivalLS"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["DistanceFromArrivalLS"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        axial_tilt: edcas_contract::Floating {
-            decimal: json["AxialTilt"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["AxialTilt"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        rotation_period: edcas_contract::Floating {
-            decimal: json["RotationPeriod"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["RotationPeriod"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
-        surface_temperature: edcas_contract::Floating {
-            decimal: json["SurfaceTemperature"]
-                .to_string()
-                .replace('.', "")
-                .parse()
-                .unwrap(),
-            floating_point: json["SurfaceTemperature"]
-                .to_string()
-                .split('.')
-                .nth(1)
-                .unwrap_or("")
-                .len() as u8,
-        },
+        radius: floating::generate_floating_from_string(json["Radius"].to_string()),
+        distance_from_arrival_ls: floating::generate_floating_from_string(
+            json["DistanceFromArrivalLS"].to_string(),
+        ),
+        axial_tilt: floating::generate_floating_from_string(json["AxialTilt"].to_string()),
+        rotation_period: floating::generate_floating_from_string(
+            json["RotationPeriod"].to_string(),
+        ),
+        surface_temperature: floating::generate_floating_from_string(
+            json["SurfaceTemperature"].to_string(),
+        ),
     }
 }
 enum SendError {
@@ -835,8 +634,11 @@ async fn execute_send_repeatable(
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
         (),
     >,
-) {
-    while let Err(err) = execute_send(function_call.clone()).await {
+) -> Result<TransactionReceipt,String>{
+    while let Err(err) =  match execute_send(function_call.clone()).await {
+        Ok(receipt) => return Ok(receipt),
+        Err(err) => Err::<(), SendError>(err)
+    }{
         match err {
             RepeatableError(_) => {
                 tokio::time::sleep(Duration::from_secs(
@@ -845,11 +647,12 @@ async fn execute_send_repeatable(
                         .parse()
                         .unwrap_or(5),
                 ))
-                .await;
+                    .await;
             }
-            NonRepeatableError(_) => break,
+            NonRepeatableError(err) => return Err(err),
         }
     }
+    Err("Unknown".into())
 }
 async fn execute_send(
     function_call: FunctionCall<
@@ -857,14 +660,14 @@ async fn execute_send(
         SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
         (),
     >,
-) -> Result<H256, SendError> {
+) -> Result<TransactionReceipt, SendError> {
     match function_call.legacy().send().await {
         Ok(pending) => match pending.await {
             Ok(receipt) => {
                 if let Some(receipt) = receipt {
                     if let Some(hash) = receipt.block_hash {
                         info!("Success calling function: {:?}", hash);
-                        Ok(hash)
+                        Ok(receipt)
                     } else {
                         Err(NonRepeatableError("Receipt without hash".into()))
                     }
@@ -952,40 +755,36 @@ async fn execute_send(
         },
     }
 }
-fn process_jump(
+async fn process_jump(
     json: JsonValue,
     contract: edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>,
-) {
-    thread::spawn(|| {
-        tokio::runtime::Builder::new_multi_thread()
-            .enable_all()
-            .build()
+) -> Result<TransactionReceipt,String>{
+    debug!("Call register_system");
+    let function_call: FunctionCall<
+        Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+        SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+        (),
+    > = contract.register_system(
+        json["SystemAddress"].as_u64().unwrap(),
+        json["StarSystem"].to_string(),
+        json["SystemGovernment"].to_string(),
+        json["SystemAllegiance"].to_string(),
+        json["SystemEconomy"].to_string(),
+        json["SystemSecondEconomy"].to_string(),
+        json["SystemSecurity"].to_string(),
+        json["Population"].as_u64().unwrap_or(0),
+        floating::generate_floating_from_string(json["StarPos"][0].to_string()),
+        floating::generate_floating_from_string(json["StarPos"][1].to_string()),
+        floating::generate_floating_from_string(json["StarPos"][2].to_string()),
+        DateTime::parse_from_rfc3339(json["timestamp"].as_str().unwrap())
             .unwrap()
-            .block_on(async move {
-                debug!("Call register_system");
-                let function_call: FunctionCall<
-                    Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
-                    SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-                    (),
-                > = contract.register_system(
-                    json["SystemAddress"].as_u64().unwrap(),
-                    json["StarSystem"].to_string(),
-                    json["SystemGovernment"].to_string(),
-                    json["SystemAllegiance"].to_string(),
-                    json["SystemEconomy"].to_string(),
-                    json["SystemSecondEconomy"].to_string(),
-                    json["SystemSecurity"].to_string(),
-                    json["Population"].as_u64().unwrap_or(0),
-                    DateTime::parse_from_rfc3339(json["timestamp"].as_str().unwrap())
-                        .unwrap()
-                        .timestamp()
-                        .into(),
-                );
-                //execute_send(function_call).await;
-                execute_send_repeatable(function_call).await;
-            });
-    });
+            .timestamp()
+            .into(),
+    );
+    //execute_send(function_call).await;
+    execute_send_repeatable(function_call).await
 }
+
 fn get_revert_message(bytes: Bytes) -> String {
     let n = bytes.split_at(134 / 2).1;
     let n: &[u8] = n.split(|b| *b == 0u8).next().unwrap();

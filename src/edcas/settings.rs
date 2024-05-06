@@ -125,6 +125,7 @@ pub struct Settings {
     pub stars: HashMap<String, Icon>,
     pub planets: HashMap<String, Icon>,
     pub settings_path: String,
+    pub log_path: String,
 }
 
 impl Default for Settings {
@@ -492,6 +493,7 @@ impl Default for Settings {
             stars,
             planets,
             settings_path,
+            log_path: "".to_string(),
         }
     }
 }

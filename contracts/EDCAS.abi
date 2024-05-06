@@ -179,6 +179,25 @@
           "internalType": "uint64",
           "name": "systemAddress",
           "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint8",
+          "name": "count",
+          "type": "uint8"
+        }
+      ],
+      "name": "SystemBodyCountRegistration",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": false,
+          "internalType": "uint64",
+          "name": "systemAddress",
+          "type": "uint64"
         }
       ],
       "name": "SystemRegistration",
@@ -863,6 +882,45 @@
           "internalType": "struct BodyProperties",
           "name": "bodyProperties",
           "type": "tuple"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "body_id",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "name": "planetSignalMap",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "enum PlanetSignalType",
+          "name": "_type",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint8",
+          "name": "count",
+          "type": "uint8"
         }
       ],
       "stateMutability": "view",
@@ -1672,6 +1730,57 @@
           "type": "uint64"
         },
         {
+          "components": [
+            {
+              "internalType": "int128",
+              "name": "decimal",
+              "type": "int128"
+            },
+            {
+              "internalType": "uint8",
+              "name": "floating_point",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct floating",
+          "name": "x",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int128",
+              "name": "decimal",
+              "type": "int128"
+            },
+            {
+              "internalType": "uint8",
+              "name": "floating_point",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct floating",
+          "name": "y",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int128",
+              "name": "decimal",
+              "type": "int128"
+            },
+            {
+              "internalType": "uint8",
+              "name": "floating_point",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct floating",
+          "name": "z",
+          "type": "tuple"
+        },
+        {
           "internalType": "uint256",
           "name": "timestamp",
           "type": "uint256"
@@ -1706,6 +1815,29 @@
         }
       ],
       "name": "report_carrier_location",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "system_address",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "body_count",
+          "type": "uint8"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        }
+      ],
+      "name": "set_body_count",
       "outputs": [],
       "stateMutability": "nonpayable",
       "type": "function"
@@ -2092,6 +2224,62 @@
           "internalType": "uint64",
           "name": "population",
           "type": "uint64"
+        },
+        {
+          "internalType": "uint8",
+          "name": "body_count",
+          "type": "uint8"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int128",
+              "name": "decimal",
+              "type": "int128"
+            },
+            {
+              "internalType": "uint8",
+              "name": "floating_point",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct floating",
+          "name": "x",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int128",
+              "name": "decimal",
+              "type": "int128"
+            },
+            {
+              "internalType": "uint8",
+              "name": "floating_point",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct floating",
+          "name": "y",
+          "type": "tuple"
+        },
+        {
+          "components": [
+            {
+              "internalType": "int128",
+              "name": "decimal",
+              "type": "int128"
+            },
+            {
+              "internalType": "uint8",
+              "name": "floating_point",
+              "type": "uint8"
+            }
+          ],
+          "internalType": "struct floating",
+          "name": "z",
+          "type": "tuple"
         }
       ],
       "stateMutability": "view",

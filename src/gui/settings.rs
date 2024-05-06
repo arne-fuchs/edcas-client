@@ -45,6 +45,12 @@ impl App for crate::edcas::settings::Settings {
                             opener::open(&self.journal_reader_settings.journal_directory).unwrap();
                         }
                         ui.end_row();
+                        ui.label("Log File:");
+                        ui.label(&self.log_path);
+                        if ui.button("Open").clicked() {
+                            opener::open(&self.log_path).unwrap();
+                        }
+                        ui.end_row();
                         ui.label("Action after reaching shutdown:");
                         egui::ComboBox::from_label("")
                             .selected_text(self.journal_reader_settings.action_at_shutdown_signal.to_string())
