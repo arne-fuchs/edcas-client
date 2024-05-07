@@ -139,7 +139,14 @@ impl EvmInterpreter {
                                             .timestamp()
                                             .into(),
                                         );
-                                        let _ = execute_send_repeatable(function_call).await;
+                                        match execute_send_repeatable(function_call).await {
+                                            Ok(receipt) => {
+                                                debug!("Call register_planet successfull {}-{}: {} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
+                                            }
+                                            Err(error) => {
+                                                debug!("Call register_planet failed {}-{}: {}",system_address,body_id,error);
+                                            }
+                                        }
                                     } else {
                                         //Star
                                         //{"AbsoluteMagnitude":8.518448,"Age_MY":446,"AxialTilt":0,"BodyID":0,"BodyName":"Hyades Sector BB-N b7-5",
@@ -148,6 +155,9 @@ impl EvmInterpreter {
                                         // "SurfaceTemperature":3367.0,"SystemAddress":11666070513017,"WasDiscovered":true,"WasMapped":false,"event":"Scan","horizons":true,
                                         // "odyssey":true,"timestamp":"2024-03-26T21:27:53Z"}
                                         debug!("Call register_star");
+                                        let body_id = json["BodyID"].as_u8().unwrap();
+                                        let system_address =
+                                            json["SystemAddress"].as_u64().unwrap();
                                         let function_call: FunctionCall<
                                             Arc<
                                                 SignerMiddleware<
@@ -158,8 +168,8 @@ impl EvmInterpreter {
                                             SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
                                             (),
                                         > = contract.register_star(
-                                            json["SystemAddress"].as_u64().unwrap(),
-                                            json["BodyID"].as_u8().unwrap(),
+                                            system_address,
+                                            body_id,
                                             json["BodyName"].to_string(),
                                             json["WasDiscovered"].as_bool().unwrap(),
                                             json["WasMapped"].as_bool().unwrap(),
@@ -172,7 +182,14 @@ impl EvmInterpreter {
                                             .timestamp()
                                             .into(),
                                         );
-                                        let _ = execute_send_repeatable(function_call).await;
+                                        match execute_send_repeatable(function_call).await {
+                                            Ok(receipt) => {
+                                                debug!("Call register_planet successfull {}-{}: {} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
+                                            }
+                                            Err(error) => {
+                                                debug!("Call register_planet failed {}-{}: {}",system_address,body_id,error);
+                                            }
+                                        }
                                     }
                                 } else {
                                     //TODO Interpret Belt Cluster and Ring

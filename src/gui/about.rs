@@ -1,17 +1,17 @@
-use eframe::egui::TextureHandle;
+use eframe::egui::{include_image};
 use eframe::{egui, App};
 
 impl App for crate::edcas::about::About {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.vertical_centered(|ui| {
-                let texture: TextureHandle =
-                    ui.ctx()
-                        .load_texture("logo", self.logo.clone(), egui::TextureOptions::LINEAR);
-                let image = egui::Image::new(&texture).max_width(512.0).rounding(10.0);
-                ui.add(image);
+                ui.add(
+                    egui::Image::new(include_image!("../../graphics/logo/edcas.png"))
+                        .max_width(512.0)
+                        .rounding(10.0),
+                );
                 ui.label("Discord:");
-                ui.hyperlink("https://discord.gg/fsstTkAw");
+                ui.hyperlink(&self.discord_url);
                 ui.end_row();
                 ui.label("Github:");
                 ui.hyperlink(&self.github_url);

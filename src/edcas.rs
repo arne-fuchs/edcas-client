@@ -20,7 +20,6 @@ use crate::edcas::backend::evm::edcas_contract::StationIdentity;
 use crate::edcas::explorer::system::PlanetSignal;
 use json::JsonValue;
 use log::info;
-use num_format::Locale::fo;
 
 use crate::edcas::materials::MaterialState;
 use crate::edcas::station::{Station, StationState};

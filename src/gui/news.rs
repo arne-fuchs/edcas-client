@@ -1,16 +1,16 @@
-use eframe::egui::TextureHandle;
+use eframe::egui::{include_image};
 use eframe::{egui, App};
 
 impl App for crate::edcas::news::News {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         egui::CentralPanel::default().show(ctx, |ui| {
             egui::ScrollArea::vertical().show(ui, |ui| {
-                let texture: TextureHandle =
-                    ui.ctx()
-                        .load_texture("logo", self.logo.clone(), egui::TextureOptions::LINEAR);
-                let image = egui::Image::new(&texture).max_width(512.0).rounding(10.0);
                 ui.vertical_centered(|ui| {
-                    ui.add(image);
+                    ui.add(
+                        egui::Image::new(include_image!("../../graphics/logo/edcas.png"))
+                            .max_width(512.0)
+                            .rounding(10.0),
+                    );
                     ui.heading("Galnet News");
                 });
 

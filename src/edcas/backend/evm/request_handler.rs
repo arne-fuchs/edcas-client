@@ -211,7 +211,7 @@ impl EvmUpdater {
                                     let mut planet_list = vec![];
 
                                     let mut timestamp: U256 = U256::max_value();
-                                    let mut index = 1;
+                                    let mut index = 0;
                                     while index <= highest_id
                                         || (highest_id == 0 && timestamp != U256::from(0)) {
                                         debug!("Call star_map: {system_address}-{index}");

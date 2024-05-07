@@ -1,33 +1,13 @@
-use eframe::egui::ColorImage;
 use log::error;
 use select::document::Document;
 use select::predicate::{Attr, Name, Predicate};
 
 pub struct News {
     pub(crate) articles: Vec<Article>,
-    pub logo: ColorImage,
 }
 
 impl Default for News {
     fn default() -> Self {
-        let mut logo_path = image::io::Reader::open("graphics\\logo\\edcas.png");
-        if cfg!(target_os = "linux") {
-            match image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas.png") {
-                Ok(_) => {
-                    logo_path =
-                        image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas.png");
-                }
-                Err(_) => {
-                    logo_path = image::io::Reader::open("graphics/logo/edcas.png");
-                }
-            }
-        }
-        let image = logo_path.unwrap().decode().unwrap();
-        let size = [image.width() as _, image.height() as _];
-        let image_buffer = image.to_rgba8();
-        let pixels = image_buffer.as_flat_samples();
-        let color_image = ColorImage::from_rgba_unmultiplied(size, pixels.as_slice());
-
         let articles = tokio::runtime::Builder::new_current_thread()
             .enable_all()
             .build()
@@ -70,8 +50,7 @@ impl Default for News {
             });
 
         Self {
-            articles,
-            logo: color_image,
+            articles
         }
     }
 }

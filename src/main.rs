@@ -78,7 +78,7 @@ fn main() {
                 image = image::open("/usr/share/edcas-client/graphics/logo/edcas_128.png");
             }
             Err(_) => {
-                image = image::open("graphics/logo/edcas.png");
+                image = image::open("edcas/graphics/logo/edcas.png");
             }
         }
     }
