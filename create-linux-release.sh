@@ -42,11 +42,6 @@ mkdir "$folder_name"/usr/share
 mkdir "$folder_name"/usr/share/"$folder_name"
 cp materials.json "$folder_name"/usr/share/"$folder_name"/materials.json
 
-mkdir "$folder_name"/usr/share/"$folder_name"/graphics
-mkdir "$folder_name"/usr/share/"$folder_name"/graphics/logo
-cp graphics/logo/edcas.png "$folder_name"/usr/share/"$folder_name"/graphics/logo/edcas.png
-cp graphics/logo/edcas_128.png "$folder_name"/usr/share/"$folder_name"/graphics/logo/edcas_128.png
-
 mkdir "$folder_name"/DEBIAN
 cp control "$folder_name"/DEBIAN/
 
