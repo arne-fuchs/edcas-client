@@ -11,7 +11,7 @@ impl App for crate::edcas::about::About {
                 let image = egui::Image::new(&texture).max_width(512.0).rounding(10.0);
                 ui.add(image);
                 ui.label("Discord:");
-                ui.hyperlink("https://discord.gg/esVdaaAXP5");
+                ui.hyperlink("https://discord.gg/fsstTkAw");
                 ui.end_row();
                 ui.label("Github:");
                 ui.hyperlink(&self.github_url);
