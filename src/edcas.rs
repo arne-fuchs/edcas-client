@@ -128,9 +128,9 @@ impl EliteRustClient {
                                 self.explorer.systems[i]
                                     .population
                                     .clone_from(&system_meta_data.population);
-                                if self.explorer.systems[i]
-                                    .body_count.is_empty() || self.explorer.systems[i]
-                                    .body_count == "n/v" {
+                                if self.explorer.systems[i].body_count.is_empty()
+                                    || self.explorer.systems[i].body_count == "n/v"
+                                {
                                     self.explorer.systems[i]
                                         .body_count
                                         .clone_from(&system_meta_data.body_count.to_string());

@@ -98,7 +98,7 @@ impl Star {
             ui.label(&self.event);
             ui.end_row();
             ui.label("Parents");
-            ui.vertical(|ui|{
+            ui.vertical(|ui| {
                 self.parents.iter().for_each(|parent| {
                     ui.label(format!("{}-{}\n", parent.id, parent.name));
                 });
@@ -313,7 +313,7 @@ impl Planet {
             ui.label(&self.event);
             ui.end_row();
             ui.label("Parents");
-            ui.vertical(|ui|{
+            ui.vertical(|ui| {
                 self.parents.iter().for_each(|parent| {
                     ui.label(format!("{}-{}\n", parent.id, parent.name));
                 });

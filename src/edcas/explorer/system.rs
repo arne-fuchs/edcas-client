@@ -136,7 +136,7 @@ impl System {
             ui.label(&self.address.to_string());
             ui.end_row();
             ui.label("Coordinates");
-            ui.label(format!("{}|{}|{}",&self.x,&self.y,&self.z));
+            ui.label(format!("{}|{}|{}", &self.x, &self.y, &self.z));
             ui.end_row();
         }
         ui.label("Allegiance");

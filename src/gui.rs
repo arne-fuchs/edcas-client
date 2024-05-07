@@ -19,7 +19,7 @@ impl App for EliteRustClient {
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
         if !self.settings.appearance_settings.applied {
             egui_extras::install_image_loaders(ctx);
-            
+
             let mut style: egui::Style = (*ctx.style()).clone();
             for (text_style, font_id) in style.text_styles.iter_mut() {
                 match text_style {

@@ -49,9 +49,7 @@ impl Default for News {
                 articles
             });
 
-        Self {
-            articles
-        }
+        Self { articles }
     }
 }
 

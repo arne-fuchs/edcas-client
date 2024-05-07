@@ -80,9 +80,9 @@ impl EvmInterpreter {
                                         DateTime::parse_from_rfc3339(
                                             json["timestamp"].as_str().unwrap(),
                                         )
-                                            .unwrap()
-                                            .timestamp()
-                                            .into(),
+                                        .unwrap()
+                                        .timestamp()
+                                        .into(),
                                     );
                                     //execute_send(function_call).await;
                                     let _ = execute_send_repeatable(function_call).await;

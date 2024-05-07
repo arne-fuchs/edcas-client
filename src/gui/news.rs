@@ -1,4 +1,4 @@
-use eframe::egui::{include_image};
+use eframe::egui::include_image;
 use eframe::{egui, App};
 
 impl App for crate::edcas::news::News {
