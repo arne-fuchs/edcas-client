@@ -1,11 +1,13 @@
 #![allow(dead_code)]
 extern crate core;
 
-use eframe::egui::{IconData, Pos2, ViewportBuilder};
-use eframe::HardwareAcceleration;
+use eframe::egui::{IconData, include_image, Pos2, ViewportBuilder};
+use eframe::{egui, HardwareAcceleration};
 use std::env;
 use std::str::FromStr;
 use std::sync::Arc;
+use eframe::glow::{RGBA8, Texture};
+use image::{DynamicImage, ImageFormat};
 
 use crate::edcas::EliteRustClient;
 
@@ -70,26 +72,16 @@ fn main() {
 
     let client = Box::<EliteRustClient>::default();
 
-    //App icon
-    let mut image = image::open("graphics\\logo\\edcas_128.png");
-    if cfg!(target_os = "linux") {
-        match image::io::Reader::open("/usr/share/edcas-client/graphics/logo/edcas_128.png") {
-            Ok(_) => {
-                image = image::open("/usr/share/edcas-client/graphics/logo/edcas_128.png");
-            }
-            Err(_) => {
-                image = image::open("edcas/graphics/logo/edcas.png");
-            }
-        }
-    }
-
+    let source = include_bytes!("../graphics/logo/edcas_128.png");
+    let image = image::load_from_memory(source);
+    
     let (icon_rgba, icon_width, icon_height) = {
         let image = image.unwrap().into_rgba8();
         let (width, height) = image.dimensions();
         let rgba = image.into_raw();
         (rgba, width, height)
     };
-
+    
     let icon = IconData {
         rgba: icon_rgba,
         width: icon_width,
