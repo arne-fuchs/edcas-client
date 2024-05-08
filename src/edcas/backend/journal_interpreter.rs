@@ -841,13 +841,17 @@ pub fn interpret_json(
         "Died" => {}
         "Resurrect" => {}
         "SelfDestruct" => {}
+        
+        //Redeem
+        "ShipyardRedeem" => {}
+        "ShipRedeemed" => {}
 
         "Fileheader" => {}
         "Shutdown" => {}
         "" => {}
         _ => {
             warn!("Unknown event: {}", &event);
-            println!("UNKNOWN EVENT:{}", event);
+            println!("UNKNOWN EVENT: {}", event);
         }
     }
     if now.elapsed().as_secs() >= 1 {
