@@ -834,7 +834,10 @@ async fn process_jump(
 }
 
 fn get_revert_message(bytes: Bytes) -> String {
-    let n = bytes.split_at(134 / 2).1;
-    let n: &[u8] = n.split(|b| *b == 0u8).next().unwrap();
-    String::from_utf8(n.to_vec()).unwrap()
+    if bytes.len() > 134 {
+        let n = bytes.split_at(134 / 2).1;
+        let n: &[u8] = n.split(|b| *b == 0u8).next().unwrap();
+        return String::from_utf8(n.to_vec()).unwrap()
+    }
+    bytes.to_string()
 }
