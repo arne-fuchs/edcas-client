@@ -195,76 +195,81 @@ impl App for Settings {
                         if self.evm_settings.show_upload_data_window {
                             Window::new("Upload journal data ⬆").show(ctx,|ui| {
                                 ui.label("Are you sure to upload all journal data to the EDCAS network? Depending on the size of your journal logs, it may can take up to several hours.");
-                                        if let Some(upload_status) = &self.evm_settings.uploader_status {
-                                            let status = upload_status.total as f32 / (upload_status.total - upload_status.current) as f32 ;
-                                            ui.add(egui::ProgressBar::new(status));
-                                        }else if ui.button("Do it!").clicked(){
-                                            let mut progress_bus: Bus<i64> = Bus::new(10);
-                                            let progress_bus_reader = progress_bus.add_rx();
+                                ui.vertical_centered(|ui|{
+                                    if let Some(ref mut upload_status) = self.evm_settings.uploader_status {
+                                        ui.label("You close this window and still use EDCAS. It will run in the background");
+                                        if let Ok(index) = upload_status.index_updates.try_recv() {upload_status.current = index as u32;}
+                                        let status = (upload_status.total - upload_status.current) as f32 / upload_status.total as f32;
+                                        ui.add(egui::ProgressBar::new(status).text(format!("{} of {} logs complete",upload_status.total - upload_status.current,upload_status.total)));
+                                    }else if ui.button("Do it!").clicked(){
+                                        let mut progress_bus: Bus<i64> = Bus::new(10);
+                                        let progress_bus_reader = progress_bus.add_rx();
 
-                                            let mut journal_bus: Bus<JsonValue> = Bus::new(1000);
-                                            let journal_bus_reader = journal_bus.add_rx();
-                                            let mut evm_reader = initialize(journal_bus_reader, &self.evm_settings);
-                                            thread::Builder::new()
-                                                .name("edcas-journal-uploader-evm".into())
-                                                .spawn(move || {
-                                                    loop {
-                                                        evm_reader.run();
-                                                    }
-                                                })
-                                                .expect("Failed to create thread journal-reader-evm");
+                                        let mut journal_bus: Bus<JsonValue> = Bus::new(1000);
+                                        let journal_bus_reader = journal_bus.add_rx();
+                                        let mut evm_reader = initialize(journal_bus_reader, &self.evm_settings);
+                                        thread::Builder::new()
+                                            .name("edcas-journal-uploader-evm".into())
+                                            .spawn(move || {
+                                                loop {
+                                                    evm_reader.run();
+                                                }
+                                            })
+                                            .expect("Failed to create thread journal-reader-evm");
 
-                                            let path = self.journal_reader_settings.journal_directory.clone();
-                                            let mut index:i64 = get_log_file_list(&path).len() as i64;
-                                            thread::Builder::new()
-                                                .name("edcas-journal-uploader".into())
-                                                .spawn(move || {
-                                                    tokio::runtime::Builder::new_multi_thread()
-                                                        .enable_all()
-                                                        .build()
-                                                        .unwrap()
-                                                        .block_on(async move {
-                                                            while index >= 0 {
-                                                                let mut journal = get_journal_log_by_index(path.clone(), index as usize);
-                                                                let mut line = String::new();
-                                                                let mut flag: usize = 1;
-                                                                while flag != 0 {
-                                                                    match journal.read_line(&mut line) {
-                                                                        Ok(line_flag) => {
-                                                                            if line_flag == 0 {
-                                                                                flag = 0;
-                                                                            } else if !line.eq("") {
-                                                                                let json_result = json::parse(&line);
-                                                                                match json_result {
-                                                                                    Ok(json) => {
-                                                                                        journal_bus.broadcast(json);
-                                                                                    }
-                                                                                    Err(err) => {
-                                                                                        error!("Couldn't parse json: {}", err)
-                                                                                    }
+                                        let path = self.journal_reader_settings.journal_directory.clone();
+                                        let mut index:i64 = get_log_file_list(&path).len() as i64;
+                                        thread::Builder::new()
+                                            .name("edcas-journal-uploader".into())
+                                            .spawn(move || {
+                                                tokio::runtime::Builder::new_multi_thread()
+                                                    .enable_all()
+                                                    .build()
+                                                    .unwrap()
+                                                    .block_on(async move {
+                                                        while index > 0 {
+                                                            index -= 1;
+                                                            let mut journal = get_journal_log_by_index(path.clone(), index as usize);
+                                                            let mut line = String::new();
+                                                            let mut flag: usize = 1;
+                                                            while flag != 0 {
+                                                                match journal.read_line(&mut line) {
+                                                                    Ok(line_flag) => {
+                                                                        if line_flag == 0 {
+                                                                            flag = 0;
+                                                                        } else if !line.eq("") {
+                                                                            let json_result = json::parse(&line);
+                                                                            match json_result {
+                                                                                Ok(json) => {
+                                                                                    journal_bus.broadcast(json);
+                                                                                }
+                                                                                Err(err) => {
+                                                                                    error!("Couldn't parse json: {}", err)
                                                                                 }
                                                                             }
-                                                                            line.clear();
                                                                         }
-                                                                        Err(_err) => {
-                                                                            error!("Error reading journal file!");
-                                                                        }
-                                                                    };
-                                                                }
-                                                                index -= 1;
-                                                                progress_bus.broadcast(index);
+                                                                        line.clear();
+                                                                    }
+                                                                    Err(_err) => {
+                                                                        error!("Error reading journal file!");
+                                                                    }
+                                                                };
                                                             }
-                                                        })
-                                                }).expect("Cannot spawn edcas-journal-uploader thread");
-                                            self.evm_settings.uploader_status = Some(UploaderStatus{
-                                                current: 0,
-                                                total: 0,
-                                                index_updates: progress_bus_reader,
-                                            });
-                                        }
+                                                            progress_bus.broadcast(index);
+                                                        }
+                                                    })
+                                            }).expect("Cannot spawn edcas-journal-uploader thread");
+                                        self.evm_settings.uploader_status = Some(UploaderStatus{
+                                            current: 0,
+                                            total: index as u32,
+                                            index_updates: progress_bus_reader,
+                                        });
+                                    }
                                     if ui.button("Close Window").clicked() {
                                         self.evm_settings.show_upload_data_window = false;
                                     }
+                                });
+
                             }).unwrap();
                         }
 

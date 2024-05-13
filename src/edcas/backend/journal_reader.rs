@@ -155,8 +155,8 @@ pub fn get_journal_log_by_index(mut directory_path: String, index: usize) -> Buf
     BufReader::new(journal_log_file)
 }
 
-pub fn get_log_file_list(directory_path: &String) -> Vec<String> {
-    let directory = fs::read_dir(directory_path.clone()).unwrap();
+pub fn get_log_file_list(directory_path: &str) -> Vec<String> {
+    let directory = fs::read_dir(directory_path).unwrap();
 
     let mut log_name_date_list: Vec<String> = Vec::new();
 
