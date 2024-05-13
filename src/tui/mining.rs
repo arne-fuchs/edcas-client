@@ -27,12 +27,14 @@ fn data_prospector_text(
     }
 
     [
-        [
-            "┌ ".to_string(),
-            mining_content.to_owned(),
-            " ───────────────────".to_string(),
-        ]
-        .join(""),
+        ["┌".to_string(), mining_content.to_owned(), {
+            let mut line = "─".to_string();
+            for i in 0..(35 - mining_content.len()) {
+                line.push('─');
+            }
+            line
+        }]
+        .join(" "),
         [
             "│ ".to_string(),
             "remaining: ".to_string(),
