@@ -79,11 +79,11 @@ impl CargoReader {
                                         let mut sell_price = -1f64;
                                         let mut mean_price = -1f64;
                                         let mut highest_sell_price = 0u64;
-                                        let mut highest_sell_station = String::from("N/A");
-                                        let mut highest_sell_system = String::from("N/A");
+                                        let mut highest_sell_station = String::from("n/v");
+                                        let mut highest_sell_system = String::from("n/v");
                                         let mut lowest_buy_price = 0u64;
-                                        let mut lowest_buy_station = String::from("N/A");
-                                        let mut lowest_buy_system = String::from("N/A");
+                                        let mut lowest_buy_station = String::from("n/v");
+                                        let mut lowest_buy_system = String::from("n/v");
                                         let mut price_history: Vec<PricePoint> = vec![];
 
                                         for old_cargo in &self.inventory {

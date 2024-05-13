@@ -10,7 +10,7 @@ use crate::edcas::settings::Settings;
 use crate::edcas::station::{CommodityListening, StationMetaData};
 use bus::Bus;
 use chrono::DateTime;
-use ethers::contract::{ContractCall, ContractError};
+use ethers::contract::ContractCall;
 use ethers::middleware::SignerMiddleware;
 use ethers::prelude::{Http, LocalWallet, Provider, U256};
 use log::{debug, error};
@@ -232,7 +232,7 @@ impl EvmUpdater {
                                                 planet_list.push(BodyType::Star(Star {
                                                     timestamp: result.0.to_string(),
                                                     event: "EVM".to_string(),
-                                                    scan_type: "N/A".to_string(),
+                                                    scan_type: "n/v".to_string(),
                                                     body_name: result.2,
                                                     body_id: result.1 as u64,
                                                     parents: vec![], //TODO Implement Parents
@@ -297,7 +297,7 @@ impl EvmUpdater {
                                                 }))
                                             }
                                             Err(err) => {
-                                                error!("Error getting star data: {err}");
+                                                error!("Error getting star data: {err} -> Trying to get planet...");
 
                                                 debug!("Call get_planet_signals: {system_address}-{index}");
                                                 let function_call: ContractCall<
@@ -352,7 +352,7 @@ impl EvmUpdater {
                                                         planet_list.push(BodyType::Planet(Planet {
                                                             timestamp: result.0.to_string(),
                                                             event: "EVM".to_string(),
-                                                            scan_type: "N/A".to_string(),
+                                                            scan_type: "n/v".to_string(),
                                                             body_name: result.2,
                                                             body_id: result.1 as u64,
                                                             parents: vec![Parent {
@@ -474,7 +474,7 @@ impl EvmUpdater {
                                         }
                                         index += 1;
                                     }
-                                    planet_list.sort_by_key(|planet_a| planet_a.get_id());
+                                    planet_list.sort_by_key(|planet| planet.get_id());
                                     self.writer.broadcast(EvmUpdate::PlanetList(
                                         system_address,
                                         planet_list,

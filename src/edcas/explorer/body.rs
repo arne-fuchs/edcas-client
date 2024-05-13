@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use json::JsonValue;
-use log::debug;
 
 use crate::edcas::explorer::planet::AsteroidRing;
 use crate::edcas::settings::Settings;
@@ -273,8 +272,8 @@ pub struct Signal {
 impl Default for Signal {
     fn default() -> Self {
         Self {
-            r#type: "N/A".to_string(),
-            type_localised: "N/A".to_string(),
+            r#type: "n/v".to_string(),
+            type_localised: "n/v".to_string(),
             count: 0,
         }
     }

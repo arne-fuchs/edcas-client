@@ -124,8 +124,8 @@ pub fn tab_explorer(
             data_planet_signals.clear();
         }
 
-        if client.explorer.systems[client.explorer.index].non_body_count != "N/A"
-            && client.explorer.systems[client.explorer.index].body_count != "N/A"
+        if client.explorer.systems[client.explorer.index].non_body_count != "n/v"
+            && client.explorer.systems[client.explorer.index].body_count != "n/v"
         {
             data_system_gauge_scanned = client.explorer.systems[client.explorer.index]
                 .body_list

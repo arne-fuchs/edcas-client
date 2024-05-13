@@ -114,7 +114,7 @@ impl EvmInterpreter {
                                         let body_id = json["BodyID"].as_u8().unwrap();
                                         let system_address =
                                             json["SystemAddress"].as_u64().unwrap();
-                                        debug!("Call register_planet: {system_address}-{body_id}");
+                                        debug!("Call register_planet: {system_address}-{body_id}-{}",json["BodyName"]);
                                         let function_call: FunctionCall<
                                             Arc<
                                                 SignerMiddleware<
@@ -141,7 +141,7 @@ impl EvmInterpreter {
                                         );
                                         match execute_send_repeatable(function_call).await {
                                             Ok(receipt) => {
-                                                debug!("Call register_planet successfull {}-{}: {} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
+                                                debug!("Call register_planet successful {}-{}: {:?} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
                                             }
                                             Err(error) => {
                                                 debug!("Call register_planet failed {}-{}: {}",system_address,body_id,error);
@@ -154,10 +154,10 @@ impl EvmInterpreter {
                                         // "StarPos":[12.1875,-74.90625,-120.5],"StarSystem":"Hyades Sector BB-N b7-5","StarType":"M","StellarMass":0.394531,"Subclass":1,
                                         // "SurfaceTemperature":3367.0,"SystemAddress":11666070513017,"WasDiscovered":true,"WasMapped":false,"event":"Scan","horizons":true,
                                         // "odyssey":true,"timestamp":"2024-03-26T21:27:53Z"}
-                                        debug!("Call register_star");
                                         let body_id = json["BodyID"].as_u8().unwrap();
                                         let system_address =
                                             json["SystemAddress"].as_u64().unwrap();
+                                        debug!("Call register_star: {system_address}-{body_id}-{}",json["BodyName"]);
                                         let function_call: FunctionCall<
                                             Arc<
                                                 SignerMiddleware<
@@ -184,14 +184,15 @@ impl EvmInterpreter {
                                         );
                                         match execute_send_repeatable(function_call).await {
                                             Ok(receipt) => {
-                                                debug!("Call register_planet successfull {}-{}: {} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
+                                                debug!("Call register_star successful {}-{}: {:?} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash.to_string(),receipt.block_number);
                                             }
                                             Err(error) => {
-                                                debug!("Call register_planet failed {}-{}: {}",system_address,body_id,error);
+                                                debug!("Call register_star failed {}-{}: {}",system_address,body_id,error);
                                             }
                                         }
                                     }
                                 } else {
+                                    debug!("Belt Cluster -> unimplemented")
                                     //TODO Interpret Belt Cluster and Ring
                                 }
                             });
@@ -221,7 +222,7 @@ impl EvmInterpreter {
                                                 &_ => 0,
                                             }
                                         };
-                                        debug!("Call register_planet_signal: {system_address}-{body_id}-{type_}");
+                                        debug!("Call register_planet_signal: {system_address}-{body_id}-{type_}-{}",json["BodyName"]);
                                         let function_call: FunctionCall<
                                             Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
                                             SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -720,7 +721,7 @@ async fn execute_send(
                         Err(NonRepeatableError("Receipt without hash".into()))
                     }
                 } else {
-                    Err(NonRepeatableError("No Receipt".into()))
+                    Err(RepeatableError("No Receipt".into()))
                 }
             }
             Err(err) => match err {
@@ -837,7 +838,7 @@ fn get_revert_message(bytes: Bytes) -> String {
     if bytes.len() > 134 {
         let n = bytes.split_at(134 / 2).1;
         let n: &[u8] = n.split(|b| *b == 0u8).next().unwrap();
-        return String::from_utf8(n.to_vec()).unwrap()
+        return String::from_utf8(n.to_vec()).unwrap();
     }
     bytes.to_string()
 }

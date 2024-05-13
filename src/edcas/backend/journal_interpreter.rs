@@ -40,8 +40,8 @@ pub fn interpret_json(
                 government_localised: json["SystemGovernment_Localised"].to_string(),
                 security_localised: json["SystemSecurity_Localised"].to_string(),
                 population: json["Population"].to_string(),
-                body_count: "N/A".to_string(),
-                non_body_count: "N/A".to_string(),
+                body_count: "n/v".to_string(),
+                non_body_count: "n/v".to_string(),
                 signal_list: vec![],
                 body_list: vec![],
                 planet_signals: vec![],
@@ -51,6 +51,10 @@ pub fn interpret_json(
                 y: json["StarPos"][1].as_f64().unwrap_or(0.0),
                 z: json["StarPos"][2].as_f64().unwrap_or(0.0),
             };
+
+            evm_request_writer
+                .send(EvmRequest::SystemMetaData(system.address))
+                .unwrap();
 
             evm_request_writer
                 .send(EvmRequest::SystemPlanetData(system.address))
@@ -184,7 +188,7 @@ pub fn interpret_json(
         "SAAScanComplete" => {}
         "Scan" => {
             //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40, "Parents":[ {"Star":1}, {"Null":0} ], "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435, "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant", "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ], "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730, "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734, "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320, "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
-            info!("Body found: {}", json["BodyName"].to_string());
+            info!("Body found: {} Id: {}", json["BodyName"].to_string(),json["BodyID"].to_string());
             if !explorer.systems.is_empty() {
                 let mut body = body::generate_from_json(json.clone(), settings.clone());
 
@@ -841,7 +845,7 @@ pub fn interpret_json(
         "Died" => {}
         "Resurrect" => {}
         "SelfDestruct" => {}
-        
+
         //Redeem
         "ShipyardRedeem" => {}
         "ShipRedeemed" => {}

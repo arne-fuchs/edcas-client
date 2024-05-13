@@ -152,7 +152,7 @@ pub fn get_body_class_from_body(planet: &Planet) -> BodyClass {
         "Star" => Star,
         _ => {
             if planet.planet_class.is_empty()
-                || planet.planet_class.eq("N/A")
+                || planet.planet_class.eq("n/v")
                 || planet.planet_class.eq("null")
             {
                 return Star;

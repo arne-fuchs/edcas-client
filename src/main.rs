@@ -1,4 +1,4 @@
-#![allow(dead_code)]
+#![allow(unreachable_code)]
 extern crate core;
 
 use eframe::egui::{IconData, Pos2, ViewportBuilder};

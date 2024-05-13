@@ -107,38 +107,42 @@ impl EliteRustClient {
                         let length = self.explorer.systems.len();
                         for i in 0..length {
                             if self.explorer.systems[i].address == system_address {
-                                self.explorer.systems[i]
-                                    .name
-                                    .clone_from(&system_meta_data.name);
-                                self.explorer.systems[i]
-                                    .allegiance
-                                    .clone_from(&system_meta_data.allegiance);
-                                self.explorer.systems[i]
-                                    .government_localised
-                                    .clone_from(&system_meta_data.government);
-                                self.explorer.systems[i]
-                                    .economy_localised
-                                    .clone_from(&system_meta_data.economy);
-                                self.explorer.systems[i]
-                                    .second_economy_localised
-                                    .clone_from(&system_meta_data.second_economy);
-                                self.explorer.systems[i]
-                                    .security_localised
-                                    .clone_from(&system_meta_data.security);
-                                self.explorer.systems[i]
-                                    .population
-                                    .clone_from(&system_meta_data.population);
-                                if self.explorer.systems[i].body_count.is_empty()
-                                    || self.explorer.systems[i].body_count == "n/v"
-                                {
+                                #[warn(clippy::collapsible_if)]
+                                if self.explorer.systems[i]
+                                    .body_count == "n/v" {
                                     self.explorer.systems[i]
                                         .body_count
                                         .clone_from(&system_meta_data.body_count.to_string());
                                 }
+                                //Currently it doesn't make sense to put in the values since, if system is loaded, the data is already available, except body and non-body count
+                                /*
+                                self.explorer.systems[i]
+                                    .name
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.name));
+                                self.explorer.systems[i]
+                                    .allegiance
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.allegiance));
+                                self.explorer.systems[i]
+                                    .government_localised
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.government));
+                                self.explorer.systems[i]
+                                    .economy_localised
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.economy));
+                                self.explorer.systems[i]
+                                    .second_economy_localised
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.second_economy));
+                                self.explorer.systems[i]
+                                    .security_localised
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.security));
+                                self.explorer.systems[i]
+                                    .population
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.population));
 
                                 self.explorer.systems[i].x.clone_from(&system_meta_data.x);
                                 self.explorer.systems[i].y.clone_from(&system_meta_data.y);
                                 self.explorer.systems[i].z.clone_from(&system_meta_data.z);
+                                */
+
                             }
                         }
                     }
