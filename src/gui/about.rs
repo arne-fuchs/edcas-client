@@ -13,7 +13,7 @@ impl App for crate::edcas::about::About {
                 ui.label("Discord:");
                 ui.hyperlink(&self.discord_url);
                 ui.end_row();
-                ui.label("Github:");
+                ui.label(" Github:");
                 ui.hyperlink(&self.github_url);
                 ui.end_row();
 

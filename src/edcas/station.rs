@@ -1,5 +1,5 @@
 use std::sync::mpsc::Sender;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::edcas::backend::evm::edcas_contract;
 use crate::edcas::request_handler::EvmRequest;
@@ -11,7 +11,7 @@ pub struct StationState {
     pub stations: Vec<Station>,
     pub search: String,
     pub evm_request_writer: Sender<EvmRequest>,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
 }
 
 #[derive(Clone)]

@@ -1,3 +1,4 @@
+use bus::BusReader;
 use std::default::Default;
 use std::fmt::Display;
 use std::fs::File;
@@ -25,7 +26,6 @@ use crate::edcas::settings::ActionAtShutdownSignal::{Continue, Exit, Nothing};
 
 pub(crate) mod presets;
 
-#[derive(Clone)]
 pub struct Icon {
     pub name: String,
     pub char: String,
@@ -39,7 +39,6 @@ impl Icon {
     }
 }
 
-#[derive(Clone)]
 pub struct AppearanceSettings {
     pub font_size: f32,
     pub font_style: String,
@@ -47,7 +46,6 @@ pub struct AppearanceSettings {
     pub applied: bool,
 }
 
-#[derive(Clone)]
 pub struct JournalReaderSettings {
     pub journal_directory: String,
     pub action_at_shutdown_signal: ActionAtShutdownSignal,
@@ -90,12 +88,10 @@ impl PartialEq for ActionAtShutdownSignal {
     }
 }
 
-#[derive(Clone)]
 pub struct ExplorerSettings {
     pub include_system_name: bool,
 }
 
-#[derive(Clone)]
 pub struct EvmSettings {
     pub url: String,
     pub n_timeout: u64,
@@ -104,17 +100,22 @@ pub struct EvmSettings {
     pub private_key: String,
     pub smart_contract_address: String,
     pub contract: Option<Edcas>,
+    pub show_upload_data_window: bool,
+    pub uploader_status: Option<UploaderStatus>,
 }
 
-#[derive(Clone)]
+pub struct UploaderStatus {
+    pub current: u32,
+    pub total: u32,
+    pub index_updates: BusReader<i64>,
+}
+
 pub struct GraphicEditorSettings {
     pub graphics_directory: String,
     pub graphic_override_content: String,
     pub show_editor: bool,
 }
 
-//TODO Add odyssey? option and make api calls depend on it
-#[derive(Clone)]
 pub struct Settings {
     pub appearance_settings: AppearanceSettings,
     pub journal_reader_settings: JournalReaderSettings,
@@ -482,6 +483,8 @@ impl Default for Settings {
                 private_key,
                 smart_contract_address,
                 contract,
+                show_upload_data_window: false,
+                uploader_status: None,
             },
             graphic_editor_settings: GraphicEditorSettings {
                 graphics_directory: graphics_directory.clone(),

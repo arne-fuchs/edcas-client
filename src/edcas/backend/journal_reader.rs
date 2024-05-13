@@ -1,6 +1,6 @@
 use std::fs::{DirEntry, File};
 use std::io::{BufRead, BufReader};
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 use std::thread::sleep;
 use std::time::Duration;
 use std::{fs, process};
@@ -14,13 +14,18 @@ use crate::edcas::settings::{ActionAtShutdownSignal, Settings};
 
 pub struct JournalReader {
     pub reader: BufReader<File>,
-    index: usize,
-    settings: Arc<Settings>,
+    pub index: usize,
+    pub settings: Arc<Mutex<Settings>>,
 }
 
-pub fn initialize(settings: Arc<Settings>) -> JournalReader {
+pub fn initialize(settings: Arc<Mutex<Settings>>) -> JournalReader {
     let mut reader = get_journal_log_by_index(
-        settings.journal_reader_settings.journal_directory.clone(),
+        settings
+            .lock()
+            .unwrap()
+            .journal_reader_settings
+            .journal_directory
+            .clone(),
         0,
     );
     let flag = 1;
@@ -40,7 +45,12 @@ pub fn initialize(settings: Arc<Settings>) -> JournalReader {
                                 //debug!("\n\nReached Shutdown -> looking for newer journals\n");
                                 sleep(Duration::from_secs(1));
                                 reader = get_journal_log_by_index(
-                                    settings.journal_reader_settings.journal_directory.clone(),
+                                    settings
+                                        .lock()
+                                        .unwrap()
+                                        .journal_reader_settings
+                                        .journal_directory
+                                        .clone(),
                                     0,
                                 )
                             }
@@ -59,12 +69,14 @@ pub fn initialize(settings: Arc<Settings>) -> JournalReader {
     }
 
     info!("Journal reader found new journal -> initializing");
-
+    let journal_directory = settings
+        .lock()
+        .unwrap()
+        .journal_reader_settings
+        .journal_directory
+        .clone();
     JournalReader {
-        reader: get_journal_log_by_index(
-            settings.journal_reader_settings.journal_directory.clone(),
-            0,
-        ),
+        reader: get_journal_log_by_index(journal_directory, 0),
         index: 0,
         settings,
     }
@@ -90,6 +102,8 @@ impl JournalReader {
                             if event == "Shutdown" {
                                 match self
                                     .settings
+                                    .lock()
+                                    .unwrap()
                                     .journal_reader_settings
                                     .action_at_shutdown_signal
                                 {
@@ -102,6 +116,8 @@ impl JournalReader {
                                         self.index += 1;
                                         self.reader = get_journal_log_by_index(
                                             self.settings
+                                                .lock()
+                                                .unwrap()
                                                 .journal_reader_settings
                                                 .journal_directory
                                                 .clone(),
@@ -126,7 +142,20 @@ impl JournalReader {
     }
 }
 
-fn get_journal_log_by_index(mut directory_path: String, index: usize) -> BufReader<File> {
+pub fn get_journal_log_by_index(mut directory_path: String, index: usize) -> BufReader<File> {
+    let log_name_date_list = get_log_file_list(&mut directory_path);
+
+    //Reader WILL crash at this point by an index out of bounds exception if it cant find any more logs
+    directory_path.push_str("/Journal.");
+    directory_path.push_str(log_name_date_list[index].to_owned().as_str());
+    directory_path.push_str(".01.log");
+
+    let journal_log_file = File::open(&directory_path).expect("file not found!");
+
+    BufReader::new(journal_log_file)
+}
+
+pub fn get_log_file_list(directory_path: &String) -> Vec<String> {
     let directory = fs::read_dir(directory_path.clone()).unwrap();
 
     let mut log_name_date_list: Vec<String> = Vec::new();
@@ -149,13 +178,5 @@ fn get_journal_log_by_index(mut directory_path: String, index: usize) -> BufRead
 
         date_time_a.cmp(&date_time_b).reverse()
     });
-
-    //Reader WILL crash at this point by an index out of bounds exception if it cant find any more logs
-    directory_path.push_str("/Journal.");
-    directory_path.push_str(log_name_date_list[index].to_owned().as_str());
-    directory_path.push_str(".01.log");
-
-    let journal_log_file = File::open(&directory_path).expect("file not found!");
-
-    BufReader::new(journal_log_file)
+    log_name_date_list
 }

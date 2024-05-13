@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use log::warn;
 
@@ -82,7 +82,7 @@ pub struct Planet {
     pub reserve_level: String,
     pub asteroid_rings: Vec<AsteroidRing>,
     pub planet_signals: Vec<Signal>,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
 }
 
 pub enum BodyClass {

@@ -15,7 +15,7 @@ use ethers::middleware::SignerMiddleware;
 use ethers::prelude::{Http, LocalWallet, Provider, U256};
 use log::{debug, error};
 use std::sync::mpsc::Receiver;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 #[derive(Clone)]
 pub enum EvmUpdate {
@@ -43,7 +43,7 @@ pub enum EvmRequest {
 pub struct EvmUpdater {
     writer: Bus<EvmUpdate>,
     receiver: Receiver<EvmRequest>,
-    settings: Arc<Settings>,
+    settings: Arc<Mutex<Settings>>,
 }
 
 #[derive(Clone)]
@@ -65,7 +65,7 @@ pub struct SystemMetaData {
 pub fn initialize(
     writer: Bus<EvmUpdate>,
     receiver: Receiver<EvmRequest>,
-    settings: Arc<Settings>,
+    settings: Arc<Mutex<Settings>>,
 ) -> EvmUpdater {
     EvmUpdater {
         writer,
@@ -76,7 +76,7 @@ pub fn initialize(
 
 impl EvmUpdater {
     pub fn run_update(&mut self) {
-        if let Some(contract) = &self.settings.evm_settings.contract {
+        if let Some(contract) = &self.settings.lock().unwrap().evm_settings.contract {
             tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()

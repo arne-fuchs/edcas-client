@@ -17,34 +17,88 @@ mod station;
 
 impl App for EliteRustClient {
     fn update(&mut self, ctx: &Context, frame: &mut eframe::Frame) {
-        if !self.settings.appearance_settings.applied {
+        if !self.settings.lock().unwrap().appearance_settings.applied {
             egui_extras::install_image_loaders(ctx);
 
             let mut style: egui::Style = (*ctx.style()).clone();
             for (text_style, font_id) in style.text_styles.iter_mut() {
                 match text_style {
                     TextStyle::Small => {
-                        if self.settings.appearance_settings.font_id.size > 4.0 {
-                            font_id.size = self.settings.appearance_settings.font_id.size - 4.0;
+                        if self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .appearance_settings
+                            .font_id
+                            .size
+                            > 4.0
+                        {
+                            font_id.size = self
+                                .settings
+                                .lock()
+                                .unwrap()
+                                .appearance_settings
+                                .font_id
+                                .size
+                                - 4.0;
                         } else {
-                            font_id.size = self.settings.appearance_settings.font_id.size;
+                            font_id.size = self
+                                .settings
+                                .lock()
+                                .unwrap()
+                                .appearance_settings
+                                .font_id
+                                .size;
                         }
                     }
                     TextStyle::Heading => {
-                        font_id.size = self.settings.appearance_settings.font_id.size + 4.0;
+                        font_id.size = self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .appearance_settings
+                            .font_id
+                            .size
+                            + 4.0;
                     }
                     _ => {
-                        font_id.size = self.settings.appearance_settings.font_id.size;
-                        font_id.family = self.settings.appearance_settings.font_id.family.clone();
+                        font_id.size = self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .appearance_settings
+                            .font_id
+                            .size;
+                        font_id.family = self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .appearance_settings
+                            .font_id
+                            .family
+                            .clone();
                     }
                 }
             }
             ctx.set_style(style);
-            self.settings.appearance_settings.font_size =
-                self.settings.appearance_settings.font_id.size;
-            self.settings.appearance_settings.font_style =
-                self.settings.appearance_settings.font_id.family.to_string();
-            self.settings.appearance_settings.applied = true;
+            let size = self
+                .settings
+                .lock()
+                .unwrap()
+                .appearance_settings
+                .font_id
+                .size;
+            self.settings.lock().unwrap().appearance_settings.font_size = size;
+            let style = self
+                .settings
+                .lock()
+                .unwrap()
+                .appearance_settings
+                .font_id
+                .family
+                .to_string();
+            self.settings.lock().unwrap().appearance_settings.font_style = style;
+            self.settings.lock().unwrap().appearance_settings.applied = true;
         }
 
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
@@ -122,7 +176,7 @@ impl App for EliteRustClient {
             About => self.about.update(ctx, frame),
             StationPage => self.station.update(ctx, frame),
             CarrierPage => self.carrier.update(ctx, frame),
-            Settings => self.settings.update(ctx, frame),
+            Settings => self.settings.lock().unwrap().update(ctx, frame),
             Explorer => self.explorer.update(ctx, frame),
             MaterialInventory => self.materials.update(ctx, frame),
             Mining => self.mining.update(ctx, frame),

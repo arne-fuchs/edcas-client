@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::edcas::explorer::system::System;
 use crate::edcas::settings::Settings;
@@ -14,5 +14,5 @@ pub struct Explorer {
     pub systems: Vec<System>,
     pub index: usize,
     pub body_list_index: Option<usize>,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
 }

@@ -30,6 +30,8 @@ impl Star {
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
         if self
             .settings
+            .lock()
+            .unwrap()
             .stars
             .get(self.star_type.as_str())
             .unwrap()
@@ -37,6 +39,8 @@ impl Star {
         {
             ui.label(
                 self.settings
+                    .lock()
+                    .unwrap()
                     .stars
                     .get(self.star_type.as_str())
                     .unwrap()
@@ -45,7 +49,13 @@ impl Star {
             );
         }
         let mut body_name = self.body_name.to_string();
-        if !self.settings.explorer_settings.include_system_name {
+        if !self
+            .settings
+            .lock()
+            .unwrap()
+            .explorer_settings
+            .include_system_name
+        {
             body_name.replace_range(0..self.star_system.len(), "");
         }
         if ui.selectable_label(false, &body_name).clicked() {
@@ -55,6 +65,8 @@ impl Star {
         for ring in &self.asteroid_rings {
             if self
                 .settings
+                .lock()
+                .unwrap()
                 .icons
                 .get(ring.ring_class.as_str())
                 .unwrap()
@@ -63,6 +75,8 @@ impl Star {
                 ui.label("|");
                 ui.label(
                     self.settings
+                        .lock()
+                        .unwrap()
                         .icons
                         .get(ring.ring_class.as_str())
                         .unwrap()
@@ -71,19 +85,47 @@ impl Star {
             }
         }
 
-        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled {
+        if self.was_discovered
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("discovered")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
             ui.label(
                 self.settings
+                    .lock()
+                    .unwrap()
                     .icons
                     .get("discovered")
                     .unwrap()
                     .get_richtext(),
             );
         }
-        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled {
+        if self.was_mapped
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("mapped")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
-            ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
+            ui.label(
+                self.settings
+                    .lock()
+                    .unwrap()
+                    .icons
+                    .get("mapped")
+                    .unwrap()
+                    .get_richtext(),
+            );
         }
     }
     fn print_side_panel_information(&self, ui: &mut Ui) {
@@ -149,6 +191,8 @@ impl Planet {
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
         if self
             .settings
+            .lock()
+            .unwrap()
             .planets
             .get(self.planet_class.as_str())
             .unwrap()
@@ -156,6 +200,8 @@ impl Planet {
         {
             ui.label(
                 self.settings
+                    .lock()
+                    .unwrap()
                     .planets
                     .get(self.planet_class.as_str())
                     .unwrap()
@@ -165,7 +211,13 @@ impl Planet {
         }
 
         let mut body_name = self.body_name.to_string();
-        if !self.settings.explorer_settings.include_system_name {
+        if !self
+            .settings
+            .lock()
+            .unwrap()
+            .explorer_settings
+            .include_system_name
+        {
             body_name.replace_range(0..self.star_system.len(), "");
         }
         if ui.selectable_label(false, &body_name).clicked() {
@@ -175,6 +227,8 @@ impl Planet {
         for ring in &self.asteroid_rings {
             if self
                 .settings
+                .lock()
+                .unwrap()
                 .icons
                 .get(ring.ring_class.as_str())
                 .unwrap()
@@ -183,6 +237,8 @@ impl Planet {
                 ui.label("|");
                 ui.label(
                     self.settings
+                        .lock()
+                        .unwrap()
                         .icons
                         .get(ring.ring_class.as_str())
                         .unwrap()
@@ -191,9 +247,26 @@ impl Planet {
             }
         }
 
-        if self.landable && self.settings.icons.get("landable").unwrap().enabled {
+        if self.landable
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("landable")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
-            ui.label(self.settings.icons.get("landable").unwrap().get_richtext());
+            ui.label(
+                self.settings
+                    .lock()
+                    .unwrap()
+                    .icons
+                    .get("landable")
+                    .unwrap()
+                    .get_richtext(),
+            );
         }
 
         if !self.planet_signals.is_empty() {
@@ -206,11 +279,21 @@ impl Planet {
                 //⛅☁ -> Atmosphere
                 match signal.r#type.as_str() {
                     "$SAA_SignalType_Biological;" => {
-                        if self.settings.icons.get("bio_signal").unwrap().enabled {
+                        if self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .icons
+                            .get("bio_signal")
+                            .unwrap()
+                            .enabled
+                        {
                             ui.label("|");
                             ui.label(&signal.count.to_string());
                             ui.label(
                                 self.settings
+                                    .lock()
+                                    .unwrap()
                                     .icons
                                     .get("bio_signal")
                                     .unwrap()
@@ -219,11 +302,21 @@ impl Planet {
                         }
                     }
                     "$SAA_SignalType_Geological;" => {
-                        if self.settings.icons.get("geo_signal").unwrap().enabled {
+                        if self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .icons
+                            .get("geo_signal")
+                            .unwrap()
+                            .enabled
+                        {
                             ui.label("|");
                             ui.label(&signal.count.to_string());
                             ui.label(
                                 self.settings
+                                    .lock()
+                                    .unwrap()
                                     .icons
                                     .get("geo_signal")
                                     .unwrap()
@@ -232,11 +325,21 @@ impl Planet {
                         }
                     }
                     "$SAA_SignalType_Xenological;" => {
-                        if self.settings.icons.get("xeno_signal").unwrap().enabled {
+                        if self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .icons
+                            .get("xeno_signal")
+                            .unwrap()
+                            .enabled
+                        {
                             ui.label("|");
                             ui.label(&signal.count.to_string());
                             ui.label(
                                 self.settings
+                                    .lock()
+                                    .unwrap()
                                     .icons
                                     .get("xeno_signal")
                                     .unwrap()
@@ -245,11 +348,21 @@ impl Planet {
                         }
                     }
                     "$SAA_SignalType_Human;" => {
-                        if self.settings.icons.get("human_signal").unwrap().enabled {
+                        if self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .icons
+                            .get("human_signal")
+                            .unwrap()
+                            .enabled
+                        {
                             ui.label("|");
                             ui.label(&signal.count.to_string());
                             ui.label(
                                 self.settings
+                                    .lock()
+                                    .unwrap()
                                     .icons
                                     .get("human_signal")
                                     .unwrap()
@@ -258,11 +371,21 @@ impl Planet {
                         }
                     }
                     _ => {
-                        if self.settings.icons.get("unknown_signal").unwrap().enabled {
+                        if self
+                            .settings
+                            .lock()
+                            .unwrap()
+                            .icons
+                            .get("unknown_signal")
+                            .unwrap()
+                            .enabled
+                        {
                             ui.label("|");
                             ui.label(&signal.count.to_string());
                             ui.label(
                                 self.settings
+                                    .lock()
+                                    .unwrap()
                                     .icons
                                     .get("unknown_signal")
                                     .unwrap()
@@ -273,31 +396,91 @@ impl Planet {
                 }
             }
         }
-        if self.settings.icons.get("gravity").unwrap().enabled {
+        if self
+            .settings
+            .lock()
+            .unwrap()
+            .icons
+            .get("gravity")
+            .unwrap()
+            .enabled
+        {
             ui.label("|");
             ui.label(self.surface_gravity.to_string());
             ui.label("G");
-            ui.label(self.settings.icons.get("gravity").unwrap().get_richtext());
+            ui.label(
+                self.settings
+                    .lock()
+                    .unwrap()
+                    .icons
+                    .get("gravity")
+                    .unwrap()
+                    .get_richtext(),
+            );
         }
-        if self.settings.icons.get("distance").unwrap().enabled {
+        if self
+            .settings
+            .lock()
+            .unwrap()
+            .icons
+            .get("distance")
+            .unwrap()
+            .enabled
+        {
             ui.label("|");
             ui.label((self.distance_from_arrival_ls as u64).to_formatted_string(&Locale::en));
             ui.label("LS");
-            ui.label(self.settings.icons.get("distance").unwrap().get_richtext());
+            ui.label(
+                self.settings
+                    .lock()
+                    .unwrap()
+                    .icons
+                    .get("distance")
+                    .unwrap()
+                    .get_richtext(),
+            );
         }
-        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled {
+        if self.was_discovered
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("discovered")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
             ui.label(
                 self.settings
+                    .lock()
+                    .unwrap()
                     .icons
                     .get("discovered")
                     .unwrap()
                     .get_richtext(),
             );
         }
-        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled {
+        if self.was_mapped
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("mapped")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
-            ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
+            ui.label(
+                self.settings
+                    .lock()
+                    .unwrap()
+                    .icons
+                    .get("mapped")
+                    .unwrap()
+                    .get_richtext(),
+            );
         }
     }
     fn print_side_panel_information(&self, ui: &mut Ui) {
@@ -403,7 +586,13 @@ impl Planet {
 impl Ring {
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
         let mut body_name = self.body_name.to_string();
-        if !self.settings.explorer_settings.include_system_name {
+        if !self
+            .settings
+            .lock()
+            .unwrap()
+            .explorer_settings
+            .include_system_name
+        {
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(), "");
         }
@@ -425,25 +614,69 @@ impl Ring {
                 body_name.push_str(signal_name.as_str());
             }
         }
-        if self.settings.icons.get("distance").unwrap().enabled {
+        if self
+            .settings
+            .lock()
+            .unwrap()
+            .icons
+            .get("distance")
+            .unwrap()
+            .enabled
+        {
             ui.label("|");
             ui.label((self.distance_from_arrival_ls as u64).to_formatted_string(&Locale::en));
             ui.label(" LS");
-            ui.label(self.settings.icons.get("distance").unwrap().get_richtext());
+            ui.label(
+                self.settings
+                    .lock()
+                    .unwrap()
+                    .icons
+                    .get("distance")
+                    .unwrap()
+                    .get_richtext(),
+            );
         }
-        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled {
+        if self.was_discovered
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("discovered")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
             ui.label(
                 self.settings
+                    .lock()
+                    .unwrap()
                     .icons
                     .get("discovered")
                     .unwrap()
                     .get_richtext(),
             );
         }
-        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled {
+        if self.was_mapped
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("mapped")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
-            ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
+            ui.label(
+                self.settings
+                    .lock()
+                    .unwrap()
+                    .icons
+                    .get("mapped")
+                    .unwrap()
+                    .get_richtext(),
+            );
         }
     }
     fn print_side_panel_information(&self, ui: &mut Ui) {
@@ -463,9 +696,19 @@ impl Ring {
 
 impl BeltCluster {
     fn print_header_content(&self, ui: &mut Ui, system_index: &mut usize, body_index: usize) {
-        if self.settings.icons.get("belt_cluster").unwrap().enabled {
+        if self
+            .settings
+            .lock()
+            .unwrap()
+            .icons
+            .get("belt_cluster")
+            .unwrap()
+            .enabled
+        {
             ui.label(
                 self.settings
+                    .lock()
+                    .unwrap()
                     .icons
                     .get("belt_cluster")
                     .unwrap()
@@ -473,7 +716,13 @@ impl BeltCluster {
             );
         }
         let mut body_name = self.body_name.to_string();
-        if !self.settings.explorer_settings.include_system_name {
+        if !self
+            .settings
+            .lock()
+            .unwrap()
+            .explorer_settings
+            .include_system_name
+        {
             let system_name = self.star_system.clone();
             body_name.replace_range(0..system_name.len(), "");
         }
@@ -482,19 +731,47 @@ impl BeltCluster {
             *system_index = body_index;
         };
 
-        if self.was_discovered && self.settings.icons.get("discovered").unwrap().enabled {
+        if self.was_discovered
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("discovered")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
             ui.label(
                 self.settings
+                    .lock()
+                    .unwrap()
                     .icons
                     .get("discovered")
                     .unwrap()
                     .get_richtext(),
             );
         }
-        if self.was_mapped && self.settings.icons.get("mapped").unwrap().enabled {
+        if self.was_mapped
+            && self
+                .settings
+                .lock()
+                .unwrap()
+                .icons
+                .get("mapped")
+                .unwrap()
+                .enabled
+        {
             ui.label("|");
-            ui.label(self.settings.icons.get("mapped").unwrap().get_richtext());
+            ui.label(
+                self.settings
+                    .lock()
+                    .unwrap()
+                    .icons
+                    .get("mapped")
+                    .unwrap()
+                    .get_richtext(),
+            );
         }
     }
 

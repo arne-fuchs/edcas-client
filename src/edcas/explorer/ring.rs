@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::edcas::explorer::body::{Parent, Signal};
 use crate::edcas::settings::Settings;
@@ -23,5 +23,5 @@ pub struct Ring {
     pub was_discovered: bool,
     pub was_mapped: bool,
     pub ring_signals: Vec<Signal>,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
 }

@@ -1,11 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use json::JsonValue;
 
 use crate::edcas::explorer::planet::AsteroidRing;
 use crate::edcas::settings::Settings;
 
-pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType {
+pub fn generate_from_json(json: JsonValue, settings: Arc<Mutex<Settings>>) -> BodyType {
     //TODO Parents implementation
     //TODO Atmosphere Composition implementation
     //TODO Materials?
