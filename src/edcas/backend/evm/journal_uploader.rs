@@ -1,11 +1,11 @@
-use bus::{Bus, BusReader};
-use json::JsonValue;
-use std::thread;
-use log::error;
-use std::io::BufRead;
 use crate::edcas;
 use crate::edcas::backend::journal_reader::{get_journal_log_by_index, get_log_file_list};
 use crate::edcas::settings::EvmSettings;
+use bus::{Bus, BusReader};
+use json::JsonValue;
+use log::error;
+use std::io::BufRead;
+use std::thread;
 
 /**
     Initializes the uploader which uploads the journal events to the edcas network, going from the latest to the oldest.
@@ -17,13 +17,12 @@ pub fn initialize(evm_settings: &EvmSettings, journal_directory: String) -> (Bus
 
     let mut journal_bus: Bus<JsonValue> = Bus::new(10);
     let journal_bus_reader = journal_bus.add_rx();
-    let mut evm_reader = edcas::backend::evm::journal_interpreter::initialize(journal_bus_reader, evm_settings);
+    let mut evm_reader =
+        edcas::backend::evm::journal_interpreter::initialize(journal_bus_reader, evm_settings);
     thread::Builder::new()
         .name("edcas-journal-uploader-evm".into())
-        .spawn(move || {
-            loop {
-                evm_reader.run();
-            }
+        .spawn(move || loop {
+            evm_reader.run();
         })
         .expect("Failed to create thread journal-reader-evm");
 
@@ -68,6 +67,7 @@ pub fn initialize(evm_settings: &EvmSettings, journal_directory: String) -> (Bus
                         progress_bus.broadcast(index);
                     }
                 })
-        }).expect("Cannot spawn edcas-journal-uploader thread");
+        })
+        .expect("Cannot spawn edcas-journal-uploader thread");
     (progress_bus_reader, index)
 }

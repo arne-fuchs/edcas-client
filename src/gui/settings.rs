@@ -1,17 +1,12 @@
-use crate::edcas::backend::evm::journal_interpreter::initialize;
-use crate::edcas::backend::journal_reader::{get_journal_log_by_index, get_log_file_list};
-use crate::edcas::settings::{EvmSettings, Settings, UploaderStatus};
-use bus::{Bus, BusReader};
-use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
-use eframe::egui::{Color32, Context, global_dark_light_mode_switch, vec2, Window};
-use eframe::{App, egui, Frame};
-use ethers::prelude::{LocalWallet, Signer};
-use json::JsonValue;
-use log::error;
-use std::io::BufRead;
-use std::path::Path;
-use std::{env, fs, thread};
 use crate::edcas::backend::evm::journal_uploader;
+use crate::edcas::settings::{Settings, UploaderStatus};
+use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
+use eframe::egui::{global_dark_light_mode_switch, vec2, Color32, Context, Window};
+use eframe::{egui, App, Frame};
+use ethers::prelude::{LocalWallet, Signer};
+use log::error;
+use std::path::Path;
+use std::{env, fs};
 
 impl App for Settings {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {

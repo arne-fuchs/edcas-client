@@ -1,8 +1,8 @@
 use crate::edcas::settings::EvmSettings;
 use bus::Bus;
 use json::JsonValue;
-use std::{env, thread};
 use log::LevelFilter;
+use std::{env, thread};
 
 use crate::eddn::adapter::EddnAdapter;
 
@@ -10,16 +10,24 @@ mod adapter;
 
 pub fn initialize() {
     println!("Initializing eddn adapter...");
-    env_logger::Builder::new().filter_level(LevelFilter::Info).init();
+    env_logger::Builder::new()
+        .filter_level(LevelFilter::Info)
+        .init();
 
     let mut bus_writer: Bus<JsonValue> = Bus::new(1000);
     let bus_reader = bus_writer.add_rx();
 
     let eddn = EddnAdapter { bus_writer };
-    let evm_settings = EvmSettings{
+    let evm_settings = EvmSettings {
         url: env::var("EVM_URL").unwrap(),
-        n_timeout: env::var("DURATION_TIMEOUT").unwrap_or("5".into()).parse().unwrap_or(5),
-        n_attempts: env::var("RETRY_TIMEOUT").unwrap_or("100".into()).parse().unwrap_or(100),
+        n_timeout: env::var("DURATION_TIMEOUT")
+            .unwrap_or("5".into())
+            .parse()
+            .unwrap_or(5),
+        n_attempts: env::var("RETRY_TIMEOUT")
+            .unwrap_or("100".into())
+            .parse()
+            .unwrap_or(100),
         allow_share_data: true,
         private_key: env::var("PRIVATE_KEY").unwrap(),
         smart_contract_address: env::var("SC_ADDRESS").unwrap(),

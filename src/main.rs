@@ -31,7 +31,7 @@ fn main() {
  |______|  |____/   \_____| /__/   \__\ |_____/
 
 "#;
-    
+
     for i in 0..args.len() {
         match args[i].as_str() {
             "--version" => {
