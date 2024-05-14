@@ -197,7 +197,7 @@ impl App for Settings {
                                 ui.label("Are you sure to upload all journal data to the EDCAS network? Depending on the size of your journal logs, it may can take up to several hours.");
                                 ui.vertical_centered(|ui|{
                                     if let Some(ref mut upload_status) = self.evm_settings.uploader_status {
-                                        ui.label("You close this window and still use EDCAS. It will run in the background");
+                                        ui.label("You are able to close this window and still use EDCAS. It will run in the background");
                                         if let Ok(index) = upload_status.index_updates.try_recv() {upload_status.current = index as u32;}
                                         let status = (upload_status.total - upload_status.current) as f32 / upload_status.total as f32;
                                         ui.add(egui::ProgressBar::new(status).text(format!("{} of {} logs complete",upload_status.total - upload_status.current,upload_status.total)));
