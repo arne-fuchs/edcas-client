@@ -205,7 +205,7 @@ impl App for Settings {
                                         let mut progress_bus: Bus<i64> = Bus::new(10);
                                         let progress_bus_reader = progress_bus.add_rx();
 
-                                        let mut journal_bus: Bus<JsonValue> = Bus::new(1000);
+                                        let mut journal_bus: Bus<JsonValue> = Bus::new(10);
                                         let journal_bus_reader = journal_bus.add_rx();
                                         let mut evm_reader = initialize(journal_bus_reader, &self.evm_settings);
                                         thread::Builder::new()
