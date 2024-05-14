@@ -55,14 +55,15 @@ fn main() {
             }
             "--help" => {
                 println!("{}", ascii_art);
-                println!("Here is a list of all commands:\n");
-                println!("--version\tPrints the current version of edcas");
-                println!("--height <f32>\tSets the height for the edcas gui");
-                println!("--width <f32>\tSets the width for the edcas gui");
+                println!("--version\t\tPrints the current version of edcas");
+                println!("--height <f32>\t\tSets the height for the edcas gui");
+                println!("--width <f32>\t\tSets the width for the edcas gui");
+                println!("--set-sc-address\tSet the smart contract address");
+                println!("--upload-journal\tUpload Journal to EDCAS network");
                 #[cfg(feature = "tui")]
-                println!("--tui\tStart edcas in tui mode");
+                println!("--tui\t\t\tStart edcas in tui mode");
                 #[cfg(feature = "eddn")]
-                println!("--eddn\tStart EDCAS with EDDN support");
+                println!("--eddn\t\tStart EDCAS with EDDN support");
                 return;
             }
             "--set-sc-address" => {
@@ -72,7 +73,6 @@ fn main() {
                 cli::set_sc_address(new_smart_contract_address, client);
                 return;
             }
-
             "--upload-journal" => {
                 let client = EliteRustClient::default();
                 cli::upload_journal(client);

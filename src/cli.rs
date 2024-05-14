@@ -1,8 +1,7 @@
+use crate::edcas::{backend::evm::journal_uploader, EliteRustClient};
 use ethers::prelude::*;
 
-use crate::edcas::{backend::evm::journal_uploader, EliteRustClient};
-
-pub fn upload_journal(mut client: EliteRustClient) {
+pub fn upload_journal(client: EliteRustClient) {
     let journal_path = client
         .settings
         .lock()
@@ -12,10 +11,12 @@ pub fn upload_journal(mut client: EliteRustClient) {
         .clone();
 
     let evm_settings = &client.settings.lock().unwrap().evm_settings;
-    let (mut progress_bus_reader, total) = journal_uploader::initialize(evm_settings, journal_path);
 
+    // start evm uploader thread
+    let (mut progress_bus_reader, total) = journal_uploader::initialize(evm_settings, journal_path);
     println!("Uploading {} logs", total);
 
+    // loop until uploading is done
     loop {
         match progress_bus_reader.recv() {
             Ok(index) => {
@@ -23,29 +24,23 @@ pub fn upload_journal(mut client: EliteRustClient) {
                     println!("done uploading");
                     break;
                 }
-                println!("{}", total - index);
+                print!("{} ", total - index);
             }
             Err(err) => {
-                println!("panicked: {}", err);
+                println!("\npanicked: {}", err);
                 break;
             }
         }
     }
-
-    return;
-    //TODO: start evm uploader thread
-    //TODO: start journal reader thread
-    //TODO: feed data from journal reader to evm uploader
-
-    //TODO: ask Frank what i have to do and how to actually do that.
 }
 
 pub fn set_sc_address(smart_contract_address: String, client: EliteRustClient) {
-    let addr = smart_contract_address
+    let _ = smart_contract_address
         .parse::<Address>()
         .unwrap_or_else(|_| panic!("Address is incorrect"));
-    println!("nothing here yet");
-    //TODO: take that sc_address and put it either directly in json or in the client.settings and
-    //then call save
-    return;
+
+    let mut settings = client.settings.lock().unwrap();
+
+    settings.evm_settings.smart_contract_address = smart_contract_address;
+    settings.save_settings_to_file();
 }
