@@ -193,7 +193,7 @@ impl App for Settings {
                             self.evm_settings.show_upload_data_window = true;
                         }
                         if self.evm_settings.show_upload_data_window {
-                            Window::new("Upload journal data ⬆").show(ctx,|ui| {
+                            Window::new("Upload journal data ⬆").collapsible(false).show(ctx,|ui| {
                                 ui.label("Are you sure to upload all journal data to the EDCAS network? Depending on the size of your journal logs, it may can take up to several hours.");
                                 ui.vertical_centered(|ui|{
                                     if let Some(ref mut upload_status) = self.evm_settings.uploader_status {
