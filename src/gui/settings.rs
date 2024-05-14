@@ -198,10 +198,10 @@ impl App for Settings {
                                         let status = (upload_status.total - upload_status.current) as f32 / upload_status.total as f32;
                                         ui.add(egui::ProgressBar::new(status).text(format!("{} of {} logs complete",upload_status.total - upload_status.current,upload_status.total)));
                                     }else if ui.button("Do it!").clicked(){
-                                        let (progress_bus_reader, index) = journal_uploader::initialize(&self.evm_settings, self.journal_reader_settings.journal_directory.clone());
+                                        let (progress_bus_reader, total) = journal_uploader::initialize(&self.evm_settings, self.journal_reader_settings.journal_directory.clone());
                                         self.evm_settings.uploader_status = Some(UploaderStatus{
                                             current: 0,
-                                            total: index as u32,
+                                            total: total as u32,
                                             index_updates: progress_bus_reader,
                                         });
                                     }
