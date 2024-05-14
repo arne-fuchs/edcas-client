@@ -7,6 +7,10 @@ use crate::edcas;
 use crate::edcas::backend::journal_reader::{get_journal_log_by_index, get_log_file_list};
 use crate::edcas::settings::EvmSettings;
 
+/**
+    Initializes the uploader which uploades the journal events to the edcas network, going from the latest to the oldest.
+    It gives back a bus reader which gives the current index of the finished log and the total number of logs which has to be uploaded.
+*/
 pub fn initialize(evm_settings: &EvmSettings, journal_directory: String) -> (BusReader<i64>, i64) {
     let mut progress_bus: Bus<i64> = Bus::new(10);
     let progress_bus_reader = progress_bus.add_rx();
