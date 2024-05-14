@@ -261,16 +261,22 @@ impl Default for EliteRustClient {
             info!("Starting Evm Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
             let settings_pointer = settings_pointer_clone;
+            let mut tangle_interpreter = backend::evm::journal_interpreter::initialize(
+                tangle_journal_bus_reader,
+                &settings_pointer.lock().unwrap().evm_settings,
+            );
             thread::Builder::new()
                 .name("edcas-evm-interpreter".into())
                 .spawn(move || {
-                    let mut tangle_interpreter = backend::evm::journal_interpreter::initialize(
-                        tangle_journal_bus_reader,
-                        &settings_pointer.lock().unwrap().evm_settings,
-                    );
-                    loop {
-                        tangle_interpreter.run();
-                    }
+                    tokio::runtime::Builder::new_multi_thread()
+                        .enable_all()
+                        .build()
+                        .unwrap()
+                        .block_on(async move {
+                            loop {
+                                tangle_interpreter.run();
+                            }
+                        });
                 })
                 .expect("Failed to create thread evm-interpreter");
         }

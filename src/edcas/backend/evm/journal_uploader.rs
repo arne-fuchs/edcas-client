@@ -21,8 +21,16 @@ pub fn initialize(evm_settings: &EvmSettings, journal_directory: String) -> (Bus
         edcas::backend::evm::journal_interpreter::initialize(journal_bus_reader, evm_settings);
     thread::Builder::new()
         .name("edcas-journal-uploader-evm".into())
-        .spawn(move || loop {
-            evm_reader.run();
+        .spawn(move || {
+            tokio::runtime::Builder::new_multi_thread()
+                .enable_all()
+                .build()
+                .unwrap()
+                .block_on(async move {
+                    loop {
+                        evm_reader.run();
+                    }
+                });
         })
         .expect("Failed to create thread journal-reader-evm");
 
