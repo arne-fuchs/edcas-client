@@ -8,7 +8,7 @@ use crate::edcas::backend::journal_reader::{get_journal_log_by_index, get_log_fi
 use crate::edcas::settings::EvmSettings;
 
 /**
-    Initializes the uploader which uploades the journal events to the edcas network, going from the latest to the oldest.
+    Initializes the uploader which uploads the journal events to the edcas network, going from the latest to the oldest.
     It gives back a bus reader which gives the current index of the finished log and the total number of logs which has to be uploaded.
 */
 pub fn initialize(evm_settings: &EvmSettings, journal_directory: String) -> (BusReader<i64>, i64) {
