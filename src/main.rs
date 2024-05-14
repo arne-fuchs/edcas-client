@@ -62,7 +62,7 @@ fn main() {
                 #[cfg(feature = "tui")]
                 println!("--tui\tStart edcas in tui mode");
                 #[cfg(feature = "eddn")]
-                println!("--eddn\tStart EDCAS in with EDDN support");
+                println!("--eddn\tStart EDCAS with EDDN support");
                 return;
             }
             "--set-sc-address" => {
