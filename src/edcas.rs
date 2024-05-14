@@ -177,6 +177,7 @@ impl EliteRustClient {
                                         self.explorer.systems[i].body_list.push(body.clone());
                                     }
                                 }
+                                self.explorer.systems[i].body_list.sort_by_key(|planet| planet.get_id());
                             }
                         }
                     }
