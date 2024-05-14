@@ -1,7 +1,7 @@
 #![allow(unreachable_code)]
 extern crate core;
 
-use eframe::egui::{IconData, Pos2, ViewportBuilder};
+use eframe::egui::{IconData, Pos2, TextBuffer, ViewportBuilder};
 use eframe::HardwareAcceleration;
 use std::env;
 use std::str::FromStr;
@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use crate::edcas::EliteRustClient;
 
+mod cli;
 mod edcas;
 #[cfg(feature = "eddn")]
 mod eddn;
@@ -31,7 +32,7 @@ fn main() {
  |______|  |____/   \_____| /__/   \__\ |_____/
 
 "#;
-    
+
     for i in 0..args.len() {
         match args[i].as_str() {
             "--version" => {
@@ -60,6 +61,19 @@ fn main() {
                 println!("--width <f32>\tSets the width for the edcas gui");
                 #[cfg(feature = "tui")]
                 println!("--tui\tStart edcas in tui mode");
+                #[cfg(feature = "eddn")]
+                println!("--eddn\tStart EDCAS in with EDDN support");
+                return;
+            }
+            "--set-sc-address" => {
+                let new_smart_contract_address = String::from_str(args[i + 1].as_str())
+                    .unwrap_or_else(|_| panic!("Wrong argument for SC Address: {}", &args[i + 1]));
+                cli::set_sc_address(new_smart_contract_address);
+                return;
+            }
+
+            "--upload-logs" => {
+                cli::upload_logs();
                 return;
             }
             #[cfg(feature = "tui")]
