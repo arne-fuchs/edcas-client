@@ -1,5 +1,6 @@
 use crate::edcas::backend::evm::edcas_contract::Floating;
 use std::str::FromStr;
+use log::debug;
 
 /**
     Takes the decimal point and the floating point of a Floating Struct of the edcas_contract and converts it as f64
@@ -21,10 +22,8 @@ pub fn floating_to_f64(decimal: i128, floating_point: u8) -> f64 {
 /**
    Takes a string like "0.234" and converts it to floating
 */
-pub fn generate_floating_from_string(mut decimal: String) -> Floating {
-    if !decimal.contains('.') {
-        decimal.push_str(".0");
-    }
+pub fn generate_floating_from_string(decimal: String) -> Floating {
+    debug!("Parsing decimal: {}", decimal);
     Floating {
         decimal: decimal.replace('.', "").parse().unwrap(),
         floating_point: decimal.split('.').nth(1).unwrap_or("").len() as u8,
