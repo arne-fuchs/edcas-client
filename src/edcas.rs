@@ -211,18 +211,16 @@ impl Default for EliteRustClient {
         let mut evm_update_bus: Bus<EvmUpdate> = Bus::new(100);
         let evm_update_reader = evm_update_bus.add_rx();
         let settings_pointer_clone = settings_pointer.clone();
+        let mut evm_updater = request_handler::initialize(
+            evm_update_bus,
+            evm_request_receiver,
+            settings_pointer_clone,
+        );
         thread::Builder::new()
             .name("edcas-evm-handler".into())
-            .spawn(move || {
-                let mut evm_updater = request_handler::initialize(
-                    evm_update_bus,
-                    evm_request_receiver,
-                    settings_pointer_clone,
-                );
-                loop {
-                    evm_updater.run_update();
-                    sleep(Duration::from_secs(1));
-                }
+            .spawn(move || loop {
+                evm_updater.run_update();
+                sleep(Duration::from_secs(1));
             })
             .expect("Failed to create thread jevm-handler");
 
