@@ -167,8 +167,16 @@ impl EliteRustClient {
                                             );
                                         }
                                     }
+                                    let mut found = false;
+                                    for j in 0..self.explorer.systems[i].body_list.len() {
+                                        if self.explorer.systems[i].body_list[j].get_id() == body.get_id() {
+                                            found = true;
+                                        }
+                                    }
+                                    if !found {
+                                        self.explorer.systems[i].body_list.push(body.clone());
+                                    }
                                 }
-                                self.explorer.systems[i].body_list.clone_from(&planet_list);
                             }
                         }
                     }
