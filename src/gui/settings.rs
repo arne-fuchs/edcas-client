@@ -1,16 +1,12 @@
-use crate::edcas::backend::evm::journal_interpreter::initialize;
-use crate::edcas::backend::journal_reader::{get_journal_log_by_index, get_log_file_list};
+use crate::edcas::backend::evm::journal_uploader;
 use crate::edcas::settings::{Settings, UploaderStatus};
-use bus::Bus;
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::egui::{global_dark_light_mode_switch, vec2, Color32, Context, Window};
 use eframe::{egui, App, Frame};
 use ethers::prelude::{LocalWallet, Signer};
-use json::JsonValue;
 use log::error;
-use std::io::BufRead;
 use std::path::Path;
-use std::{env, fs, thread};
+use std::{env, fs};
 
 impl App for Settings {
     fn update(&mut self, ctx: &Context, _frame: &mut Frame) {
@@ -202,63 +198,7 @@ impl App for Settings {
                                         let status = (upload_status.total - upload_status.current) as f32 / upload_status.total as f32;
                                         ui.add(egui::ProgressBar::new(status).text(format!("{} of {} logs complete",upload_status.total - upload_status.current,upload_status.total)));
                                     }else if ui.button("Do it!").clicked(){
-                                        let mut progress_bus: Bus<i64> = Bus::new(10);
-                                        let progress_bus_reader = progress_bus.add_rx();
-
-                                        let mut journal_bus: Bus<JsonValue> = Bus::new(10);
-                                        let journal_bus_reader = journal_bus.add_rx();
-                                        let mut evm_reader = initialize(journal_bus_reader, &self.evm_settings);
-                                        thread::Builder::new()
-                                            .name("edcas-journal-uploader-evm".into())
-                                            .spawn(move || {
-                                                loop {
-                                                    evm_reader.run();
-                                                }
-                                            })
-                                            .expect("Failed to create thread journal-reader-evm");
-
-                                        let path = self.journal_reader_settings.journal_directory.clone();
-                                        let mut index:i64 = get_log_file_list(&path).len() as i64;
-                                        thread::Builder::new()
-                                            .name("edcas-journal-uploader".into())
-                                            .spawn(move || {
-                                                tokio::runtime::Builder::new_multi_thread()
-                                                    .enable_all()
-                                                    .build()
-                                                    .unwrap()
-                                                    .block_on(async move {
-                                                        while index > 0 {
-                                                            index -= 1;
-                                                            let mut journal = get_journal_log_by_index(path.clone(), index as usize);
-                                                            let mut line = String::new();
-                                                            let mut flag: usize = 1;
-                                                            while flag != 0 {
-                                                                match journal.read_line(&mut line) {
-                                                                    Ok(line_flag) => {
-                                                                        if line_flag == 0 {
-                                                                            flag = 0;
-                                                                        } else if !line.eq("") {
-                                                                            let json_result = json::parse(&line);
-                                                                            match json_result {
-                                                                                Ok(json) => {
-                                                                                    journal_bus.broadcast(json);
-                                                                                }
-                                                                                Err(err) => {
-                                                                                    error!("Couldn't parse json: {}", err)
-                                                                                }
-                                                                            }
-                                                                        }
-                                                                        line.clear();
-                                                                    }
-                                                                    Err(_err) => {
-                                                                        error!("Error reading journal file!");
-                                                                    }
-                                                                };
-                                                            }
-                                                            progress_bus.broadcast(index);
-                                                        }
-                                                    })
-                                            }).expect("Cannot spawn edcas-journal-uploader thread");
+                                        let (progress_bus_reader, index) = journal_uploader::initialize(&self.evm_settings, self.journal_reader_settings.journal_directory.clone());
                                         self.evm_settings.uploader_status = Some(UploaderStatus{
                                             current: 0,
                                             total: index as u32,

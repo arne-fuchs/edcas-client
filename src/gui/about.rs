@@ -10,7 +10,7 @@ impl App for crate::edcas::about::About {
                         .max_width(512.0)
                         .rounding(10.0),
                 );
-                ui.label("Discord:");
+                ui.label("🐟 Discord:");
                 ui.hyperlink(&self.discord_url);
                 ui.end_row();
                 ui.label(" Github:");

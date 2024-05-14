@@ -89,7 +89,7 @@ impl EvmInterpreter {
                     }
                     "Scan" => {
                         let contract = self.contract.clone();
-                        thread::spawn(||{
+                        thread::spawn(|| {
                             tokio::runtime::Builder::new_multi_thread()
                                 .enable_all()
                                 .build()
@@ -564,21 +564,46 @@ impl EvmInterpreter {
                                         for i in 0..size {
                                             let commoditiy = &json["commodities"][i];
                                             let function_call: FunctionCall<
-                                                Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
-                                                SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                                Arc<
+                                                    SignerMiddleware<
+                                                        Provider<Http>,
+                                                        Wallet<SigningKey>,
+                                                    >,
+                                                >,
+                                                SignerMiddleware<
+                                                    Provider<Http>,
+                                                    Wallet<SigningKey>,
+                                                >,
                                                 (),
                                             > = contract.register_commodity_listening(
                                                 market_id,
-                                                commoditiy["name"].as_str().unwrap().to_ascii_lowercase(),
-                                                edcas_contract::CommodityListening{
-                                                    buy_price: commoditiy["buyPrice"].as_u32().unwrap_or(0),
-                                                    sell_price: commoditiy["sellPrice"].as_u32().unwrap_or(0),
-                                                    mean_price: commoditiy["meanPrice"].as_u32().unwrap_or(0),
-                                                    stock: commoditiy["stock"].as_u32().unwrap_or(0),
-                                                    demand: commoditiy["demand"].as_u32().unwrap_or(0),
-                                                    stock_bracket: commoditiy["stockBracket"].as_u32().unwrap_or(0),
-                                                    demand_bracket: commoditiy["demandBracket"].as_u32().unwrap_or(0),
-                                                }
+                                                commoditiy["name"]
+                                                    .as_str()
+                                                    .unwrap()
+                                                    .to_ascii_lowercase(),
+                                                edcas_contract::CommodityListening {
+                                                    buy_price: commoditiy["buyPrice"]
+                                                        .as_u32()
+                                                        .unwrap_or(0),
+                                                    sell_price: commoditiy["sellPrice"]
+                                                        .as_u32()
+                                                        .unwrap_or(0),
+                                                    mean_price: commoditiy["meanPrice"]
+                                                        .as_u32()
+                                                        .unwrap_or(0),
+                                                    stock: commoditiy["stock"]
+                                                        .as_u32()
+                                                        .unwrap_or(0),
+                                                    demand: commoditiy["demand"]
+                                                        .as_u32()
+                                                        .unwrap_or(0),
+                                                    stock_bracket: commoditiy["stockBracket"]
+                                                        .as_u32()
+                                                        .unwrap_or(0),
+                                                    demand_bracket: commoditiy["demandBracket"]
+                                                        .as_u32()
+                                                        .unwrap_or(0),
+                                                },
                                             );
                                             //execute_send(function_call).await;
                                             let _ = execute_send_repeatable(function_call).await;
@@ -666,12 +691,10 @@ fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
         landable: json["Landable"].as_bool().unwrap_or(false),
         terraform_state: json["TerraformState"].to_string(),
         volcanism: json["Volcanism"].to_string(),
-        tidal_lock: json["TidalLock"]
-            .as_bool()
-            .unwrap_or({
-                error!("Tidal Lock not parseable {}", json);
-                false
-            }),
+        tidal_lock: json["TidalLock"].as_bool().unwrap_or({
+            error!("Tidal Lock not parseable {}", json);
+            false
+        }),
         parent_id,
         mass_em: floating::generate_floating_from_string(json["MassEM"].to_string()),
         surface_gravity: floating::generate_floating_from_string(
