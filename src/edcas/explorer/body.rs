@@ -1,12 +1,11 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use json::JsonValue;
-use log::debug;
 
 use crate::edcas::explorer::planet::AsteroidRing;
 use crate::edcas::settings::Settings;
 
-pub fn generate_from_json(json: JsonValue, settings: Arc<Settings>) -> BodyType {
+pub fn generate_from_json(json: JsonValue, settings: Arc<Mutex<Settings>>) -> BodyType {
     //TODO Parents implementation
     //TODO Atmosphere Composition implementation
     //TODO Materials?
@@ -273,8 +272,8 @@ pub struct Signal {
 impl Default for Signal {
     fn default() -> Self {
         Self {
-            r#type: "N/A".to_string(),
-            type_localised: "N/A".to_string(),
+            r#type: "n/v".to_string(),
+            type_localised: "n/v".to_string(),
             count: 0,
         }
     }

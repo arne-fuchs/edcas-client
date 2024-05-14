@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::edcas::settings::Settings;
 use chrono::{DateTime, Utc};
@@ -6,7 +6,7 @@ use chrono::{DateTime, Utc};
 pub struct CarrierState {
     pub carriers: Vec<Carrier>,
     pub search: String,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
 }
 
 #[derive(Clone)]

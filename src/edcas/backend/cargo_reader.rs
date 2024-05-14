@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use json::{JsonValue, Null};
 use log::{debug, error};
@@ -35,8 +35,13 @@ pub struct PricePoint {
     pub timestamp: u64,
 }
 
-pub fn initialize(settings: Arc<Settings>) -> CargoReader {
-    let mut directory_path = settings.journal_reader_settings.journal_directory.clone();
+pub fn initialize(settings: Arc<Mutex<Settings>>) -> CargoReader {
+    let mut directory_path = settings
+        .lock()
+        .unwrap()
+        .journal_reader_settings
+        .journal_directory
+        .clone();
     if cfg!(target_os = "windows") {
         directory_path.push_str("\\Cargo.json");
     } else if cfg!(target_os = "linux") {
@@ -79,11 +84,11 @@ impl CargoReader {
                                         let mut sell_price = -1f64;
                                         let mut mean_price = -1f64;
                                         let mut highest_sell_price = 0u64;
-                                        let mut highest_sell_station = String::from("N/A");
-                                        let mut highest_sell_system = String::from("N/A");
+                                        let mut highest_sell_station = String::from("n/v");
+                                        let mut highest_sell_system = String::from("n/v");
                                         let mut lowest_buy_price = 0u64;
-                                        let mut lowest_buy_station = String::from("N/A");
-                                        let mut lowest_buy_system = String::from("N/A");
+                                        let mut lowest_buy_station = String::from("n/v");
+                                        let mut lowest_buy_system = String::from("n/v");
                                         let mut price_history: Vec<PricePoint> = vec![];
 
                                         for old_cargo in &self.inventory {

@@ -1,5 +1,5 @@
 use std::ops::Add;
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use eframe::egui;
 use eframe::emath::Numeric;
@@ -23,7 +23,7 @@ pub struct System {
     pub body_list: Vec<BodyType>,
     pub planet_signals: Vec<PlanetSignal>,
     pub index: usize,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
     pub x: f64,
     pub y: f64,
     pub z: f64,
@@ -75,6 +75,8 @@ impl System {
                                     ui.label(&signal.count.to_string());
                                     ui.label(
                                         self.settings
+                                            .lock()
+                                            .unwrap()
                                             .icons
                                             .get("bio_signal")
                                             .unwrap()
@@ -85,6 +87,8 @@ impl System {
                                     ui.label(&signal.count.to_string());
                                     ui.label(
                                         self.settings
+                                            .lock()
+                                            .unwrap()
                                             .icons
                                             .get("geo_signal")
                                             .unwrap()
@@ -95,6 +99,8 @@ impl System {
                                     ui.label(&signal.count.to_string());
                                     ui.label(
                                         self.settings
+                                            .lock()
+                                            .unwrap()
                                             .icons
                                             .get("xeno_signal")
                                             .unwrap()
@@ -105,6 +111,8 @@ impl System {
                                     ui.label(&signal.count.to_string());
                                     ui.label(
                                         self.settings
+                                            .lock()
+                                            .unwrap()
                                             .icons
                                             .get("human_signal")
                                             .unwrap()
@@ -115,6 +123,8 @@ impl System {
                                     ui.label(&signal.count.to_string());
                                     ui.label(
                                         self.settings
+                                            .lock()
+                                            .unwrap()
                                             .icons
                                             .get("unknown_signal")
                                             .unwrap()
@@ -187,20 +197,20 @@ impl System {
                 ui.end_row();
             });
 
-        if !self.body_count.eq("N/A") {
+        if !self.body_count.eq("n/v") {
             ui.add(
                 egui::ProgressBar::new(
-                    (&self.body_list.len().to_f64()
-                        / (&self.body_count.parse::<f64>().unwrap()
-                            + &self.non_body_count.parse::<f64>().unwrap()))
+                    (self.body_list.len().to_f64()
+                        / (self.body_count.parse::<f64>().unwrap_or(0.0)
+                            + self.non_body_count.parse::<f64>().unwrap_or(0.0)))
                         as f32,
                 )
                 .text(
                     self.body_list.len().to_string().add("/").add(
-                        (&self.body_count.parse::<f64>().unwrap()
-                            + &self.non_body_count.parse::<f64>().unwrap())
-                            .to_string()
-                            .as_str(),
+                        (self.body_count.parse::<f64>().unwrap_or(0.0)
+                            + self.non_body_count.parse::<f64>().unwrap_or(0.0))
+                        .to_string()
+                        .as_str(),
                     ),
                 ),
             );
@@ -237,8 +247,7 @@ impl System {
         let id = body.get_id();
         self.body_list.push(body);
 
-        self.body_list
-            .sort_by(|body_a, body_b| body_a.get_id().cmp(&body_b.get_id()));
+        self.body_list.sort_by_key(|body_a| body_a.get_id());
 
         for i in 0..self.body_list.len() {
             if id == self.body_list.get(i).unwrap().get_id() {

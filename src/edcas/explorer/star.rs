@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::edcas::explorer::body::Parent;
 use crate::edcas::explorer::planet::AsteroidRing;
@@ -34,5 +34,5 @@ pub struct Star {
     pub was_discovered: bool,
     pub was_mapped: bool,
     pub asteroid_rings: Vec<AsteroidRing>,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
 }

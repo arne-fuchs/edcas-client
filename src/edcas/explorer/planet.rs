@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use log::warn;
 
@@ -82,7 +82,7 @@ pub struct Planet {
     pub reserve_level: String,
     pub asteroid_rings: Vec<AsteroidRing>,
     pub planet_signals: Vec<Signal>,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
 }
 
 pub enum BodyClass {
@@ -152,7 +152,7 @@ pub fn get_body_class_from_body(planet: &Planet) -> BodyClass {
         "Star" => Star,
         _ => {
             if planet.planet_class.is_empty()
-                || planet.planet_class.eq("N/A")
+                || planet.planet_class.eq("n/v")
                 || planet.planet_class.eq("null")
             {
                 return Star;

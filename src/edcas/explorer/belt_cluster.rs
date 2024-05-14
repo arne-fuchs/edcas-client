@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, Mutex};
 
 use crate::edcas::explorer::body::Parent;
 use crate::edcas::settings::Settings;
@@ -16,5 +16,5 @@ pub struct BeltCluster {
     pub distance_from_arrival_ls: f64,
     pub was_discovered: bool,
     pub was_mapped: bool,
-    pub settings: Arc<Settings>,
+    pub settings: Arc<Mutex<Settings>>,
 }

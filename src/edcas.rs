@@ -43,7 +43,7 @@ pub struct EliteRustClient {
     pub carrier: CarrierState,
     pub state: State,
     pub materials: MaterialState,
-    pub settings: settings::Settings,
+    pub settings: Arc<Mutex<settings::Settings>>,
     pub news: news::News,
     pub mining: mining::Mining,
     pub cargo_reader: Arc<Mutex<CargoReader>>,
@@ -63,7 +63,7 @@ impl EliteRustClient {
                 &mut self.explorer,
                 &mut self.materials,
                 &mut self.mining,
-                Arc::new(self.settings.clone()),
+                self.settings.clone(),
             );
         }
         {
@@ -107,38 +107,40 @@ impl EliteRustClient {
                         let length = self.explorer.systems.len();
                         for i in 0..length {
                             if self.explorer.systems[i].address == system_address {
-                                self.explorer.systems[i]
-                                    .name
-                                    .clone_from(&system_meta_data.name);
-                                self.explorer.systems[i]
-                                    .allegiance
-                                    .clone_from(&system_meta_data.allegiance);
-                                self.explorer.systems[i]
-                                    .government_localised
-                                    .clone_from(&system_meta_data.government);
-                                self.explorer.systems[i]
-                                    .economy_localised
-                                    .clone_from(&system_meta_data.economy);
-                                self.explorer.systems[i]
-                                    .second_economy_localised
-                                    .clone_from(&system_meta_data.second_economy);
-                                self.explorer.systems[i]
-                                    .security_localised
-                                    .clone_from(&system_meta_data.security);
-                                self.explorer.systems[i]
-                                    .population
-                                    .clone_from(&system_meta_data.population);
-                                if self.explorer.systems[i].body_count.is_empty()
-                                    || self.explorer.systems[i].body_count == "n/v"
-                                {
+                                #[warn(clippy::collapsible_if)]
+                                if self.explorer.systems[i].body_count == "n/v" {
                                     self.explorer.systems[i]
                                         .body_count
                                         .clone_from(&system_meta_data.body_count.to_string());
                                 }
+                                //Currently it doesn't make sense to put in the values since, if system is loaded, the data is already available, except body and non-body count
+                                /*
+                                self.explorer.systems[i]
+                                    .name
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.name));
+                                self.explorer.systems[i]
+                                    .allegiance
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.allegiance));
+                                self.explorer.systems[i]
+                                    .government_localised
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.government));
+                                self.explorer.systems[i]
+                                    .economy_localised
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.economy));
+                                self.explorer.systems[i]
+                                    .second_economy_localised
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.second_economy));
+                                self.explorer.systems[i]
+                                    .security_localised
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.security));
+                                self.explorer.systems[i]
+                                    .population
+                                    .clone_from(&backend::translator::extract_word_from_standard(&system_meta_data.population));
 
                                 self.explorer.systems[i].x.clone_from(&system_meta_data.x);
                                 self.explorer.systems[i].y.clone_from(&system_meta_data.y);
                                 self.explorer.systems[i].z.clone_from(&system_meta_data.z);
+                                */
                             }
                         }
                     }
@@ -195,8 +197,7 @@ impl Default for EliteRustClient {
             log_path,
             ..Default::default()
         };
-        let settings_pointer = Arc::new(settings.clone());
-
+        let settings_pointer = Arc::new(Mutex::new(settings));
         info!("Starting...");
         info!("Current directory: {:?}", env::current_dir().unwrap());
         info!("Reading materials");
@@ -245,9 +246,18 @@ impl Default for EliteRustClient {
 
         info!(
             "Allow to share data over edcas: {}",
-            settings_pointer.evm_settings.allow_share_data
+            settings_pointer
+                .lock()
+                .unwrap()
+                .evm_settings
+                .allow_share_data
         );
-        if settings_pointer.evm_settings.allow_share_data {
+        if settings_pointer
+            .lock()
+            .unwrap()
+            .evm_settings
+            .allow_share_data
+        {
             info!("Starting Evm Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
             let settings_pointer = settings_pointer_clone;
@@ -256,7 +266,7 @@ impl Default for EliteRustClient {
                 .spawn(move || {
                     let mut tangle_interpreter = backend::evm::journal_interpreter::initialize(
                         tangle_journal_bus_reader,
-                        settings_pointer,
+                        &settings_pointer.lock().unwrap().evm_settings,
                     );
                     loop {
                         tangle_interpreter.run();
@@ -273,7 +283,6 @@ impl Default for EliteRustClient {
             prospectors: Default::default(),
             cargo: cargo_reader.clone(),
         };
-
         Self {
             news: news::News::default(),
             about: about::About::default(),
@@ -300,7 +309,7 @@ impl Default for EliteRustClient {
             evm_request_writer,
             evm_update_reader,
             materials,
-            settings,
+            settings: settings_pointer.clone(),
             mining,
             timestamp: String::from(""),
         }

@@ -18,7 +18,7 @@ use crate::edcas::backend::evm::journal_interpreter::SendError::{
 };
 use crate::edcas::backend::floating;
 
-use crate::edcas::settings::Settings;
+use crate::edcas::settings::EvmSettings;
 
 pub type Edcas = edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>>;
 pub type ContractCall = FunctionCall<
@@ -29,17 +29,12 @@ pub type ContractCall = FunctionCall<
 
 pub struct EvmInterpreter {
     bus: BusReader<JsonValue>,
-    settings: Arc<Settings>,
     contract: Edcas,
 }
 
 impl EvmInterpreter {
     pub fn run(&mut self) {
-        let Self {
-            bus,
-            settings: _,
-            contract: _,
-        } = self;
+        let Self { bus, contract: _ } = self;
 
         match bus.recv() {
             Err(_) => {}
@@ -114,7 +109,7 @@ impl EvmInterpreter {
                                         let body_id = json["BodyID"].as_u8().unwrap();
                                         let system_address =
                                             json["SystemAddress"].as_u64().unwrap();
-                                        debug!("Call register_planet: {system_address}-{body_id}");
+                                        debug!("Call register_planet: {system_address}-{body_id}-{}",json["BodyName"]);
                                         let function_call: FunctionCall<
                                             Arc<
                                                 SignerMiddleware<
@@ -141,7 +136,7 @@ impl EvmInterpreter {
                                         );
                                         match execute_send_repeatable(function_call).await {
                                             Ok(receipt) => {
-                                                debug!("Call register_planet successfull {}-{}: {} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
+                                                debug!("Call register_planet successful {}-{}: {:?} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
                                             }
                                             Err(error) => {
                                                 debug!("Call register_planet failed {}-{}: {}",system_address,body_id,error);
@@ -154,10 +149,10 @@ impl EvmInterpreter {
                                         // "StarPos":[12.1875,-74.90625,-120.5],"StarSystem":"Hyades Sector BB-N b7-5","StarType":"M","StellarMass":0.394531,"Subclass":1,
                                         // "SurfaceTemperature":3367.0,"SystemAddress":11666070513017,"WasDiscovered":true,"WasMapped":false,"event":"Scan","horizons":true,
                                         // "odyssey":true,"timestamp":"2024-03-26T21:27:53Z"}
-                                        debug!("Call register_star");
                                         let body_id = json["BodyID"].as_u8().unwrap();
                                         let system_address =
                                             json["SystemAddress"].as_u64().unwrap();
+                                        debug!("Call register_star: {system_address}-{body_id}-{}",json["BodyName"]);
                                         let function_call: FunctionCall<
                                             Arc<
                                                 SignerMiddleware<
@@ -184,14 +179,15 @@ impl EvmInterpreter {
                                         );
                                         match execute_send_repeatable(function_call).await {
                                             Ok(receipt) => {
-                                                debug!("Call register_planet successfull {}-{}: {} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
+                                                debug!("Call register_star successful {}-{}: {:?} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash.to_string(),receipt.block_number);
                                             }
                                             Err(error) => {
-                                                debug!("Call register_planet failed {}-{}: {}",system_address,body_id,error);
+                                                debug!("Call register_star failed {}-{}: {}",system_address,body_id,error);
                                             }
                                         }
                                     }
                                 } else {
+                                    debug!("Belt Cluster -> unimplemented")
                                     //TODO Interpret Belt Cluster and Ring
                                 }
                             });
@@ -221,7 +217,7 @@ impl EvmInterpreter {
                                                 &_ => 0,
                                             }
                                         };
-                                        debug!("Call register_planet_signal: {system_address}-{body_id}-{type_}");
+                                        debug!("Call register_planet_signal: {system_address}-{body_id}-{type_}-{}",json["BodyName"]);
                                         let function_call: FunctionCall<
                                             Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
                                             SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
@@ -555,45 +551,50 @@ impl EvmInterpreter {
         }
     }
 }
-pub fn initialize(bus_reader: BusReader<JsonValue>, settings: Arc<Settings>) -> EvmInterpreter {
-    let settings_arc_clone = &settings.clone();
+pub fn initialize(bus_reader: BusReader<JsonValue>, evm_settings: &EvmSettings) -> EvmInterpreter {
     let contract = tokio::runtime::Builder::new_multi_thread()
         .enable_all()
         .build()
         .unwrap()
-        .block_on(async move { get_contract(settings_arc_clone).await });
+        .block_on(async move { get_contract(evm_settings).await });
 
     EvmInterpreter {
         bus: bus_reader,
-        settings,
         contract,
     }
 }
 pub async fn get_contract(
-    settings: &Arc<Settings>,
+    evm_settings: &EvmSettings,
 ) -> edcas_contract::EDCAS<SignerMiddleware<Provider<Http>, LocalWallet>> {
-    let sc_address = settings.evm_settings.smart_contract_address.as_str();
+    let sc_address = evm_settings.smart_contract_address.to_string();
+    let sc_address = sc_address.as_str();
 
-    let client: SignerMiddleware<Provider<Http>, LocalWallet> = get_client(settings).await;
+    let node_url = evm_settings.url.to_string();
+    let private = evm_settings.private_key.to_string();
+    let retry = evm_settings.n_attempts;
+    let timeout = evm_settings.n_timeout;
+
+    let client: SignerMiddleware<Provider<Http>, LocalWallet> =
+        get_client(node_url, private, retry, timeout).await;
 
     let edcas_address = sc_address.parse::<Address>().unwrap();
 
     edcas_contract::EDCAS::new(edcas_address, Arc::new(client.clone()))
 }
 
-pub async fn get_client(settings: &Arc<Settings>) -> SignerMiddleware<Provider<Http>, LocalWallet> {
+pub async fn get_client(
+    node_url: String,
+    private_key: String,
+    retry: u64,
+    timeout: u64,
+) -> SignerMiddleware<Provider<Http>, LocalWallet> {
     info!("Loading wallet");
-
-    let node_url = settings.evm_settings.url.as_str();
-    let private = settings.evm_settings.private_key.as_str();
-    let retry = settings.evm_settings.n_attempts;
-    let timeout = settings.evm_settings.n_timeout;
 
     info!("Using URL:{}", &node_url);
 
-    let provider = Provider::connect(node_url).await;
+    let provider = Provider::connect(node_url.as_str()).await;
 
-    let wallet: LocalWallet = private.parse::<LocalWallet>().unwrap();
+    let wallet: LocalWallet = private_key.parse::<LocalWallet>().unwrap();
     info!("EVM Address: {:?}", wallet.address());
 
     let mut result =
@@ -717,10 +718,10 @@ async fn execute_send(
                         info!("Success calling function: {:?}", hash);
                         Ok(receipt)
                     } else {
-                        Err(NonRepeatableError("Receipt without hash".into()))
+                        Err(RepeatableError("Receipt without hash".into()))
                     }
                 } else {
-                    Err(NonRepeatableError("No Receipt".into()))
+                    Err(RepeatableError("No Receipt".into()))
                 }
             }
             Err(err) => match err {
@@ -837,7 +838,7 @@ fn get_revert_message(bytes: Bytes) -> String {
     if bytes.len() > 134 {
         let n = bytes.split_at(134 / 2).1;
         let n: &[u8] = n.split(|b| *b == 0u8).next().unwrap();
-        return String::from_utf8(n.to_vec()).unwrap()
+        return String::from_utf8(n.to_vec()).unwrap();
     }
     bytes.to_string()
 }
