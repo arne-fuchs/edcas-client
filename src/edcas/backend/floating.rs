@@ -1,6 +1,5 @@
 use crate::edcas::backend::evm::edcas_contract::Floating;
 use std::str::FromStr;
-use log::debug;
 
 /**
     Takes the decimal point and the floating point of a Floating Struct of the edcas_contract and converts it as f64

@@ -44,6 +44,7 @@ pub struct EvmUpdater {
     writer: Bus<EvmUpdate>,
     receiver: Receiver<EvmRequest>,
     settings: Arc<Mutex<Settings>>,
+    contract: Edcas,
 }
 
 #[derive(Clone)]
@@ -67,17 +68,25 @@ pub fn initialize(
     receiver: Receiver<EvmRequest>,
     settings: Arc<Mutex<Settings>>,
 ) -> EvmUpdater {
+    let contract = settings
+        .lock()
+        .unwrap()
+        .evm_settings
+        .contract
+        .clone()
+        .unwrap();
     EvmUpdater {
         writer,
         receiver,
         settings,
+        contract,
     }
 }
 
 impl EvmUpdater {
     pub fn run_update(&mut self) {
-        if let Some(contract) = &self.settings.lock().unwrap().evm_settings.contract {
-            tokio::runtime::Builder::new_multi_thread()
+        let contract = &self.contract;
+        tokio::runtime::Builder::new_multi_thread()
                 .enable_all()
                 .build()
                 .unwrap()
@@ -527,7 +536,6 @@ impl EvmUpdater {
                         }
                     }
                 });
-        }
     }
 }
 

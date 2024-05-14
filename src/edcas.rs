@@ -167,8 +167,17 @@ impl EliteRustClient {
                                             );
                                         }
                                     }
+                                    let mut found = false;
+                                    for j in 0..self.explorer.systems[i].body_list.len() {
+                                        if self.explorer.systems[i].body_list[j].get_id() == body.get_id() {
+                                            found = true;
+                                        }
+                                    }
+                                    if !found {
+                                        self.explorer.systems[i].body_list.push(body.clone());
+                                    }
                                 }
-                                self.explorer.systems[i].body_list.clone_from(&planet_list);
+                                self.explorer.systems[i].body_list.sort_by_key(|planet| planet.get_id());
                             }
                         }
                     }
@@ -211,18 +220,16 @@ impl Default for EliteRustClient {
         let mut evm_update_bus: Bus<EvmUpdate> = Bus::new(100);
         let evm_update_reader = evm_update_bus.add_rx();
         let settings_pointer_clone = settings_pointer.clone();
+        let mut evm_updater = request_handler::initialize(
+            evm_update_bus,
+            evm_request_receiver,
+            settings_pointer_clone,
+        );
         thread::Builder::new()
             .name("edcas-evm-handler".into())
-            .spawn(move || {
-                let mut evm_updater = request_handler::initialize(
-                    evm_update_bus,
-                    evm_request_receiver,
-                    settings_pointer_clone,
-                );
-                loop {
-                    evm_updater.run_update();
-                    sleep(Duration::from_secs(1));
-                }
+            .spawn(move || loop {
+                evm_updater.run_update();
+                sleep(Duration::from_secs(1));
             })
             .expect("Failed to create thread jevm-handler");
 
@@ -261,16 +268,22 @@ impl Default for EliteRustClient {
             info!("Starting Evm Interpreter");
             //Buffer needs to be this large or in development, when the reader timeout is set to 0 the buffer can get full
             let settings_pointer = settings_pointer_clone;
+            let mut tangle_interpreter = backend::evm::journal_interpreter::initialize(
+                tangle_journal_bus_reader,
+                &settings_pointer.lock().unwrap().evm_settings,
+            );
             thread::Builder::new()
                 .name("edcas-evm-interpreter".into())
                 .spawn(move || {
-                    let mut tangle_interpreter = backend::evm::journal_interpreter::initialize(
-                        tangle_journal_bus_reader,
-                        &settings_pointer.lock().unwrap().evm_settings,
-                    );
-                    loop {
-                        tangle_interpreter.run();
-                    }
+                    tokio::runtime::Builder::new_multi_thread()
+                        .enable_all()
+                        .build()
+                        .unwrap()
+                        .block_on(async move {
+                            loop {
+                                tangle_interpreter.run();
+                            }
+                        });
                 })
                 .expect("Failed to create thread evm-interpreter");
         }
