@@ -28,8 +28,7 @@ pub fn initialize(settings: Arc<Mutex<Settings>>) -> JournalReader {
             .clone(),
         0,
     );
-    let flag = 1;
-    while flag != 0 {
+    loop {
         let mut line = String::new();
 
         match reader.read_line(&mut line) {
@@ -143,7 +142,7 @@ impl JournalReader {
 }
 
 pub fn get_journal_log_by_index(mut directory_path: String, index: usize) -> BufReader<File> {
-    let log_name_date_list = get_log_file_list(&mut directory_path);
+    let log_name_date_list = get_log_file_list(&directory_path);
 
     //Reader WILL crash at this point by an index out of bounds exception if it cant find any more logs
     directory_path.push_str("/Journal.");

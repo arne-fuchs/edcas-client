@@ -385,11 +385,6 @@ fn initialize_logger() -> String {
         ])
         .level_filter(level);
 
-    let _logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
-        .name(log_path.to_str().unwrap())
-        .target_exclusions(&["h2", "hyper", "rustls"])
-        .level_filter(level);
-
     let config = fern_logger::LoggerConfig::build()
         .with_output(logger_output_config)
         .finish();

@@ -10,6 +10,8 @@ use std::sync::Arc;
 use crate::edcas::EliteRustClient;
 
 mod edcas;
+#[cfg(feature = "eddn")]
+mod eddn;
 mod gui;
 #[cfg(feature = "tui")]
 mod tui;
@@ -20,29 +22,7 @@ fn main() {
     let mut hpos: f32 = -1.0;
     let mut fullscreen = false;
     let mut maximized = false;
-
-    for i in 0..args.len() {
-        match args[i].as_str() {
-            "--version" => {
-                println!("{}", env!("CARGO_PKG_VERSION"));
-                return;
-            }
-            "--wposition" => {
-                wpos = f32::from_str(args[i + 1].as_str())
-                    .expect(format!("Wrong argument for width: {} ", &args[i + 1]).as_str());
-            }
-            "--hposition" => {
-                hpos = f32::from_str(args[i + 1].as_str())
-                    .expect(format!("Wrong argument for width: {} ", &args[i + 1]).as_str());
-            }
-            "--fullscreen" => {
-                fullscreen = true;
-            }
-            "--maximized" => {
-                maximized = true;
-            }
-            "--help" => {
-                let ascii_art = r#"
+    let ascii_art = r#"
   ______    ____      ____       _       ______
  |  ____|  |  _ \   / ____|     / \     /  ____|
  | |__     | | | |  | |        / _ \    |  (___
@@ -51,6 +31,28 @@ fn main() {
  |______|  |____/   \_____| /__/   \__\ |_____/
 
 "#;
+    
+    for i in 0..args.len() {
+        match args[i].as_str() {
+            "--version" => {
+                println!("{}", env!("CARGO_PKG_VERSION"));
+                return;
+            }
+            "--wposition" => {
+                wpos = f32::from_str(args[i + 1].as_str())
+                    .unwrap_or_else(|_| panic!("Wrong argument for width: {} ", &args[i + 1]));
+            }
+            "--hposition" => {
+                hpos = f32::from_str(args[i + 1].as_str())
+                    .unwrap_or_else(|_| panic!("Wrong argument for width: {} ", &args[i + 1]));
+            }
+            "--fullscreen" => {
+                fullscreen = true;
+            }
+            "--maximized" => {
+                maximized = true;
+            }
+            "--help" => {
                 println!("{}", ascii_art);
                 println!("Here is a list of all commands:\n");
                 println!("--version\tPrints the current version of edcas");
@@ -62,6 +64,12 @@ fn main() {
             "--tui" => {
                 let client = EliteRustClient::default();
                 tui::draw_tui(client).unwrap();
+                return;
+            }
+            #[cfg(feature = "eddn")]
+            "--eddn" => {
+                println!("{}", ascii_art);
+                eddn::initialize();
                 return;
             }
             _ => {}

@@ -40,19 +40,22 @@ impl EvmInterpreter {
             Err(_) => {}
             Ok(json) => {
                 //let json = json.clone();
-                let event = json["event"].as_str().unwrap();
+                let event = json["event"].as_str().unwrap_or("");
 
                 debug!("EVM event received: {}", event);
 
                 match event {
                     "FSDJump" => {
-                        tokio::runtime::Builder::new_multi_thread()
-                            .enable_all()
-                            .build()
-                            .unwrap()
-                            .block_on(async move {
-                                let _ = process_jump(json, self.contract.clone()).await;
-                            });
+                        let contract = self.contract.clone();
+                        thread::spawn(|| {
+                            tokio::runtime::Builder::new_multi_thread()
+                                .enable_all()
+                                .build()
+                                .unwrap()
+                                .block_on(async move {
+                                    let _ = process_jump(json, contract).await;
+                                });
+                        });
                     }
                     "FSSDiscoveryScan" => {
                         let contract = self.contract.clone();
@@ -85,112 +88,114 @@ impl EvmInterpreter {
                         });
                     }
                     "Scan" => {
-                        tokio::runtime::Builder::new_multi_thread()
-                            .enable_all()
-                            .build()
-                            .unwrap()
-                            .block_on(async move {
-                                let contract = self.contract.clone();
-                                if !json["BodyName"].to_string().contains("Belt Cluster")
-                                    && !json["BodyName"].to_string().contains("Ring")
-                                {
-                                    if !json.has_key("StarType") {
-                                        //Planet (Body)
-                                        //Body
-                                        //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40,
-                                        // "Parents":[ {"Star":1}, {"Null":0} ],
-                                        // "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435,
-                                        // "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant",
-                                        // "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ],
-                                        // "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730,
-                                        // "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734,
-                                        // "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320,
-                                        // "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
-                                        let body_id = json["BodyID"].as_u8().unwrap();
-                                        let system_address =
-                                            json["SystemAddress"].as_u64().unwrap();
-                                        debug!("Call register_planet: {system_address}-{body_id}-{}",json["BodyName"]);
-                                        let function_call: FunctionCall<
-                                            Arc<
-                                                SignerMiddleware<
-                                                    Provider<Http>,
-                                                    Wallet<SigningKey>,
+                        let contract = self.contract.clone();
+                        thread::spawn(||{
+                            tokio::runtime::Builder::new_multi_thread()
+                                .enable_all()
+                                .build()
+                                .unwrap()
+                                .block_on(async move {
+                                    if !json["BodyName"].to_string().contains("Belt Cluster")
+                                        && !json["BodyName"].to_string().contains("Ring")
+                                    {
+                                        if !json.has_key("StarType") {
+                                            //Planet (Body)
+                                            //Body
+                                            //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40,
+                                            // "Parents":[ {"Star":1}, {"Null":0} ],
+                                            // "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435,
+                                            // "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant",
+                                            // "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ],
+                                            // "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730,
+                                            // "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734,
+                                            // "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320,
+                                            // "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
+                                            let body_id = json["BodyID"].as_u8().unwrap();
+                                            let system_address =
+                                                json["SystemAddress"].as_u64().unwrap();
+                                            debug!("Call register_planet: {system_address}-{body_id}-{}",json["BodyName"]);
+                                            let function_call: FunctionCall<
+                                                Arc<
+                                                    SignerMiddleware<
+                                                        Provider<Http>,
+                                                        Wallet<SigningKey>,
+                                                    >,
                                                 >,
-                                            >,
-                                            SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-                                            (),
-                                        > = contract.register_planet(
-                                            system_address,
-                                            body_id,
-                                            json["BodyName"].to_string(),
-                                            json["WasDiscovered"].as_bool().unwrap(),
-                                            json["WasMapped"].as_bool().unwrap(),
-                                            extract_planet_properties(&json),
-                                            extract_body_properties(&json),
-                                            DateTime::parse_from_rfc3339(
-                                                json["timestamp"].as_str().unwrap(),
-                                            )
-                                            .unwrap()
-                                            .timestamp()
-                                            .into(),
-                                        );
-                                        match execute_send_repeatable(function_call).await {
-                                            Ok(receipt) => {
-                                                debug!("Call register_planet successful {}-{}: {:?} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
+                                                SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                                (),
+                                            > = contract.register_planet(
+                                                system_address,
+                                                body_id,
+                                                json["BodyName"].to_string(),
+                                                json["WasDiscovered"].as_bool().unwrap(),
+                                                json["WasMapped"].as_bool().unwrap(),
+                                                extract_planet_properties(&json),
+                                                extract_body_properties(&json),
+                                                DateTime::parse_from_rfc3339(
+                                                    json["timestamp"].as_str().unwrap(),
+                                                )
+                                                    .unwrap()
+                                                    .timestamp()
+                                                    .into(),
+                                            );
+                                            match execute_send_repeatable(function_call).await {
+                                                Ok(receipt) => {
+                                                    debug!("Call register_planet successful {}-{}: {:?} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash,receipt.block_number);
+                                                }
+                                                Err(error) => {
+                                                    debug!("Call register_planet failed {}-{}: {}",system_address,body_id,error);
+                                                }
                                             }
-                                            Err(error) => {
-                                                debug!("Call register_planet failed {}-{}: {}",system_address,body_id,error);
+                                        } else {
+                                            //Star
+                                            //{"AbsoluteMagnitude":8.518448,"Age_MY":446,"AxialTilt":0,"BodyID":0,"BodyName":"Hyades Sector BB-N b7-5",
+                                            // "DistanceFromArrivalLS":0,"Luminosity":"Va","Radius":374854272.0,"RotationPeriod":192595.293946,"ScanType":"AutoScan",
+                                            // "StarPos":[12.1875,-74.90625,-120.5],"StarSystem":"Hyades Sector BB-N b7-5","StarType":"M","StellarMass":0.394531,"Subclass":1,
+                                            // "SurfaceTemperature":3367.0,"SystemAddress":11666070513017,"WasDiscovered":true,"WasMapped":false,"event":"Scan","horizons":true,
+                                            // "odyssey":true,"timestamp":"2024-03-26T21:27:53Z"}
+                                            let body_id = json["BodyID"].as_u8().unwrap();
+                                            let system_address =
+                                                json["SystemAddress"].as_u64().unwrap();
+                                            debug!("Call register_star: {system_address}-{body_id}-{}",json["BodyName"]);
+                                            let function_call: FunctionCall<
+                                                Arc<
+                                                    SignerMiddleware<
+                                                        Provider<Http>,
+                                                        Wallet<SigningKey>,
+                                                    >,
+                                                >,
+                                                SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                                (),
+                                            > = contract.register_star(
+                                                system_address,
+                                                body_id,
+                                                json["BodyName"].to_string(),
+                                                json["WasDiscovered"].as_bool().unwrap(),
+                                                json["WasMapped"].as_bool().unwrap(),
+                                                extract_star_properties(&json),
+                                                extract_body_properties(&json),
+                                                DateTime::parse_from_rfc3339(
+                                                    json["timestamp"].as_str().unwrap(),
+                                                )
+                                                    .unwrap()
+                                                    .timestamp()
+                                                    .into(),
+                                            );
+                                            match execute_send_repeatable(function_call).await {
+                                                Ok(receipt) => {
+                                                    debug!("Call register_star successful {}-{}: {:?} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash.to_string(),receipt.block_number);
+                                                }
+                                                Err(error) => {
+                                                    debug!("Call register_star failed {}-{}: {}",system_address,body_id,error);
+                                                }
                                             }
                                         }
                                     } else {
-                                        //Star
-                                        //{"AbsoluteMagnitude":8.518448,"Age_MY":446,"AxialTilt":0,"BodyID":0,"BodyName":"Hyades Sector BB-N b7-5",
-                                        // "DistanceFromArrivalLS":0,"Luminosity":"Va","Radius":374854272.0,"RotationPeriod":192595.293946,"ScanType":"AutoScan",
-                                        // "StarPos":[12.1875,-74.90625,-120.5],"StarSystem":"Hyades Sector BB-N b7-5","StarType":"M","StellarMass":0.394531,"Subclass":1,
-                                        // "SurfaceTemperature":3367.0,"SystemAddress":11666070513017,"WasDiscovered":true,"WasMapped":false,"event":"Scan","horizons":true,
-                                        // "odyssey":true,"timestamp":"2024-03-26T21:27:53Z"}
-                                        let body_id = json["BodyID"].as_u8().unwrap();
-                                        let system_address =
-                                            json["SystemAddress"].as_u64().unwrap();
-                                        debug!("Call register_star: {system_address}-{body_id}-{}",json["BodyName"]);
-                                        let function_call: FunctionCall<
-                                            Arc<
-                                                SignerMiddleware<
-                                                    Provider<Http>,
-                                                    Wallet<SigningKey>,
-                                                >,
-                                            >,
-                                            SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
-                                            (),
-                                        > = contract.register_star(
-                                            system_address,
-                                            body_id,
-                                            json["BodyName"].to_string(),
-                                            json["WasDiscovered"].as_bool().unwrap(),
-                                            json["WasMapped"].as_bool().unwrap(),
-                                            extract_star_properties(&json),
-                                            extract_body_properties(&json),
-                                            DateTime::parse_from_rfc3339(
-                                                json["timestamp"].as_str().unwrap(),
-                                            )
-                                            .unwrap()
-                                            .timestamp()
-                                            .into(),
-                                        );
-                                        match execute_send_repeatable(function_call).await {
-                                            Ok(receipt) => {
-                                                debug!("Call register_star successful {}-{}: {:?} - BlockNr.{:?}",system_address,body_id,receipt.transaction_hash.to_string(),receipt.block_number);
-                                            }
-                                            Err(error) => {
-                                                debug!("Call register_star failed {}-{}: {}",system_address,body_id,error);
-                                            }
-                                        }
+                                        debug!("Belt Cluster -> unimplemented")
+                                        //TODO Interpret Belt Cluster and Ring
                                     }
-                                } else {
-                                    debug!("Belt Cluster -> unimplemented")
-                                    //TODO Interpret Belt Cluster and Ring
-                                }
-                            });
+                                });
+                        });
                     }
                     //{ "timestamp":"2022-07-07T20:58:06Z", "event":"SAASignalsFound", "BodyName":"IC 2391 Sector YE-A d103 B 1", "SystemAddress":3549631072611, "BodyID":15, "Signals":[ { "Type":"$SAA_SignalType_Guardian;", "Type_Localised":"Guardian", "Count":1 }, { "Type":"$SAA_SignalType_Human;", "Type_Localised":"Menschlich", "Count":9 } ] }
                     //{ "timestamp":"2022-09-07T17:50:41Z", "event":"FSSBodySignals", "BodyName":"Synuefe EN-H d11-106 6 a", "BodyID":31, "SystemAddress":3652777380195, "Signals":[ { "Type":"$SAA_SignalType_Biological;", "Type_Localised":"Biologisch", "Count":1 }, { "Type":"$SAA_SignalType_Geological;", "Type_Localised":"Geologisch", "Count":3 } ] }
@@ -460,7 +465,7 @@ impl EvmInterpreter {
                                     let mut services = String::new();
                                     for entry in 0..json["StationServices"].len() {
                                         if !services.is_empty() {
-                                            services.push_str(",");
+                                            services.push(',');
                                         }
                                         services.push_str(
                                             json["StationServices"][entry].as_str().unwrap(),
@@ -541,6 +546,43 @@ impl EvmInterpreter {
                                             );
                                         //execute_send(function_call).await;
                                         let _ = execute_send_repeatable(function_call).await;
+                                    }
+                                });
+                        });
+                    }
+                    "" => {
+                        let contract = self.contract.clone();
+                        thread::spawn(|| {
+                            tokio::runtime::Builder::new_multi_thread()
+                                .enable_all()
+                                .build()
+                                .unwrap()
+                                .block_on(async move {
+                                    if !json["commodities"].is_empty() {
+                                        let market_id = json["marketId"].as_u64().unwrap();
+                                        let size = json["commodities"].len();
+                                        for i in 0..size {
+                                            let commoditiy = &json["commodities"][i];
+                                            let function_call: FunctionCall<
+                                                Arc<SignerMiddleware<Provider<Http>, Wallet<SigningKey>>>,
+                                                SignerMiddleware<Provider<Http>, Wallet<SigningKey>>,
+                                                (),
+                                            > = contract.register_commodity_listening(
+                                                market_id,
+                                                commoditiy["name"].as_str().unwrap().to_ascii_lowercase(),
+                                                edcas_contract::CommodityListening{
+                                                    buy_price: commoditiy["buyPrice"].as_u32().unwrap_or(0),
+                                                    sell_price: commoditiy["sellPrice"].as_u32().unwrap_or(0),
+                                                    mean_price: commoditiy["meanPrice"].as_u32().unwrap_or(0),
+                                                    stock: commoditiy["stock"].as_u32().unwrap_or(0),
+                                                    demand: commoditiy["demand"].as_u32().unwrap_or(0),
+                                                    stock_bracket: commoditiy["stockBracket"].as_u32().unwrap_or(0),
+                                                    demand_bracket: commoditiy["demandBracket"].as_u32().unwrap_or(0),
+                                                }
+                                            );
+                                            //execute_send(function_call).await;
+                                            let _ = execute_send_repeatable(function_call).await;
+                                        }
                                     }
                                 });
                         });
@@ -626,7 +668,10 @@ fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
         volcanism: json["Volcanism"].to_string(),
         tidal_lock: json["TidalLock"]
             .as_bool()
-            .unwrap_or_else(|| panic!("Tidal Lock not parseable {}", json)),
+            .unwrap_or({
+                error!("Tidal Lock not parseable {}", json);
+                false
+            }),
         parent_id,
         mass_em: floating::generate_floating_from_string(json["MassEM"].to_string()),
         surface_gravity: floating::generate_floating_from_string(
@@ -770,7 +815,7 @@ async fn execute_send(
         Err(err) => match err {
             ContractError::Revert(err) => {
                 let message = get_revert_message(err);
-                error!("Revert: {}", message);
+                info!("Revert: {}", message);
                 Err(NonRepeatableError(message))
             }
             ContractError::DecodingError(err) => {
@@ -835,7 +880,7 @@ async fn process_jump(
 }
 
 fn get_revert_message(bytes: Bytes) -> String {
-    if bytes.len() > 134 {
+    if bytes.len() < 134 {
         let n = bytes.split_at(134 / 2).1;
         let n: &[u8] = n.split(|b| *b == 0u8).next().unwrap();
         return String::from_utf8(n.to_vec()).unwrap();
