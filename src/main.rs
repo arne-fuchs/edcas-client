@@ -58,6 +58,8 @@ fn main() {
                 println!("--version\tPrints the current version of edcas");
                 println!("--height <f32>\tSets the height for the edcas gui");
                 println!("--width <f32>\tSets the width for the edcas gui");
+                #[cfg(feature = "tui")]
+                println!("--tui\tStart edcas in tui mode");
                 return;
             }
             #[cfg(feature = "tui")]
