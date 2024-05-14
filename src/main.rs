@@ -66,14 +66,16 @@ fn main() {
                 return;
             }
             "--set-sc-address" => {
+                let client = EliteRustClient::default();
                 let new_smart_contract_address = String::from_str(args[i + 1].as_str())
                     .unwrap_or_else(|_| panic!("Wrong argument for SC Address: {}", &args[i + 1]));
-                cli::set_sc_address(new_smart_contract_address);
+                cli::set_sc_address(new_smart_contract_address, client);
                 return;
             }
 
-            "--upload-logs" => {
-                cli::upload_logs();
+            "--upload-journal" => {
+                let client = EliteRustClient::default();
+                cli::upload_journal(client);
                 return;
             }
             #[cfg(feature = "tui")]
