@@ -5,6 +5,8 @@ use bus::{Bus, BusReader};
 use json::JsonValue;
 use log::error;
 use std::io::BufRead;
+use std::sync::Arc;
+use std::sync::atomic::AtomicUsize;
 use std::thread;
 
 /**
@@ -17,21 +19,11 @@ pub fn initialize(evm_settings: &EvmSettings, journal_directory: String) -> (Bus
 
     let mut journal_bus: Bus<JsonValue> = Bus::new(10);
     let journal_bus_reader = journal_bus.add_rx();
-    let mut evm_reader =
+    let mut evm_interpreter =
         edcas::backend::evm::journal_interpreter::initialize(journal_bus_reader, evm_settings);
     thread::Builder::new()
-        .name("edcas-journal-uploader-evm".into())
-        .spawn(move || {
-            tokio::runtime::Builder::new_multi_thread()
-                .enable_all()
-                .build()
-                .unwrap()
-                .block_on(async move {
-                    loop {
-                        evm_reader.run();
-                    }
-                });
-        })
+        .name("edcas-evm-interpreter".into())
+        .spawn(move || evm_interpreter.run_loop())
         .expect("Failed to create thread journal-reader-evm");
 
     let path = journal_directory.clone();
