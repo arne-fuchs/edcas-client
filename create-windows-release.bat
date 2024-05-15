@@ -7,9 +7,6 @@ set "folder_name=edcas-client-windows"
 rem Clean build artifacts
 cargo clean
 
-rem Update dependencies
-cargo update
-
 rem Build release version
 cargo build --release
 

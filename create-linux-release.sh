@@ -2,7 +2,6 @@
 
 echo "Running cargo commands"
 #cargo clean
-cargo update
 cargo build --release
 
 folder_name="edcas-client"
