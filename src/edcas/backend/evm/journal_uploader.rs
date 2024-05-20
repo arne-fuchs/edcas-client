@@ -5,8 +5,6 @@ use bus::{Bus, BusReader};
 use json::JsonValue;
 use log::error;
 use std::io::BufRead;
-use std::sync::Arc;
-use std::sync::atomic::AtomicUsize;
 use std::thread;
 
 /**
