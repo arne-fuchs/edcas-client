@@ -194,15 +194,15 @@ impl App for Settings {
                                 ui.vertical_centered(|ui|{
                                     if let Some(ref mut upload_status) = self.evm_settings.uploader_status {
                                         ui.label("You are able to close this window and still use EDCAS. It will run in the background");
-                                        if let Ok(index) = upload_status.index_updates.try_recv() {upload_status.current = index as u32;}
-                                        let status = (upload_status.total - upload_status.current) as f32 / upload_status.total as f32;
-                                        ui.add(egui::ProgressBar::new(status).text(format!("{} of {} logs complete",upload_status.total - upload_status.current,upload_status.total)));
+                                        if let Ok(index) = upload_status.log_index_updates.try_recv() {upload_status.current_log = index as u32;}
+                                        let status = (upload_status.total_logs - upload_status.current_log) as f32 / upload_status.total_logs as f32;
+                                        ui.add(egui::ProgressBar::new(status).text(format!("{} of {} logs read", upload_status.total_logs - upload_status.current_log, upload_status.total_logs)));
                                     }else if ui.button("Do it!").clicked(){
                                         let (progress_bus_reader, total) = journal_uploader::initialize(&self.evm_settings, self.journal_reader_settings.journal_directory.clone());
                                         self.evm_settings.uploader_status = Some(UploaderStatus{
-                                            current: 0,
-                                            total: total as u32,
-                                            index_updates: progress_bus_reader,
+                                            current_log: 0,
+                                            total_logs: total as u32,
+                                            log_index_updates: progress_bus_reader,
                                         });
                                     }
                                     if ui.button("Close Window").clicked() {

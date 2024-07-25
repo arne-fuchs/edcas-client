@@ -169,7 +169,9 @@ impl EliteRustClient {
                                     }
                                     let mut found = false;
                                     for j in 0..self.explorer.systems[i].body_list.len() {
-                                        if self.explorer.systems[i].body_list[j].get_id() == body.get_id() {
+                                        if self.explorer.systems[i].body_list[j].get_id()
+                                            == body.get_id()
+                                        {
                                             found = true;
                                         }
                                     }
@@ -177,7 +179,9 @@ impl EliteRustClient {
                                         self.explorer.systems[i].body_list.push(body.clone());
                                     }
                                 }
-                                self.explorer.systems[i].body_list.sort_by_key(|planet| planet.get_id());
+                                self.explorer.systems[i]
+                                    .body_list
+                                    .sort_by_key(|planet| planet.get_id());
                             }
                         }
                     }
