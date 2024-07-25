@@ -105,9 +105,9 @@ pub struct EvmSettings {
 }
 
 pub struct UploaderStatus {
-    pub current: u32,
-    pub total: u32,
-    pub index_updates: BusReader<i64>,
+    pub current_log: u32,
+    pub total_logs: u32,
+    pub log_index_updates: BusReader<i64>,
 }
 
 pub struct GraphicEditorSettings {

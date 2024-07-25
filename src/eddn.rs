@@ -39,8 +39,7 @@ pub fn initialize() {
         crate::edcas::backend::evm::journal_interpreter::initialize(bus_reader, &evm_settings);
     thread::Builder::new()
         .name("edcas-evm-interpreter".into())
-        .spawn(move || evm_interpreter.run_loop()
-        )
+        .spawn(move || evm_interpreter.run_loop())
         .expect("Can't spawn eddn thread");
     println!("Ready!");
     tokio::runtime::Builder::new_multi_thread()
