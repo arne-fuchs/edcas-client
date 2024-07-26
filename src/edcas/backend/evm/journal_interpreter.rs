@@ -48,6 +48,7 @@ impl EvmInterpreter {
             while let Ok(json) = self.bus.try_recv() {
                 match json["event"].as_str().unwrap_or("") {
                     "FSDJump" => {
+                        debug!("Add register_system to queue");
                         let function_call: ContractCall = self.contract.register_system(
                             json["SystemAddress"].as_u64().unwrap(),
                             json["StarSystem"].to_string(),
@@ -67,6 +68,260 @@ impl EvmInterpreter {
                         );
                         self.queue.push_back(function_call);
                     },
+                    "FSSDiscoveryScan" => {
+                        debug!("Add set_body_count to queue");
+                        let system_address = json["SystemAddress"].as_u64().unwrap();
+                        let body_count = json["BodyCount"].as_u8().unwrap();
+                        let function_call: ContractCall = self.contract.set_body_count(
+                            system_address,
+                            body_count,
+                            DateTime::parse_from_rfc3339(json["timestamp"].as_str().unwrap())
+                                .unwrap()
+                                .timestamp()
+                                .into(),
+                        );
+                        self.queue.push_back(function_call);
+                    },
+                    "Scan" => {
+                        if !json["BodyName"].to_string().contains("Belt Cluster")
+                            && !json["BodyName"].to_string().contains("Ring")
+                        {
+                            if !json.has_key("StarType") {
+                                //Planet (Body)
+                                //Body
+                                //{ "timestamp":"2022-10-16T23:51:17Z", "event":"Scan", "ScanType":"Detailed", "BodyName":"Ogmar A 6", "BodyID":40,
+                                // "Parents":[ {"Star":1}, {"Null":0} ],
+                                // "StarSystem":"Ogmar", "SystemAddress":84180519395914, "DistanceFromArrivalLS":3376.246435,
+                                // "TidalLock":false, "TerraformState":"", "PlanetClass":"Sudarsky class I gas giant",
+                                // "Atmosphere":"", "AtmosphereComposition":[ { "Name":"Hydrogen", "Percent":73.044167 }, { "Name":"Helium", "Percent":26.955832 } ],
+                                // "Volcanism":"", "MassEM":24.477320, "Radius":22773508.000000, "SurfaceGravity":18.811067, "SurfaceTemperature":62.810730,
+                                // "SurfacePressure":0.000000, "Landable":false, "SemiMajorAxis":1304152250289.916992, "Eccentricity":0.252734,
+                                // "OrbitalInclination":156.334694, "Periapsis":269.403039, "OrbitalPeriod":990257555.246353, "AscendingNode":-1.479320,
+                                // "MeanAnomaly":339.074691, "RotationPeriod":37417.276422, "AxialTilt":0.018931, "WasDiscovered":true, "WasMapped":true }
+                                let body_id = json["BodyID"].as_u8().unwrap();
+                                let system_address = json["SystemAddress"].as_u64().unwrap();
+                                let function_call: ContractCall = self.contract.register_planet(
+                                    system_address,
+                                    body_id,
+                                    json["BodyName"].to_string(),
+                                    json["WasDiscovered"].as_bool().unwrap(),
+                                    json["WasMapped"].as_bool().unwrap(),
+                                    extract_planet_properties(&json),
+                                    extract_body_properties(&json),
+                                    DateTime::parse_from_rfc3339(
+                                        json["timestamp"].as_str().unwrap(),
+                                    )
+                                        .unwrap()
+                                        .timestamp()
+                                        .into(),
+                                );
+                                debug!("Add register_planet to queue");
+                                self.queue.push_back(function_call);
+                            } else {
+                                //Star
+                                //{"AbsoluteMagnitude":8.518448,"Age_MY":446,"AxialTilt":0,"BodyID":0,"BodyName":"Hyades Sector BB-N b7-5",
+                                // "DistanceFromArrivalLS":0,"Luminosity":"Va","Radius":374854272.0,"RotationPeriod":192595.293946,"ScanType":"AutoScan",
+                                // "StarPos":[12.1875,-74.90625,-120.5],"StarSystem":"Hyades Sector BB-N b7-5","StarType":"M","StellarMass":0.394531,"Subclass":1,
+                                // "SurfaceTemperature":3367.0,"SystemAddress":11666070513017,"WasDiscovered":true,"WasMapped":false,"event":"Scan","horizons":true,
+                                // "odyssey":true,"timestamp":"2024-03-26T21:27:53Z"}
+                                let body_id = json["BodyID"].as_u8().unwrap();
+                                let system_address = json["SystemAddress"].as_u64().unwrap();
+                                let function_call: ContractCall = self.contract.register_star(
+                                    system_address,
+                                    body_id,
+                                    json["BodyName"].to_string(),
+                                    json["WasDiscovered"].as_bool().unwrap(),
+                                    json["WasMapped"].as_bool().unwrap(),
+                                    extract_star_properties(&json),
+                                    extract_body_properties(&json),
+                                    DateTime::parse_from_rfc3339(
+                                        json["timestamp"].as_str().unwrap(),
+                                    )
+                                        .unwrap()
+                                        .timestamp()
+                                        .into(),
+                                );
+                                debug!("Add register_star to queue");
+                                self.queue.push_back(function_call);
+                            }
+                        }
+                    },
+                    "FSSBodySignals" | "SAASignalsFound" => {
+                        let system_address = json["SystemAddress"].as_u64().unwrap();
+                        let body_id = json["BodyID"].as_u8().unwrap();
+                        for i in 0..json["Signals"].len() {
+                            let type_ = {
+                                //enum PlanetSignalType {
+                                //     unknown,geo,xeno,bio,human
+                                // }
+                                match json["Signals"][i]["Type"].as_str().unwrap() {
+                                    "$SAA_SignalType_Human;" => 4,
+                                    "$SAA_SignalType_Biological;" => 3,
+                                    "$SAA_SignalType_Xenological;" => 2,
+                                    "$SAA_SignalType_Geological;" => 1,
+                                    &_ => 0,
+                                }
+                            };
+                            let function_call: ContractCall = self.contract.register_planet_signal(
+                                system_address,
+                                body_id,
+                                type_,
+                                json["Signals"][i]["Count"].as_u8().unwrap(),
+                                DateTime::parse_from_rfc3339(
+                                    json["timestamp"].as_str().unwrap(),
+                                )
+                                    .unwrap()
+                                    .timestamp()
+                                    .into(),
+                            );
+                            debug!("Add register_planet_signal to queue");
+                            self.queue.push_back(function_call);
+                        }
+                    },
+                    "CarrierJumpRequest" => {
+                        let function_call: ContractCall = self.contract.emit_carrier_jump(
+                            json["CarrierID"].as_u64().unwrap(),
+                            json["SystemName"].as_str().unwrap().to_string(),
+                            json["Body"].as_str().unwrap_or("Unknown").to_string(),
+                            DateTime::parse_from_rfc3339(
+                                json["DepartureTime"].as_str().unwrap_or(""),
+                            )
+                                .unwrap_or(DateTime::default())
+                                .timestamp()
+                                .into(),
+                        );
+                        debug!("Add emit_carrier_jump to queue");
+                        self.queue.push_back(function_call);
+                    },
+                    "CarrierJumpCancelled" => {
+                        let function_call: ContractCall = self.contract.cancel_carrier_jump(json["CarrierID"].as_u64().unwrap());
+                        debug!("Add cancel_carrier_jump to queue");
+                        self.queue.push_back(function_call);
+                    },
+                    "CarrierBuy" => {
+                        let function_call: ContractCall = self.contract.register_carrier(
+                            json["CarrierID"].as_u64().unwrap(),
+                            "Carrier".to_string(),
+                            json["Callsign"].as_str().unwrap().to_string(),
+                            "".to_string(),
+                            "".to_string(),
+                            false,
+                            DateTime::parse_from_rfc3339(json["timestamp"].as_str().unwrap())
+                                .unwrap()
+                                .timestamp()
+                                .into(),
+                        );
+                        debug!("Add register_carrier to queue");
+                        self.queue.push_back(function_call);
+                    },
+                    "CarrierStats" => {
+                        let mut services = String::new();
+                        for entry in 0..json["StationServices"].len() {
+                            if !services.is_empty() {
+                                services.push(',');
+                            }
+                            services.push_str(json["StationServices"][entry].as_str().unwrap());
+                        }
+                        if json["StationType"].as_str().unwrap() == "FleetCarrier" {
+                            debug!("Call register_carrier");
+                            let function_call: ContractCall = self.contract.register_carrier(
+                                json["MarketID"].as_u64().unwrap(),
+                                "Fleet Carrier".to_string(),
+                                json["StationName"].as_str().unwrap().to_string(),
+                                services,
+                                "".to_string(),
+                                false,
+                                DateTime::parse_from_rfc3339(
+                                    json["timestamp"].as_str().unwrap(),
+                                )
+                                    .unwrap()
+                                    .timestamp()
+                                    .into(),
+                            );
+                            debug!("Add register_carrier to queue");
+                            self.queue.push_back(function_call);
+                            let function_call: ContractCall = self.contract.report_carrier_location(
+                                json["MarketID"].as_u64().unwrap(),
+                                json["StarSystem"].as_str().unwrap().to_string(),
+                                "Unkown".to_string(),
+                                DateTime::parse_from_rfc3339(
+                                    json["timestamp"].as_str().unwrap(),
+                                )
+                                    .unwrap()
+                                    .timestamp()
+                                    .into(),
+                            );
+                            debug!("Call report_carrier_location to queue");
+                            self.queue.push_back(function_call);
+                        } else {
+                            debug!("Call register_station  to queue");
+                            let function_call: ContractCall = self.contract.register_station(
+                                json["MarketID"].as_u64().unwrap(),
+                                json["StationName"].as_str().unwrap().to_string(),
+                                json["StationType"].as_str().unwrap().to_string(),
+                                json["SystemAddress"].as_u64().unwrap(),
+                                json["StarSystem"].as_str().unwrap().to_string(),
+                                edcas_contract::Faction {
+                                    name: json["StationFaction"]["Name"]
+                                        .as_str()
+                                        .unwrap()
+                                        .to_string(),
+                                    state: json["StationFaction"]["FactionState"]
+                                        .as_str()
+                                        .unwrap_or("")
+                                        .to_string(),
+                                },
+                                json["StationGovernment"].as_str().unwrap().to_string(),
+                                json["StationEconomy"].as_str().unwrap().to_string(),
+                                services,
+                                floating::generate_floating_from_string(
+                                    json["DistFromStarLS"].to_string(),
+                                ),
+                                json["LandingPads"].to_string(),
+                                DateTime::parse_from_rfc3339(
+                                    json["timestamp"].as_str().unwrap(),
+                                )
+                                    .unwrap()
+                                    .timestamp()
+                                    .into(),
+                            );
+                            //execute_send(function_call).await;
+                            self.queue.push_back(function_call);
+                        }
+                    }
+                    "" => {
+                        if !json["commodities"].is_empty() {
+                            let market_id = json["marketId"].as_u64().unwrap();
+                            let size = json["commodities"].len();
+                            for i in 0..size {
+                                let commoditiy = &json["commodities"][i];
+                                let function_call: ContractCall = self.contract.register_commodity_listening(
+                                    market_id,
+                                    commoditiy["name"].as_str().unwrap().to_ascii_lowercase(),
+                                    edcas_contract::CommodityListening {
+                                        buy_price: commoditiy["buyPrice"].as_u32().unwrap_or(0),
+                                        sell_price: commoditiy["sellPrice"]
+                                            .as_u32()
+                                            .unwrap_or(0),
+                                        mean_price: commoditiy["meanPrice"]
+                                            .as_u32()
+                                            .unwrap_or(0),
+                                        stock: commoditiy["stock"].as_u32().unwrap_or(0),
+                                        demand: commoditiy["demand"].as_u32().unwrap_or(0),
+                                        stock_bracket: commoditiy["stockBracket"]
+                                            .as_u32()
+                                            .unwrap_or(0),
+                                        demand_bracket: commoditiy["demandBracket"]
+                                            .as_u32()
+                                            .unwrap_or(0),
+                                    },
+                                );
+                                //execute_send(function_call).await;
+                                debug!("Call register_commodity_listening to queue");
+                                self.queue.push_back(function_call);
+                            }
+                        }
+                    }
                     &_ => {}
                 }
             }
@@ -88,6 +343,7 @@ impl EvmInterpreter {
                             })
                             .unwrap();
                     self.pool.push(thread);
+                    debug!("Queue size: {}",self.queue.len());
                 }
             } else {
                 thread::sleep(Duration::from_secs(1));
@@ -363,8 +619,8 @@ async fn execute_send(
         Ok(pending) => match pending.await {
             Ok(receipt) => {
                 if let Some(receipt) = receipt {
-                    if let Some(hash) = receipt.block_hash {
-                        info!("Success calling function: {:?}", hash);
+                    if let Some(_hash) = receipt.block_hash {
+                        //info!("Success calling function: {:?}", hash);
                         Ok(receipt)
                     } else {
                         Err(RepeatableError("Receipt without hash".into()))

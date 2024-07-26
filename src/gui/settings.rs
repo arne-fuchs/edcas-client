@@ -1,5 +1,5 @@
 use crate::edcas::backend::evm::journal_uploader;
-use crate::edcas::settings::{Settings, UploaderStatus};
+use crate::edcas::settings::{Settings, JournalReadStatus};
 use eframe::egui::scroll_area::ScrollBarVisibility::AlwaysVisible;
 use eframe::egui::{global_dark_light_mode_switch, vec2, Color32, Context, Window};
 use eframe::{egui, App, Frame};
@@ -192,14 +192,14 @@ impl App for Settings {
                             Window::new("Upload journal data ⬆").collapsible(false).show(ctx,|ui| {
                                 ui.label("Are you sure to upload all journal data to the EDCAS network? Depending on the size of your journal logs, it may can take up to several hours.");
                                 ui.vertical_centered(|ui|{
-                                    if let Some(ref mut upload_status) = self.evm_settings.uploader_status {
+                                    if let Some(ref mut upload_status) = self.evm_settings.journal_read_status {
                                         ui.label("You are able to close this window and still use EDCAS. It will run in the background");
                                         if let Ok(index) = upload_status.log_index_updates.try_recv() {upload_status.current_log = index as u32;}
                                         let status = (upload_status.total_logs - upload_status.current_log) as f32 / upload_status.total_logs as f32;
                                         ui.add(egui::ProgressBar::new(status).text(format!("{} of {} logs read", upload_status.total_logs - upload_status.current_log, upload_status.total_logs)));
                                     }else if ui.button("Do it!").clicked(){
                                         let (progress_bus_reader, total) = journal_uploader::initialize(&self.evm_settings, self.journal_reader_settings.journal_directory.clone());
-                                        self.evm_settings.uploader_status = Some(UploaderStatus{
+                                        self.evm_settings.journal_read_status = Some(JournalReadStatus {
                                             current_log: 0,
                                             total_logs: total as u32,
                                             log_index_updates: progress_bus_reader,
