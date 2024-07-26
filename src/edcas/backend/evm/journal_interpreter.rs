@@ -346,7 +346,7 @@ impl EvmInterpreter {
                     debug!("Queue size: {}",self.queue.len());
                 }
             } else {
-                thread::sleep(Duration::from_secs(1));
+                thread::sleep(Duration::from_millis(50));
                 //Here we have max number of workers reached.
                 let mut num_of_failes = 0;
 
@@ -420,7 +420,7 @@ impl EvmInterpreter {
                                 }
                             }
                         }
-                        thread::sleep(Duration::from_secs(1));
+                        thread::sleep(Duration::from_millis(50));
                     }
 
                     info!("Finished waiting -> calculating actual nonce (Current: {})",self.nonce);
@@ -429,7 +429,7 @@ impl EvmInterpreter {
                     info!("New nonce: {}",self.nonce);
                 }
             }
-            thread::sleep(Duration::from_secs(1));
+            thread::sleep(Duration::from_millis(50));
         }
     }
 }
