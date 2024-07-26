@@ -215,6 +215,8 @@ impl EvmInterpreter {
                         self.queue.push_back(function_call);
                     },
                     "CarrierStats" => {
+                        //TODO Currently broken
+                        break;
                         let mut services = String::new();
                         for entry in 0..json["StationServices"].len() {
                             if !services.is_empty() {
