@@ -200,7 +200,7 @@ impl App for Settings {
                                     }else if ui.button("Do it!").clicked(){
                                         let (progress_bus_reader, total) = journal_uploader::initialize(&self.evm_settings, self.journal_reader_settings.journal_directory.clone());
                                         self.evm_settings.journal_read_status = Some(JournalReadStatus {
-                                            current_log: 0,
+                                            current_log: 1,
                                             total_logs: total as u32,
                                             log_index_updates: progress_bus_reader,
                                         });
