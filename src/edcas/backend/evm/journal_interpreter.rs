@@ -420,7 +420,7 @@ impl EvmInterpreter {
                                 }
                             }
                         }
-                        thread::sleep(Duration::from_millis(50));
+                        thread::sleep(Duration::from_secs(1));
                     }
 
                     info!("Finished waiting -> calculating actual nonce (Current: {})",self.nonce);
