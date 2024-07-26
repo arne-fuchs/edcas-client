@@ -33,7 +33,7 @@ pub fn initialize() {
         smart_contract_address: env::var("SC_ADDRESS").unwrap(),
         contract: None,
         show_upload_data_window: false,
-        uploader_status: None,
+        journal_read_status: None,
     };
     let mut evm_interpreter =
         crate::edcas::backend::evm::journal_interpreter::initialize(bus_reader, &evm_settings);

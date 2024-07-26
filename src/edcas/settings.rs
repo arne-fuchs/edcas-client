@@ -101,10 +101,10 @@ pub struct EvmSettings {
     pub smart_contract_address: String,
     pub contract: Option<Edcas>,
     pub show_upload_data_window: bool,
-    pub uploader_status: Option<UploaderStatus>,
+    pub journal_read_status: Option<JournalReadStatus>,
 }
 
-pub struct UploaderStatus {
+pub struct JournalReadStatus {
     pub current_log: u32,
     pub total_logs: u32,
     pub log_index_updates: BusReader<i64>,
@@ -484,7 +484,7 @@ impl Default for Settings {
                 smart_contract_address,
                 contract,
                 show_upload_data_window: false,
-                uploader_status: None,
+                journal_read_status: None,
             },
             graphic_editor_settings: GraphicEditorSettings {
                 graphics_directory: graphics_directory.clone(),
