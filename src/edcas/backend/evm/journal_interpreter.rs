@@ -215,8 +215,46 @@ impl EvmInterpreter {
                         self.queue.push_back(function_call);
                     },
                     "CarrierStats" => {
+                        //{"timestamp":"2022-09-08T21:27:21Z","event":"CarrierStats","CarrierID":3704402432,"Callsign":"Q2K-BHB","Name":"FUXBAU","DockingAccess":"squadron","AllowNotorious":false,"FuelLevel":529,"JumpRangeCurr":500.000000,
+                        // "JumpRangeMax":500.000000,"PendingDecommission":false,"SpaceUsage":{"TotalCapacity":25000,"Crew":1030,"Cargo":2021,"CargoSpaceReserved":21949,"ShipPacks":0,"ModulePacks":0,"FreeSpace":0},
+                        // "Finance":{"CarrierBalance":1035568031,"ReserveBalance":53265598,"AvailableBalance":854053845,"ReservePercent":5,"TaxRate_rearm":100,"TaxRate_refuel":100,"TaxRate_repair":100},
+                        // "Crew":[{"CrewRole":"BlackMarket","Activated":false},{"CrewRole":"Captain","Activated":true,"Enabled":true,"CrewName":"Vada Cannon"},{"CrewRole":"Refuel","Activated":true,"Enabled":true,"CrewName":"Donna Moon"},{"CrewRole":"Repair","Activated":true,"Enabled":true,"CrewName":"Darnell Grant"},{"CrewRole":"Rearm","Activated":true,"Enabled":true,"CrewName":"Eiza York"},{"CrewRole":"Commodities","Activated":true,"Enabled":true,"CrewName":"Jewel King"},{"CrewRole":"VoucherRedemption","Activated":true,"Enabled":true,"CrewName":"Ezra Ramirez"},{"CrewRole":"Exploration","Activated":false},{"CrewRole":"Shipyard","Activated":false},{"CrewRole":"Outfitting","Activated":false},{"CrewRole":"CarrierFuel","Activated":true,"Enabled":true,"CrewName":"Abraham Strickland"}],
+                        // "ShipPacks":[],"ModulePacks":[]}
                         //TODO Currently broken
                         break;
+                        let mut services = String::new();
+                        for entry in 0..json["Crew"].len() {
+                            if json["Crew"][entry]["Activated"].as_bool().unwrap_or(false) {
+                                if !services.is_empty() {
+                                    services.push_str(",");
+                                }
+                                services.push_str(
+                                    json["Crew"][entry]["CrewRole"].to_string().as_str(),
+                                );
+                            }
+                        }
+                        let function_call: ContractCall = self.contract.register_carrier(
+                            json["CarrierID"].as_u64().unwrap(),
+                            json["Name"].as_str().unwrap().to_string(),
+                            json["Callsign"].as_str().unwrap().to_string(),
+                            services,
+                            json["DockingAccess"].as_str().unwrap().to_string(),
+                            json["AllowNotorious"].as_bool().unwrap(),
+                            DateTime::parse_from_rfc3339(json["timestamp"].as_str().unwrap())
+                                .unwrap()
+                                .timestamp()
+                                .into(),
+                        );
+                        self.queue.push_back(function_call);
+                    }
+                    "Docked" => {
+                        //{ "timestamp":"2024-04-02T21:22:42Z", "event":"Docked", "StationName":"Q2K-BHB", "StationType":"FleetCarrier", "Taxi":false, "Multicrew":false,
+                        // "StarSystem":"Dulos", "SystemAddress":13865362204089, "MarketID":3704402432,
+                        // "StationFaction":{ "Name":"FleetCarrier" }, "StationGovernment":"$government_Carrier;", "StationGovernment_Localised":"Private Ownership",
+                        // "StationServices":[ "dock", "autodock", "commodities", "contacts", "exploration", "outfitting", "crewlounge", "rearm", "refuel", "repair", "shipyard", "engineer", "flightcontroller", "stationoperations", "stationMenu", "carriermanagement", "carrierfuel", "livery", "voucherredemption", "socialspace", "bartender", "vistagenomics" ],
+                        // "StationEconomy":"$economy_Carrier;", "StationEconomy_Localised":"Private Enterprise",
+                        // "StationEconomies":[ { "Name":"$economy_Carrier;", "Name_Localised":"Private Enterprise", "Proportion":1.000000 } ],
+                        // "DistFromStarLS":0.000000, "LandingPads":{ "Small":4, "Medium":4, "Large":8 } }
                         let mut services = String::new();
                         for entry in 0..json["StationServices"].len() {
                             if !services.is_empty() {
@@ -290,7 +328,7 @@ impl EvmInterpreter {
                             //execute_send(function_call).await;
                             self.queue.push_back(function_call);
                         }
-                    }
+                    },
                     "" => {
                         if !json["commodities"].is_empty() {
                             let market_id = json["marketId"].as_u64().unwrap();
