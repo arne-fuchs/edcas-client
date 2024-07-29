@@ -3,6 +3,7 @@ use std::default::Default;
 use std::fmt::Display;
 use std::fs::File;
 use std::io::{Read, Write};
+#[cfg(unix)]
 use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::str::FromStr;
