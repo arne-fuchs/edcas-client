@@ -1,7 +1,7 @@
 #![allow(unreachable_code)]
 extern crate core;
 
-use eframe::egui::{IconData, Pos2, TextBuffer, ViewportBuilder};
+use eframe::egui::{IconData, Pos2, ViewportBuilder};
 use eframe::HardwareAcceleration;
 use std::env;
 use std::str::FromStr;
@@ -168,7 +168,7 @@ fn main() {
     eframe::run_native(
         "ED: Commander Assistant System",
         native_options,
-        Box::new(|_cc| client),
+        Box::new(|_cc| Ok(client)),
     )
     .expect("Program panicked");
 }

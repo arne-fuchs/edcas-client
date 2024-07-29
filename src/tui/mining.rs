@@ -29,7 +29,7 @@ fn data_prospector_text(
     [
         ["┌".to_string(), mining_content.to_owned(), {
             let mut line = "─".to_string();
-            for i in 0..(35 - mining_content.len()) {
+            for _i in 0..(35 - mining_content.len()) {
                 line.push('─');
             }
             line
