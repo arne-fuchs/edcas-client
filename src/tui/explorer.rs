@@ -764,9 +764,9 @@ pub fn tab_explorer(
     .block(
         Block::default()
             .title(Line::from(vec![
-                Span::from(" ◁ "),
+                Span::from(" < "),
                 data_system_name,
-                Span::from(" ▷ "),
+                Span::from(" > "),
             ]))
             .borders(Borders::TOP | Borders::LEFT)
             .bold()

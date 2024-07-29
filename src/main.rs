@@ -1,7 +1,7 @@
 #![allow(unreachable_code)]
 extern crate core;
 
-use eframe::egui::{IconData, Pos2, ViewportBuilder};
+use eframe::egui::{IconData, Pos2, TextBuffer, ViewportBuilder};
 use eframe::HardwareAcceleration;
 use std::env;
 use std::str::FromStr;
@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use crate::edcas::EliteRustClient;
 
+mod cli;
 mod edcas;
 #[cfg(feature = "eddn")]
 mod eddn;
@@ -54,10 +55,51 @@ fn main() {
             }
             "--help" => {
                 println!("{}", ascii_art);
-                println!("Here is a list of all commands:\n");
-                println!("--version\tPrints the current version of edcas");
-                println!("--height <f32>\tSets the height for the edcas gui");
-                println!("--width <f32>\tSets the width for the edcas gui");
+                println!("--version\t\tPrints the current version of edcas");
+                println!("--height <f32>\t\tSets the height for the edcas gui");
+                println!("--width <f32>\t\tSets the width for the edcas gui");
+                println!("--set-sc-address\tSet the smart contract address");
+                println!("--upload-journal\tUpload Journal to EDCAS network");
+                #[cfg(feature = "tui")]
+                println!("--tui\t\t\tStart edcas in tui mode");
+                #[cfg(feature = "eddn")]
+                println!("--eddn\t\tStart EDCAS with EDDN support");
+                return;
+            }
+            "--set-sc-address" => {
+                let client = EliteRustClient::default();
+                let new_smart_contract_address = String::from_str(args[i + 1].as_str())
+                    .unwrap_or_else(|_| panic!("Wrong argument for SC Address: {}", &args[i + 1]));
+                cli::set_sc_address(new_smart_contract_address, client);
+                return;
+            }
+            "--upload-journal" => {
+                let client = EliteRustClient::default();
+                cli::upload_journal(client);
+                return;
+            }
+            "--set-journal-path" => {
+                let new_journal_path =
+                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
+                        panic!("Wrong argument for Journal path: {}", &args[i + 1])
+                    });
+                cli::set_journal_path(new_journal_path);
+                return;
+            }
+            "--set-graphics-path" => {
+                let new_graphics_path =
+                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
+                        panic!("Wrong argument for Graphics path: {}", &args[i + 1])
+                    });
+                cli::set_graphics_path(new_graphics_path);
+                return;
+            }
+            "--set-settings-path" => {
+                let new_settings_path =
+                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
+                        panic!("Wrong argument for Settings path: {}", &args[i + 1])
+                    });
+                cli::set_settings_path(new_settings_path);
                 return;
             }
             #[cfg(feature = "tui")]
