@@ -345,6 +345,7 @@ pub fn interpret_json(
         "SuitLoadout" => {}
         "UseConsumable" => {}
         "ScanOrganic" => {}
+        "BuyWeapon" => {}
 
         //Market
         "MarketBuy" => {}

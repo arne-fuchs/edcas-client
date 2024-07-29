@@ -25,7 +25,7 @@ impl App for Explorer {
                     .min_col_width(200.0)
                     .max_col_width(200.0)
                     .show(ui, |ui| {
-                        ui.with_layout(Layout::left_to_right(Align::RIGHT), |ui| {
+                        ui.with_layout(Layout::left_to_right(Align::LEFT), |ui| {
                             if ui.button("<-").clicked() && self.index != 0 {
                                 self.index -= 1;
                             }
@@ -35,12 +35,13 @@ impl App for Explorer {
                             ui.heading(&self.systems[self.index].name)
                         });
 
-                        ui.with_layout(Layout::left_to_right(Align::LEFT), |ui| {
+                        ui.with_layout(Layout::right_to_left(Align::LEFT), |ui| {
                             if ui.button("->").clicked() && self.index + 1 < self.systems.len() {
                                 self.index += 1;
                             }
                         });
-                        ui.add_space(ui.available_size_before_wrap().x);
+                        //ui.add_space(ui.available_size_before_wrap().x);
+                        ui.end_row();
                     });
 
                 egui::ScrollArea::vertical()
