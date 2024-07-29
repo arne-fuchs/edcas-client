@@ -16,6 +16,10 @@ Shows system information compact for explorer.
 
 ![Screenshot of settings panel](graphics/screenshots/settings-screenshot.jpg "Settings Panel")
 
+<h2>Gui or tui? Your choice!</h2>
+
+![Screenshot of tui](graphics/screenshots/tui.png "Tui")
+
 <h2>And much more!</h2>
 
 ## Features
@@ -27,6 +31,7 @@ Shows system information compact for explorer.
 * Apply graphic override configurations (with presets or your own!)
 * Always keep track of what the feds are doing in the news tab
 * Written in rust so you know its good
+* Data sharing and pulling over a decentralized, open sourced network
 
 ## Installation
 
