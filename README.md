@@ -56,16 +56,18 @@ makepkg -i
 
 ## Command Options
 
-| Option       | Description                                              | Example            |
-|--------------|----------------------------------------------------------|--------------------|
-| --version    | Prints version into terminal                             |                    |
-| --width      | Sets initial window width size for the gui               | --width 200.0      |
-| --height     | Sets initial window height size for the gui              | --width 800.0      |
-| --wposition  | Sets initial window width position for the gui           | --wposition 3000.0 |
-| --hposition  | Sets initial window height position for the gui          | --hposition 100.0  |
-| --fullscreen | Opens the gui in fullscreen                              |                    |
-| --maximized  | Opens the guis maximized                                 |                    |
-| --tui        | Starts EDCAS in terminal mode (ignores window arguments) |                    |
+| Option            | Description                                              | Example            |
+|-------------------|----------------------------------------------------------|--------------------|
+| --version         | Prints version into terminal                             |                    |
+| --width           | Sets initial window width size for the gui               | --width 200.0      |
+| --height          | Sets initial window height size for the gui              | --width 800.0      |
+| --wposition       | Sets initial window width position for the gui           | --wposition 3000.0 |
+| --hposition       | Sets initial window height position for the gui          | --hposition 100.0  |
+| --fullscreen      | Opens the gui in fullscreen                              |                    |
+| --maximized       | Opens the guis maximized                                 |                    |
+| --set-sc-address  | Sets the smart contract address                          |                    |
+| --upload-journal  | Uploads Journal to EDCAS network                         |                    |
+| --tui             | Starts EDCAS in terminal mode (ignores window arguments) |                    |
 
 # Build it yourself
 
