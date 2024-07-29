@@ -1,12 +1,11 @@
-use std::any::Any;
+use ethers::prelude::*;
 
 use crate::edcas::{
     self,
-    backend::evm::journal_uploader,
-    settings::{self, Settings},
+    backend::evm::journal_uploader
+    ,
     EliteRustClient,
 };
-use ethers::prelude::*;
 
 pub fn upload_journal(client: EliteRustClient) {
     let journal_path = client
