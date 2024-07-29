@@ -78,6 +78,30 @@ fn main() {
                 cli::upload_journal(client);
                 return;
             }
+            "--set-journal-path" => {
+                let new_journal_path =
+                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
+                        panic!("Wrong argument for Journal path: {}", &args[i + 1])
+                    });
+                cli::set_journal_path(new_journal_path);
+                return;
+            }
+            "--set-graphics-path" => {
+                let new_graphics_path =
+                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
+                        panic!("Wrong argument for Graphics path: {}", &args[i + 1])
+                    });
+                cli::set_graphics_path(new_graphics_path);
+                return;
+            }
+            "--set-settings-path" => {
+                let new_settings_path =
+                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
+                        panic!("Wrong argument for Settings path: {}", &args[i + 1])
+                    });
+                cli::set_settings_path(new_settings_path);
+                return;
+            }
             #[cfg(feature = "tui")]
             "--tui" => {
                 let client = EliteRustClient::default();
