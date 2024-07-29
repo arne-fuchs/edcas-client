@@ -456,7 +456,7 @@ pub fn tab_explorer(
                         Row::new(vec![
                             "Surface Gravity".to_string(),
                             [
-                                round_to_2(planet_body.surface_gravity).to_string(),
+                                round_to_2(planet_body.surface_gravity * 0.01).to_string(),
                                 "G".to_string(),
                             ]
                             .join(" "),
