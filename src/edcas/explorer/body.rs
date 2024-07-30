@@ -1,5 +1,5 @@
 use std::sync::{Arc, Mutex};
-
+use eframe::emath::round_to_decimals;
 use json::JsonValue;
 
 use crate::edcas::explorer::planet::AsteroidRing;
@@ -112,7 +112,7 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Mutex<Settings>>) -> Bo
                 volcanism: json["Volcanism"].to_string(),
                 mass_em: json["MassEM"].as_f64().unwrap(),
                 radius: json["Radius"].as_f64().unwrap(),
-                surface_gravity: json["SurfaceGravity"].as_f64().unwrap(),
+                surface_gravity: round_to_decimals(json["SurfaceGravity"].as_f64().unwrap() * 0.1,5), //TODO Why is it missed by factor 10
                 surface_temperature: json["SurfaceTemperature"].as_f64().unwrap(),
                 surface_pressure: json["SurfacePressure"].as_f64().unwrap(),
                 landable: json["Landable"].to_string().parse().unwrap(),
