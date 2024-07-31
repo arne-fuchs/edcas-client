@@ -40,6 +40,9 @@ cp target/release/edcas-client "$folder_name"/usr/bin
 mkdir "$folder_name"/usr/share
 mkdir "$folder_name"/usr/share/"$folder_name"
 cp materials.json "$folder_name"/usr/share/"$folder_name"/materials.json
+cp graphics/logo/edcas_128.png "$folder_name"/usr/share/"$folder_name"/edcas_128.png
+
+cp edcas.desktop ~/.local/share/applications/edcas.desktop
 
 mkdir "$folder_name"/DEBIAN
 cp control "$folder_name"/DEBIAN/

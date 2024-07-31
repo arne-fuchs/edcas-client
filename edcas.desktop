@@ -1,0 +1,9 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Edcas Client
+Icon=/usr/share/edcas-client/edcas_128.png
+Exec=/usr/bin/edcas-client
+Comment=Elite Dangerous Commander Assistant System
+Categories=Game;
+Terminal=false
