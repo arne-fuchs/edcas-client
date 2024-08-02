@@ -1,7 +1,7 @@
 use crate::edcas::explorer::body::{BodyType, Parent};
 use crate::edcas::explorer::Explorer;
 use eframe::egui::collapsing_header::{CollapsingState, HeaderResponse};
-use eframe::egui::{Align, Context, Layout};
+use eframe::egui::{Align, Context, Direction, Layout, Widget};
 use eframe::{egui, App, Frame};
 
 impl App for Explorer {
@@ -106,6 +106,12 @@ impl App for Explorer {
                                 },
                             });
                     });
+            });
+        } else {
+            egui::CentralPanel::default().show(ctx, |ui| {
+                ui.with_layout(Layout::centered_and_justified(Direction::LeftToRight), |ui|{
+                  ui.heading("No Data");  
+                });
             });
         }
     }
