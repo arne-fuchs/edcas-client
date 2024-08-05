@@ -276,7 +276,7 @@ impl Default for Settings {
         //---------------------------
         let mut graphics_directory = json["graphics-editor"]["graphics-directory"].to_string();
         let graphics_path = Path::new(&graphics_directory);
-        let mut graphics_override_file = graphics_directory.clone();
+        let mut graphics_override_file = format!("{}/GraphicsConfigurationOverride.xml", graphics_directory);
         if !graphics_path.exists() {
             if cfg!(target_os = "windows") {
                 let mut userprofile = env::var("USERPROFILE").unwrap_or("".to_string());
