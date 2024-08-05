@@ -8,35 +8,35 @@ repository = "https://github.com/arne-fuchs/edcas-client"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.37.0", features = ["full"] }
+tokio = { version = "1.39.2", features = ["full"] }
 json = "0.12.4"
-serde_json = "1.0.117"
+serde_json = "1.0.121"
 chrono = "0.4.38"
 bus = "2.4.1"
-reqwest = "0.12.2"
+reqwest = "0.12.5"
 select = "0.6.0"
 sha256 = "1.5.0"
 num-format = "0.4.4"
-opener = "0.7.0"
+opener = "0.7.1"
 ethers = {version = "2.0.14"}
 
 fern-logger = "0.5.0"
-log = "0.4.21"
+log = "0.4.22"
 
 # Gui
 eframe = { version = "0.28.1", features = ["persistence"] }
 egui_extras = { version = "0.28.1", features = ["image"] }
-image = { version = "0.25.1", features = ["png"] }
+image = { version = "0.25.2", features = ["png"] }
 
 # Tui
-ratatui = {version = "0.26.1", optional = true}
-crossterm = {version = "0.27.0", optional = true}
+ratatui = {version = "0.27.0", optional = true}
+crossterm = {version = "0.28.1", optional = true}
 
 # Eddn
 zmq = {version = "0.10.0", optional = true}
-env_logger = {version = "0.11.3", optional = true}
-flate2 = { version = "1.0.30", features = ["zlib-ng"], default-features = false , optional = true}
-regex = "1.10.5"
+env_logger = {version = "0.11.5", optional = true}
+flate2 = { version = "1.0.31", features = ["zlib-ng"], default-features = false , optional = true}
+regex = "1.10.6"
 
 [build-dependencies]
 ethers = {version = "2.0.14"}
