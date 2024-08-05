@@ -7,7 +7,7 @@
     "include_system_name": true
   },
   "graphics-editor": {
-    "graphics-directory": "/home/arne/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics"
+    "graphics-directory": "~/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics"
   },
   "icons": [
     {
@@ -136,7 +136,7 @@
     "attempts": 4,
     "base-url": "https://api.testnet.undertheocean.net/wasp/api/v1/chains/rms1prflcwju7wyzks0wzyyvejz6sqzf8gl7qwyen339e7zeaue9k99yv2exr04/evm",
     "private-key": "",
-    "smart-contract-address": "0x7Ec2AB8B8A0B5c521bF2f734A5377452b8AB5f7a",
+    "smart-contract-address": "0xe346ac7a39d1b7a62b318d901ffac36dfcfb277f",
     "port": 443,
     "timeout": 5
   },
