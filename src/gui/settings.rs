@@ -264,7 +264,7 @@ impl App for Settings {
 
 impl Settings {
     fn show_graphics_editor(&mut self, ctx: &Context) {
-        Window::new("Editor")
+        Window::new("Editor GraphicsConfigurationOverride.xml")
             .fixed_size(vec2(800f32, 600f32))
             .show(ctx, |ui| {
                 egui::Grid::new("preset_buttons")
