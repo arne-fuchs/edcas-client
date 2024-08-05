@@ -16,10 +16,15 @@ impl App for crate::edcas::about::About {
                 ui.label(" Github:");
                 ui.hyperlink(&self.github_url);
                 ui.end_row();
+                ui.label("📄 Version:");
+                ui.hyperlink_to(
+                    option_env!("CARGO_PKG_VERSION").unwrap_or("Unknown"),
+                    "https://github.com/arne-fuchs/edcas-client/releases",
+                );
+                ui.end_row();
 
                 ui.with_layout(egui::Layout::bottom_up(egui::Align::LEFT), |ui| {
                     ui.horizontal(|ui| {
-                        ui.spacing_mut().item_spacing.x = 0.0;
                         ui.label("powered by ");
                         ui.hyperlink_to("egui", "https://github.com/emilk/egui");
                         ui.label(" and ");
