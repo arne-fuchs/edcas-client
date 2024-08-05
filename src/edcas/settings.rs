@@ -274,7 +274,7 @@ impl Default for Settings {
         //---------------------------
         // Graphics directory
         //---------------------------
-        let mut graphics_directory = json["journal-reader"]["graphics-directory"].to_string();
+        let mut graphics_directory = json["graphics-editor"]["graphics-directory"].to_string();
         let graphics_path = Path::new(&graphics_directory);
         let mut graphics_override_file = graphics_directory.clone();
         if !graphics_path.exists() {
