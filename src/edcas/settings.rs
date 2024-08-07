@@ -330,7 +330,7 @@ impl Default for Settings {
 
         let smart_contract_address = json["evm"]["smart-contract-address"]
             .as_str()
-            .unwrap_or("0xC28b89d570Fec3df45629212922b7F43090CF843")
+            .unwrap_or("0xe346ac7a39d1b7a62b318d901ffac36dfcfb277f")
             .to_string();
 
         let middleware_result = tokio::runtime::Builder::new_current_thread()
