@@ -572,9 +572,16 @@ fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
         terraform_state: json["TerraformState"].to_string(),
         volcanism: json["Volcanism"].to_string(),
         tidal_lock: json["TidalLock"].as_bool().unwrap_or({
+            //{"AscendingNode":56.31435,"Atmosphere":"hot thick silicate vapour atmosphere",
+            // "AtmosphereComposition":[{"Name":"Silicates","Percent":98.505775},{"Name":"Iron","Percent":1.475897}],"AtmosphereType":"SilicateVapour","AxialTilt":-0.421178,"BodyID":5,"BodyName":"Gungnir 1","Composition":{"Ice":0,"Metal":0.329362,"Rock":0.670638},"DistanceFromArrivalLS":11.583155,"Eccentricity":0.000013,"Landable":false,"MassEM":23.45116,"MeanAnomaly":68.333037,"OrbitalInclination":-0.000019,"OrbitalPeriod":115385.937691,"Parents":[{"Star":0}],
+            // "Periapsis":13.683273,"PlanetClass":"High metal content body","Radius":13971218,"RotationPeriod":110680.124475,
+            // "ScanType":"AutoScan","SemiMajorAxis":3472558856.010437,"StarPos":[-9.6875,15.9375,102.28125],"StarSystem":"Gungnir",
+            // "SurfaceGravity":47.885637,"SurfacePressure":1809044078592,"SurfaceTemperature":7562.364746,"SystemAddress":766391617907,
+            // "TerraformState":"","TidalLock":true,"Volcanism":"major silicate vapour geysers volcanism","WasDiscovered":true,"WasMapped":true,
+            // "event":"Scan","horizons":true,"odyssey":true,"timestamp":"2024-08-07T23:20:13Z"}
             let val: bool = json["TidalLock"].to_string().parse().unwrap_or(
                 {
-                    error!("Tidal Lock not parseable {}", json);
+                    error!("Tidal Lock not parseable {} {}",json["TidalLock"], json);
                     false
                 }
             );
