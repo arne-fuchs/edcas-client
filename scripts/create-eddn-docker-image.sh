@@ -1,3 +1,3 @@
 #!/bin/bash
-docker build --tag edcas-eddn:latest ./
-echo "Finished building image edcas-eddn:latest"
+docker build --tag frankthefish/edcas-eddn:latest ./
+echo "Finished building image frankthefish/edcas-eddn:latest"
