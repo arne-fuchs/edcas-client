@@ -572,8 +572,13 @@ fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
         terraform_state: json["TerraformState"].to_string(),
         volcanism: json["Volcanism"].to_string(),
         tidal_lock: json["TidalLock"].as_bool().unwrap_or({
-            error!("Tidal Lock not parseable {}", json);
-            false
+            let val: bool = json["TidalLock"].to_string().parse().unwrap_or(
+                {
+                    error!("Tidal Lock not parseable {}", json);
+                    false
+                }
+            );
+            val
         }),
         parent_id,
         mass_em: floating::generate_floating_from_string(json["MassEM"].to_string()),
