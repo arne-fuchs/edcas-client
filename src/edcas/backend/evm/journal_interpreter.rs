@@ -576,9 +576,6 @@ fn extract_planet_properties(json: &JsonValue) -> PlanetProperties {
             if format!("{}",json["TidalLock"]) == "true" {
                 bool = true;
             }
-            error!("TD: {},{}",json["TidalLock"],bool);
-            error!("TS: {}",json["TidalLock"].to_string());
-            error!("AS: {}",json["TidalLock"].as_str().unwrap_or(""));
             bool
         }),
         parent_id,

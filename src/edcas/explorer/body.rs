@@ -103,7 +103,13 @@ pub fn generate_from_json(json: JsonValue, settings: Arc<Mutex<Settings>>) -> Bo
                 star_system: json["StarSystem"].to_string(),
                 system_address: json["SystemAddress"].as_i64().unwrap(),
                 distance_from_arrival_ls: json["DistanceFromArrivalLS"].as_f64().unwrap(),
-                tidal_lock: json["TidalLock"].to_string().parse().unwrap(),
+                tidal_lock: json["TidalLock"].to_string().parse::<bool>().unwrap_or({
+                    let mut bool = false;
+                    if format!("{}",json["TidalLock"]) == "true" {
+                        bool = true;
+                    }
+                    bool
+                }),
                 terraform_state: json["TerraformState"].to_string(),
                 planet_class: json["PlanetClass"].to_string(),
                 atmosphere: json["Atmosphere"].to_string(),
