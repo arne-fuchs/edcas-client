@@ -8,7 +8,7 @@ use std::{env, fs, thread};
 
 use bus::{Bus, BusReader};
 use chrono::Local;
-
+use dioxus::prelude::*;
 use crate::edcas::backend::cargo_reader;
 use crate::edcas::backend::cargo_reader::CargoReader;
 use crate::edcas::backend::evm::request_handler;
@@ -35,6 +35,12 @@ pub mod mining;
 pub(crate) mod news;
 pub(crate) mod settings;
 pub(crate) mod station;
+
+#[component]
+pub fn Desktop() -> Element {
+    rsx!{}
+}
+
 
 pub struct EliteRustClient {
     pub about: about::About,

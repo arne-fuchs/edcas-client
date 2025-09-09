@@ -15,34 +15,37 @@ chrono = "0.4.38"
 bus = "2.4.1"
 reqwest = "0.12.5"
 select = "0.6.0"
-sha256 = "1.5.0"
 num-format = "0.4.4"
 opener = "0.7.1"
-ethers = {version = "2.0.14"}
 
 fern-logger = "0.5.0"
 log = "0.4.22"
 
 # Gui
-eframe = { version = "0.28.1", features = ["persistence"] }
-egui_extras = { version = "0.28.1", features = ["image"] }
-image = { version = "0.25.2", features = ["png"] }
+dioxus = { version = "0.7.0-rc.0", features = ["fullstack"] }
 
-# Tui
-ratatui = {version = "0.27.0", optional = true}
-crossterm = {version = "0.28.1", optional = true}
-
-# Eddn
-zmq = {version = "0.10.0", optional = true}
-env_logger = {version = "0.11.5", optional = true}
-flate2 = { version = "1.0.31", features = ["zlib-ng"], default-features = false , optional = true}
-regex = "1.10.6"
-
-[build-dependencies]
-ethers = {version = "2.0.14"}
+#Server stuff
 
 #[cfg(feature = "evm")]
 [features]
-default = ["tui"]
-tui = ["dep:ratatui","dep:crossterm"]
-eddn = ["dep:zmq","dep:env_logger","dep:flate2"]
+default = ["desktop"]
+# The feature that are only required for the web = ["dioxus/web"] build target should be optional and only enabled in the web = ["dioxus/web"] feature
+web = ["dioxus/web"]
+# The feature that are only required for the desktop = ["dioxus/desktop"] build target should be optional and only enabled in the desktop = ["dioxus/desktop"] feature
+desktop = ["dioxus/desktop"]
+# The feature that are only required for the mobile = ["dioxus/mobile"] build target should be optional and only enabled in the mobile = ["dioxus/mobile"] feature
+mobile = ["dioxus/mobile"]
+
+server = ["dioxus/server"]
+
+[profile]
+
+[profile.wasm-dev]
+inherits = "dev"
+opt-level = 1
+
+[profile.server-dev]
+inherits = "dev"
+
+[profile.android-dev]
+inherits = "dev"

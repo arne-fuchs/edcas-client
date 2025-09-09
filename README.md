@@ -1,24 +1,28 @@
-![logo](graphics/logo/edcas.png)
+![logo](assets/graphics/logo/edcas.png)
 
 # Elite Dangerous Commander Assistant System
+# VERSION 0.4.0 coming!
+```
+Current release is broken since there is a whole rebuild of the edcas econsystem. Stay tuned!
+```
 
 Shows system information compact for explorer.
 
 <h2>Gotta see all those planets!</h2>
 
-![Screenshot of explorer panel](graphics/screenshots/explorer-screenshot.jpg "Explorer Panel")
+![Screenshot of explorer panel](assets/graphics/screenshots/explorer-screenshot.jpg "Explorer Panel")
 
 <h2>Track your materials!</h2>
 
-![Screenshot of materials panel](graphics/screenshots/materials-screenshot.jpg "Materials Panel")
+![Screenshot of materials panel](assets/graphics/screenshots/materials-screenshot.jpg "Materials Panel")
 
 <h2>Make it truly yours!</h2>
 
-![Screenshot of settings panel](graphics/screenshots/settings-screenshot.jpg "Settings Panel")
+![Screenshot of settings panel](assets/graphics/screenshots/settings-screenshot.jpg "Settings Panel")
 
 <h2>Gui or tui? Your choice!</h2>
 
-![Screenshot of tui](graphics/screenshots/tui.png "Tui")
+![Screenshot of tui](assets/graphics/screenshots/tui.png "Tui")
 
 <h2>And much more!</h2>
 

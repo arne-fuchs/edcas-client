@@ -1,28 +1,21 @@
 #![allow(unreachable_code)]
 extern crate core;
 
-use eframe::egui::{IconData, Pos2, ViewportBuilder};
-use eframe::HardwareAcceleration;
 use std::env;
-use std::str::FromStr;
-use std::sync::Arc;
+use dioxus::desktop::tao::platform::unix::WindowBuilderExtUnix;
+use dioxus::desktop::tao::window::{Icon, Theme};
+use dioxus::desktop::WindowBuilder;
+use dioxus::prelude::*;
+use num_format::Locale::tr;
+//use crate::edcas::EliteRustClient;
 
-use crate::edcas::EliteRustClient;
-
-mod cli;
-mod edcas;
-#[cfg(feature = "eddn")]
-mod eddn;
-mod gui;
-#[cfg(feature = "tui")]
-mod tui;
+//mod cli;
+//mod edcas;
+use views::{Home};
+mod views;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let mut wpos: f32 = -1.0;
-    let mut hpos: f32 = -1.0;
-    let mut fullscreen = false;
-    let mut maximized = false;
     let ascii_art = r#"
   ______    ____      ____       _       ______
  |  ____|  |  _ \   / ____|     / \     /  ____|
@@ -35,140 +28,53 @@ fn main() {
 
     for i in 0..args.len() {
         match args[i].as_str() {
-            "--version" => {
-                println!("{}", env!("CARGO_PKG_VERSION"));
-                return;
-            }
-            "--wposition" => {
-                wpos = f32::from_str(args[i + 1].as_str())
-                    .unwrap_or_else(|_| panic!("Wrong argument for width: {} ", &args[i + 1]));
-            }
-            "--hposition" => {
-                hpos = f32::from_str(args[i + 1].as_str())
-                    .unwrap_or_else(|_| panic!("Wrong argument for width: {} ", &args[i + 1]));
-            }
-            "--fullscreen" => {
-                fullscreen = true;
-            }
-            "--maximized" => {
-                maximized = true;
-            }
-            "--help" => {
-                println!("{}", ascii_art);
-                println!("--version\t\tPrints the current version of edcas");
-                println!("--height <f32>\t\tSets the height for the edcas gui");
-                println!("--width <f32>\t\tSets the width for the edcas gui");
-                println!("--set-sc-address\tSet the smart contract address");
-                println!("--upload-journal\tUpload Journal to EDCAS network");
-                #[cfg(feature = "tui")]
-                println!("--tui\t\t\tStart edcas in tui mode");
-                #[cfg(feature = "eddn")]
-                println!("--eddn\t\tStart EDCAS with EDDN support");
-                return;
-            }
-            "--set-sc-address" => {
-                let client = EliteRustClient::default();
-                let new_smart_contract_address = String::from_str(args[i + 1].as_str())
-                    .unwrap_or_else(|_| panic!("Wrong argument for SC Address: {}", &args[i + 1]));
-                cli::set_sc_address(new_smart_contract_address, client);
-                return;
-            }
-            "--upload-journal" => {
-                let client = EliteRustClient::default();
-                cli::upload_journal(client);
-                return;
-            }
-            "--set-journal-path" => {
-                let new_journal_path =
-                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
-                        panic!("Wrong argument for Journal path: {}", &args[i + 1])
-                    });
-                cli::set_journal_path(new_journal_path);
-                return;
-            }
-            "--set-graphics-path" => {
-                let new_graphics_path =
-                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
-                        panic!("Wrong argument for Graphics path: {}", &args[i + 1])
-                    });
-                cli::set_graphics_path(new_graphics_path);
-                return;
-            }
-            "--set-settings-path" => {
-                let new_settings_path =
-                    String::from_str(args[i + 1].as_str()).unwrap_or_else(|_| {
-                        panic!("Wrong argument for Settings path: {}", &args[i + 1])
-                    });
-                cli::set_settings_path(new_settings_path);
-                return;
-            }
-            #[cfg(feature = "tui")]
-            "--tui" => {
-                let client = EliteRustClient::default();
-                tui::draw_tui(client).unwrap();
-                return;
-            }
-            #[cfg(feature = "eddn")]
-            "--eddn" => {
-                println!("{}", ascii_art);
-                eddn::initialize();
-                return;
-            }
             _ => {}
         }
     }
 
-    let client = Box::<EliteRustClient>::default();
+    //let client = Box::<EliteRustClient>::default();
 
-    let source = include_bytes!("../graphics/logo/edcas_128.png");
-    let image = image::load_from_memory(source);
+    // Set the url of the server where server functions are hosted.
+    //#[cfg(not(feature = "server"))]
+    //dioxus::fullstack::set_server_url("http://127.0.0.1:8080");
 
-    let (icon_rgba, icon_width, icon_height) = {
-        let image = image.unwrap().into_rgba8();
-        let (width, height) = image.dimensions();
-        let rgba = image.into_raw();
-        (rgba, width, height)
-    };
+    #[cfg(feature = "desktop")]
+    {
+        let background = (0,0,0,255);
+        let file = std::fs::read("./assets/graphics/logo/edcas_128_rgba.png").expect("Missing logo");
+        let icon = Icon::from_rgba(file,32,32).expect("Couldn't load icon");
+        let window = WindowBuilder::new()
+            .with_decorations(true)
+            .with_theme(Some(Theme::Dark))
+            .with_background_color(background)
+            .with_window_icon(Some(icon.clone()))
+            .with_title("EDCAS")
+            //.with_skip_taskbar(true)
+            //.with_maximized(true)
+            ;
+        let config = dioxus::desktop::Config::new()
+            .with_icon(icon)
+            .with_background_color(background)
+            .with_window(window)
+            .with_resource_directory("dist/")
+            //.with_menu()
+            //.with_resource_directory()
+            ;
 
-    let icon = IconData {
-        rgba: icon_rgba,
-        width: icon_width,
-        height: icon_height,
-    };
-
-    let mut viewport = ViewportBuilder::default()
-        .with_icon(Arc::new(icon))
-        .with_app_id("edcas-client")
-        .with_title("ED: Commander Assistant System")
-        .with_decorations(true)
-        .with_taskbar(true)
-        .with_resizable(true)
-        .with_maximize_button(true)
-        .with_minimize_button(true)
-        .with_close_button(true)
-        .with_titlebar_shown(true);
-
-    if wpos > 0.0 && hpos > 0.0 {
-        viewport = viewport.with_position(Pos2::new(wpos, hpos));
+        dioxus::LaunchBuilder::desktop().with_cfg(config).launch(App)
     }
-    if fullscreen {
-        viewport = viewport.with_fullscreen(true);
-    }
-    if maximized {
-        viewport = viewport.with_maximized(true);
-    }
+    #[cfg(feature = "web")]
+    dioxus::launch(App);
+    #[cfg(feature = "server")]
+    dioxus::launch(App);
+}
 
-    let native_options = eframe::NativeOptions {
-        hardware_acceleration: HardwareAcceleration::Preferred,
-        persist_window: true,
-        viewport,
-        ..Default::default()
-    };
+const MAIN_CSS: Asset = asset!("/assets/styling/main.css");
 
-    eframe::run_native(
-        "ED: Commander Assistant System",
-        native_options,
-        Box::new(|_cc| Ok(client)),
-    )
-    .expect("Program panicked");
+#[component]
+fn App() -> Element {
+    rsx!{
+        document::Link { rel: "stylesheet", href: MAIN_CSS }
+        img { src: asset!("/assets/graphics/logo/edcas.png", AssetOptions::image().with_avif()), id: "logo-img", draggable: false }
+    }
 }
