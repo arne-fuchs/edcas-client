@@ -2,14 +2,13 @@
 extern crate core;
 
 use std::env;
-use dioxus::logger::tracing::{debug, error, info};
+use dioxus::logger::tracing::{debug, info, error};
 use dioxus::prelude::*;
-use num_format::Locale::tr;
 //use crate::edcas::EliteRustClient;
 
 //mod cli;
 //mod edcas;
-use views::{Home};
+use views::News;
 mod views;
 
 fn main() {
@@ -38,15 +37,18 @@ fn main() {
 
     #[cfg(feature = "desktop")]
     {
+        use dioxus::desktop::tao::window::RGBA;
         use dioxus::desktop::tao::window::{Icon, Theme};
         use dioxus::desktop::WindowBuilder;
         let background = (0,0,0,255);
         let icon_bytes = include_bytes!("../assets/graphics/logo/edcas_128_rgba.png");
-        let icon = Icon::from_rgba(icon_bytes.to_vec(),32,32).expect("Couldn't load icon");
+        //let icon_asset:Asset = asset!("/assets/graphics/logo/edcas.png", AssetOptions::image().with_png().with_size(ImageSize::Manual { width: 64, height: 64 }));
+        //let rgba = RGBA::from(icon_bytes.as_slice());
+        let icon = Icon::from_rgba(icon_bytes.to_vec(),128,128).expect("Couldn't load icon");
         let window = WindowBuilder::new()
             .with_decorations(true)
             .with_theme(Some(Theme::Dark))
-            .with_background_color(background)
+            //.with_background_color(background)
             .with_window_icon(Some(icon.clone()))
             .with_title("EDCAS")
             //.with_skip_taskbar(true)
@@ -54,7 +56,7 @@ fn main() {
             ;
         let config = dioxus::desktop::Config::new()
             .with_icon(icon)
-            .with_background_color(background)
+            //.with_background_color(background)
             .with_window(window)
             .with_resource_directory("dist/")
             //.with_menu()
@@ -67,13 +69,17 @@ fn main() {
     #[cfg(feature = "server")]
     dioxus::launch(App);
 }
+
+
+pub struct Article {
+    pub title: String,
+    pub date: String,
+    pub text: String,
+}
+
 #[component]
 fn App() -> Element {
     rsx!{
-        document::Link { rel: "stylesheet", href: asset!("/assets/tailwind.css") }
-        div{
-            class: "items-center",
-            img { src: asset!("/assets/graphics/logo/edcas.png"), id: "logo-img", draggable: false }
-        }
+        News {}
     }
 }

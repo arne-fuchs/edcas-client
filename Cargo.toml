@@ -13,7 +13,7 @@ json = "0.12.4"
 serde_json = "1.0.121"
 chrono = "0.4.38"
 bus = "2.4.1"
-reqwest = "0.12.5"
+reqwest = {version = "0.12.23"}
 select = "0.6.0"
 num-format = "0.4.4"
 opener = "0.7.1"

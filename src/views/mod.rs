@@ -1,4 +1,4 @@
+pub mod news;
+mod navbar;
 
-mod home;
-//noinspection UnresolvedImports
-pub use home::Home;
+pub use news::News;
