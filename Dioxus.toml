@@ -1,4 +1,5 @@
 [application]
+name = "EDCAS"
 
 [web.app]
 

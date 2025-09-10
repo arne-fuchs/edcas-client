@@ -2,9 +2,7 @@
 extern crate core;
 
 use std::env;
-use dioxus::desktop::tao::platform::unix::WindowBuilderExtUnix;
-use dioxus::desktop::tao::window::{Icon, Theme};
-use dioxus::desktop::WindowBuilder;
+use dioxus::logger::tracing::{debug, error, info};
 use dioxus::prelude::*;
 use num_format::Locale::tr;
 //use crate::edcas::EliteRustClient;
@@ -40,9 +38,11 @@ fn main() {
 
     #[cfg(feature = "desktop")]
     {
+        use dioxus::desktop::tao::window::{Icon, Theme};
+        use dioxus::desktop::WindowBuilder;
         let background = (0,0,0,255);
-        let file = std::fs::read("./assets/graphics/logo/edcas_128_rgba.png").expect("Missing logo");
-        let icon = Icon::from_rgba(file,32,32).expect("Couldn't load icon");
+        let icon_bytes = include_bytes!("../assets/graphics/logo/edcas_128_rgba.png");
+        let icon = Icon::from_rgba(icon_bytes.to_vec(),32,32).expect("Couldn't load icon");
         let window = WindowBuilder::new()
             .with_decorations(true)
             .with_theme(Some(Theme::Dark))
@@ -58,7 +58,6 @@ fn main() {
             .with_window(window)
             .with_resource_directory("dist/")
             //.with_menu()
-            //.with_resource_directory()
             ;
 
         dioxus::LaunchBuilder::desktop().with_cfg(config).launch(App)
@@ -68,13 +67,13 @@ fn main() {
     #[cfg(feature = "server")]
     dioxus::launch(App);
 }
-
-const MAIN_CSS: Asset = asset!("/assets/styling/main.css");
-
 #[component]
 fn App() -> Element {
     rsx!{
-        document::Link { rel: "stylesheet", href: MAIN_CSS }
-        img { src: asset!("/assets/graphics/logo/edcas.png", AssetOptions::image().with_avif()), id: "logo-img", draggable: false }
+        document::Link { rel: "stylesheet", href: asset!("/assets/tailwind.css") }
+        div{
+            class: "items-center",
+            img { src: asset!("/assets/graphics/logo/edcas.png"), id: "logo-img", draggable: false }
+        }
     }
 }
