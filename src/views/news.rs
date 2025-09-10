@@ -1,6 +1,11 @@
 use dioxus::logger::tracing::{debug, error};
 use dioxus::prelude::*;
-use crate::Article;
+
+pub struct Article {
+    pub title: String,
+    pub date: String,
+    pub text: String,
+}
 
 #[component]
 pub fn News() -> Element {
