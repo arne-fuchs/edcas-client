@@ -1,14 +1,15 @@
 #![allow(unreachable_code)]
 extern crate core;
 
-use std::env;
-use dioxus::logger::tracing::{debug, info, error};
+use dioxus::logger::tracing::debug;
 use dioxus::prelude::*;
+use std::env;
 //use crate::edcas::EliteRustClient;
 
 //mod cli;
 //mod edcas;
-use views::{News,Navbar,Settings};
+use views::{Navbar, News, Settings};
+mod desktop;
 mod views;
 
 fn main() {
@@ -22,9 +23,10 @@ fn main() {
  |______|  |____/   \_____| /__/   \__\ |_____/
 
 "#;
+    println!("{}",ascii_art);
 
-    for i in 0..args.len() {
-        match args[i].as_str() {
+    for arg in args {
+        match arg {
             _ => {}
         }
     }
@@ -37,12 +39,12 @@ fn main() {
 
     #[cfg(feature = "desktop")]
     {
+        use dioxus::desktop::tao::platform::unix::WindowBuilderExtUnix;
         use dioxus::desktop::tao::window::{Icon, Theme};
         use dioxus::desktop::WindowBuilder;
-        use dioxus::desktop::tao::platform::unix::WindowBuilderExtUnix;
 
         let icon_bytes = include_bytes!("../assets/graphics/logo/edcas_128_rgba.png");
-        let icon = Icon::from_rgba(icon_bytes.to_vec(),128,128).expect("Couldn't load icon");
+        let icon = Icon::from_rgba(icon_bytes.to_vec(), 128, 128).expect("Couldn't load icon");
         let window = WindowBuilder::new()
             //.with_decorations(false)
             .with_theme(Some(Theme::Dark))
@@ -51,7 +53,7 @@ fn main() {
             .with_skip_taskbar(true)
             .with_resizable(true)
             .with_maximized(true)
-            ;
+        ;
         let config = dioxus::desktop::Config::new()
             .with_icon(icon)
             .with_window(window)
@@ -59,7 +61,9 @@ fn main() {
             //.with_menu()
             ;
 
-        dioxus::LaunchBuilder::desktop().with_cfg(config).launch(App)
+        dioxus::LaunchBuilder::desktop()
+            .with_cfg(config)
+            .launch(App)
     }
     #[cfg(feature = "web")]
     dioxus::launch(App);
@@ -67,27 +71,33 @@ fn main() {
     dioxus::launch(App);
 }
 
+#[derive(PartialEq)]
 enum AppState {
     News,
-    Settings
+    Settings,
 }
 
 #[component]
 fn App() -> Element {
-    let state = use_signal(|| AppState::News);
-
-    rsx!{
-        Navbar {app_state: state},
+    let state = use_signal(|| AppState::Settings);
+    let settings = use_signal(desktop::settings::Settings::default);
+    rsx! {
+        document::Link { rel: "stylesheet", href: asset!("/assets/tailwind.css") }
+        Navbar { app_state: state }
         match state.try_read_unchecked() {
             Ok(state) => {
                 match &*state {
-                    AppState::News => rsx!{News {}},
-                    AppState::Settings => rsx!{Settings {}}
+                    AppState::News => rsx! {
+                        News {}
+                    },
+                    AppState::Settings => rsx! {
+                        Settings {settings: settings}
+                    },
                 }
             }
-            Err(err) => rsx!{
+            Err(err) => rsx! {
                 {err.to_string()}
-            }
+            },
         }
 
     }

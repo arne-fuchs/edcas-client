@@ -1,0 +1,39 @@
+@import "tailwindcss";
+@source "./src/**/*.{rs,html,css}";
+
+@layer base {
+  html {
+    @apply dark:bg-black dark:text-white/90 font-mono blur-[0.5px];
+  }
+  div {
+    @apply select-none;
+  }
+  img {
+    @apply select-none;
+  }
+}
+
+@layer components {
+    .ed-value-box{
+        @apply bg-clip-border
+                      bg-linear-to-r from-amber-700/65 via-amber-600/65 to-orange-700/50
+                      bg-radial-[at_25%_25%] to-75%
+                      outline-2 outline-offset-4 outline-amber-700/80
+                      shadow-[0px_0px_20px_10px_rgba(249,_115,_22,_0.5)];
+    }
+    .text-glow{
+        @apply text-shadow-[0px_0px_5px_2px_rgba(249,_115,_22,_0.8)]
+    }
+    .ed-button{
+        @apply cursor-pointer flex-initial mt-1 mb-1
+                 hover:bg-linear-to-r hover:from-amber-500/75 hover:via-amber-400/75 hover:to-orange-400/60
+                 hover:bg-radial-[at_25%_25%] hover:to-75% hover:shadow-[0px_0px_10px_5px_rgba(249,_115,_22,_0.5)]
+                 text-center content-center;
+    }
+    .ed-button-active{
+        @apply flex-initial mt-1 mb-1
+                 bg-linear-to-r from-amber-500/75 via-amber-400/75 to-orange-400/60
+                 bg-radial-[at_25%_25%] to-75% shadow-[0px_0px_10px_5px_rgba(249,_115,_22,_0.5)]
+                 text-center content-center;
+    }
+}

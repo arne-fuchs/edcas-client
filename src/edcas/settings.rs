@@ -93,18 +93,6 @@ pub struct ExplorerSettings {
     pub include_system_name: bool,
 }
 
-pub struct EvmSettings {
-    pub url: String,
-    pub n_timeout: u64,
-    pub n_attempts: u64,
-    pub allow_share_data: bool,
-    pub private_key: String,
-    pub smart_contract_address: String,
-    pub contract: Option<Edcas>,
-    pub show_upload_data_window: bool,
-    pub journal_read_status: Option<JournalReadStatus>,
-}
-
 pub struct JournalReadStatus {
     pub current_log: u32,
     pub total_logs: u32,

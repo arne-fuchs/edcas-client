@@ -36,12 +36,6 @@ pub(crate) mod news;
 pub(crate) mod settings;
 pub(crate) mod station;
 
-#[component]
-pub fn Desktop() -> Element {
-    rsx!{}
-}
-
-
 pub struct EliteRustClient {
     pub about: about::About,
     pub explorer: explorer::Explorer,
@@ -338,69 +332,4 @@ pub enum State {
     Explorer,
     MaterialInventory,
     Mining,
-}
-
-fn initialize_logger() -> String {
-    let mut log_directory = env::current_dir().unwrap().join("logs");
-    if std::path::Path::new("/tmp/").exists() {
-        log_directory = std::path::Path::new("/tmp/edcas-client/").to_path_buf();
-    }
-
-    if let Err(err) = fs::create_dir_all(&log_directory) {
-        println!("Error while creating log directory: {:?}", err);
-    }
-
-    let log_filename = format!("{}.log", Local::now().format("%Y-%m-%d-%H-%M"));
-
-    let log_path = log_directory.join(log_filename);
-    //let log_path = log_file_path_buf.strip_prefix(&log_directory).unwrap_or(&log_file_path_buf);
-
-    if let Ok(entries) = fs::read_dir(&log_directory) {
-        let mut log_files: Vec<PathBuf> = entries
-            .filter_map(|entry| entry.ok().map(|e| e.path()))
-            .collect();
-
-        log_files.sort_by(|a, b| {
-            b.metadata()
-                .unwrap()
-                .modified()
-                .unwrap()
-                .cmp(&a.metadata().unwrap().modified().unwrap())
-        });
-
-        let logs_to_keep = 5;
-        if log_files.len() > logs_to_keep {
-            for log_file in log_files.into_iter().skip(logs_to_keep) {
-                //println!("Removing old log file: {:?}",&log_file);
-                if let Err(err) = fs::remove_file(log_file) {
-                    println!("Error deleting old log file: {:?}", err);
-                }
-            }
-        }
-    }
-
-    println!("Log file: {:?}", log_path.clone());
-
-    let level = log::LevelFilter::Debug;
-
-    let logger_output_config = fern_logger::LoggerOutputConfigBuilder::new()
-        .name(log_path.to_str().unwrap())
-        .target_exclusions(&[
-            "h2",
-            "hyper",
-            "rustls",
-            "iota_wallet",
-            "iota_client",
-            "reqwest",
-            "tree_builder",
-            "html5ever",
-            "ethers_providers",
-        ])
-        .level_filter(level);
-
-    let config = fern_logger::LoggerConfig::build()
-        .with_output(logger_output_config)
-        .finish();
-    fern_logger::logger_init(config).unwrap();
-    log_path.to_str().unwrap().to_string()
 }
