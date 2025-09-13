@@ -19,8 +19,8 @@ select = "0.6.0"
 num-format = "0.4.4"
 opener = "0.7.1"
 
-fern-logger = "0.5.0"
-log = "0.4.22"
+web-sys = { version = "0.3.78", features = ["Document", "KeyboardEvent", "Window", "console"] }
+wasm-bindgen = "0.2.83"
 
 # Gui
 dioxus = { version = "0.7.0-rc.0", features = ["fullstack"] }

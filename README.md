@@ -88,11 +88,11 @@ makepkg -i
 ### Debian based
 
 ```bash
-sudo apt install cmake cargo pkg-config libssl-dev libfontconfig1-dev libclang-dev openssl clang build-essential git libudev-dev
+sudo apt install cmake cargo pkg-config libssl-dev libfontconfig1-dev libclang-dev openssl clang build-essential git libudev-dev libasound2-dev
 ```
 ### Arch
 
-```bash 
+```bash
 cargo alsa-lib fontconfig clang rocksdb
 sudo pacman -S cargo alsa-lib fontconfig git
 ```

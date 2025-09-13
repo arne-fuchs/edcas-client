@@ -1,7 +1,7 @@
 #![allow(unreachable_code)]
 extern crate core;
 
-use dioxus::logger::tracing::debug;
+use dioxus::{logger::tracing::debug};
 use dioxus::prelude::*;
 use std::env;
 //use crate::edcas::EliteRustClient;
@@ -58,6 +58,7 @@ fn main() {
             .with_icon(icon)
             .with_window(window)
             .with_resource_directory("dist/")
+            .with_exits_when_last_window_closes(true)
             //.with_menu()
             ;
 
@@ -71,16 +72,68 @@ fn main() {
     dioxus::launch(App);
 }
 
-#[derive(PartialEq)]
+#[derive(PartialEq,Eq, PartialOrd, Ord, Clone)]
 enum AppState {
-    News,
-    Settings,
+    News = 0,
+    Settings = 1,
+}
+
+impl AppState {
+    fn next(&self) -> Self {
+        match &self {
+            AppState::News => AppState::Settings,
+            AppState::Settings => AppState::News,
+        }
+    }
+
+    fn prev(&self) -> Self {
+        match &self {
+            AppState::News => AppState::Settings,
+            AppState::Settings => AppState::News,
+        }
+    }
 }
 
 #[component]
 fn App() -> Element {
-    let state = use_signal(|| AppState::Settings);
+    let mut state = use_signal(|| AppState::Settings);
     let settings = use_signal(desktop::settings::Settings::default);
+
+    #[cfg(feature = "desktop")]{
+        use dioxus::desktop::use_wry_event_handler;
+        use dioxus::desktop::tao::event::Event as WryEvent;
+        use dioxus::desktop::tao::event::WindowEvent;
+
+        use_wry_event_handler(move |event, _| {
+            if let WryEvent::WindowEvent {
+                event: WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _, ..  },
+                ..
+            } = event
+            {
+
+                if event.state == dioxus::desktop::tao::event::ElementState::Released {
+                    match event.physical_key {
+                        dioxus::desktop::tao::keyboard::KeyCode::KeyE => {
+                            let current = state.read().clone();
+                            state.set(current.next());
+                        }
+                        dioxus::desktop::tao::keyboard::KeyCode::KeyQ => {
+                            let current = state.read().clone();
+                            state.set(current.prev());
+                        }
+                        dioxus::desktop::tao::keyboard::KeyCode::ArrowUp => {}
+                        dioxus::desktop::tao::keyboard::KeyCode::ArrowDown => {}
+                        dioxus::desktop::tao::keyboard::KeyCode::ArrowLeft => {}
+                        dioxus::desktop::tao::keyboard::KeyCode::ArrowRight => {}
+                        _ => {}
+                    }
+                    debug!("key_state: {:?}",event);
+                }
+            }
+        });
+    }
+
+
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/assets/tailwind.css") }
         Navbar { app_state: state }

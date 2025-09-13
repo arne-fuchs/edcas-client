@@ -11,13 +11,8 @@ pub mod appearance;
 pub mod explorer;
 pub mod grapic_editor;
 pub mod journal_reader;
-
-#[derive(Serialize, Deserialize,Clone)]
-pub struct Icon {
-    pub char: String,
-    pub color: String,
-    pub enabled: bool,
-}
+pub mod icons;
+use icons::Icon;
 
 #[derive(Serialize, Deserialize,Clone)]
 pub struct Settings {
@@ -44,7 +39,7 @@ impl Default for Settings {
                     File::open(&settings_path).expect("Unable to open file")
                 } else {
                     info!("Couldn't find config file in {} -> trying to create file structure and copy to desired config folder",settings_path);
-                    create_setting_json(&mut settings_path, home)
+                    create_setting_json(home)
                 }
             }
             Err(err) => {
@@ -138,7 +133,7 @@ impl Default for Settings {
     }
 }
 
-fn create_setting_json(settings_path: &mut String, home: String) -> File {
+fn create_setting_json(home: String) -> File {
     match std::fs::create_dir_all(format!("{}/.config/edcas-client", home)) {
         Ok(_) => {
             info!("Created $HOME/.config/edcas-client/");

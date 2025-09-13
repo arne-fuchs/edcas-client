@@ -55,7 +55,7 @@ pub fn Navbar(app_state: Signal<AppState>) -> Element {
                 p { class: "text-glow",
                     "About"
                 }
-            }
+            },
             div { class: "flex ml-auto",
                 div {
                     class: "ed-button w-10",
@@ -64,10 +64,10 @@ pub fn Navbar(app_state: Signal<AppState>) -> Element {
                         {
                             let maximized = dioxus::desktop::window().is_maximized();
                             let mut pos = dioxus::desktop::tao::dpi::PhysicalPosition::default();
-                            let current_monitor = dioxus::desktop::window().window.current_monitor();
+                            let current_monitor = dioxus::desktop::window().current_monitor();
                             debug!("current_monitor {:?}", current_monitor);
                             if let Some(current_monitor) = current_monitor {
-                                let outer_position = dioxus::desktop::window().window.outer_position();
+                                let outer_position = dioxus::desktop::window().outer_position();
                                 debug!("outer_position {:?}", outer_position);
                                 if let Ok(outer_position) = outer_position {
                                     pos.y = current_monitor.size().height - outer_position.y as u32;
@@ -89,10 +89,10 @@ pub fn Navbar(app_state: Signal<AppState>) -> Element {
                         {
                             let maximized = dioxus::desktop::window().is_maximized();
                             let mut pos = dioxus::desktop::tao::dpi::PhysicalPosition::default();
-                            let current_monitor = dioxus::desktop::window().window.current_monitor();
+                            let current_monitor = dioxus::desktop::window().current_monitor();
                             debug!("current_monitor {:?}", current_monitor);
                             if let Some(current_monitor) = current_monitor {
-                                let outer_position = dioxus::desktop::window().window.outer_position();
+                                let outer_position = dioxus::desktop::window().outer_position();
                                 debug!("outer_position {:?}", outer_position);
                                 if let Ok(outer_position) = outer_position {
                                     pos.y = current_monitor.size().height + outer_position.y as u32;
@@ -114,10 +114,10 @@ pub fn Navbar(app_state: Signal<AppState>) -> Element {
                         {
                             let maximized = dioxus::desktop::window().is_maximized();
                             let mut pos = dioxus::desktop::tao::dpi::PhysicalPosition::default();
-                            let current_monitor = dioxus::desktop::window().window.current_monitor();
+                            let current_monitor = dioxus::desktop::window().current_monitor();
                             debug!("current_monitor {:?}", current_monitor);
                             if let Some(current_monitor) = current_monitor {
-                                let outer_position = dioxus::desktop::window().window.outer_position();
+                                let outer_position = dioxus::desktop::window().outer_position();
                                 debug!("outer_position {:?}", outer_position);
                                 if let Ok(outer_position) = outer_position {
                                     pos.x = current_monitor.size().width - outer_position.x as u32;
@@ -139,10 +139,10 @@ pub fn Navbar(app_state: Signal<AppState>) -> Element {
                         {
                             let maximized = dioxus::desktop::window().is_maximized();
                             let mut pos = dioxus::desktop::tao::dpi::PhysicalPosition::default();
-                            let current_monitor = dioxus::desktop::window().window.current_monitor();
+                            let current_monitor = dioxus::desktop::window().current_monitor();
                             debug!("current_monitor {:?}", current_monitor);
                             if let Some(current_monitor) = current_monitor {
-                                let outer_position = dioxus::desktop::window().window.outer_position();
+                                let outer_position = dioxus::desktop::window().outer_position();
                                 debug!("outer_position {:?}", outer_position);
                                 if let Ok(outer_position) = outer_position {
                                     pos.x = current_monitor.size().width + outer_position.x as u32;
@@ -173,6 +173,7 @@ pub fn Navbar(app_state: Signal<AppState>) -> Element {
                 div {
                     class: if *app_state.read() == AppState::Settings {"ed-button-active w-10"} else {"ed-button w-10"},
                     onclick: move |_| {
+                        #[cfg(feature = "desktop")]
                         app_state.set(AppState::Settings);
                     },
                     p {class: "text-glow", "⚙" }

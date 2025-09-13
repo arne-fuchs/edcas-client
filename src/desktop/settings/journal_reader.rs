@@ -1,6 +1,7 @@
 use bus::BusReader;
 use std::fmt::Display;
 use std::str::FromStr;
+use dioxus::{logger::tracing::debug, prelude::*};
 
 use serde::{Deserialize, Serialize};
 
@@ -52,8 +53,8 @@ impl Display for ActionAtShutdownSignal {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let str = match self {
             ActionAtShutdownSignal::Exit => "Exit".to_string(),
-            ActionAtShutdownSignal::Nothing => "nothing".to_string(),
-            ActionAtShutdownSignal::Continue => "continue".to_string(),
+            ActionAtShutdownSignal::Nothing => "Nothing".to_string(),
+            ActionAtShutdownSignal::Continue => "Continue".to_string(),
         };
         write!(f, "{}", str)
     }
@@ -63,11 +64,91 @@ impl FromStr for ActionAtShutdownSignal {
     type Err = String;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "Exit" => Ok(ActionAtShutdownSignal::Exit),
+        match s.to_lowercase().as_str() {
+            "exit" => Ok(ActionAtShutdownSignal::Exit),
             "nothing" => Ok(ActionAtShutdownSignal::Nothing),
             "continue" => Ok(ActionAtShutdownSignal::Continue),
             _ => Err("Failed to parse ActionShutdownSignal".to_string()),
+        }
+    }
+}
+
+#[component]
+pub fn settings_view(settings: Signal< crate::desktop::settings::Settings>) -> Element {
+    rsx!{
+        div { class: "ed-value-box mt-10",
+            div { class: "flex justify-center",
+                p {
+                    class: "text-base m-5 \
+                    sm:text-xl  \
+                    md:text-2xl \
+                    lg:text-3xl \
+                    xl:text-4xl",
+                    "Journal Reader"
+                }
+            },
+            div { class: "flex  \
+                 row-border \
+                ",
+                div{
+                    class:"text-center content-center h-11",
+                    p {
+                        class: "ml-10 mr-10 ",
+                        "Journal Directory"
+                    }
+                }
+                div{
+                    class:"text-center content-center h-11",
+                    input {
+                        class: "mr-10 w-2xs \
+                        ed-input-text
+                        ",
+                        type: "text",
+                        oninput: move |evt| {
+                            let mut copy = settings.cloned();
+                            copy.journal_reader.journal_directory = evt.value();
+                            settings.replace(copy);
+                        },
+                        value: "{settings.read().journal_reader.journal_directory}"
+                    }
+                }
+            }
+            div { class: "flex -mt-[4px] \
+                 row-border \
+                ",
+                div{
+                    class:"text-center content-center h-11",
+                    p {
+                        class: "ml-10 mr-10 ",
+                        "Action at shutdown"
+                    }
+                }
+                div{
+                    class:"text-center content-center h-11",
+                    select {
+                        class: "w-2xs ed-input-select bg-black/50 border border-black/50 text-black block ",
+                        value: "{settings.read().journal_reader.action_at_shutdown_signal.to_string()}",
+                        onchange: move |evt| {
+                            let mut copy = settings.cloned();
+                            copy.journal_reader.action_at_shutdown_signal = ActionAtShutdownSignal::from_str(evt.value().as_str()).unwrap();
+                            debug!("{}",copy.journal_reader.action_at_shutdown_signal.to_string());
+                            settings.replace(copy);
+                        },
+                        option{
+                            value: "Exit",
+                            "Exit"
+                        },
+                        option{
+                            value: "Nothing",
+                            "Nothing"
+                        },
+                        option{
+                            value: "Continue",
+                            "Continue"
+                        }
+                    }
+                }
+            }
         }
     }
 }

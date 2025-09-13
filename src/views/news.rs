@@ -64,7 +64,7 @@ pub fn News() -> Element {
     });
     rsx! {
         div { class: "flex flex-col",
-            div { class: "flex justify-center",
+            div { class: "flex justify-center blur-none",
                 img {
                     src: asset!("/assets/graphics/logo/edcas.png"),
                     id: "logo-img",
@@ -73,7 +73,7 @@ pub fn News() -> Element {
                 }
 
             }
-            div { class: "flex justify-center",
+            div { class: "flex justify-center blur-none",
                 p { class: "text-base \
                     sm:text-xl          \
                     md:text-2xl md:-mt-10 \
@@ -91,7 +91,7 @@ pub fn News() -> Element {
                                 div { class: "flex flex-col pl-40 pr-40 -mt-40",
                                     for article in articles {
                                         div { class: "pt-20",
-                                            div { class: "flex justify-center",
+                                            div { class: "flex justify-center blur-none",
                                                 p { class: "text-base \
                                                                                               sm:text-xl \
                                                                                               md:text-2xl \
