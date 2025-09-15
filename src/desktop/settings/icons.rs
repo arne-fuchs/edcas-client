@@ -33,7 +33,8 @@ pub fn settings_view_icons(settings: Signal<crate::desktop::settings::Settings>)
                      row-border \
                     ",
                     div{
-                        class: "ml-10 w-[20px] text-center content-center h-12 text-[{settings.read().icons.get(key).unwrap().color}]",
+                        class: "ml-10 w-[20px] text-center content-center h-12",
+                        style:"color: {settings.read().icons.get(key.as_str()).unwrap().color}",
                         "{settings.read().icons.get(key).unwrap().char}"
                     }
                     div{
@@ -107,7 +108,8 @@ pub fn settings_view_stars(settings: Signal<crate::desktop::settings::Settings>)
                      row-border \
                     ",
                     div{
-                        class: "ml-10 w-[20px] text-center content-center h-12 text-[{settings.read().stars.get(key.as_str()).unwrap().color}]",
+                        class: "ml-10 w-[20px] text-center content-center h-12",
+                        style:"color: {settings.read().stars.get(key.as_str()).unwrap().color}",
                         "{settings.read().stars.get(key.as_str()).unwrap().char}"
                     }
                     div{
@@ -181,7 +183,8 @@ pub fn settings_view_planets(settings: Signal<crate::desktop::settings::Settings
                      row-border \
                     ",
                     div{
-                        class: "ml-10 w-[20px] text-center content-center h-12 text-[{settings.read().planets.get(key.as_str()).unwrap().color}]",
+                        class: "ml-10 w-[20px] text-center content-center h-12",
+                        style:"color: {settings.read().planets.get(key.as_str()).unwrap().color}",
                         "{settings.read().planets.get(key.as_str()).unwrap().char}"
                     }
                     div{
