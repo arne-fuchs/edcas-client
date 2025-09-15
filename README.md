@@ -96,19 +96,37 @@ sudo apt install cmake cargo pkg-config libssl-dev libfontconfig1-dev libclang-d
 cargo alsa-lib fontconfig clang rocksdb
 sudo pacman -S cargo alsa-lib fontconfig git
 ```
+
+## Addings wasm target
+
+```bash
+rustup toolchain install stable
+rustup target add wasm32-unknown-unknown
+```
+## build dioxus from source
+This requieres some compiling time since we need the pre--release from dioxus
+```bash
+cargo install dioxus-cli@0.7.0-rc.0
+```
+If something fails, look up <a href=https://dioxuslabs.com/learn/0.7/getting_started/ > here </a>.
+
 ## Building
 
-Clone the repo
+Clone the repo & cd
 
 ```bash
-git clone https://github.com/arne-fuchs/edcas-client.git
+git clone https://github.com/arne-fuchs/edcas-client.git cd edcas-client
 ```
 
-cd into it and build it
+## Run via dioxus
 
 ```bash
-cd edcas-client && cargo build
+dioxus serve --fullstack --release
 ```
+
+# Important notice about running debug
+
+Running debug will requiere a server instance running locally and therefor needs additional setup, which is not documented yet.
 
 ## Standard directories
 
@@ -120,14 +138,13 @@ It might try to copy the files to the desired places.
 | settings-example.json      | /etc/edcas-client/settigns-example.json  | ./settings-example.json |
 | settings.json              | $HOME/.config/edcas-client/settings.json | ./settings.json         |
 | Assets like materials.json | /usr/share/edcas-client/                 | ./                      |
-| logs                       | /tmp/edcas-client/                       | ./logs/                 |
 
 
 ## Using it with <a href=https://github.com/rfvgyhn/min-ed-launcher>min-ed-launcher</a>
 
 Go and first build the project with
 ```bash
-cargo build
+dx build --fullstack --release
 ```
 
 Then edit your min-ed-launcher config:
