@@ -1,3 +1,5 @@
+use std::option;
+
 use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -11,6 +13,9 @@ pub struct Icon {
 #[component]
 pub fn settings_view_icons(settings: Signal<crate::desktop::settings::Settings>) -> Element {
     let icons = settings.cloned().icons;
+    let mut icons: Vec<&String> = icons.iter().map(|f| f.0 ).collect();
+    icons.sort();
+
     rsx! {
         div { class: "ed-value-box mt-10",
             div { class: "flex justify-center",
@@ -23,10 +28,14 @@ pub fn settings_view_icons(settings: Signal<crate::desktop::settings::Settings>)
                     "Icons"
                 }
             }
-            for key in icons.keys() {
+            for key in icons {
                 div { class: "flex  \
                      row-border \
                     ",
+                    div{
+                        class: "ml-10 w-[20px] text-center content-center h-12 text-[{settings.read().icons.get(key).unwrap().color}]",
+                        "{settings.read().icons.get(key).unwrap().char}"
+                    }
                     div{
                         class:"text-center content-center h-12 w-2xs",
                         p {
@@ -37,7 +46,7 @@ pub fn settings_view_icons(settings: Signal<crate::desktop::settings::Settings>)
                     div{
                         class:"text-center content-center h-12",
                         input {
-                            class: "mr-10 w-5xs \
+                            class: "mr-10 w-[20px] \
                             ed-input-text
                             ",
                             type: "text",
@@ -45,11 +54,29 @@ pub fn settings_view_icons(settings: Signal<crate::desktop::settings::Settings>)
                                 let mut settings_cloned = settings.cloned();
                                 let key_cloned = key.clone();
                                 move |evt| {
-                                    settings_cloned.icons.get_mut(key_cloned.as_str()).unwrap().char = evt.value().clone().to_string();
+                                    settings_cloned.icons.get_mut(key_cloned.as_str()).unwrap().char = evt.value().clone().trim().to_string();
                                     settings.set(settings_cloned.clone());
                                 }
                             },
-                            value: "{settings.read().icons.get(key.as_str()).unwrap().char}"
+                            value: "{settings.read().icons.get(key).unwrap().char}"
+                        }
+                    }
+                    div{
+                        class:"text-center content-center h-12",
+                        input {
+                            class: "mr-10 w-[70px] \
+                            ed-input-text
+                            ",
+                            type: "text",
+                            oninput: {
+                                let mut settings_cloned = settings.cloned();
+                                let key_cloned = key.clone();
+                                move |evt| {
+                                    settings_cloned.icons.get_mut(key_cloned.as_str()).unwrap().color = evt.value().clone().trim().to_string();
+                                    settings.set(settings_cloned.clone());
+                                }
+                            },
+                            value: "{settings.read().icons.get(key).unwrap().color}"
                         }
                     }
                 }
@@ -61,6 +88,8 @@ pub fn settings_view_icons(settings: Signal<crate::desktop::settings::Settings>)
 #[component]
 pub fn settings_view_stars(settings: Signal<crate::desktop::settings::Settings>) -> Element {
     let icons = settings.cloned().stars;
+    let mut icons: Vec<&String> = icons.iter().map(|f| f.0 ).collect();
+    icons.sort();
     rsx! {
         div { class: "ed-value-box mt-10",
             div { class: "flex justify-center",
@@ -73,10 +102,14 @@ pub fn settings_view_stars(settings: Signal<crate::desktop::settings::Settings>)
                     "Stars"
                 }
             }
-            for key in icons.keys() {
+            for key in icons {
                 div { class: "flex  \
                      row-border \
                     ",
+                    div{
+                        class: "ml-10 w-[20px] text-center content-center h-12 text-[{settings.read().stars.get(key.as_str()).unwrap().color}]",
+                        "{settings.read().stars.get(key.as_str()).unwrap().char}"
+                    }
                     div{
                         class:"text-center content-center h-12 w-2xs",
                         p {
@@ -87,7 +120,7 @@ pub fn settings_view_stars(settings: Signal<crate::desktop::settings::Settings>)
                     div{
                         class:"text-center content-center h-12",
                         input {
-                            class: "mr-10 w-5xs \
+                            class: "mr-10 w-[20px] \
                             ed-input-text
                             ",
                             type: "text",
@@ -95,11 +128,29 @@ pub fn settings_view_stars(settings: Signal<crate::desktop::settings::Settings>)
                                 let mut settings_cloned = settings.cloned();
                                 let key_cloned = key.clone();
                                 move |evt| {
-                                    settings_cloned.stars.get_mut(key_cloned.as_str()).unwrap().char = evt.value().clone().to_string();
+                                    settings_cloned.stars.get_mut(key_cloned.as_str()).unwrap().char = evt.value().clone().trim().to_string();
                                     settings.set(settings_cloned.clone());
                                 }
                             },
                             value: "{settings.read().stars.get(key.as_str()).unwrap().char}"
+                        }
+                    }
+                    div{
+                        class:"text-center content-center h-12",
+                        input {
+                            class: "mr-10 w-[70px] \
+                            ed-input-text
+                            ",
+                            type: "text",
+                            oninput: {
+                                let mut settings_cloned = settings.cloned();
+                                let key_cloned = key.clone();
+                                move |evt| {
+                                    settings_cloned.stars.get_mut(key_cloned.as_str()).unwrap().color = evt.value().clone().trim().to_string();
+                                    settings.set(settings_cloned.clone());
+                                }
+                            },
+                            value: "{settings.read().stars.get(key.as_str()).unwrap().color}"
                         }
                     }
                 }
@@ -111,6 +162,8 @@ pub fn settings_view_stars(settings: Signal<crate::desktop::settings::Settings>)
 #[component]
 pub fn settings_view_planets(settings: Signal<crate::desktop::settings::Settings>) -> Element {
     let icons = settings.cloned().planets;
+    let mut icons: Vec<&String> = icons.iter().map(|f| f.0 ).collect();
+    icons.sort();
     rsx! {
         div { class: "ed-value-box mt-10",
             div { class: "flex justify-center",
@@ -123,10 +176,14 @@ pub fn settings_view_planets(settings: Signal<crate::desktop::settings::Settings
                     "Planets"
                 }
             }
-            for key in icons.keys() {
+            for key in icons {
                 div { class: "flex  \
                      row-border \
                     ",
+                    div{
+                        class: "ml-10 w-[20px] text-center content-center h-12 text-[{settings.read().planets.get(key.as_str()).unwrap().color}]",
+                        "{settings.read().planets.get(key.as_str()).unwrap().char}"
+                    }
                     div{
                         class:"text-center content-center h-12 w-2xs",
                         p {
@@ -137,7 +194,7 @@ pub fn settings_view_planets(settings: Signal<crate::desktop::settings::Settings
                     div{
                         class:"text-center content-center h-12",
                         input {
-                            class: "mr-10 w-5xs \
+                            class: "mr-10 w-[20px] \
                             ed-input-text
                             ",
                             type: "text",
@@ -145,11 +202,29 @@ pub fn settings_view_planets(settings: Signal<crate::desktop::settings::Settings
                                 let mut settings_cloned = settings.cloned();
                                 let key_cloned = key.clone();
                                 move |evt| {
-                                    settings_cloned.planets.get_mut(key_cloned.as_str()).unwrap().char = evt.value().clone().to_string();
+                                    settings_cloned.planets.get_mut(key_cloned.as_str()).unwrap().char = evt.value().clone().trim().to_string();
                                     settings.set(settings_cloned.clone());
                                 }
                             },
                             value: "{settings.read().planets.get(key.as_str()).unwrap().char}"
+                        }
+                    }
+                    div{
+                        class:"text-center content-center h-12",
+                        input {
+                            class: "mr-10 w-[70px] \
+                            ed-input-text
+                            ",
+                            type: "text",
+                            oninput: {
+                                let mut settings_cloned = settings.cloned();
+                                let key_cloned = key.clone();
+                                move |evt| {
+                                    settings_cloned.planets.get_mut(key_cloned.as_str()).unwrap().color = evt.value().clone().trim().to_string();
+                                    settings.set(settings_cloned.clone());
+                                }
+                            },
+                            value: "{settings.read().planets.get(key.as_str()).unwrap().color}"
                         }
                     }
                 }

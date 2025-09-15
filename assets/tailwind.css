@@ -250,6 +250,12 @@
   .w-25 {
     width: calc(var(--spacing) * 25);
   }
+  .w-\[20px\] {
+    width: 20px;
+  }
+  .w-\[70px\] {
+    width: 70px;
+  }
   .w-full {
     width: 100%;
   }
