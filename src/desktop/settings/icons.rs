@@ -3,7 +3,7 @@ use std::option;
 use dioxus::prelude::*;
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize,Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Icon {
     pub char: String,
     pub color: String,
@@ -13,7 +13,7 @@ pub struct Icon {
 #[component]
 pub fn settings_view_icons(settings: Signal<crate::desktop::settings::Settings>) -> Element {
     let icons = settings.cloned().icons;
-    let mut icons: Vec<&String> = icons.iter().map(|f| f.0 ).collect();
+    let mut icons: Vec<&String> = icons.iter().map(|f| f.0).collect();
     icons.sort();
 
     rsx! {
@@ -89,7 +89,7 @@ pub fn settings_view_icons(settings: Signal<crate::desktop::settings::Settings>)
 #[component]
 pub fn settings_view_stars(settings: Signal<crate::desktop::settings::Settings>) -> Element {
     let icons = settings.cloned().stars;
-    let mut icons: Vec<&String> = icons.iter().map(|f| f.0 ).collect();
+    let mut icons: Vec<&String> = icons.iter().map(|f| f.0).collect();
     icons.sort();
     rsx! {
         div { class: "ed-value-box mt-10",
@@ -164,7 +164,7 @@ pub fn settings_view_stars(settings: Signal<crate::desktop::settings::Settings>)
 #[component]
 pub fn settings_view_planets(settings: Signal<crate::desktop::settings::Settings>) -> Element {
     let icons = settings.cloned().planets;
-    let mut icons: Vec<&String> = icons.iter().map(|f| f.0 ).collect();
+    let mut icons: Vec<&String> = icons.iter().map(|f| f.0).collect();
     icons.sort();
     rsx! {
         div { class: "ed-value-box mt-10",

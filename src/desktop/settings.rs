@@ -1,23 +1,19 @@
 use dioxus::logger::tracing::*;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
-use std::{
-    collections::HashMap,
-    io::Read,
-    path::Path,
-};
+use std::{collections::HashMap, io::Read, path::Path};
 
 pub mod appearance;
 pub mod explorer;
 pub mod grapic_editor;
-pub mod journal_reader;
 pub mod icons;
+pub mod journal_reader;
 use icons::Icon;
 
 use crate::desktop::settings::grapic_editor::GraphicEditorSettings;
 use crate::desktop::settings::journal_reader::JournalReaderSettings;
 
-#[derive(Serialize, Deserialize,Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Settings {
     pub appearance: appearance::AppearanceSettings,
     pub journal_reader: journal_reader::JournalReaderSettings,

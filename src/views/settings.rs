@@ -6,7 +6,6 @@ use crate::desktop::{self, settings::journal_reader::ActionAtShutdownSignal};
 
 #[component]
 pub fn Settings(settings: Signal<desktop::settings::Settings>) -> Element {
-
     rsx! {
         div { class: "flex flex-col pt-20 pd-20",
             div{class: "flex justify-center",

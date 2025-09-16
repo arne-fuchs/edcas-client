@@ -1,11 +1,14 @@
 use bus::BusReader;
+use dioxus::{
+    logger::tracing::{debug, error},
+    prelude::*,
+};
 use std::fmt::Display;
 use std::str::FromStr;
-use dioxus::{logger::tracing::{debug, error}, prelude::*};
 
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize,Clone)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct JournalReaderSettings {
     #[serde(default = "default_journal_directory")]
     pub journal_directory: String,
@@ -15,7 +18,10 @@ pub struct JournalReaderSettings {
 
 impl Default for JournalReaderSettings {
     fn default() -> Self {
-        Self { journal_directory: default_journal_directory() , action_at_shutdown_signal: Default::default() }
+        Self {
+            journal_directory: default_journal_directory(),
+            action_at_shutdown_signal: Default::default(),
+        }
     }
 }
 
@@ -27,16 +33,16 @@ fn default_journal_directory() -> String {
     } else if cfg!(target_os = "linux") {
         let mut home = std::env::var("HOME").unwrap_or("~".to_string());
         home.push_str("/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
-        if std::path::Path::new(&home).exists(){
-            debug!("Found journal path: {}",&home);
+        if std::path::Path::new(&home).exists() {
+            debug!("Found journal path: {}", &home);
             home
         } else {
             home = std::env::var("HOME").unwrap_or("~".to_string());
             home.push_str("/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
-            if std::path::Path::new(&home).exists(){
-                debug!("Found journal path: {}",&home);
+            if std::path::Path::new(&home).exists() {
+                debug!("Found journal path: {}", &home);
                 home
-            }else{
+            } else {
                 debug!("Did not found journal path");
                 String::default()
             }
@@ -53,15 +59,13 @@ pub struct JournalReadStatus {
     pub log_index_updates: BusReader<i64>,
 }
 
-#[derive(Clone, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Clone, Serialize, Deserialize, Default)]
 pub enum ActionAtShutdownSignal {
     Exit,
     Nothing,
     #[default]
     Continue,
 }
-
 
 impl PartialEq for ActionAtShutdownSignal {
     fn eq(&self, other: &Self) -> bool {
@@ -94,8 +98,8 @@ impl FromStr for ActionAtShutdownSignal {
 }
 
 #[component]
-pub fn settings_view(settings: Signal< crate::desktop::settings::Settings>) -> Element {
-    rsx!{
+pub fn settings_view(settings: Signal<crate::desktop::settings::Settings>) -> Element {
+    rsx! {
         div { class: "ed-value-box mt-10",
             div { class: "flex justify-center",
                 p {

@@ -1,7 +1,7 @@
 #![allow(unreachable_code)]
 extern crate core;
 
-use dioxus::{logger::tracing::debug};
+use dioxus::logger::tracing::debug;
 use dioxus::prelude::*;
 use std::env;
 //use crate::edcas::EliteRustClient;
@@ -10,6 +10,9 @@ use std::env;
 //mod edcas;
 use views::{Navbar, News, Settings};
 mod desktop;
+mod edcas;
+#[cfg(feature = "eddn")]
+mod eddn;
 mod views;
 
 fn main() {
@@ -23,10 +26,28 @@ fn main() {
  |______|  |____/   \_____| /__/   \__\ |_____/
 
 "#;
-    println!("{}",ascii_art);
+    println!("{}", ascii_art);
+    if args.len() > 0 {
+        debug!("Arguments: {:?}", args);
+        println!("Arguments: {:?}",args);
+    }
 
     for arg in args {
-        match arg {
+        match arg.as_str() {
+            #[cfg(feature = "eddn")]
+            "--eddn-listener" => {
+                use std::process::exit;
+
+                eddn::run_listener();
+                exit(0);
+            }
+            #[cfg(feature = "eddn")]
+            "--eddn-parser" => {
+                use std::process::exit;
+
+                eddn::run_parser();
+                exit(0);
+            }
             _ => {}
         }
     }
@@ -52,8 +73,7 @@ fn main() {
             .with_title("EDCAS")
             .with_skip_taskbar(true)
             .with_resizable(true)
-            .with_maximized(true)
-        ;
+            .with_maximized(true);
         let config = dioxus::desktop::Config::new()
             .with_icon(icon)
             .with_window(window)
@@ -72,7 +92,7 @@ fn main() {
     dioxus::launch(App);
 }
 
-#[derive(PartialEq,Eq, PartialOrd, Ord, Clone)]
+#[derive(PartialEq, Eq, PartialOrd, Ord, Clone)]
 enum AppState {
     News = 0,
     Settings = 1,
@@ -99,18 +119,24 @@ fn App() -> Element {
     let mut state = use_signal(|| AppState::Settings);
     let settings = use_signal(desktop::settings::Settings::default);
 
-    #[cfg(feature = "desktop")]{
-        use dioxus::desktop::use_wry_event_handler;
+    #[cfg(feature = "desktop")]
+    {
         use dioxus::desktop::tao::event::Event as WryEvent;
         use dioxus::desktop::tao::event::WindowEvent;
+        use dioxus::desktop::use_wry_event_handler;
 
         use_wry_event_handler(move |event, _| {
             if let WryEvent::WindowEvent {
-                event: WindowEvent::KeyboardInput { device_id: _, event, is_synthetic: _, ..  },
+                event:
+                    WindowEvent::KeyboardInput {
+                        device_id: _,
+                        event,
+                        is_synthetic: _,
+                        ..
+                    },
                 ..
             } = event
             {
-
                 if event.state == dioxus::desktop::tao::event::ElementState::Released {
                     match event.physical_key {
                         dioxus::desktop::tao::keyboard::KeyCode::KeyE => {
@@ -127,12 +153,11 @@ fn App() -> Element {
                         dioxus::desktop::tao::keyboard::KeyCode::ArrowRight => {}
                         _ => {}
                     }
-                    debug!("key_state: {:?}",event);
+                    debug!("key_state: {:?}", event);
                 }
             }
         });
     }
-
 
     rsx! {
         document::Link { rel: "stylesheet", href: asset!("/assets/tailwind.css") }
