@@ -21,7 +21,17 @@ fn default_journal_directory() -> String {
     } else if cfg!(target_os = "linux") {
         let mut home = std::env::var("HOME").unwrap_or("~".to_string());
         home.push_str("/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
-        home
+        if std::path::Path::new(&home).exists(){
+            home
+        } else {
+            home = std::env::var("HOME").unwrap_or("~".to_string());
+            home.push_str("/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
+            if std::path::Path::new(&home).exists(){
+                home
+            }else{
+                String::default()
+            }
+        }
     } else {
         panic!("Unknown OS");
     }
