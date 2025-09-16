@@ -9,6 +9,12 @@ pub struct GraphicEditorSettings {
     pub graphic_override_content: String,
 }
 
+impl Default for GraphicEditorSettings {
+    fn default() -> Self {
+        Self { graphics_directory: default_graphics_directory() , graphic_override_content: graphic_override_content() }
+    }
+}
+
 fn default_graphics_directory() -> String {
     if cfg!(target_os = "windows") {
         let mut userprofile = std::env::var("USERPROFILE").unwrap_or("".to_string());

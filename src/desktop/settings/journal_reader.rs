@@ -13,6 +13,12 @@ pub struct JournalReaderSettings {
     pub action_at_shutdown_signal: ActionAtShutdownSignal,
 }
 
+impl Default for JournalReaderSettings {
+    fn default() -> Self {
+        Self { journal_directory: default_journal_directory() , action_at_shutdown_signal: Default::default() }
+    }
+}
+
 fn default_journal_directory() -> String {
     if cfg!(target_os = "windows") {
         let mut userprofile = std::env::var("USERPROFILE").unwrap_or("".to_string());

@@ -14,6 +14,9 @@ pub mod journal_reader;
 pub mod icons;
 use icons::Icon;
 
+use crate::desktop::settings::grapic_editor::GraphicEditorSettings;
+use crate::desktop::settings::journal_reader::JournalReaderSettings;
+
 #[derive(Serialize, Deserialize,Clone)]
 pub struct Settings {
     pub appearance: appearance::AppearanceSettings,
@@ -82,6 +85,7 @@ impl Default for Settings {
                 "journal path {} does not exists",
                 settings.journal_reader.journal_directory
             );
+            settings.journal_reader = JournalReaderSettings::default();
         }
         debug!(
             "Journal logs: {}",
@@ -96,6 +100,7 @@ impl Default for Settings {
                 "graphics path {} does not exists",
                 &settings.graphics_editor.graphics_directory
             );
+            settings.graphics_editor = GraphicEditorSettings::default();
         } else if cfg!(target_os = "windows") {
             settings.graphics_editor.graphic_override_content = format!(
                 "{}\\GraphicsConfigurationOverride.xml",
