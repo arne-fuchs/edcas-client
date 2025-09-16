@@ -1,7 +1,7 @@
 use bus::BusReader;
 use std::fmt::Display;
 use std::str::FromStr;
-use dioxus::{logger::tracing::debug, prelude::*};
+use dioxus::{logger::tracing::{debug, error}, prelude::*};
 
 use serde::{Deserialize, Serialize};
 
@@ -22,18 +22,22 @@ fn default_journal_directory() -> String {
         let mut home = std::env::var("HOME").unwrap_or("~".to_string());
         home.push_str("/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
         if std::path::Path::new(&home).exists(){
+            debug!("Found journal path: {}",&home);
             home
         } else {
             home = std::env::var("HOME").unwrap_or("~".to_string());
             home.push_str("/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
             if std::path::Path::new(&home).exists(){
+                debug!("Found journal path: {}",&home);
                 home
             }else{
+                debug!("Did not found journal path");
                 String::default()
             }
         }
     } else {
-        panic!("Unknown OS");
+        error!("Unknown OS!");
+        String::default()
     }
 }
 

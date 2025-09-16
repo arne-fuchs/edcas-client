@@ -1,3 +1,4 @@
+use dioxus::logger::tracing::{debug, error};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize,Clone)]
@@ -19,18 +20,22 @@ fn default_graphics_directory() -> String {
         let mut home = std::env::var("HOME").unwrap_or("~".to_string());
         home.push_str("/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics");
         if std::path::Path::new(&home).exists(){
+            debug!("Found graphics path: {}",&home);
             home
         } else {
             home = std::env::var("HOME").unwrap_or("~".to_string());
             home.push_str("/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics");
             if std::path::Path::new(&home).exists(){
+                debug!("Found graphics path: {}",&home);
                 home
             }else{
+                debug!("Did not found graphics path");
                 String::default()
             }
         }
     } else {
-        panic!("Unknown OS");
+        error!("Unknown OS!");
+        String::default()
     }
 }
 
