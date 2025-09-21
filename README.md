@@ -88,13 +88,14 @@ makepkg -i
 ### Debian based
 
 ```bash
-sudo apt install cmake cargo pkg-config libssl-dev libfontconfig1-dev libclang-dev openssl clang build-essential git libudev-dev libasound2-dev
+sudo apt install cmake pkg-config build-essential git libwayland-dev libglib2.0-dev libgdk3.0-cil-dev libappindicator3-dev libsoup-3.0-dev libwebkit2gtk-4.1-dev libxdo-dev
 ```
+
 ### Arch
 
+#TODO
 ```bash
-cargo alsa-lib fontconfig clang rocksdb
-sudo pacman -S cargo alsa-lib fontconfig git
+
 ```
 
 ## Addings wasm target
