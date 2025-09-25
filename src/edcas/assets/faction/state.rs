@@ -24,7 +24,7 @@ impl ActiveState {
         journal_id: i64,
         system_address: i64,
         faction_name: i32,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), postgres::Error> {
         use crate::edcas::tables::{value_table, Tables};
         let Self { state } = self;
@@ -59,7 +59,7 @@ impl PendingState {
         journal_id: i64,
         system_address: i64,
         faction_name: i32,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), postgres::Error> {
         use crate::edcas::tables::{value_table, Tables};
         let Self { state, trend } = self;
@@ -93,7 +93,7 @@ impl RecoveringState {
         journal_id: i64,
         system_address: i64,
         faction_name: i32,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), postgres::Error> {
         use crate::edcas::tables::{value_table, Tables};
         let Self { state, trend } = self;

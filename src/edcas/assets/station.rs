@@ -16,7 +16,7 @@ impl StationEconomy {
     pub fn insert_into_db(
         self,
         journal_id: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), postgres::Error> {
         //TODO: Implement
         Ok(())
@@ -33,7 +33,7 @@ impl StationFaction {
     pub fn insert_into_db(
         self,
         journal_id: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<i32, postgres::Error> {
         use crate::edcas::tables::{value_table, Tables};
 
@@ -60,7 +60,7 @@ impl LandingPads {
         self,
         journal_id: i64,
         market_id: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), postgres::Error> {
         //TODO: Implement
         Ok(())

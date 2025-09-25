@@ -66,7 +66,7 @@ pub fn value_table(
     table: Tables,
     value: String,
     journal_id: i64,
-    client: &mut postgres::Client,
+    client: &mut postgres::Transaction,
 ) -> Result<i32, postgres::Error> {
     let sql = format!("SELECT id FROM {} WHERE value=$1", table);
     let id: Option<i32> = match client.query_one(sql.as_str(), &[&value]) {

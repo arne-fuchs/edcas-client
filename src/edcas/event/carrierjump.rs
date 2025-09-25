@@ -92,6 +92,8 @@ impl Carrierjump {
         journal_id: i64,
         client: &mut postgres::Client,
     ) -> Result<(), crate::eddn::edcas_error::EdcasError> {
+        use dioxus::html::tr;
+
         use crate::edcas::tables::{value_table, Tables};
         use crate::eddn::edcas_error::EdcasError;
 
@@ -134,9 +136,11 @@ impl Carrierjump {
         //TODO Missing: Thargoid war status. See https://elite-journal.readthedocs.io/en/latest/Travel.html#fsdjump
         //TODO Power play status is mssing. See https://elite-journal.readthedocs.io/en/latest/Travel.html#fsdjump
         //TODO Check if actually something is being saved
+        let mut transaction = client.transaction()?;
+
         if let Some(powers) = powers {
             for power in powers {
-                value_table(Tables::Power, power, journal_id, client)?;
+                value_table(Tables::Power, power, journal_id, &mut transaction)?;
             }
         }
         let controlling_power = if let Some(controlling_power) = controlling_power {
@@ -144,28 +148,29 @@ impl Carrierjump {
                 Tables::Power,
                 controlling_power,
                 journal_id,
-                client,
+                &mut transaction,
             )?)
         } else {
             None
         };
-        let station_faction = station_faction.insert_into_db(journal_id, client)?;
+        let station_faction = station_faction.insert_into_db(journal_id, &mut transaction)?;
         let system_government =
-            value_table(Tables::Government, system_government, journal_id, client)?;
+            value_table(Tables::Government, system_government, journal_id, &mut transaction)?;
         let station_government =
-            value_table(Tables::Government, station_government, journal_id, client)?;
-        let station_type = value_table(Tables::StationType, station_type, journal_id, client)?;
+            value_table(Tables::Government, station_government, journal_id, &mut transaction)?;
+        let station_type = value_table(Tables::StationType, station_type, journal_id, &mut transaction)?;
 
         let system_allegiance =
-            value_table(Tables::Allegiance, system_allegiance, journal_id, client)?;
-        let economy = value_table(Tables::EconomyType, system_economy, journal_id, client)?;
+            value_table(Tables::Allegiance, system_allegiance, journal_id, &mut transaction)?;
+        let economy = value_table(Tables::EconomyType, system_economy, journal_id, &mut transaction)?;
         let second_economy = value_table(
             Tables::EconomyType,
             system_second_economy,
             journal_id,
-            client,
+            &mut transaction,
         )?;
-        let security = value_table(Tables::Security, system_security, journal_id, client)?;
+        let security = value_table(Tables::Security, system_security, journal_id, &mut transaction)?;
+        transaction.commit()?;
         let system_address = crate::edcas::assets::star_system::insert_star_system(
             system_address,
             star_system,
@@ -181,14 +186,16 @@ impl Carrierjump {
             client,
         )?;
 
+        let mut transaction = client.transaction()?;
+
         let allegiance = value_table(
             Tables::Allegiance,
             "PilotsFederation".to_string(),
             journal_id,
-            client,
+            &mut transaction,
         )?;
-        let happiness = value_table(Tables::Happiness, "".to_string(), journal_id, client)?;
-        if let Err(err) = client.execute(
+        let happiness = value_table(Tables::Happiness, "".to_string(), journal_id, &mut transaction)?;
+        if let Err(err) = transaction.execute(
                                         //language=postgresql
                                         "INSERT INTO factions (name, system_address, government, allegiance, happiness, influence, journal_id) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ON CONSTRAINT factions_pkey DO UPDATE SET
                                                                                                               government=$3,allegiance=$4,journal_id=$7",
@@ -201,10 +208,11 @@ impl Carrierjump {
         }
         //Market
         let station_economy =
-            value_table(Tables::EconomyType, station_economy, journal_id, client)?;
+            value_table(Tables::EconomyType, station_economy, journal_id, &mut transaction)?;
         for station_economy in station_economies {
-            station_economy.insert_into_db(journal_id, client)?;
+            station_economy.insert_into_db(journal_id, &mut transaction)?;
         }
+        transaction.commit()?;
         if let Err(err) = client.execute(
             //language=postgres
             "INSERT INTO stations (market_id, system_address, name, type, faction_name, government, economy, journal_id)
@@ -221,9 +229,9 @@ impl Carrierjump {
                 log::error!("[{}]insert station: {}",journal_id,err);
                 return Err(EdcasError::from(err));
             }
-
+        let mut transaction = client.transaction()?;
         //Station services
-        if let Err(err) = client.execute(
+        if let Err(err) = transaction.execute(
             "DELETE FROM station_services WHERE market_id=$1",
             &[&market_id],
         ) {
@@ -235,9 +243,9 @@ impl Carrierjump {
                 Tables::StationServicesTypes,
                 station_service,
                 journal_id,
-                client,
+                &mut transaction,
             )?;
-            if let Err(err) = client.execute(
+            if let Err(err) = transaction.execute(
                 // language=postgresql
                 "INSERT INTO station_services (id, market_id,journal_id) VALUES ($1, $2,$3)",
                 &[&id, &market_id, &journal_id],
@@ -250,6 +258,7 @@ impl Carrierjump {
                 return Err(EdcasError::from(err));
             }
         }
+        transaction.commit()?;
         Ok(())
     }
 }
@@ -358,10 +367,11 @@ impl Carrierjumponfoot {
         //TODO Missing: Thargoid war status. See https://elite-journal.readthedocs.io/en/latest/Travel.html#fsdjump
         //TODO Power play status is mssing. See https://elite-journal.readthedocs.io/en/latest/Travel.html#fsdjump
         //TODO Check if actually something is being saved
+        let mut transaction = client.transaction()?;
         use crate::edcas::tables::{value_table, Tables};
         if let Some(powers) = powers {
             for power in powers {
-                value_table(Tables::Power, power, journal_id, client)?;
+                value_table(Tables::Power, power, journal_id, &mut transaction)?;
             }
         }
         let controlling_power = if let Some(controlling_power) = controlling_power {
@@ -369,23 +379,24 @@ impl Carrierjumponfoot {
                 Tables::Power,
                 controlling_power,
                 journal_id,
-                client,
+                &mut transaction,
             )?)
         } else {
             None
         };
         let system_government =
-            value_table(Tables::Government, system_government, journal_id, client)?;
+            value_table(Tables::Government, system_government, journal_id, &mut transaction)?;
         let system_allegiance =
-            value_table(Tables::Allegiance, system_allegiance, journal_id, client)?;
-        let economy = value_table(Tables::EconomyType, system_economy, journal_id, client)?;
+            value_table(Tables::Allegiance, system_allegiance, journal_id, &mut transaction)?;
+        let economy = value_table(Tables::EconomyType, system_economy, journal_id, &mut transaction)?;
         let second_economy = value_table(
             Tables::EconomyType,
             system_second_economy,
             journal_id,
-            client,
+            &mut transaction,
         )?;
-        let security = value_table(Tables::Security, system_security, journal_id, client)?;
+        let security = value_table(Tables::Security, system_security, journal_id, &mut transaction)?;
+        transaction.commit()?;
         crate::edcas::assets::star_system::insert_star_system(
             system_address,
             star_system,

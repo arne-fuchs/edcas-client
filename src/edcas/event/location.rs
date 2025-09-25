@@ -154,8 +154,9 @@ impl Location {
             station_economies,
             station_faction,
         } = self;
+        let mut transaction = client.transaction()?;
         if let Some(system_faction) = system_faction {
-            system_faction.insert_into_db(journal_id, client)?;
+            system_faction.insert_into_db(journal_id, &mut transaction)?;
         }
         //TODO Implement
         let _ = dist_from_star_ls;
@@ -168,7 +169,7 @@ impl Location {
         //TODO Check if actually something is being saved
         if let Some(powers) = powers {
             for power in powers {
-                value_table(Tables::Power, power, journal_id, client)?;
+                value_table(Tables::Power, power, journal_id, &mut transaction)?;
             }
         }
         let controlling_power = if let Some(controlling_power) = controlling_power {
@@ -176,22 +177,23 @@ impl Location {
                 Tables::Power,
                 controlling_power,
                 journal_id,
-                client,
+                &mut transaction,
             )?)
         } else {
             None
         };
         let system_allegiance =
-            value_table(Tables::Allegiance, system_allegiance, journal_id, client)?;
-        let economy = value_table(Tables::EconomyType, system_economy, journal_id, client)?;
+            value_table(Tables::Allegiance, system_allegiance, journal_id, &mut transaction)?;
+        let economy = value_table(Tables::EconomyType, system_economy, journal_id, &mut transaction)?;
         let second_economy = value_table(
             Tables::EconomyType,
             system_second_economy,
             journal_id,
-            client,
+            &mut transaction,
         )?;
-        let government = value_table(Tables::Government, system_government, journal_id, client)?;
-        let security = value_table(Tables::Security, system_security, journal_id, client)?;
+        let government = value_table(Tables::Government, system_government, journal_id, &mut transaction)?;
+        let security = value_table(Tables::Security, system_security, journal_id, &mut transaction)?;
+        transaction.commit()?;
 
         let system_address = crate::edcas::assets::star_system::insert_star_system(
             system_address,
@@ -208,14 +210,16 @@ impl Location {
             client,
         )?;
 
+        let mut transaction = client.transaction()?;
+
         if let Some(factions) = factions {
             for faction in factions {
-                faction.insert_into_db(journal_id, system_address, client)?;
+                faction.insert_into_db(journal_id, system_address, &mut transaction)?;
             }
         }
         if let Some(conflicts) = conflicts {
             for conflict in conflicts {
-                conflict.insert_into_db(journal_id, system_address, client)?;
+                conflict.insert_into_db(journal_id, system_address, &mut transaction)?;
             }
         }
 
@@ -230,22 +234,22 @@ impl Location {
                     Tables::StationType,
                     station_type.clone(),
                     journal_id,
-                    client,
+                    &mut transaction,
                 )?,
                 station_type,
             );
 
             let station_government = station_government
                 .ok_or(format!("No station government when docked: {}", journal_id))?;
-            let _ = value_table(Tables::Government, station_government, journal_id, client)?;
+            let _ = value_table(Tables::Government, station_government, journal_id, &mut transaction)?;
 
             let station_economy =
-                station_economy.ok_or(format!("No station economy when docked: {}", journal_id))?;
+                station_economy.ok_or("No station economy when docked".to_string())?;
 
             let station_faction = station_faction
-                .ok_or(format!("No station faction when docked: {}", journal_id))?
-                .insert_into_db(journal_id, client)?;
-            let happiness = value_table(Tables::Happiness, "".to_string(), journal_id, client)?;
+                .ok_or("No station faction when docked".to_string())?
+                .insert_into_db(journal_id, &mut transaction)?;
+            let happiness = value_table(Tables::Happiness, "".to_string(), journal_id, &mut transaction)?;
             use crate::eddn::edcas_error::EdcasError;
             match station_type.1.as_str() {
                 "FleetCarrier" | "PlanetaryConstructionDepot" | "SpaceConstructionDepot" => {
@@ -253,9 +257,9 @@ impl Location {
                         Tables::Allegiance,
                         "PilotsFederation".to_string(),
                         journal_id,
-                        client,
+                        &mut transaction,
                     )?;
-                    if let Err(err) = client.execute(
+                    if let Err(err) = transaction.execute(
                                                     //language=postgresql
                                                     "INSERT INTO factions (name, system_address, government, allegiance, happiness, influence, journal_id) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ON CONSTRAINT factions_pkey DO UPDATE SET
                                                                                                                           government=$3,allegiance=$4,journal_id=$7",
@@ -266,7 +270,7 @@ impl Location {
                     }
                 }
                 "MegaShip" => {
-                    if let Err(err) = client.execute(
+                    if let Err(err) = transaction.execute(
                                                     //language=postgresql
                                                     "INSERT INTO factions (name, system_address, government, allegiance, happiness, influence, journal_id) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ON CONSTRAINT factions_pkey DO UPDATE SET
                                                                                                                           government=$3,allegiance=$4,journal_id=$7",
@@ -278,7 +282,7 @@ impl Location {
                     }
                 }
                 _ => {
-                    if let Err(err) = client.execute(
+                    if let Err(err) = transaction.execute(
                                                 //language=postgresql
                                                 "INSERT INTO factions (name, system_address, government, allegiance, happiness, influence, journal_id) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ON CONSTRAINT factions_pkey DO UPDATE SET
                                                                                                                           government=$3,allegiance=$4,journal_id=$7",
@@ -290,12 +294,13 @@ impl Location {
                 }
             }
             //TODO delete old station economy
-            let _ = value_table(Tables::EconomyType, station_economy, journal_id, client)?;
-            let station_economies = station_economies
-                .ok_or(format!("No station economy when docked: {}", journal_id))?;
-            for station_economy in station_economies {
-                station_economy.insert_into_db(journal_id, client)?;
+            let _ = value_table(Tables::EconomyType, station_economy, journal_id, &mut transaction)?;
+            if let Some(station_economies) = station_economies {
+                for station_economy in station_economies {
+                    station_economy.insert_into_db(journal_id, &mut transaction)?;
+                }
             }
+            transaction.commit()?;
             //Market
             if let Err(err) = client.execute(
                 //language=postgres
@@ -313,9 +318,9 @@ impl Location {
                     log::error!("[Location]insert station: {}",err);
                     return Err(EdcasError::from(err));
                 }
-
+            let mut transaction = client.transaction()?;
             //Station services
-            if let Err(err) = client.execute(
+            if let Err(err) = transaction.execute(
                 "DELETE FROM station_services WHERE market_id=$1",
                 &[&market_id],
             ) {
@@ -328,9 +333,9 @@ impl Location {
                         Tables::StationServicesTypes,
                         station_service,
                         journal_id,
-                        client,
+                        &mut transaction,
                     )?;
-                    if let Err(err) = client.execute(
+                    if let Err(err) = transaction.execute(
                         // language=postgresql
                         "INSERT INTO station_services (id, market_id,journal_id) VALUES ($1, $2,$3)",
                         &[&id, &market_id, &journal_id],
@@ -344,6 +349,7 @@ impl Location {
                     }
                 }
             }
+            transaction.commit()?;
         }
         Ok(())
     }

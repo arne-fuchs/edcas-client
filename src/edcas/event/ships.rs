@@ -43,7 +43,8 @@ impl Ships {
             timestamp,
         } = self;
         //TODO: Implement
-        if let Err(err) = client.execute(
+        let mut transaction = client.transaction()?;
+        if let Err(err) = transaction.execute(
             //language=postgresql
             "DELETE FROM ship_listening WHERE market_id=$1",
             &[&market_id],
@@ -54,8 +55,8 @@ impl Ships {
             )));
         }
         for ship in ships {
-            let ship_name = value_table(Tables::ShipName, ship, journal_id, client)?;
-            if let Err(err) = client.execute(
+            let ship_name = value_table(Tables::ShipName, ship, journal_id, &mut transaction)?;
+            if let Err(err) = transaction.execute(
                 //language=postgresql
                 "INSERT INTO ship_listening (ship_name, market_id, journal_id) VALUES ($1,$2,$3)",
                 &[&ship_name, &market_id, &journal_id],
@@ -66,6 +67,7 @@ impl Ships {
                 )));
             }
         }
+        transaction.commit()?;
         Ok(())
     }
 }

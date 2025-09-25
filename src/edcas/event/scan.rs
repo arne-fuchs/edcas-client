@@ -170,14 +170,15 @@ impl Scan {
             body_name,
             tidal_lock,
         } = self;
-
-        let planet_class = value_table(Tables::PlanetClass, planet_class, journal_id, client)?;
-        let volcanism = value_table(Tables::Volcanism, volcanism, journal_id, client)?;
-        let atmosphere = value_table(Tables::Atmosphere, atmosphere, journal_id, client)?;
+        let mut transaction = client.transaction()?;
+        let planet_class = value_table(Tables::PlanetClass, planet_class, journal_id, &mut transaction)?;
+        let volcanism = value_table(Tables::Volcanism, volcanism, journal_id, &mut transaction)?;
+        let atmosphere = value_table(Tables::Atmosphere, atmosphere, journal_id, &mut transaction)?;
         let atmosphere_type =
-            value_table(Tables::AtmosphereType, atmosphere_type, journal_id, client)?;
+            value_table(Tables::AtmosphereType, atmosphere_type, journal_id, &mut transaction)?;
         let terraform_state =
-            value_table(Tables::TerraformState, terraform_state, journal_id, client)?;
+            value_table(Tables::TerraformState, terraform_state, journal_id, &mut transaction)?;
+        transaction.commit()?;
         if let Err(err) = client.execute(
                             //language=postgresql
                             "INSERT INTO body

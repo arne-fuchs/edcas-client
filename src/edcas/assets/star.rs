@@ -121,13 +121,14 @@ impl Star {
         ){
             return Err(EdcasError::new(format!("[Star]: insert system: {}", err)));
         }
-
+        let mut transaction = client.transaction()?;
         let star_type = value_table(
             crate::edcas::tables::Tables::StarType,
             star_type,
             journal_id,
-            client,
+            &mut transaction,
         )?;
+        transaction.commit()?;
 
         if let Err(err) = client.execute(
             //language=postgresql
@@ -140,11 +141,15 @@ impl Star {
             log::error!("[Star] inserting star: {}",err);
             return Err(EdcasError::from(err));
         }
+        let mut transaction = client.transaction()?;
+
         if let Some(rings) = rings {
             for ring in rings {
-                ring.insert_into_db(journal_id, system_address, body_id, client)?;
+                ring.insert_into_db(journal_id, system_address, body_id, &mut transaction)?;
             }
         }
+        transaction.commit()?;
+
         Ok(())
     }
 }

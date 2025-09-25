@@ -115,9 +115,11 @@ impl Fsdjump {
         // "PowerplayStateReinforcement": 12725,
         // "PowerplayStateControlProgress": 0.056415
         //TODO Check if actually something is being saved
+
+        let mut transaction = client.transaction()?;
         if let Some(powers) = powers {
             for power in powers {
-                value_table(Tables::Power, power, journal_id, client)?;
+                value_table(Tables::Power, power, journal_id, &mut transaction)?;
             }
         }
         let controlling_power = if let Some(controlling_power) = controlling_power {
@@ -125,25 +127,26 @@ impl Fsdjump {
                 Tables::Power,
                 controlling_power,
                 journal_id,
-                client,
+                &mut transaction,
             )?)
         } else {
             None
         };
         if let Some(system_faction) = system_faction {
-            system_faction.insert_into_db(journal_id, client)?;
+            system_faction.insert_into_db(journal_id, &mut transaction)?;
         }
         let system_allegiance =
-            value_table(Tables::Allegiance, system_allegiance, journal_id, client)?;
-        let economy = value_table(Tables::EconomyType, system_economy, journal_id, client)?;
+            value_table(Tables::Allegiance, system_allegiance, journal_id, &mut transaction)?;
+        let economy = value_table(Tables::EconomyType, system_economy, journal_id, &mut transaction)?;
         let second_economy = value_table(
             Tables::EconomyType,
             system_second_economy,
             journal_id,
-            client,
+            &mut transaction,
         )?;
-        let government = value_table(Tables::Government, system_government, journal_id, client)?;
-        let security = value_table(Tables::Security, system_security, journal_id, client)?;
+        let government = value_table(Tables::Government, system_government, journal_id, &mut transaction)?;
+        let security = value_table(Tables::Security, system_security, journal_id, &mut transaction)?;
+        transaction.commit()?;
 
         let system_address = crate::edcas::assets::star_system::insert_star_system(
             system_address,
@@ -159,15 +162,15 @@ impl Fsdjump {
             journal_id,
             client,
         )?;
-
+        let mut transaction = client.transaction()?;
         if let Some(factions) = factions {
             for faction in factions {
-                faction.insert_into_db(journal_id, system_address, client)?;
+                faction.insert_into_db(journal_id, system_address, &mut transaction)?;
             }
         }
         if let Some(conflicts) = conflicts {
             for conflict in conflicts {
-                conflict.insert_into_db(journal_id, system_address, client)?;
+                conflict.insert_into_db(journal_id, system_address, &mut transaction)?;
             }
         }
 

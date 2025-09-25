@@ -107,12 +107,13 @@ impl Docked {
         ){
             return Err(EdcasError::new(format!("Star: {}", err)));
         }
+        let mut transaction = client.transaction()?;
         let station_type = (
             value_table(
                 Tables::StationType,
                 station_type.clone(),
                 journal_id,
-                client,
+                &mut transaction,
             )?,
             station_type,
         );
@@ -124,25 +125,25 @@ impl Docked {
                 None => "".to_string(),
             },
             journal_id,
-            client,
+             &mut transaction,
         )?;
 
         let station_government =
-            value_table(Tables::Government, station_government, journal_id, client)?;
+            value_table(Tables::Government, station_government, journal_id,  &mut transaction)?;
         let station_economy =
-            value_table(Tables::EconomyType, station_economy, journal_id, client)?;
+            value_table(Tables::EconomyType, station_economy, journal_id,  &mut transaction)?;
 
         //TODO delete old station economy
         for station_economy in station_economies {
-            station_economy.insert_into_db(journal_id, client)?;
+            station_economy.insert_into_db(journal_id,  &mut transaction)?;
         }
 
-        let station_faction = station_faction.insert_into_db(journal_id, client)?;
-        let happiness = value_table(Tables::Happiness, "".to_string(), journal_id, client)?;
+        let station_faction = station_faction.insert_into_db(journal_id,  &mut transaction)?;
+        let happiness = value_table(Tables::Happiness, "".to_string(), journal_id,  &mut transaction)?;
         use crate::eddn::edcas_error::EdcasError;
         match station_type.1.as_str() {
             "FleetCarrier" | "PlanetaryConstructionDepot" | "SpaceConstructionDepot" => {
-                if let Err(err) = client.execute(
+                if let Err(err) = transaction.execute(
                                                 //language=postgresql
                                                 "INSERT INTO factions (name, system_address, government, allegiance, happiness, influence, journal_id) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ON CONSTRAINT factions_pkey DO UPDATE SET
                                                                                                                       government=$3,allegiance=$4,journal_id=$7",
@@ -153,7 +154,7 @@ impl Docked {
                 }
             }
             "MegaShip" => {
-                if let Err(err) = client.execute(
+                if let Err(err) = transaction.execute(
                                                 //language=postgresql
                                                 "INSERT INTO factions (name, system_address, government, allegiance, happiness, influence, journal_id) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ON CONSTRAINT factions_pkey DO UPDATE SET
                                                                                                                       government=$3,allegiance=$4,journal_id=$7",
@@ -165,7 +166,7 @@ impl Docked {
                 }
             }
             _ => {
-                if let Err(err) = client.execute(
+                if let Err(err) = transaction.execute(
                                             //language=postgresql
                                             "INSERT INTO factions (name, system_address, government, allegiance, happiness, influence, journal_id) VALUES ($1,$2,$3,$4,$5,$6,$7) ON CONFLICT ON CONSTRAINT factions_pkey DO UPDATE SET
                                                                                                                       government=$3,allegiance=$4,journal_id=$7",
@@ -176,6 +177,7 @@ impl Docked {
                 }
             }
         }
+        transaction.commit()?;
         //Market
         if let Err(err) = client.execute(
             //language=postgres
@@ -193,9 +195,10 @@ impl Docked {
                 log::error!("[Stations]insert station: {}",err);
                 return Err(EdcasError::from(err));
             }
+        let mut transaction = client.transaction()?;
 
         //Station services
-        if let Err(err) = client.execute(
+        if let Err(err) = transaction.execute(
             "DELETE FROM station_services WHERE market_id=$1",
             &[&market_id],
         ) {
@@ -207,9 +210,9 @@ impl Docked {
                 Tables::StationServicesTypes,
                 station_service,
                 journal_id,
-                client,
+                &mut transaction,
             )?;
-            if let Err(err) = client.execute(
+            if let Err(err) = transaction.execute(
                 // language=postgresql
                 "INSERT INTO station_services (id, market_id,journal_id) VALUES ($1, $2,$3)",
                 &[&id, &market_id, &journal_id],
@@ -223,8 +226,9 @@ impl Docked {
             }
         }
         if let Some(landing_pads) = landing_pads{
-            landing_pads.insert_into_db(journal_id, market_id, client)?;
+            landing_pads.insert_into_db(journal_id, market_id, &mut transaction)?;
         }
+        transaction.commit()?;
         Ok(())
     }
 }

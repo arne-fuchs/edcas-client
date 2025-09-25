@@ -129,10 +129,11 @@ impl Body {
                 }
             }
         };
+        let mut transaction = client.transaction()?;
 
-        let volcanism = value_table(Tables::Volcanism, volcanism, journal_id, client)?;
-        let atmosphere = value_table(Tables::Atmosphere, atmosphere, journal_id, client)?;
-        let planet_class = value_table(Tables::PlanetClass, planet_class, journal_id, client)?;
+        let volcanism = value_table(Tables::Volcanism, volcanism, journal_id, &mut transaction)?;
+        let atmosphere = value_table(Tables::Atmosphere, atmosphere, journal_id, &mut transaction)?;
+        let planet_class = value_table(Tables::PlanetClass, planet_class, journal_id, &mut transaction)?;
         let atmosphere_type = value_table(
             Tables::AtmosphereType,
             match atmosphere_type {
@@ -140,10 +141,11 @@ impl Body {
                 None => "".to_string(),
             },
             journal_id,
-            client,
+            &mut transaction,
         )?;
         let terraform_state =
-            value_table(Tables::TerraformState, terraform_state, journal_id, client)?;
+            value_table(Tables::TerraformState, terraform_state, journal_id, &mut transaction)?;
+        transaction.commit()?;
         if let Err(err) = client.execute(
             //language=postgresql
             "INSERT INTO body
@@ -161,7 +163,8 @@ impl Body {
             log::error!("[Body][{}] inserting body: {}",scan_type, err);
             return Err(EdcasError::from(err));
         }
-        if let Err(err) = client.execute(
+        let mut transaction = client.transaction()?;
+        if let Err(err) = transaction.execute(
             //language=postgresql
             "DELETE FROM atmosphere_composition WHERE body_id=$1 AND system_address=$2",
             &[&body_id, &system_address],
@@ -179,11 +182,11 @@ impl Body {
                     journal_id,
                     body_id,
                     system_address,
-                    client,
+                    &mut transaction,
                 )?;
             }
         }
-        if let Err(err) = client.execute(
+        if let Err(err) = transaction.execute(
             //language=postgresql
             "DELETE FROM planet_material WHERE body_id=$1 AND system_address=$2",
             &[&body_id, &system_address],
@@ -193,10 +196,10 @@ impl Body {
         }
         if let Some(materials) = materials {
             for material in materials {
-                material.insert_into_db(journal_id, body_id, system_address, client)?;
+                material.insert_into_db(journal_id, body_id, system_address, &mut transaction)?;
             }
         }
-        if let Err(err) = client.execute(
+        if let Err(err) = transaction.execute(
             //language=postgresql
             "DELETE FROM planet_composition WHERE body_id=$1 AND system_address=$2",
             &[&body_id, &system_address],
@@ -209,12 +212,13 @@ impl Body {
             return Err(EdcasError::from(err));
         }
         if let Some(composition) = composition {
-            composition.insert_into_db(journal_id, body_id, system_address, client)?;
+            composition.insert_into_db(journal_id, body_id, system_address, &mut transaction)?;
         }
 
         for parent in parents {
-            parent.insert_into_db(journal_id, system_address, body_id, client)?;
+            parent.insert_into_db(journal_id, system_address, body_id, &mut transaction)?;
         }
+        transaction.commit()?;
         Ok(())
     }
 }
@@ -234,7 +238,7 @@ impl AtmosphereComposition {
         journal_id: i64,
         body_id: i32,
         system_address: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), crate::eddn::edcas_error::EdcasError> {
         use crate::edcas::tables::{value_table, Tables};
 
@@ -267,7 +271,7 @@ impl Materials {
         journal_id: i64,
         body_id: i32,
         system_address: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), crate::eddn::edcas_error::EdcasError> {
         use crate::edcas::tables::{value_table, Tables};
 
@@ -303,7 +307,7 @@ impl Composition {
         journal_id: i64,
         body_id: i32,
         system_address: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), crate::eddn::edcas_error::EdcasError> {
         use crate::edcas::tables::{value_table, Tables};
         use crate::eddn::edcas_error::EdcasError;
@@ -376,7 +380,7 @@ impl Parent {
         journal_id: i64,
         system_address: i64,
         body_id: i32,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), crate::eddn::edcas_error::EdcasError> {
         use crate::eddn::edcas_error::EdcasError;
 
@@ -455,7 +459,7 @@ impl Ring {
         journal_id: i64,
         system_address: i64,
         body_id: i32,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), crate::eddn::edcas_error::EdcasError> {
         use crate::{edcas::tables::value_table, eddn::edcas_error::EdcasError};
         let Self {

@@ -17,7 +17,7 @@ impl SystemFaction {
     pub fn insert_into_db(
         self,
         journal_id: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), postgres::Error> {
         use crate::edcas::tables::{value_table, Tables};
         let Self {
@@ -71,7 +71,7 @@ impl Faction {
         self,
         journal_id: i64,
         system_address: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), postgres::Error> {
         use crate::edcas::tables::{value_table, Tables};
         let Self {
@@ -86,12 +86,13 @@ impl Faction {
             active_states,
             recovering_states,
         } = self;
-
-        let faction_name_id = value_table(Tables::FactionName, name, journal_id, client)?;
-        let government = value_table(Tables::Government, government, journal_id, client)?;
-        let allegiance = value_table(Tables::Allegiance, allegiance, journal_id, client)?;
-        let happiness = value_table(Tables::Happiness, happiness, journal_id, client)?;
-        let _ = value_table(Tables::FactionStateName, faction_state, journal_id, client)?;
+        let mut transaction = client.transaction()?;
+        let faction_name_id = value_table(Tables::FactionName, name, journal_id, &mut transaction)?;
+        let government = value_table(Tables::Government, government, journal_id, &mut transaction)?;
+        let allegiance = value_table(Tables::Allegiance, allegiance, journal_id, &mut transaction)?;
+        let happiness = value_table(Tables::Happiness, happiness, journal_id, &mut transaction)?;
+        let _ = value_table(Tables::FactionStateName, faction_state, journal_id, &mut transaction)?;
+        transaction.commit()?;
 
         let name = insert_faction(
             system_address,
@@ -103,7 +104,8 @@ impl Faction {
             journal_id,
             client,
         )?;
-        if let Err(err) = client.execute(
+        let mut transaction = client.transaction()?;
+        if let Err(err) = transaction.execute(
             "DELETE FROM faction_states WHERE system_address=$1 AND faction=$2",
             &[&system_address, &faction_name_id],
         ) {
@@ -115,19 +117,20 @@ impl Faction {
         }
         if let Some(active_states) = active_states {
             for active_state in active_states {
-                active_state.insert_into_db(journal_id, system_address, name, client)?;
+                active_state.insert_into_db(journal_id, system_address, name, &mut transaction)?;
             }
         }
         if let Some(pending_states) = pending_states {
             for pending_state in pending_states {
-                pending_state.insert_into_db(journal_id, system_address, name, client)?;
+                pending_state.insert_into_db(journal_id, system_address, name, &mut transaction)?;
             }
         }
         if let Some(recovering_states) = recovering_states {
             for recovering_states in recovering_states {
-                recovering_states.insert_into_db(journal_id, system_address, name, client)?;
+                recovering_states.insert_into_db(journal_id, system_address, name, &mut transaction)?;
             }
         }
+        transaction.commit()?;
         Ok(())
     }
 }
@@ -141,7 +144,7 @@ fn insert_faction(
     happiness: i32,
     influence: f32,
     journal_id: i64,
-    client: &mut postgres::Client,
+    client: &mut postgres::Transaction,
 ) -> Result<i32, postgres::Error> {
     let faction_key: Option<i32> = match client.query_one(
         // language=postgresql

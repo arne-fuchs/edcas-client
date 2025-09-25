@@ -42,8 +42,8 @@ impl Modules {
             odyssey,
             timestamp,
         } = self;
-
-        if let Err(err) = client.execute(
+        let mut transaction = client.transaction()?;
+        if let Err(err) = transaction.execute(
             //language=postgresql
             "DELETE FROM modul_listening WHERE market_id=$1",
             &[&market_id],
@@ -55,8 +55,8 @@ impl Modules {
         }
 
         for module in modules {
-            let name = value_table(Tables::ModulName, module, journal_id, client)?;
-            if let Err(err) = client.execute(
+            let name = value_table(Tables::ModulName, module, journal_id, &mut transaction)?;
+            if let Err(err) = transaction.execute(
                 //language=postgresql
                 "INSERT INTO modul_listening (modul_name, market_id, journal_id) VALUES ($1,$2,$3)",
                 &[&name, &market_id, &journal_id],
@@ -67,6 +67,7 @@ impl Modules {
                 )));
             }
         }
+        transaction.commit()?;
         Ok(())
     }
 }

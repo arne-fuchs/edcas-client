@@ -54,8 +54,8 @@ impl Commodities {
 
         //TODO Insert station economies
         // TODO Insert prohibited
-
-        if let Err(err) = client.execute(
+        let mut transaction = client.transaction()?;
+        if let Err(err) = transaction.execute(
             // language=postgresql
             "DELETE FROM commodity_listening WHERE market_id=$1",
             &[&market_id],
@@ -66,8 +66,9 @@ impl Commodities {
             )));
         }
         for commodity in commodities {
-            commodity.insert_into_db(journal_id, market_id, client)?;
+            commodity.insert_into_db(journal_id, market_id, &mut transaction)?;
         }
+        transaction.commit()?;
         Ok(())
     }
 }
@@ -110,7 +111,7 @@ impl Commodity {
         self,
         journal_id: i64,
         market_id: i64,
-        client: &mut postgres::Client,
+        client: &mut postgres::Transaction,
     ) -> Result<(), crate::eddn::edcas_error::EdcasError> {
         use crate::edcas::tables::value_table;
         use crate::eddn::edcas_error::EdcasError;
