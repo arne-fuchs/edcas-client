@@ -1,0 +1,25 @@
+{
+    "event": "SAASignalsFound",
+    "BodyID": 53,
+    "Genuses": [
+        {
+            "Genus": "$Codex_Ent_Bacterial_Genus_Name;"
+        },
+        {
+            "Genus": "$Codex_Ent_Fonticulus_Genus_Name;"
+        }
+    ],
+    "Signals": [
+        {
+            "Type": "$SAA_SignalType_Biological;",
+            "Count": 2
+        }
+    ],
+    "StarPos": [1840.46875, 316.09375, 2038.84375],
+    "odyssey": true,
+    "BodyName": "Phylucs BR-H b25-0 B 4 c",
+    "horizons": true,
+    "timestamp": "2025-09-08T17:24:49Z",
+    "StarSystem": "Phylucs BR-H b25-0",
+    "SystemAddress": 695651608793
+}

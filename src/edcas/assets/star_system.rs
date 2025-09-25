@@ -1,6 +1,4 @@
-use log::error;
-use postgres::{Client, Error};
-
+#[cfg(feature = "eddn")]
 pub fn insert_star_system(
     system_address: i64,
     name: String,
@@ -13,8 +11,9 @@ pub fn insert_star_system(
     population: i64,
     controlling_power: Option<i32>,
     journal_id: i64,
-    client: &mut Client,
-) -> Result<i64, Error> {
+    client: &mut postgres::Client,
+) -> Result<i64, crate::eddn::edcas_error::EdcasError> {
+    use crate::eddn::edcas_error::EdcasError;
     let system_address_db: Option<i64> = match client.query_one(
         // language=postgresql
         "SELECT system_address FROM star_systems WHERE system_address=$1",
@@ -29,11 +28,14 @@ pub fn insert_star_system(
         }
         Err(err) => {
             if err.to_string() != "query returned an unexpected number of rows" {
-                error!(
+                use crate::eddn::edcas_error::EdcasError;
+
+                log::error!(
                     "[{}]insert_star_system: Unable to get star system: {}",
-                    journal_id, err
+                    journal_id,
+                    err
                 );
-                return Err(err);
+                return Err(EdcasError::from(err));
             }
             None
         }
@@ -53,8 +55,8 @@ pub fn insert_star_system(
             {
                 Ok(row) => Ok(row.get(0)),
                 Err(err) => {
-                    error!("[{}]insert_star_system: Unable to insert star system: {}",journal_id,err);
-                    Err(err)
+                    log::error!("[{}]insert_star_system: Unable to insert star system: {}",journal_id,err);
+                    Err(EdcasError::from(err))
                 }
             }
         }
@@ -96,11 +98,8 @@ pub fn insert_star_system(
             ) {
                 Ok(_) => Ok(system_address),
                 Err(err) => {
-                    error!(
-                        "[{}]insert_star_system: Unable to update star systems: {}",
-                        journal_id, err
-                    );
-                    Err(err)
+                    log::error!("insert_star_system: Unable to update star systems: {}", err);
+                    Err(EdcasError::from(err))
                 }
             }
         }

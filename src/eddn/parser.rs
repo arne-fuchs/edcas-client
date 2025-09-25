@@ -1,4 +1,4 @@
-use log::{error, info, warn};
+use log::{error, warn};
 use postgres::{Client, NoTls};
 use std::thread;
 use std::time::{Duration, Instant};
@@ -26,24 +26,25 @@ pub fn run() {
         }
 
         let rows = match client.query(sql, &[]) {
-            Ok(rows) => {
-                rows
-            },
+            Ok(rows) => rows,
             Err(err) => {
-                error!("Couldn't get journal logs: {}",err);
+                error!("Couldn't get journal logs: {}", err);
                 std::thread::sleep(Duration::from_secs(1));
                 continue;
-            },
+            }
         };
 
-        for row in rows{
-            let journal_id:i64 = row.get(0);
-            let event:&str = row.get(1);
+        for row in rows {
+            let journal_id: i64 = row.get(0);
+            let event: &str = row.get(1);
             let json: serde_json::value::Value = row.get(2);
 
             let now = Instant::now();
-            if let Err(err) = interpreter::interpret_json(journal_id, event,json::parse(json.to_string().as_str()).unwrap() , &mut client){
-                error!("Interpreter resulted in error: {}",err);
+            if let Err(err) = interpreter::interpret_json(journal_id, event, json, &mut client) {
+                match err.0 {
+                    crate::eddn::edcas_error::ErrorType::Unimplemented() => {}, //TODO When more is implemented, disable this
+                    _ => error!("{}", err.with_id(journal_id))
+                }
             }
             if now.elapsed().as_secs() >= 1 {
                 warn!(
@@ -54,8 +55,10 @@ pub fn run() {
             }
             let sql = "UPDATE journal_events SET parsed=true WHERE id=$1;";
             match client.execute(sql, &[&journal_id]) {
-                Ok(_) => {},
-                Err(err) => {error!("Interpreter update journal resulted in error: {}",err);}
+                Ok(_) => {}
+                Err(err) => {
+                    error!("Interpreter update journal resulted in error: {}", err);
+                }
             }
         }
     }

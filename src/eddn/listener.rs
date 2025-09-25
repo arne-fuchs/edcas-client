@@ -1,5 +1,6 @@
 use log::{error, warn};
 use postgres::{Client, NoTls};
+use std::str::FromStr;
 use std::sync::mpsc::channel;
 use std::thread;
 use std::time::{Duration, Instant};
@@ -19,7 +20,7 @@ pub async fn run() {
             Client::connect(db_url.as_str(), NoTls).expect("Couldn't connect to postgres");
         loop {
             match bus_reader.recv() {
-                Ok(string) => match json::parse(string.as_str()) {
+                Ok(string) => match serde_json::Value::from_str(string.as_str()) {
                     Ok(json) => {
                         while client.is_closed() || client.is_valid(Duration::from_secs(1)).is_err()
                         {
@@ -32,14 +33,12 @@ pub async fn run() {
                         let now = Instant::now();
                         let mut event = json["event"].as_str();
                         if event.is_none() {
-                            event = if json.has_key("commodities") {
+                            event = if json.get("commodities").is_some() {
                                 Some("commodities")
-                            } else if json.has_key("modules") {
+                            } else if json.get("modules").is_some() {
                                 Some("modules")
-                            } else if json.has_key("ships") {
+                            } else if json.get("ships").is_some() {
                                 Some("ships")
-                            } else if json.has_key("marketId") {
-                                Some("marketId")
                             } else {
                                 Some("unknown")
                             };

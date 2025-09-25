@@ -1,0 +1,113 @@
+{
+    "timestamp": "2022-10-16T20:54:45Z",
+    "event": "Location",
+    "DistFromStarLS": 1007.705243,
+    "Docked": true,
+    "StationName": "Q2K-BHB",
+    "StationType": "FleetCarrier",
+    "MarketID": 3704402432,
+    "StationFaction": { "Name": "FleetCarrier" },
+    "StationGovernment": "$government_Carrier;",
+    "StationGovernment_Localised": "Privateigentum",
+    "StationServices": [
+        "dock",
+        "autodock",
+        "commodities",
+        "contacts",
+        "exploration",
+        "outfitting",
+        "crewlounge",
+        "rearm",
+        "refuel",
+        "repair",
+        "shipyard",
+        "engineer",
+        "flightcontroller",
+        "stationoperations",
+        "stationMenu",
+        "carriermanagement",
+        "carrierfuel",
+        "livery",
+        "voucherredemption",
+        "socialspace",
+        "bartender",
+        "vistagenomics"
+    ],
+    "StationEconomy": "$economy_Carrier;",
+    "StationEconomy_Localised": "Privatunternehmen",
+    "StationEconomies": [
+        {
+            "Name": "$economy_Carrier;",
+            "Name_Localised": "Privatunternehmen",
+            "Proportion": 1.0
+        }
+    ],
+    "Taxi": false,
+    "Multicrew": false,
+    "StarSystem": "Colonia",
+    "SystemAddress": 3238296097059,
+    "StarPos": [-9530.5, -910.28125, 19808.125],
+    "SystemAllegiance": "Independent",
+    "SystemEconomy": "$economy_Tourism;",
+    "SystemEconomy_Localised": "Tourismus",
+    "SystemSecondEconomy": "$economy_HighTech;",
+    "SystemSecondEconomy_Localised": "Hightech",
+    "SystemGovernment": "$government_Cooperative;",
+    "SystemGovernment_Localised": "Kooperative",
+    "SystemSecurity": "$SYSTEM_SECURITY_low;",
+    "SystemSecurity_Localised": "Geringe Sicherheit",
+    "Population": 583869,
+    "Body": "Colonia 2 c",
+    "BodyID": 18,
+    "BodyType": "Planet",
+    "Factions": [
+        {
+            "Name": "Jaques",
+            "FactionState": "Investment",
+            "Government": "Cooperative",
+            "Influence": 0.454092,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand1;",
+            "Happiness_Localised": "In Hochstimmung",
+            "MyReputation": 100.0,
+            "RecoveringStates": [{ "State": "PublicHoliday", "Trend": 0 }],
+            "ActiveStates": [
+                { "State": "Investment" },
+                { "State": "CivilLiberty" }
+            ]
+        },
+        {
+            "Name": "Colonia Council",
+            "FactionState": "Boom",
+            "Government": "Cooperative",
+            "Influence": 0.331337,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": 100.0,
+            "ActiveStates": [{ "State": "Boom" }]
+        },
+        {
+            "Name": "People of Colonia",
+            "FactionState": "None",
+            "Government": "Cooperative",
+            "Influence": 0.090818,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": 27.9564
+        },
+        {
+            "Name": "Holloway Bioscience Institute",
+            "FactionState": "None",
+            "Government": "Corporate",
+            "Influence": 0.123752,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": -9.42,
+            "RecoveringStates": [{ "State": "PirateAttack", "Trend": 0 }]
+        }
+    ],
+    "SystemFaction": { "Name": "Jaques", "FactionState": "Investment" }
+}

@@ -1,2 +1,5 @@
-pub mod faction;
-pub mod star_system;
+pub mod assets;
+pub mod event;
+
+#[cfg(feature = "eddn")]
+pub mod tables;

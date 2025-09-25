@@ -9,6 +9,7 @@ use std::env;
 //mod cli;
 //mod edcas;
 use views::{Navbar, News, Settings};
+
 mod desktop;
 mod edcas;
 #[cfg(feature = "eddn")]
@@ -27,9 +28,9 @@ fn main() {
 
 "#;
     println!("{}", ascii_art);
-    if args.len() > 0 {
+    if !args.is_empty() {
         debug!("Arguments: {:?}", args);
-        println!("Arguments: {:?}",args);
+        println!("Arguments: {:?}", args);
     }
 
     for arg in args {

@@ -1,0 +1,97 @@
+{
+    "Body": "Wyrd",
+    "event": "FSDJump",
+    "BodyID": 1,
+    "Powers": ["Edmund Mahon", "Jerome Archer"],
+    "StarPos": [-11.625, 31.53125, -3.9375],
+    "odyssey": true,
+    "BodyType": "Star",
+    "Factions": [
+        {
+            "Name": "Wyrd People's Party",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.040514,
+            "Allegiance": "Independent",
+            "Government": "Communism",
+            "FactionState": "None"
+        },
+        {
+            "Name": "Alliance of BD+47 2112",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.237154,
+            "Allegiance": "Federation",
+            "Government": "Confederacy",
+            "FactionState": "None",
+            "RecoveringStates": [
+                { "State": "InfrastructureFailure", "Trend": 0 }
+            ]
+        },
+        {
+            "Name": "Traditional Wyrd Justice Party",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.037549,
+            "Allegiance": "Alliance",
+            "Government": "Dictatorship",
+            "FactionState": "None",
+            "RecoveringStates": [{ "State": "PirateAttack", "Trend": 0 }]
+        },
+        {
+            "Name": "Wyrd Jet Power Industries",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.115613,
+            "Allegiance": "Federation",
+            "Government": "Corporate",
+            "FactionState": "None"
+        },
+        {
+            "Name": "Wyrd Raiders",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.009881,
+            "Allegiance": "Independent",
+            "Government": "Anarchy",
+            "ActiveStates": [{ "State": "PirateAttack" }],
+            "FactionState": "PirateAttack"
+        },
+        {
+            "Name": "Legacy Corp",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.052372,
+            "Allegiance": "Federation",
+            "Government": "Democracy",
+            "ActiveStates": [{ "State": "PirateAttack" }],
+            "FactionState": "PirateAttack"
+        },
+        {
+            "Name": "New Pilots Initiative",
+            "Happiness": "$Faction_HappinessBand1;",
+            "Influence": 0.506917,
+            "Allegiance": "Independent",
+            "Government": "Corporate",
+            "ActiveStates": [
+                { "State": "Investment" },
+                { "State": "CivilLiberty" },
+                { "State": "Expansion" }
+            ],
+            "FactionState": "Expansion"
+        }
+    ],
+    "horizons": true,
+    "timestamp": "2025-09-08T22:56:26Z",
+    "Population": 27519138,
+    "StarSystem": "Wyrd",
+    "SystemAddress": 5031654888146,
+    "SystemEconomy": "$economy_Extraction;",
+    "SystemFaction": {
+        "Name": "New Pilots Initiative",
+        "FactionState": "Expansion"
+    },
+    "PowerplayState": "Stronghold",
+    "SystemSecurity": "$SYSTEM_SECURITY_medium;",
+    "ControllingPower": "Edmund Mahon",
+    "SystemAllegiance": "Independent",
+    "SystemGovernment": "$government_Corporate;",
+    "SystemSecondEconomy": "$economy_Agri;",
+    "PowerplayStateUndermining": 4110,
+    "PowerplayStateReinforcement": 12725,
+    "PowerplayStateControlProgress": 0.056415
+}

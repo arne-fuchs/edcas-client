@@ -96,6 +96,31 @@ CREATE TABLE terraform_state (
     journal_id BIGINT REFERENCES journal_events(id) NOT NULL
 );
 
+CREATE TABLE star_type (
+    id SERIAL PRIMARY KEY,
+    value VARCHAR(255) UNIQUE NOT NULL,
+    journal_id BIGINT REFERENCES journal_events(id) NOT NULL
+);
+
+CREATE TABLE star (
+    id INTEGER NOT NULL,
+    system_address BIGINT REFERENCES star_systems(system_address),
+    name VARCHAR(255) UNIQUE NOT NULL,
+    age_my INTEGER,
+    radius REAL,
+    star_type INTEGER REFERENCES star_type(id),
+    subclass INTEGER,
+    axial_tilt REAL,
+    luminosity VARCHAR(3),
+    stellar_mass REAL,
+    rotation_period REAL,
+    absolute_magnitude REAL,
+    surface_temperature REAL,
+    distance REAL,
+    journal_id BIGINT REFERENCES journal_events(id),
+    PRIMARY KEY (id,system_address)
+);
+
 CREATE TABLE body (
     id INTEGER NOT NULL,
     system_address BIGINT REFERENCES star_systems(system_address),
@@ -166,23 +191,22 @@ CREATE TABLE planet_material (
     FOREIGN KEY (body_id,system_address) REFERENCES body(id,system_address)
 );
 
-CREATE TABLE star (
-    id INTEGER NOT NULL,
-    system_address BIGINT REFERENCES star_systems(system_address),
-    name VARCHAR(255) UNIQUE NOT NULL,
-    age_my INTEGER,
-    radius REAL,
-    star_type VARCHAR(3),
-    subclass INTEGER,
-    axial_tilt REAL,
-    luminosity VARCHAR(3),
-    stellar_mass REAL,
-    rotation_period REAL,
-    absolut_magnitude REAL,
-    surface_temperature REAL,
-    distance REAL,
+CREATE TABLE ring_class (
+    id SERIAL PRIMARY KEY,
+    value VARCHAR(255) UNIQUE NOT NULL,
+    journal_id BIGINT REFERENCES journal_events(id) NOT NULL
+);
+
+CREATE TABLE ring (
+    body_id INTEGER NOT NULL,
+    system_address BIGINT NOT NULL REFERENCES star_systems(system_address),
+    ring_class INTEGER NOT NULL REFERENCES ring_class(id),
+    inner_rad REAL,
+    outer_rad REAL,
+    mass_mt REAL,
+    name VARCHAR(255),
     journal_id BIGINT REFERENCES journal_events(id),
-    PRIMARY KEY (id,system_address)
+    PRIMARY KEY (body_id,system_address,name)
 );
 
 CREATE TABLE parents (
@@ -215,7 +239,7 @@ CREATE TABLE stations(
     market_id BIGINT PRIMARY KEY NOT NULL,
     system_address BIGINT REFERENCES star_systems(system_address),
     body_id INTEGER,
-    name VARCHAR(255) UNIQUE NOT NULL,
+    name VARCHAR(255) NOT NULL,
     type INTEGER REFERENCES station_type(id),
     faction_name INTEGER REFERENCES faction_name(id),
     government INTEGER REFERENCES government(id),

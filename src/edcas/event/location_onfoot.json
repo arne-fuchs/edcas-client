@@ -1,0 +1,122 @@
+{
+    "Body": "NLTT 6655 5 a",
+    "BodyID": 37,
+    "BodyType": "Planet",
+    "Conflicts": [
+        {
+            "Faction1": {
+                "Name": "Green Party of NLTT 6655",
+                "Stake": "",
+                "WonDays": 0
+            },
+            "Faction2": {
+                "Name": "NLTT 6655 Blue Travel PLC",
+                "Stake": "Rah's Castings",
+                "WonDays": 0
+            },
+            "Status": "active",
+            "WarType": "civilwar"
+        },
+        {
+            "Faction1": {
+                "Name": "Natural NLTT 6655 Constitution Party",
+                "Stake": "",
+                "WonDays": 0
+            },
+            "Faction2": {
+                "Name": "Quebecois Patriots",
+                "Stake": "Hartsfield Gateway",
+                "WonDays": 2
+            },
+            "Status": "active",
+            "WarType": "election"
+        }
+    ],
+    "ControllingPower": "Pranav Antal",
+    "DistFromStarLS": 1349.61033,
+    "Docked": false,
+    "Factions": [
+        {
+            "ActiveStates": [{ "State": "CivilWar" }],
+            "Allegiance": "Federation",
+            "FactionState": "CivilWar",
+            "Government": "Democracy",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.09739,
+            "Name": "Green Party of NLTT 6655"
+        },
+        {
+            "Allegiance": "Independent",
+            "FactionState": "None",
+            "Government": "Dictatorship",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.044177,
+            "Name": "NLTT 6655 Party"
+        },
+        {
+            "ActiveStates": [{ "State": "CivilWar" }],
+            "Allegiance": "Independent",
+            "FactionState": "CivilWar",
+            "Government": "Corporate",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.09739,
+            "Name": "NLTT 6655 Blue Travel PLC"
+        },
+        {
+            "Allegiance": "Independent",
+            "FactionState": "None",
+            "Government": "Anarchy",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.01004,
+            "Name": "NLTT 6655 Jet Mafia"
+        },
+        {
+            "ActiveStates": [{ "State": "Election" }],
+            "Allegiance": "Independent",
+            "FactionState": "Election",
+            "Government": "Dictatorship",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.095382,
+            "Name": "Natural NLTT 6655 Constitution Party"
+        },
+        {
+            "ActiveStates": [{ "State": "Election" }],
+            "Allegiance": "Independent",
+            "FactionState": "Election",
+            "Government": "Patronage",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.095382,
+            "Name": "Quebecois Patriots",
+            "PendingStates": [{ "State": "Expansion", "Trend": 0 }]
+        },
+        {
+            "ActiveStates": [{ "State": "Expansion" }],
+            "Allegiance": "Independent",
+            "FactionState": "Expansion",
+            "Government": "Cooperative",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.560241,
+            "Name": "Aseveljet"
+        }
+    ],
+    "OnFoot": true,
+    "Population": 15123030,
+    "PowerplayState": "Stronghold",
+    "PowerplayStateControlProgress": 0.353698,
+    "PowerplayStateReinforcement": 3314,
+    "PowerplayStateUndermining": 26416,
+    "Powers": ["Li Yong-Rui", "Pranav Antal", "Jerome Archer"],
+    "StarPos": [-52.90625, -23.78125, -54.46875],
+    "StarSystem": "NLTT 6655",
+    "SystemAddress": 2869172381073,
+    "SystemAllegiance": "Independent",
+    "SystemEconomy": "$economy_Industrial;",
+    "SystemFaction": { "FactionState": "Expansion", "Name": "Aseveljet" },
+    "SystemGovernment": "$government_Cooperative;",
+    "SystemSecondEconomy": "$economy_Extraction;",
+    "SystemSecurity": "$SYSTEM_SECURITY_high;",
+    "event": "Location",
+    "horizons": true,
+    "odyssey": true,
+    "timestamp": "2025-09-01T12:02:16Z"
+}

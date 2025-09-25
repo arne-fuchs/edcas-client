@@ -1,3 +1,4 @@
+.idea
 .gitignore
 /target
 settings.json
@@ -10,3 +11,4 @@ edcas-client.zip
 edcas-client.deb
 custom_graphics_override.xml
 log
+tmp.json

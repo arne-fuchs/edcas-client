@@ -1,11 +1,8 @@
-mod edcas_error;
+pub mod edcas_error;
 mod eddn_adapter;
 mod interpreter;
 mod listener;
 mod parser;
-
-mod faction;
-mod star_system;
 
 use log::{debug, error, info, warn};
 
@@ -19,6 +16,7 @@ pub fn run_listener() {
             listener::run().await;
         });
 }
+
 pub fn run_parser() {
     initialize_logging("eddn_parser");
     parser::run();
@@ -30,7 +28,7 @@ fn initialize_logging(module: &str) {
         .format(|out, message, record| {
             out.finish(format_args!(
                 "[{}][{}]{}",
-                chrono::Utc::now().to_rfc3339(),
+                chrono::Local::now().format("%Y/%m/%d %H:%M:%S"),
                 record.level(),
                 message
             ))

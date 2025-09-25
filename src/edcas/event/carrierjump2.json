@@ -1,0 +1,20 @@
+{
+    "Body": "Col 285 Sector CS-V b18-2",
+    "event": "CarrierJump",
+    "BodyID": 0,
+    "Docked": false,
+    "OnFoot": true,
+    "StarPos": [154.0, 247.5, 51.4375],
+    "odyssey": true,
+    "BodyType": "Star",
+    "horizons": true,
+    "timestamp": "2025-09-08T16:25:01Z",
+    "Population": 0,
+    "StarSystem": "Col 285 Sector CS-V b18-2",
+    "SystemAddress": 5070880843193,
+    "SystemEconomy": "$economy_None;",
+    "SystemSecurity": "$GAlAXY_MAP_INFO_state_anarchy;",
+    "SystemAllegiance": "",
+    "SystemGovernment": "$government_None;",
+    "SystemSecondEconomy": "$economy_None;"
+}

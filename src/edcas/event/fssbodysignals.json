@@ -1,0 +1,17 @@
+{
+    "event": "FSSBodySignals",
+    "BodyID": 14,
+    "Signals": [
+        {
+            "Type": "$SAA_SignalType_Biological;",
+            "Count": 3
+        }
+    ],
+    "StarPos": [582.4375, -19.90625, -10102.34375],
+    "odyssey": true,
+    "BodyName": "Eos Ain QO-Z d13-0 A 5 e",
+    "horizons": true,
+    "timestamp": "2025-09-08T17:14:20Z",
+    "StarSystem": "Eos Ain QO-Z d13-0",
+    "SystemAddress": 10611590523
+}

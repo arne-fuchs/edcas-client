@@ -1,0 +1,53 @@
+{
+    "Rings": [
+        {
+            "Name": "Thaila UE-P d6-12 A 4 A Ring",
+            "MassMT": 2618600.0,
+            "InnerRad": 24356000.0,
+            "OuterRad": 77276000.0,
+            "RingClass": "eRingClass_Icy"
+        }
+    ],
+    "event": "Scan",
+    "BodyID": 26,
+    "MassEM": 9.842379,
+    "Radius": 14761100.0,
+    "Parents": [{ "Star": 1 }, { "Null": 0 }],
+    "StarPos": [5713.0625, -636.875, 4685.4375],
+    "odyssey": true,
+    "BodyName": "Thaila UE-P d6-12 A 4",
+    "Landable": false,
+    "ScanType": "Detailed",
+    "horizons": true,
+    "AxialTilt": 0.274867,
+    "Periapsis": 47.114044,
+    "TidalLock": false,
+    "Volcanism": "water geysers volcanism",
+    "WasMapped": false,
+    "timestamp": "2025-09-08T21:58:01Z",
+    "Atmosphere": "thick argon rich atmosphere",
+    "StarSystem": "Thaila UE-P d6-12",
+    "Composition": { "Ice": 0.684116, "Rock": 0.211393, "Metal": 0.10449 },
+    "MeanAnomaly": 316.149492,
+    "PlanetClass": "Icy body",
+    "Eccentricity": 0.000307,
+    "ReserveLevel": "PristineResources",
+    "AscendingNode": 163.716431,
+    "OrbitalPeriod": 557862579.82254,
+    "SemiMajorAxis": 1053689241409.3018,
+    "SystemAddress": 424002063163,
+    "WasDiscovered": false,
+    "AtmosphereType": "ArgonRich",
+    "RotationPeriod": 44020.829902,
+    "SurfaceGravity": 18.004124,
+    "TerraformState": "",
+    "SurfacePressure": 83864496.0,
+    "OrbitalInclination": 0.142458,
+    "SurfaceTemperature": 144.480164,
+    "AtmosphereComposition": [
+        { "Name": "Nitrogen", "Percent": 99.589745 },
+        { "Name": "Argon", "Percent": 0.217201 },
+        { "Name": "Helium", "Percent": 0.188041 }
+    ],
+    "DistanceFromArrivalLS": 3513.951598
+}

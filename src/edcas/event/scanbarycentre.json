@@ -1,0 +1,17 @@
+{
+    "event": "ScanBaryCentre",
+    "BodyID": 4,
+    "StarPos": [524.65625, -143.21875, -200.46875],
+    "odyssey": true,
+    "horizons": true,
+    "Periapsis": 36.31379,
+    "timestamp": "2025-09-09T16:23:14Z",
+    "StarSystem": "Synuefe HF-N b40-2",
+    "MeanAnomaly": 275.053831,
+    "Eccentricity": 0.104385,
+    "AscendingNode": 68.393061,
+    "OrbitalPeriod": 18850259780.88379,
+    "SemiMajorAxis": 4693070530891.418,
+    "SystemAddress": 5075979871577,
+    "OrbitalInclination": -21.515703
+}

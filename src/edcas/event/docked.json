@@ -1,0 +1,71 @@
+{
+    "Taxi": false,
+    "event": "Docked",
+    "StarPos": [11.1875, -37.375, -31.84375],
+    "odyssey": true,
+    "MarketID": 3223415296,
+    "horizons": true,
+    "Multicrew": false,
+    "timestamp": "2025-09-08T21:46:49Z",
+    "StarSystem": "LHS 20",
+    "LandingPads": {
+        "Large": 6,
+        "Small": 7,
+        "Medium": 12
+    },
+    "StationName": "Ohm City",
+    "StationType": "Coriolis",
+    "SystemAddress": 33656303199641,
+    "DistFromStarLS": 1289.578089,
+    "StationEconomy": "$economy_HighTech;",
+    "StationFaction": {
+        "Name": "Movement for LHS 20 Liberals",
+        "FactionState": "Boom"
+    },
+    "StationServices": [
+        "dock",
+        "autodock",
+        "blackmarket",
+        "commodities",
+        "contacts",
+        "exploration",
+        "missions",
+        "outfitting",
+        "crewlounge",
+        "rearm",
+        "refuel",
+        "repair",
+        "shipyard",
+        "tuning",
+        "engineer",
+        "missionsgenerated",
+        "flightcontroller",
+        "stationoperations",
+        "powerplay",
+        "searchrescue",
+        "materialtrader",
+        "techBroker",
+        "stationMenu",
+        "shop",
+        "livery",
+        "socialspace",
+        "bartender",
+        "vistagenomics",
+        "pioneersupplies",
+        "apexinterstellar",
+        "frontlinesolutions",
+        "registeringcolonisation"
+    ],
+    "StationEconomies": [
+        {
+            "Name": "$economy_HighTech;",
+            "Proportion": 0.8
+        },
+        {
+            "Name": "$economy_Refinery;",
+            "Proportion": 0.2
+        }
+    ],
+    "StationAllegiance": "Federation",
+    "StationGovernment": "$government_Democracy;"
+}

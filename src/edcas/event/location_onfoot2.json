@@ -1,0 +1,88 @@
+{
+    "Body": "Naren 8 d",
+    "BodyID": 43,
+    "BodyType": "Planet",
+    "ControllingPower": "Li Yong-Rui",
+    "DistFromStarLS": 3051.834041,
+    "Docked": false,
+    "Factions": [
+        {
+            "Allegiance": "Independent",
+            "FactionState": "None",
+            "Government": "Democracy",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.01003,
+            "Name": "Workers of Naren Labour"
+        },
+        {
+            "Allegiance": "Federation",
+            "FactionState": "None",
+            "Government": "Corporate",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.01003,
+            "Name": "Naren Industry"
+        },
+        {
+            "Allegiance": "Independent",
+            "FactionState": "None",
+            "Government": "Communism",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.934804,
+            "Name": "Nagii Union",
+            "PendingStates": [{ "State": "Expansion", "Trend": 0 }]
+        },
+        {
+            "Allegiance": "Independent",
+            "FactionState": "None",
+            "Government": "Dictatorship",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.01003,
+            "Name": "Autocracy of Naren"
+        },
+        {
+            "ActiveStates": [{ "State": "CivilUnrest" }],
+            "Allegiance": "Independent",
+            "FactionState": "CivilUnrest",
+            "Government": "Corporate",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.015045,
+            "Name": "Naren Ltd"
+        },
+        {
+            "Allegiance": "Independent",
+            "FactionState": "None",
+            "Government": "Anarchy",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.01003,
+            "Name": "Naren Gold Drug Empire"
+        },
+        {
+            "Allegiance": "Independent",
+            "FactionState": "None",
+            "Government": "Confederacy",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Influence": 0.01003,
+            "Name": "Contagion Confederation"
+        }
+    ],
+    "OnFoot": true,
+    "Population": 8082516412,
+    "PowerplayState": "Fortified",
+    "PowerplayStateControlProgress": 0.268283,
+    "PowerplayStateReinforcement": 638,
+    "PowerplayStateUndermining": 3854,
+    "Powers": ["Li Yong-Rui", "Pranav Antal", "Jerome Archer"],
+    "StarPos": [-47.46875, -18.78125, -114.28125],
+    "StarSystem": "Naren",
+    "SystemAddress": 3893127809371,
+    "SystemAllegiance": "Independent",
+    "SystemEconomy": "$economy_Agri;",
+    "SystemFaction": { "Name": "Nagii Union" },
+    "SystemGovernment": "$government_Communism;",
+    "SystemSecondEconomy": "$economy_Extraction;",
+    "SystemSecurity": "$SYSTEM_SECURITY_high;",
+    "event": "Location",
+    "horizons": true,
+    "odyssey": true,
+    "timestamp": "2025-09-07T07:21:32Z"
+}

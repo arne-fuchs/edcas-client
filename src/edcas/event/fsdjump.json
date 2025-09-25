@@ -1,0 +1,140 @@
+{
+    "timestamp": "2022-10-16T23:25:31Z",
+    "event": "FSDJump",
+    "Taxi": false,
+    "Multicrew": false,
+    "StarSystem": "Ogmar",
+    "SystemAddress": 84180519395914,
+    "StarPos": [-9534.0, -905.28125, 19802.03125],
+    "SystemAllegiance": "Independent",
+    "SystemEconomy": "$economy_HighTech;",
+    "SystemEconomy_Localised": "Hightech",
+    "SystemSecondEconomy": "$economy_Military;",
+    "SystemSecondEconomy_Localised": "Militär",
+    "SystemGovernment": "$government_Confederacy;",
+    "SystemGovernment_Localised": "Konföderation",
+    "SystemSecurity": "$SYSTEM_SECURITY_medium;",
+    "SystemSecurity_Localised": "Mittlere Sicherheit",
+    "Population": 151752,
+    "Body": "Ogmar A",
+    "BodyID": 1,
+    "BodyType": "Star",
+    "JumpDist": 8.625,
+    "FuelUsed": 0.024493,
+    "FuelLevel": 31.975506,
+    "Factions": [
+        {
+            "Name": "Jaques",
+            "FactionState": "Election",
+            "Government": "Cooperative",
+            "Influence": 0.138384,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand1;",
+            "Happiness_Localised": "In Hochstimmung",
+            "MyReputation": 100.0,
+            "PendingStates": [{ "State": "Outbreak", "Trend": 0 }],
+            "ActiveStates": [{ "State": "Election" }]
+        },
+        {
+            "Name": "ICU Colonial Corps",
+            "FactionState": "War",
+            "Government": "Communism",
+            "Influence": 0.119192,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": 96.402496,
+            "PendingStates": [{ "State": "Expansion", "Trend": 0 }],
+            "ActiveStates": [{ "State": "War" }]
+        },
+        {
+            "Name": "Societas Eruditorum de Civitas Dei",
+            "FactionState": "War",
+            "Government": "Dictatorship",
+            "Influence": 0.119192,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": 46.414799,
+            "ActiveStates": [{ "State": "War" }]
+        },
+        {
+            "Name": "GalCop Colonial Defence Commission",
+            "FactionState": "Boom",
+            "Government": "Confederacy",
+            "Influence": 0.406061,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": -75.0,
+            "ActiveStates": [{ "State": "Boom" }]
+        },
+        {
+            "Name": "Likedeeler of Colonia",
+            "FactionState": "None",
+            "Government": "Democracy",
+            "Influence": 0.068687,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": 4.0025
+        },
+        {
+            "Name": "Colonia Tech Combine",
+            "FactionState": "Election",
+            "Government": "Cooperative",
+            "Influence": 0.138384,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": 4.85,
+            "ActiveStates": [{ "State": "Election" }]
+        },
+        {
+            "Name": "Milanov's Reavers",
+            "FactionState": "Bust",
+            "Government": "Anarchy",
+            "Influence": 0.010101,
+            "Allegiance": "Independent",
+            "Happiness": "$Faction_HappinessBand2;",
+            "Happiness_Localised": "Glücklich",
+            "MyReputation": 0.0,
+            "RecoveringStates": [{ "State": "Terrorism", "Trend": 0 }],
+            "ActiveStates": [{ "State": "Bust" }]
+        }
+    ],
+    "SystemFaction": {
+        "Name": "GalCop Colonial Defence Commission",
+        "FactionState": "Boom"
+    },
+    "Conflicts": [
+        {
+            "WarType": "election",
+            "Status": "active",
+            "Faction1": {
+                "Name": "Jaques",
+                "Stake": "Guerrero Military Base",
+                "WonDays": 1
+            },
+            "Faction2": {
+                "Name": "Colonia Tech Combine",
+                "Stake": "",
+                "WonDays": 0
+            }
+        },
+        {
+            "WarType": "war",
+            "Status": "active",
+            "Faction1": {
+                "Name": "ICU Colonial Corps",
+                "Stake": "Boulaid Command Facility",
+                "WonDays": 1
+            },
+            "Faction2": {
+                "Name": "Societas Eruditorum de Civitas Dei",
+                "Stake": "Chatterjee's Respite",
+                "WonDays": 0
+            }
+        }
+    ]
+}
