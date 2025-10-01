@@ -1,6 +1,6 @@
 [package]
 name = "edcas-client"
-version = "0.3.1"
+version = "0.4.0"
 edition = "2021"
 readme = "README.md"
 repository = "https://github.com/arne-fuchs/edcas-client"
@@ -8,18 +8,18 @@ repository = "https://github.com/arne-fuchs/edcas-client"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-tokio = { version = "1.39.2", features = ["full"] }
-serde = "1.0.219"
-serde_json = "1.0.143"
-chrono = "0.4.41"
+tokio = { version = "1.47.1", features = ["full"] }
+serde = "1.0.228"
+serde_json = "1.0.145"
+chrono = "0.4.42"
 bus = "2.4.1"
-reqwest = {version = "0.12.23"}
-select = "0.6.0"
+reqwest = "0.12.23"
+select = "0.6.1"
 num-format = "0.4.4"
-opener = "0.7.1"
+opener = "0.7.2"
 
-web-sys = { version = "0.3.78", features = ["Document", "KeyboardEvent", "Window", "console"] }
-wasm-bindgen = "0.2.83"
+web-sys = { version = "0.3.81", features = ["Document", "KeyboardEvent", "Window", "console"] }
+wasm-bindgen = "0.2.104"
 
 # Gui
 dioxus = { version = "0.7.0-rc.0", features = ["fullstack"] }
@@ -27,9 +27,9 @@ dioxus = { version = "0.7.0-rc.0", features = ["fullstack"] }
 # Eddn
 zmq = {version="0.10.0", optional=true}
 flate2 = { version = "1.1.2", features = ["zlib-ng"], default-features = false, optional=true }
-postgres = {version = "0.19.10", features = ["with-chrono-0_4","with-serde_json-1"], optional=true}
-postgres-types = {version = "0.2.9", features = ["derive"], optional=true}
-log = {version="0.4.27", optional=true}
+postgres = {version = "0.19.11", features = ["with-chrono-0_4","with-serde_json-1"], optional=true}
+postgres-types = {version = "0.2.10", features = ["derive"], optional=true}
+log = {version="0.4.28", optional=true}
 fern = {version="0.7.1", optional=true}
 
 #Server stuff

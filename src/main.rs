@@ -1,6 +1,7 @@
 #![allow(unreachable_code)]
 extern crate core;
 
+use std::process::exit;
 use dioxus::logger::tracing::debug;
 use dioxus::prelude::*;
 use std::env;
@@ -37,16 +38,17 @@ fn main() {
         match arg.as_str() {
             #[cfg(feature = "eddn")]
             "--eddn-listener" => {
-                use std::process::exit;
-
                 eddn::run_listener();
                 exit(0);
             }
             #[cfg(feature = "eddn")]
             "--eddn-parser" => {
-                use std::process::exit;
-
                 eddn::run_parser();
+                exit(0);
+            }
+            "--help" => {
+                println!("--eddn-parser Runs the parser on the database");
+                println!("--eddn-listener Listens to the eddn network and loads the json into the database");
                 exit(0);
             }
             _ => {}

@@ -33,7 +33,7 @@ fn initialize_logging(module: &str) {
                 message
             ))
         })
-        //.chain(std::io::stdout())
+        .chain(std::io::stdout())
         .level(log::LevelFilter::Error)
         .level(log::LevelFilter::Warn)
         .level(log::LevelFilter::Info)

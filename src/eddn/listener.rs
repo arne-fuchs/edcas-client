@@ -22,50 +22,52 @@ pub async fn run() {
             match bus_reader.recv() {
                 Ok(string) => match serde_json::Value::from_str(string.as_str()) {
                     Ok(json) => {
-                        while client.is_closed() || client.is_valid(Duration::from_secs(1)).is_err()
-                        {
-                            warn!("Postgres client closed -> reconnecting");
-                            thread::sleep(Duration::from_millis(100));
-                            if let Ok(conn) = Client::connect(db_url.as_str(), NoTls) {
-                                client = conn;
-                            }
-                        }
-                        let now = Instant::now();
-                        let mut event = json["event"].as_str();
-                        if event.is_none() {
-                            event = if json.get("commodities").is_some() {
-                                Some("commodities")
-                            } else if json.get("modules").is_some() {
-                                Some("modules")
-                            } else if json.get("ships").is_some() {
-                                Some("ships")
-                            } else {
-                                Some("unknown")
-                            };
-                        }
-                        let event = event.unwrap();
-                        let current_timestamp = chrono::Utc::now();
-                        let json_string: serde_json::Value =
-                            serde_json::from_str(json.to_string().as_str())
-                                .expect("Unable to cast it to serde json");
+                        match json.get("message") {
+                            Some(json) => {
+                                while client.is_closed() || client.is_valid(Duration::from_secs(1)).is_err()
+                                {
+                                    warn!("Postgres client closed -> reconnecting");
+                                    thread::sleep(Duration::from_millis(100));
+                                    if let Ok(conn) = Client::connect(db_url.as_str(), NoTls) {
+                                        client = conn;
+                                    }
+                                }
+                                let now = Instant::now();
+                                let mut event = json["event"].as_str();
+                                if event.is_none() {
+                                    event = if json.get("commodities").is_some() {
+                                        Some("commodities")
+                                    } else if json.get("modules").is_some() {
+                                        Some("modules")
+                                    } else if json.get("ships").is_some() {
+                                        Some("ships")
+                                    } else {
+                                        Some("unknown")
+                                    };
+                                }
+                                let event = event.unwrap();
+                                let current_timestamp = chrono::Utc::now();
 
-                        let journal_id: Option<i64> = match client.query_one(
-                            // language=postgresql
-                            "INSERT INTO journal_events (timestamp, event_type, data) VALUES ($1,$2,$3) RETURNING journal_events.id;",
-                            &[&current_timestamp, &event, &json_string],
-                        ){
-                            Ok(row) => Some(row.get(0)),
-                            Err(e) => {
-                                error!("Unable to insert json blob: {}", e);
-                                None
-                            }
-                        };
-                        if now.elapsed().as_secs() >= 1 {
-                            warn!(
-                                "Event {} took {} second(s)",
-                                journal_id.unwrap_or_default(),
-                                now.elapsed().as_secs(),
-                            );
+                                let journal_id: Option<i64> = match client.query_one(
+                                    // language=postgresql
+                                    "INSERT INTO journal_events (timestamp, event_type, data) VALUES ($1,$2,$3) RETURNING journal_events.id;",
+                                    &[&current_timestamp, &event, &json],
+                                ){
+                                    Ok(row) => Some(row.get(0)),
+                                    Err(e) => {
+                                        error!("Unable to insert json blob: {}", e);
+                                        None
+                                    }
+                                };
+                                if now.elapsed().as_secs() >= 1 {
+                                    warn!(
+                                        "Event {} took {} second(s)",
+                                        journal_id.unwrap_or_default(),
+                                        now.elapsed().as_secs(),
+                                    );
+                                }
+                            },
+                            None => todo!(),
                         }
                     }
                     Err(error) => {
