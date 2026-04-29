@@ -5,24 +5,23 @@ edition = "2021"
 readme = "README.md"
 repository = "https://github.com/arne-fuchs/edcas-client"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 tokio = { version = "1.47.1", features = ["full"] }
 serde = "1.0.228"
 serde_json = "1.0.145"
 chrono = "0.4.42"
 bus = "2.4.1"
-reqwest = "0.12.23"
+reqwest = { version = "0.12.23", features = ["blocking"] }
 select = "0.6.1"
 num-format = "0.4.4"
 opener = "0.7.2"
+tracing = "0.1"
+tracing-subscriber = "0.3"
+anyhow = "1.0"
 
-web-sys = { version = "0.3.81", features = ["Document", "KeyboardEvent", "Window", "console"] }
-wasm-bindgen = "0.2.104"
-
-# Gui
-dioxus = { version = "0.7.0-rc.0", features = ["fullstack"] }
+# TUI
+ratatui = "0.29"
+crossterm = "0.28"
 
 # Eddn
 zmq = {version="0.10.0", optional=true}
@@ -32,29 +31,6 @@ postgres-types = {version = "0.2.10", features = ["derive"], optional=true}
 log = {version="0.4.28", optional=true}
 fern = {version="0.7.1", optional=true}
 
-#Server stuff
-
 [features]
-default = ["desktop","eddn"]
-# The feature that are only required for the web = ["dioxus/web"] build target should be optional and only enabled in the web = ["dioxus/web"] feature
-web = ["dioxus/web"]
-# The feature that are only required for the desktop = ["dioxus/desktop"] build target should be optional and only enabled in the desktop = ["dioxus/desktop"] feature
-desktop = ["dioxus/desktop"]
-# The feature that are only required for the mobile = ["dioxus/mobile"] build target should be optional and only enabled in the mobile = ["dioxus/mobile"] feature
-mobile = ["dioxus/mobile"]
-
-server = ["dioxus/server"]
-
+default = ["eddn"]
 eddn = ["zmq","flate2","postgres","postgres-types","log","fern"]
-
-[profile]
-
-[profile.wasm-dev]
-inherits = "dev"
-opt-level = 1
-
-[profile.server-dev]
-inherits = "dev"
-
-[profile.android-dev]
-inherits = "dev"

@@ -1,4 +1,4 @@
-use dioxus::logger::tracing::{debug, error};
+use tracing::{debug, error};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone)]

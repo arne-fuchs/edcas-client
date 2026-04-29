@@ -92,8 +92,6 @@ impl Carrierjump {
         journal_id: i64,
         client: &mut postgres::Client,
     ) -> Result<(), crate::eddn::edcas_error::EdcasError> {
-        use dioxus::html::tr;
-
         use crate::edcas::tables::{value_table, Tables};
         use crate::eddn::edcas_error::EdcasError;
 

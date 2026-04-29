@@ -1,5 +1,19 @@
-use dioxus::logger::tracing::{debug, error};
-use dioxus::prelude::*;
+use crossterm::event::{KeyCode, KeyEvent};
+use ratatui::{
+    layout::Rect,
+    style::{Color, Modifier, Style},
+    text::{Line, Span},
+    widgets::{Block, Borders, Paragraph},
+    Frame,
+};
+use crate::views::ViewEvent;
+
+pub struct NewsView {
+    pub articles: Vec<Article>,
+    pub loading: bool,
+    pub error: Option<String>,
+    pub scroll: usize,
+}
 
 pub struct Article {
     pub title: String,
@@ -7,14 +21,38 @@ pub struct Article {
     pub text: String,
 }
 
-#[component]
-pub fn News() -> Element {
-    use select::document::Document;
-    use select::predicate::{Attr, Name, Predicate};
+impl NewsView {
+    pub fn new() -> Self {
+        let mut view = Self {
+            articles: Vec::new(),
+            loading: true,
+            error: None,
+            scroll: 0,
+        };
+        view.fetch_articles();
+        view
+    }
 
-    let articles_fetch = use_resource(|| async move {
-        let mut articles: Vec<Article> = Vec::new();
-        let client = reqwest::Client::new();
+    pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
+        match key.code {
+            KeyCode::Tab => ViewEvent::NextTab,
+            KeyCode::BackTab => ViewEvent::PrevTab,
+            KeyCode::Char('w') => {
+                if self.scroll > 0 {
+                    self.scroll -= 1;
+                }
+                ViewEvent::None
+            }
+            KeyCode::Char('s') => {
+                self.scroll += 1;
+                ViewEvent::None
+            }
+            _ => ViewEvent::None,
+        }
+    }
+
+    fn fetch_articles(&mut self) {
+        let client = reqwest::blocking::Client::new();
         let response_result = client
             .get("https://community.elitedangerous.com/en/galnet")
             .header(
@@ -27,119 +65,138 @@ pub fn News() -> Element {
             )
             .header("Accept-Language", "en-US,en;q=0.5")
             .header("Referer", "https://www.duckduckgo.com")
-            .send()
-            .await;
+            .send();
+
         match response_result {
-            Ok(response) => {
-                let html_result = response.text().await;
-                match html_result {
-                    Ok(html) => {
-                        // Parse the HTML code using the select library
-                        let document = Document::from(html.as_str());
+            Ok(response) => match response.text() {
+                Ok(html) => {
+                    use select::document::Document;
+                    use select::predicate::{Attr, Name, Predicate};
+                    let document = Document::from(html.as_str());
+                    let mut articles: Vec<Article> = Vec::new();
 
-                        // Iterate through all the <p> tags in the HTML
-                        for div_article in document.find(Name("div").and(Attr("class", "article")))
-                        {
-                            let title = div_article.find(Name("a")).next().unwrap().text();
+                    for div_article in document.find(Name("div").and(Attr("class", "article"))) {
+                        if let Some(title_elem) = div_article.find(Name("a")).next() {
+                            let title = title_elem.text();
                             let mut list = div_article.find(Name("p"));
-                            let date = list.next().unwrap().text();
-                            let text = list.next().unwrap().text();
-                            let article = Article { title, date, text };
-                            articles.push(article);
+                            if let (Some(date_elem), Some(text_elem)) = (list.next(), list.next()) {
+                                let date = date_elem.text();
+                                let text = text_elem.text();
+                                articles.push(Article { title, date, text });
+                            }
                         }
                     }
-                    Err(err) => {
-                        error!("Couldn't parse html site from galnet: {}", err);
-                        return Err(format!("Couldn't parse html site from galnet: {}", err));
-                    }
+
+                    tracing::debug!("Success fetching galnet {} articles", articles.len());
+                    self.articles = articles;
+                    self.loading = false;
                 }
-            }
+                Err(err) => {
+                    tracing::error!("Couldn't parse html site from galnet: {}", err);
+                    self.error = Some(format!("Couldn't parse Galnet page: {}", err));
+                    self.loading = false;
+                }
+            },
             Err(err) => {
-                error!("Couldn't fetch galnet page: {}", err);
-                return Err(format!("Couldn't fetch galnet page: {}", err));
-            }
-        }
-        debug!("Success fetching galnet {} articles", articles.len());
-        Ok(articles)
-    });
-    rsx! {
-        div { class: "flex flex-col",
-            div { class: "flex justify-center blur-none",
-                img {
-                    src: asset!("/assets/graphics/logo/edcas.png"),
-                    id: "logo-img",
-                    class: "\
-                transition-opacity duration-500 w-4/7",
-                }
-
-            }
-            div { class: "flex justify-center blur-none",
-                p { class: "text-base \
-                    sm:text-xl          \
-                    md:text-2xl md:-mt-10 \
-                    lg:text-3xl lg:-mt-20 \
-                    xl:text-4xl xl:-mt-40",
-                    "Elite Dangerous Commander Assistant System"
-                }
-            }
-            div { class: "flex justify-center mt-20 sm:mt-20 md:mt-20 lg:mt-20",
-                match &*articles_fetch.read_unchecked() {
-                    Some(articles_result) => {
-                        match articles_result {
-                            Ok(articles) => rsx! {
-
-                                div { class: "flex flex-col pl-40 pr-40 -mt-40",
-                                    for article in articles {
-                                        div { class: "pt-20",
-                                            div { class: "flex justify-center blur-none",
-                                                p { class: "text-base \
-                                                                                              sm:text-xl \
-                                                                                              md:text-2xl \
-                                                                                              lg:text-3xl \
-                                                                                              xl:text-3xl",
-                                                    {article.date.clone()}
-                                                }
-                                            }
-                                            div { class: "ed-value-box",
-                                                div { class: "flex justify-center m-10 pt-10",
-                                                    p { class: "text-base \
-                                                                                              sm:text-xl \
-                                                                                              md:text-2xl \
-                                                                                              lg:text-3xl \
-                                                                                              xl:text-4xl",
-                                                        {article.title.clone()}
-                                                    }
-                                                }
-                                                div {
-                                                    p { class: "text-base p-10 pt-0 \
-                                                                                              sm:text-base \
-                                                                                              md:text-2lg \
-                                                                                              lg:text-xl \
-                                                                                              xl:text-1xl \
-                                                                                               \
-                                                                                              ",
-                                                        {article.text.clone()}
-                                                    }
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            },
-                            Err(err) => rsx! {
-                                {err.to_string()}
-                            },
-                        }
-                    }
-                    None => rsx! {
-                        img {
-                            src: asset!("/assets/graphics/logo/edcas_128.png"),
-                            id: "loading",
-                            class: "animate-spin",
-                        }
-                    },
-                }
+                tracing::error!("Couldn't fetch galnet page: {}", err);
+                self.error = Some(format!("Couldn't fetch Galnet page: {}", err));
+                self.loading = false;
             }
         }
     }
+
+    pub fn render(&self, frame: &mut Frame, area: Rect) {
+        let mut lines: Vec<Line> = Vec::new();
+
+        lines.push(Line::from(Span::styled(
+            "Elite Dangerous Commander Assistant System",
+            Style::default()
+                .fg(Color::Yellow)
+                .add_modifier(Modifier::BOLD),
+        )));
+        lines.push(Line::from(""));
+
+        if self.loading {
+            lines.push(Line::from(Span::styled(
+                "Loading Galnet articles...",
+                Style::default()
+                    .fg(Color::Cyan)
+                    .add_modifier(Modifier::BOLD),
+            )));
+        } else if let Some(ref error) = self.error {
+            lines.push(Line::from(Span::styled(
+                format!("Error: {}", error),
+                Style::default()
+                    .fg(Color::Red)
+                    .add_modifier(Modifier::BOLD),
+            )));
+        } else {
+            let max_width = (area.width as usize).saturating_sub(4);
+            for article in &self.articles {
+                lines.push(Line::from(Span::styled(
+                    &article.date,
+                    Style::default()
+                        .fg(Color::Cyan)
+                        .add_modifier(Modifier::BOLD),
+                )));
+                lines.push(Line::from(Span::styled(
+                    &article.title,
+                    Style::default()
+                        .fg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD),
+                )));
+                lines.push(Line::from(""));
+
+                let cleaned_text = article.text.replace('\n', " ").replace('\r', "");
+                let wrapped_lines = wrap_text(&cleaned_text, max_width);
+                for line in wrapped_lines {
+                    lines.push(Line::from(Span::raw(line)));
+                }
+                lines.push(Line::from(""));
+                lines.push(Line::from(Span::styled(
+                    "─".repeat(max_width),
+                    Style::default().fg(Color::DarkGray),
+                )));
+                lines.push(Line::from(""));
+            }
+        }
+
+        let paragraph = Paragraph::new(lines)
+            .block(
+                Block::default()
+                    .title(" Galnet News (w/s: scroll) ")
+                    .borders(Borders::ALL)
+                    .style(Style::default().fg(Color::White)),
+            )
+            .scroll((self.scroll as u16, 0));
+
+        frame.render_widget(paragraph, area);
+    }
+}
+
+fn wrap_text(text: &str, max_width: usize) -> Vec<String> {
+    let mut lines = Vec::new();
+    let mut current_line = String::new();
+
+    for word in text.split_whitespace() {
+        if current_line.is_empty() {
+            current_line = word.to_string();
+        } else if current_line.len() + 1 + word.len() <= max_width {
+            current_line.push(' ');
+            current_line.push_str(word);
+        } else {
+            lines.push(current_line);
+            current_line = word.to_string();
+        }
+    }
+
+    if !current_line.is_empty() {
+        lines.push(current_line);
+    }
+
+    if lines.is_empty() {
+        lines.push(String::new());
+    }
+
+    lines
 }

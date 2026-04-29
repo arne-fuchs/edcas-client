@@ -1,4 +1,4 @@
-use dioxus::logger::tracing::*;
+use tracing::*;
 use serde::{Deserialize, Serialize};
 use std::fs::File;
 use std::{collections::HashMap, io::Read, path::Path};
@@ -8,7 +8,7 @@ pub mod explorer;
 pub mod grapic_editor;
 pub mod icons;
 pub mod journal_reader;
-use icons::Icon;
+pub use icons::Icon;
 
 use crate::desktop::settings::grapic_editor::GraphicEditorSettings;
 use crate::desktop::settings::journal_reader::JournalReaderSettings;

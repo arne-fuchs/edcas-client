@@ -1,8 +1,19 @@
-pub mod news;
-pub use news::News;
+mod about;
+mod carriers;
+mod event;
+mod explorer;
+mod materials;
+mod mining;
+mod news;
+mod settings;
+mod stations;
 
-pub mod navbar;
-pub use navbar::Navbar;
-
-pub mod settings;
-pub use settings::Settings;
+pub use about::AboutView;
+pub use carriers::CarriersView;
+pub use event::ViewEvent;
+pub use explorer::ExplorerView;
+pub use materials::MaterialsView;
+pub use mining::MiningView;
+pub use news::NewsView;
+pub use settings::SettingsView;
+pub use stations::StationsView;
