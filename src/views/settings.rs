@@ -9,9 +9,9 @@ use ratatui::{
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use crate::desktop::settings::Settings;
-use crate::desktop::settings::icons::Icon;
-use crate::desktop::settings::journal_reader::ActionAtShutdownSignal;
+use crate::settings::Settings;
+use crate::settings::icons::Icon;
+use crate::settings::journal_reader::ActionAtShutdownSignal;
 use crate::views::ViewEvent;
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -53,37 +53,57 @@ impl SettingsSection {
 }
 
 #[derive(Clone, PartialEq)]
-enum EditableField {
+enum CellType {
+    Label(String),
     StringValue(String),
     BoolValue(bool),
     EnumValue(Vec<&'static str>),
+    ToggleEnabled(bool),
 }
 
-struct FieldInfo {
-    label: String,
-    field: EditableField,
+impl CellType {
+    fn is_editable(&self) -> bool {
+        matches!(
+            self,
+            CellType::StringValue(_)
+                | CellType::BoolValue(_)
+                | CellType::EnumValue(_)
+                | CellType::ToggleEnabled(_)
+        )
+    }
 }
 
-struct IconFieldInfo {
-    name: String,
-    sub_field: usize,
-    label: String,
+struct GridRow {
+    cells: Vec<CellType>,
 }
 
 pub struct SettingsView {
     section: SettingsSection,
-    focus: usize,
+    sidebar_focus: usize,
+    row: usize,
+    col: usize,
     editing: bool,
     edit_buffer: String,
+    content_scroll: usize,
+    focus: FocusArea,
+}
+
+enum FocusArea {
+    Sidebar,
+    Content,
 }
 
 impl SettingsView {
     pub fn new() -> Self {
         Self {
             section: SettingsSection::default(),
-            focus: 0,
+            sidebar_focus: 0,
+            row: 0,
+            col: 0,
             editing: false,
             edit_buffer: String::new(),
+            content_scroll: 0,
+            focus: FocusArea::Sidebar,
         }
     }
 
@@ -111,57 +131,90 @@ impl SettingsView {
             return ViewEvent::None;
         }
 
-        let field_count = self.get_field_count(settings);
-
         match key.code {
-            KeyCode::Char('a') => {
-                let sections = SettingsSection::all();
-                let idx = sections.iter().position(|s| *s == self.section).unwrap_or(0);
-                if idx > 0 {
-                    self.section = sections[idx - 1];
-                    self.focus = 0;
+            KeyCode::Char('w') => match self.focus {
+                FocusArea::Sidebar => {
+                    if self.sidebar_focus > 0 {
+                        self.sidebar_focus -= 1;
+                        self.section = SettingsSection::all()[self.sidebar_focus];
+                        self.reset_content_position(settings);
+                    }
                 }
-            }
-            KeyCode::Char('d') => {
-                let sections = SettingsSection::all();
-                let idx = sections.iter().position(|s| *s == self.section).unwrap_or(0);
-                if idx < sections.len() - 1 {
-                    self.section = sections[idx + 1];
-                    self.focus = 0;
+                FocusArea::Content => {
+                    if self.row > 0 {
+                        self.row -= 1;
+                        self.clamp_col(settings);
+                        self.ensure_scroll_visible();
+                    }
                 }
-            }
-            KeyCode::Char('w') => {
-                if field_count > 0 && self.focus > 0 {
-                    self.focus -= 1;
+            },
+            KeyCode::Char('s') => match self.focus {
+                FocusArea::Sidebar => {
+                    let section_count = SettingsSection::all().len();
+                    if self.sidebar_focus + 1 < section_count {
+                        self.sidebar_focus += 1;
+                        self.section = SettingsSection::all()[self.sidebar_focus];
+                        self.reset_content_position(settings);
+                    }
                 }
-            }
-            KeyCode::Char('s') => {
-                if field_count > 0 && self.focus < field_count - 1 {
-                    self.focus += 1;
+                FocusArea::Content => {
+                    let grid = self.build_grid(settings);
+                    let row_count = grid.len();
+                    if self.row + 1 < row_count {
+                        self.row += 1;
+                        self.clamp_col(settings);
+                        self.ensure_scroll_visible();
+                    }
                 }
-            }
-            KeyCode::Char(' ') => {
-                if field_count > 0 {
-                    if self.is_icon_section() {
-                        self.edit_icon_field(settings);
+            },
+            KeyCode::Char('a') => match self.focus {
+                FocusArea::Sidebar => {}
+                FocusArea::Content => {
+                    if self.col > 0 {
+                        self.col -= 1;
                     } else {
-                        let fields = self.get_fields(settings);
-                        if self.focus < fields.len() {
-                            let field = &fields[self.focus].field;
-                            match field {
-                                EditableField::StringValue(s) => {
-                                    self.editing = true;
-                                    self.edit_buffer = s.clone();
-                                }
-                                EditableField::BoolValue(_) => {
-                                    self.toggle_bool(self.focus, settings);
-                                    return ViewEvent::SettingsChanged;
-                                }
-                                EditableField::EnumValue(options) => {
-                                    self.cycle_enum(self.focus, options, settings);
-                                    return ViewEvent::SettingsChanged;
-                                }
+                        self.focus = FocusArea::Sidebar;
+                    }
+                }
+            },
+            KeyCode::Char('d') => match self.focus {
+                FocusArea::Sidebar => {
+                    self.focus = FocusArea::Content;
+                }
+                FocusArea::Content => {
+                    let grid = self.build_grid(settings);
+                    let max_col = if self.row < grid.len() {
+                        grid[self.row].cells.len()
+                    } else {
+                        0
+                    };
+                    if self.col + 1 < max_col {
+                        self.col += 1;
+                    }
+                }
+            },
+            KeyCode::Char(' ') => {
+                if matches!(self.focus, FocusArea::Content) {
+                    let grid = self.build_grid(settings);
+                    if self.row < grid.len() && self.col < grid[self.row].cells.len() {
+                        let cell = &grid[self.row].cells[self.col];
+                        match cell {
+                            CellType::StringValue(_) => {
+                                self.editing = true;
+                                self.edit_buffer = match cell {
+                                    CellType::StringValue(s) => s.clone(),
+                                    _ => String::new(),
+                                };
                             }
+                            CellType::BoolValue(_) => {
+                                settings.explorer.include_system_name = !settings.explorer.include_system_name;
+                                return ViewEvent::SettingsChanged;
+                            }
+                            CellType::ToggleEnabled(_) => {
+                                self.toggle_enabled(settings);
+                                return ViewEvent::SettingsChanged;
+                            }
+                            _ => {}
                         }
                     }
                 }
@@ -174,20 +227,37 @@ impl SettingsView {
         ViewEvent::None
     }
 
+    fn reset_content_position(&mut self, settings: &Settings) {
+        self.row = 0;
+        self.col = 0;
+        self.content_scroll = 0;
+        self.clamp_col(settings);
+    }
+
+    fn clamp_col(&mut self, settings: &Settings) {
+        let grid = self.build_grid(settings);
+        if self.row < grid.len() {
+            let max_col = grid[self.row].cells.len();
+            if self.col >= max_col {
+                self.col = max_col.saturating_sub(1);
+            }
+        }
+    }
+
+    fn ensure_scroll_visible(&mut self) {
+        let visible_lines = 15;
+        if self.row >= self.content_scroll + visible_lines {
+            self.content_scroll = self.row.saturating_sub(visible_lines.saturating_sub(1));
+        } else if self.row < self.content_scroll {
+            self.content_scroll = self.row;
+        }
+    }
+
     fn is_icon_section(&self) -> bool {
         matches!(
             self.section,
             SettingsSection::Icons | SettingsSection::Stars | SettingsSection::Planets
         )
-    }
-
-    fn get_icon_count(&self, settings: &Settings) -> usize {
-        match self.section {
-            SettingsSection::Icons => settings.icons.len(),
-            SettingsSection::Stars => settings.stars.len(),
-            SettingsSection::Planets => settings.planets.len(),
-            _ => 0,
-        }
     }
 
     fn get_icon_keys(&self, settings: &Settings) -> Vec<String> {
@@ -202,78 +272,81 @@ impl SettingsView {
         keys
     }
 
-    fn get_field_count(&self, settings: &Settings) -> usize {
+    fn build_grid(&self, settings: &Settings) -> Vec<GridRow> {
         if self.is_icon_section() {
-            return self.get_icon_count(settings) * 3;
+            self.build_icon_grid(settings)
+        } else {
+            self.build_regular_grid(settings)
         }
-        self.get_fields(settings).len()
     }
 
-    fn get_fields(&self, settings: &Settings) -> Vec<FieldInfo> {
+    fn build_regular_grid(&self, settings: &Settings) -> Vec<GridRow> {
         match self.section {
             SettingsSection::JournalReader => vec![
-                FieldInfo {
-                    label: "Journal Directory".to_string(),
-                    field: EditableField::StringValue(settings.journal_reader.journal_directory.clone()),
+                GridRow {
+                    cells: vec![
+                        CellType::Label("Journal Directory".to_string()),
+                        CellType::StringValue(settings.journal_reader.journal_directory.clone()),
+                    ],
                 },
-                FieldInfo {
-                    label: "Action at Shutdown".to_string(),
-                    field: EditableField::EnumValue(vec!["Exit", "Nothing", "Continue"]),
-                },
-            ],
-            SettingsSection::GraphicsEditor => vec![
-                FieldInfo {
-                    label: "Graphics Directory".to_string(),
-                    field: EditableField::StringValue(settings.graphics_editor.graphics_directory.clone()),
+                GridRow {
+                    cells: vec![
+                        CellType::Label("Action at Shutdown".to_string()),
+                        CellType::StringValue(settings.journal_reader.action_at_shutdown_signal.to_string()),
+                    ],
                 },
             ],
-            SettingsSection::Appearance => vec![
-                FieldInfo {
-                    label: "Color".to_string(),
-                    field: EditableField::StringValue(settings.appearance.color.clone()),
-                },
-            ],
-            SettingsSection::Explorer => vec![
-                FieldInfo {
-                    label: "Include System Name".to_string(),
-                    field: EditableField::BoolValue(settings.explorer.include_system_name),
-                },
-            ],
+            SettingsSection::GraphicsEditor => vec![GridRow {
+                cells: vec![
+                    CellType::Label("Graphics Directory".to_string()),
+                    CellType::StringValue(settings.graphics_editor.graphics_directory.clone()),
+                ],
+            }],
+            SettingsSection::Appearance => vec![GridRow {
+                cells: vec![
+                    CellType::Label("Color".to_string()),
+                    CellType::StringValue(settings.appearance.color.clone()),
+                ],
+            }],
+            SettingsSection::Explorer => vec![GridRow {
+                cells: vec![
+                    CellType::Label("Include System Name".to_string()),
+                    CellType::BoolValue(settings.explorer.include_system_name),
+                ],
+            }],
             _ => vec![],
         }
     }
 
-    fn get_icon_field_at(&self, focus: usize, settings: &Settings) -> Option<IconFieldInfo> {
-        if !self.is_icon_section() {
-            return None;
-        }
-        let icon_idx = focus / 3;
-        let sub_idx = focus % 3;
+    fn build_icon_grid(&self, settings: &Settings) -> Vec<GridRow> {
         let keys = self.get_icon_keys(settings);
-        if let Some(key) = keys.get(icon_idx) {
-            let label = match sub_idx {
-                0 => format!("  {}", key),
-                1 => format!("  {}", key),
-                2 => format!("  {}", key),
-                _ => key.clone(),
-            };
-            Some(IconFieldInfo {
-                name: key.clone(),
-                sub_field: sub_idx,
-                label,
+        let icons: &HashMap<String, Icon> = match self.section {
+            SettingsSection::Icons => &settings.icons,
+            SettingsSection::Stars => &settings.stars,
+            SettingsSection::Planets => &settings.planets,
+            _ => &settings.icons,
+        };
+
+        keys.iter()
+            .filter_map(|key| {
+                icons.get(key).map(|icon| GridRow {
+                    cells: vec![
+                        CellType::Label(key.clone()),
+                        CellType::StringValue(icon.char.clone()),
+                        CellType::StringValue(icon.color.clone()),
+                        CellType::ToggleEnabled(icon.enabled),
+                    ],
+                })
             })
-        } else {
-            None
-        }
+            .collect()
     }
 
     fn apply_edit(&mut self, settings: &mut Settings) {
         let value = self.edit_buffer.clone();
+
         if self.is_icon_section() {
-            let icon_idx = self.focus / 3;
-            let sub_idx = self.focus % 3;
             let icon_keys = self.get_icon_keys(settings);
-            if let Some(key) = icon_keys.get(icon_idx) {
+            if let Some(key) = icon_keys.get(self.row) {
                 let icon = match self.section {
                     SettingsSection::Icons => settings.icons.get_mut(key),
                     SettingsSection::Stars => settings.stars.get_mut(key),
@@ -281,16 +354,16 @@ impl SettingsView {
                     _ => None,
                 };
                 if let Some(icon) = icon {
-                    match sub_idx {
-                        0 => icon.char = value,
-                        1 => icon.color = value,
+                    match self.col {
+                        1 => icon.char = value,
+                        2 => icon.color = value,
                         _ => {}
                     }
                 }
             }
         } else {
             match self.section {
-                SettingsSection::JournalReader => match self.focus {
+                SettingsSection::JournalReader => match self.row {
                     0 => settings.journal_reader.journal_directory = value,
                     1 => {
                         if let Ok(action) = ActionAtShutdownSignal::from_str(&value) {
@@ -300,12 +373,12 @@ impl SettingsView {
                     _ => {}
                 },
                 SettingsSection::GraphicsEditor => {
-                    if self.focus == 0 {
+                    if self.row == 0 {
                         settings.graphics_editor.graphics_directory = value;
                     }
                 }
                 SettingsSection::Appearance => {
-                    if self.focus == 0 {
+                    if self.row == 0 {
                         settings.appearance.color = value;
                     }
                 }
@@ -314,54 +387,17 @@ impl SettingsView {
         }
     }
 
-    fn toggle_bool(&self, focus: usize, settings: &mut Settings) {
-        if self.section == SettingsSection::Explorer && focus == 0 {
-            settings.explorer.include_system_name = !settings.explorer.include_system_name;
-        }
-    }
-
-    fn cycle_enum(&self, focus: usize, options: &[&'static str], settings: &mut Settings) {
-        if self.section == SettingsSection::JournalReader && focus == 1 {
-            let current = &settings.journal_reader.action_at_shutdown_signal;
-            let current_str = current.to_string();
-            let idx = options.iter().position(|o| *o == current_str.as_str()).unwrap_or(0);
-            let next_idx = (idx + 1) % options.len();
-            if let Ok(action) = ActionAtShutdownSignal::from_str(options[next_idx]) {
-                settings.journal_reader.action_at_shutdown_signal = action;
-            }
-        }
-    }
-
-    fn edit_icon_field(&mut self, settings: &mut Settings) {
-        let icon_idx = self.focus / 3;
-        let sub_idx = self.focus % 3;
+    fn toggle_enabled(&self, settings: &mut Settings) {
         let icon_keys = self.get_icon_keys(settings);
-        if let Some(key) = icon_keys.get(icon_idx) {
-            if sub_idx == 2 {
-                let icon = match self.section {
-                    SettingsSection::Icons => settings.icons.get_mut(key),
-                    SettingsSection::Stars => settings.stars.get_mut(key),
-                    SettingsSection::Planets => settings.planets.get_mut(key),
-                    _ => None,
-                };
-                if let Some(icon) = icon {
-                    icon.enabled = !icon.enabled;
-                }
-            } else {
-                self.editing = true;
-                let icon = match self.section {
-                    SettingsSection::Icons => settings.icons.get(key),
-                    SettingsSection::Stars => settings.stars.get(key),
-                    SettingsSection::Planets => settings.planets.get(key),
-                    _ => None,
-                };
-                if let Some(icon) = icon {
-                    match sub_idx {
-                        0 => self.edit_buffer = icon.char.clone(),
-                        1 => self.edit_buffer = icon.color.clone(),
-                        _ => {}
-                    }
-                }
+        if let Some(key) = icon_keys.get(self.row) {
+            let icon = match self.section {
+                SettingsSection::Icons => settings.icons.get_mut(key),
+                SettingsSection::Stars => settings.stars.get_mut(key),
+                SettingsSection::Planets => settings.planets.get_mut(key),
+                _ => None,
+            };
+            if let Some(icon) = icon {
+                icon.enabled = !icon.enabled;
             }
         }
     }
@@ -382,42 +418,49 @@ impl SettingsView {
     fn render_sidebar(&self, frame: &mut Frame, area: Rect) {
         let items: Vec<ListItem> = SettingsSection::all()
             .iter()
-            .map(|s| ListItem::new(s.title()))
+            .enumerate()
+            .map(|(i, s)| {
+                let is_focused = i == self.sidebar_focus;
+                if is_focused {
+                    ListItem::new(Span::styled(
+                        format!("> {}", s.title()),
+                        Style::default()
+                            .fg(Color::Black)
+                            .bg(Color::Yellow)
+                            .add_modifier(Modifier::BOLD),
+                    ))
+                } else {
+                    ListItem::new(format!("  {}", s.title()))
+                }
+            })
             .collect();
 
-        let selected_idx = SettingsSection::all()
-            .iter()
-            .position(|s| *s == self.section)
-            .unwrap_or(0);
+        let sidebar_title = if matches!(self.focus, FocusArea::Sidebar) {
+            " Sections (w/s: nav, d: content) "
+        } else {
+            " Sections (a: sidebar) "
+        };
 
         let list = List::new(items)
             .block(
                 Block::default()
-                    .title(" Sections (a/d) ")
+                    .title(sidebar_title)
                     .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White)),
-            )
-            .highlight_style(
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
+                    .style(
+                        if matches!(self.focus, FocusArea::Sidebar) {
+                            Style::default().fg(Color::Yellow)
+                        } else {
+                            Style::default().fg(Color::DarkGray)
+                        }
+                    ),
             );
 
-        let mut state = ratatui::widgets::ListState::default().with_selected(Some(selected_idx));
+        let mut state = ratatui::widgets::ListState::default().with_selected(Some(self.sidebar_focus));
         frame.render_stateful_widget(list, area, &mut state);
     }
 
-    fn render_content(&mut self, frame: &mut Frame, area: Rect, settings: &Settings) {
-        if self.is_icon_section() {
-            self.render_icon_content(frame, area, settings);
-        } else {
-            self.render_regular_content(frame, area, settings);
-        }
-    }
-
-    fn render_regular_content(&self, frame: &mut Frame, area: Rect, settings: &Settings) {
-        let fields = self.get_fields(settings);
+    fn render_content(&self, frame: &mut Frame, area: Rect, settings: &Settings) {
+        let grid = self.build_grid(settings);
         let mut lines: Vec<Line> = vec![
             Line::from(Span::styled(
                 self.section.title(),
@@ -427,184 +470,97 @@ impl SettingsView {
             )),
             Line::from(""),
             Line::from(Span::styled(
-                "Press Space to edit, Enter to confirm, Esc to cancel",
+                if matches!(self.focus, FocusArea::Content) {
+                    "w/s: rows | a/d: columns/panel | space: edit | enter: save | esc: cancel"
+                } else {
+                    "d: focus content | w/s: navigate sections"
+                },
                 Style::default().fg(Color::DarkGray),
             )),
             Line::from(""),
         ];
 
-        for (i, field) in fields.iter().enumerate() {
-            let is_focused = i == self.focus;
-            let is_editing = self.editing && is_focused;
+        for (row_idx, row) in grid.iter().enumerate() {
+            let is_row_focused = row_idx == self.row;
+            let mut row_spans: Vec<Span> = Vec::new();
 
-            let value_str = if is_editing {
-                format!("{}_", self.edit_buffer)
-            } else {
-                match &field.field {
-                    EditableField::StringValue(s) => s.clone(),
-                    EditableField::BoolValue(b) => if *b { "true" } else { "false" }.to_string(),
-                    EditableField::EnumValue(_) => {
-                        if self.section == SettingsSection::JournalReader && i == 1 {
+            row_spans.push(Span::styled(
+                if is_row_focused { "> " } else { "  " },
+                Style::default().fg(Color::DarkGray),
+            ));
+
+            for (col_idx, cell) in row.cells.iter().enumerate() {
+                let is_cell_focused = is_row_focused && col_idx == self.col;
+                let is_editing = self.editing && is_cell_focused;
+
+                let display = match cell {
+                    CellType::Label(s) => s.clone(),
+                    CellType::StringValue(s) => {
+                        if is_editing {
+                            format!("{}_", self.edit_buffer)
+                        } else {
+                            s.clone()
+                        }
+                    }
+                    CellType::BoolValue(b) => if *b { "true" } else { "false" }.to_string(),
+                    CellType::EnumValue(_) => {
+                        if self.section == SettingsSection::JournalReader && row_idx == 1 {
                             settings.journal_reader.action_at_shutdown_signal.to_string()
                         } else {
                             String::new()
                         }
                     }
-                }
-            };
+                    CellType::ToggleEnabled(b) => if *b { "Yes" } else { "No" }.to_string(),
+                };
 
-            let line = if is_editing {
-                Line::from(vec![
-                    Span::styled(
-                        format!(" > {:<25} ", field.label),
-                        Style::default()
-                            .fg(Color::Black)
-                            .bg(Color::Yellow)
-                            .add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled(
-                        format!("= [ {} ]", value_str),
-                        Style::default()
-                            .fg(Color::Black)
-                            .bg(Color::Yellow)
-                            .add_modifier(Modifier::BOLD),
-                    ),
-                ])
-            } else if is_focused {
-                Line::from(vec![
-                    Span::styled(
-                        format!("   {:<25} ", field.label),
-                        Style::default()
-                            .fg(Color::Yellow)
-                            .add_modifier(Modifier::BOLD),
-                    ),
-                    Span::styled(
-                        format!("= {}", value_str),
-                        Style::default().fg(Color::Cyan),
-                    ),
-                ])
-            } else {
-                Line::from(vec![
-                    Span::styled(
-                        format!("   {:<25} ", field.label),
-                        Style::default().fg(Color::White),
-                    ),
-                    Span::styled(
-                        format!("= {}", value_str),
-                        Style::default().fg(Color::Gray),
-                    ),
-                ])
-            };
-            lines.push(line);
+                let style = if is_editing {
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
+                } else if is_cell_focused {
+                    Style::default()
+                        .fg(Color::Black)
+                        .bg(Color::Yellow)
+                        .add_modifier(Modifier::BOLD)
+                } else if matches!(cell, CellType::Label(_)) {
+                    Style::default().fg(Color::Cyan)
+                } else if matches!(cell, CellType::ToggleEnabled(true)) {
+                    Style::default().fg(Color::Green)
+                } else if matches!(cell, CellType::ToggleEnabled(false)) {
+                    Style::default().fg(Color::Red)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+
+                let padding = match cell {
+                    CellType::Label(_) => 35,
+                    CellType::StringValue(_) => 12,
+                    _ => 10,
+                };
+                row_spans.push(Span::styled(format!("{:<padding$}", display), style));
+            }
+
+            lines.push(Line::from(row_spans));
         }
+
+        let content_border_style = if matches!(self.focus, FocusArea::Content) {
+            Style::default().fg(Color::Yellow)
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
 
         let paragraph = Paragraph::new(lines)
             .block(
                 Block::default()
-                    .title(format!(" {} (w/s: navigate, space: edit) ", self.section.title()))
+                    .title(format!(" {} ", self.section.title()))
                     .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White)),
+                    .style(content_border_style),
             )
-            .wrap(Wrap { trim: false });
+            .wrap(Wrap { trim: false })
+            .scroll((self.content_scroll as u16, 0));
 
         frame.render_widget(paragraph, area);
-    }
-
-    fn render_icon_content(&mut self, _frame: &mut Frame, area: Rect, settings: &Settings) {
-        let icon_keys = self.get_icon_keys(settings);
-        let mut lines: Vec<Line> = vec![
-            Line::from(Span::styled(
-                self.section.title(),
-                Style::default()
-                    .fg(Color::Yellow)
-                    .add_modifier(Modifier::BOLD),
-            )),
-            Line::from(""),
-            Line::from(Span::styled(
-                "Press Space to edit, Enter to confirm, Esc to cancel",
-                Style::default().fg(Color::DarkGray),
-            )),
-            Line::from(""),
-            Line::from(Span::styled(
-                format!("{:<35} {:<8} {:<15} {:<8}", "Name", "Char", "Color", "Enabled"),
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::BOLD),
-            )),
-            Line::from(Span::styled(
-                "-".repeat(70),
-                Style::default().fg(Color::DarkGray),
-            )),
-        ];
-
-        for (list_idx, name) in icon_keys.iter().enumerate() {
-            let char_focus = self.focus == list_idx * 3;
-            let color_focus = self.focus == list_idx * 3 + 1;
-            let enabled_focus = self.focus == list_idx * 3 + 2;
-
-            let icon = match self.section {
-                SettingsSection::Icons => settings.icons.get(name),
-                SettingsSection::Stars => settings.stars.get(name),
-                SettingsSection::Planets => settings.planets.get(name),
-                _ => None,
-            };
-
-            if let Some(icon) = icon {
-                let char_display = if self.editing && self.focus / 3 == list_idx && self.focus % 3 == 0 {
-                    format!("{}_", self.edit_buffer)
-                } else {
-                    icon.char.clone()
-                };
-                let color_display = if self.editing && self.focus / 3 == list_idx && self.focus % 3 == 1 {
-                    format!("{}_", self.edit_buffer)
-                } else {
-                    icon.color.clone()
-                };
-                let enabled_display = if icon.enabled { "Yes" } else { "No" };
-
-                let char_style = if char_focus {
-                    Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-                let color_style = if color_focus {
-                    Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-                let enabled_style = if enabled_focus {
-                    Style::default().fg(Color::Black).bg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else if icon.enabled {
-                    Style::default().fg(Color::Green)
-                } else {
-                    Style::default().fg(Color::Red)
-                };
-                let name_style = if char_focus || color_focus || enabled_focus {
-                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-
-                let line = Line::from(vec![
-                    Span::styled(format!("{:<35} ", name), name_style),
-                    Span::styled(format!("{:<8} ", char_display), char_style),
-                    Span::styled(format!("{:<15} ", color_display), color_style),
-                    Span::styled(enabled_display, enabled_style),
-                ]);
-                lines.push(line);
-            }
-        }
-
-        let paragraph = Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .title(format!(" {} (w/s: navigate, space: edit) ", self.section.title()))
-                    .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White)),
-            )
-            .wrap(Wrap { trim: false });
-
-        _frame.render_widget(paragraph, area);
     }
 
     pub fn save_settings(&self, settings: &Settings) {

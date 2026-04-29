@@ -18,15 +18,15 @@ use ratatui::{
     Frame, Terminal,
 };
 
-use crate::desktop::settings::Settings;
+use crate::settings::Settings;
 use crate::views::{
     AboutView, CarriersView, ExplorerView, MaterialsView, MiningView, NewsView, SettingsView,
     StationsView, ViewEvent,
 };
 
 mod cli;
-mod desktop;
 mod edcas;
+mod settings;
 #[cfg(feature = "eddn")]
 mod eddn;
 mod views;
@@ -34,7 +34,14 @@ mod views;
 const APP_TITLE: &str = "EDCAS - Elite Dangerous Commander Assistant System";
 
 const TABS: &[&str] = &[
-    "News", "Explorer", "Mining", "Materials", "Stations", "Carriers", "Settings", "About",
+    "News",
+    "Explorer",
+    "Mining",
+    "Materials",
+    "Stations",
+    "Carriers",
+    "Settings",
+    "About",
 ];
 
 #[derive(Default, Clone, Copy, PartialEq)]
@@ -129,10 +136,7 @@ impl App {
     }
 
     fn render_tabs(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let titles: Vec<Line> = TABS
-            .iter()
-            .map(|t| Line::from(Span::raw(*t)))
-            .collect();
+        let titles: Vec<Line> = TABS.iter().map(|t| Line::from(Span::raw(*t))).collect();
 
         let tabs = Tabs::new(titles)
             .block(
@@ -169,7 +173,7 @@ impl App {
 
     fn render_status_bar(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
         let editing_hint = if self.view == AppView::Settings {
-            " | w/s: nav | a/d: section | space: edit | enter: save | esc: cancel | tab: switch tab"
+            " | w/s: rows | a: sidebar | d: fields | j/k: cols | space: select/edit | enter: save"
         } else {
             ""
         };
@@ -228,16 +232,6 @@ impl App {
 
 fn main() -> Result<()> {
     let args: Vec<String> = std::env::args().collect();
-    let ascii_art = r#"
-  ______    ____      ____       _       ______
- |  ____|  |  _ \   / ____|     / \     /  ____|
- | |__     | | | |  | |        / _ \    |  (___
- |  __|    | | | |  | |       / /_\ \   \___   \
- | |____   | |_| |  | |____  /  / \  \   ____) |
- |______|  |____/   \_____| /__/   \__\ |_____/
-
-"#;
-    println!("{}", ascii_art);
 
     for arg in args {
         match arg.as_str() {
@@ -290,7 +284,10 @@ fn main() -> Result<()> {
     Ok(())
 }
 
-fn run_app(terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>, app: &mut App) -> Result<()> {
+fn run_app(
+    terminal: &mut Terminal<CrosstermBackend<std::io::Stdout>>,
+    app: &mut App,
+) -> Result<()> {
     loop {
         terminal.draw(|frame| app.render(frame))?;
 

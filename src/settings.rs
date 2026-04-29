@@ -10,8 +10,8 @@ pub mod icons;
 pub mod journal_reader;
 pub use icons::Icon;
 
-use crate::desktop::settings::grapic_editor::GraphicEditorSettings;
-use crate::desktop::settings::journal_reader::JournalReaderSettings;
+use crate::settings::grapic_editor::GraphicEditorSettings;
+use crate::settings::journal_reader::JournalReaderSettings;
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Settings {
