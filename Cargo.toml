@@ -1,3 +1,11 @@
+[workspace]
+members = [
+    ".",
+    "crates/edcas-common",
+    "crates/edcas-eddn",
+]
+resolver = "2"
+
 [package]
 name = "edcas-client"
 version = "0.4.0"
@@ -6,31 +14,20 @@ readme = "README.md"
 repository = "https://github.com/arne-fuchs/edcas-client"
 
 [dependencies]
+edcas-common = { path = "crates/edcas-common" }
 tokio = { version = "1.47.1", features = ["full"] }
-serde = "1.0.228"
+serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.145"
 chrono = "0.4.42"
-bus = "2.4.1"
-reqwest = { version = "0.12.23", features = ["blocking"] }
+reqwest = { version = "0.12.23", features = ["blocking", "json"] }
 select = "0.6.1"
 num-format = "0.4.4"
 opener = "0.7.2"
 tracing = "0.1"
 tracing-subscriber = "0.3"
+tracing-appender = "0.2"
 anyhow = "1.0"
 
 # TUI
 ratatui = "0.29"
 crossterm = "0.28"
-
-# Eddn
-zmq = {version="0.10.0", optional=true}
-flate2 = { version = "1.1.2", features = ["zlib-ng"], default-features = false, optional=true }
-postgres = {version = "0.19.11", features = ["with-chrono-0_4","with-serde_json-1"], optional=true}
-postgres-types = {version = "0.2.10", features = ["derive"], optional=true}
-log = {version="0.4.28", optional=true}
-fern = {version="0.7.1", optional=true}
-
-[features]
-default = ["eddn"]
-eddn = ["zmq","flate2","postgres","postgres-types","log","fern"]

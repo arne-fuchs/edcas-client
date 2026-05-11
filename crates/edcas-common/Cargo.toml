@@ -1,0 +1,10 @@
+[package]
+name = "edcas-common"
+version = "0.1.0"
+edition = "2021"
+description = "Shared Elite Dangerous journal event types for edcas-client and edcas-eddn"
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+chrono = { version = "0.4", features = ["serde"] }

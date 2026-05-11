@@ -28,7 +28,7 @@ impl AboutView {
             Line::from(Span::styled(
                 "EDCAS - Elite Dangerous Commander Assistant System",
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(Color::Rgb(255, 140, 0))
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
@@ -45,7 +45,7 @@ impl AboutView {
             Line::from(Span::styled(
                 "Features:",
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(Color::Rgb(255, 140, 0))
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from("  - Galnet news feed"),
@@ -65,7 +65,7 @@ impl AboutView {
             Line::from(Span::styled(
                 "Controls:",
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(Color::Rgb(255, 140, 0))
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from("  w/s    - Navigate up/down"),

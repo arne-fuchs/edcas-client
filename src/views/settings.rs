@@ -8,6 +8,7 @@ use ratatui::{
 };
 use std::collections::HashMap;
 use std::str::FromStr;
+use tracing::{info, warn, error};
 
 use crate::settings::Settings;
 use crate::settings::icons::Icon;
@@ -355,8 +356,14 @@ impl SettingsView {
                 };
                 if let Some(icon) = icon {
                     match self.col {
-                        1 => icon.char = value,
-                        2 => icon.color = value,
+                        1 => {
+                            info!("Updated icon char for '{}': '{}'", key, value);
+                            icon.char = value;
+                        }
+                        2 => {
+                            info!("Updated icon color for '{}': '{}'", key, value);
+                            icon.color = value;
+                        }
                         _ => {}
                     }
                 }
@@ -364,21 +371,29 @@ impl SettingsView {
         } else {
             match self.section {
                 SettingsSection::JournalReader => match self.row {
-                    0 => settings.journal_reader.journal_directory = value,
+                    0 => {
+                        info!("Updated journal directory: '{}'", value);
+                        settings.journal_reader.journal_directory = value;
+                    }
                     1 => {
                         if let Ok(action) = ActionAtShutdownSignal::from_str(&value) {
+                            info!("Updated shutdown action: {}", action);
                             settings.journal_reader.action_at_shutdown_signal = action;
+                        } else {
+                            warn!("Invalid shutdown action value: '{}'", value);
                         }
                     }
                     _ => {}
                 },
                 SettingsSection::GraphicsEditor => {
                     if self.row == 0 {
+                        info!("Updated graphics directory: '{}'", value);
                         settings.graphics_editor.graphics_directory = value;
                     }
                 }
                 SettingsSection::Appearance => {
                     if self.row == 0 {
+                        info!("Updated appearance color: '{}'", value);
                         settings.appearance.color = value;
                     }
                 }
@@ -398,6 +413,7 @@ impl SettingsView {
             };
             if let Some(icon) = icon {
                 icon.enabled = !icon.enabled;
+                info!("Toggled icon '{}' enabled: {}", key, icon.enabled);
             }
         }
     }
@@ -426,7 +442,7 @@ impl SettingsView {
                         format!("> {}", s.title()),
                         Style::default()
                             .fg(Color::Black)
-                            .bg(Color::Yellow)
+                            .bg(Color::Rgb(255, 140, 0))
                             .add_modifier(Modifier::BOLD),
                     ))
                 } else {
@@ -448,7 +464,7 @@ impl SettingsView {
                     .borders(Borders::ALL)
                     .style(
                         if matches!(self.focus, FocusArea::Sidebar) {
-                            Style::default().fg(Color::Yellow)
+                            Style::default().fg(Color::Rgb(255, 140, 0))
                         } else {
                             Style::default().fg(Color::DarkGray)
                         }
@@ -465,7 +481,7 @@ impl SettingsView {
             Line::from(Span::styled(
                 self.section.title(),
                 Style::default()
-                    .fg(Color::Yellow)
+                    .fg(Color::Rgb(255, 140, 0))
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
@@ -516,12 +532,12 @@ impl SettingsView {
                 let style = if is_editing {
                     Style::default()
                         .fg(Color::Black)
-                        .bg(Color::Yellow)
+                        .bg(Color::Rgb(255, 140, 0))
                         .add_modifier(Modifier::BOLD)
                 } else if is_cell_focused {
                     Style::default()
                         .fg(Color::Black)
-                        .bg(Color::Yellow)
+                        .bg(Color::Rgb(255, 140, 0))
                         .add_modifier(Modifier::BOLD)
                 } else if matches!(cell, CellType::Label(_)) {
                     Style::default().fg(Color::Cyan)
@@ -545,7 +561,7 @@ impl SettingsView {
         }
 
         let content_border_style = if matches!(self.focus, FocusArea::Content) {
-            Style::default().fg(Color::Yellow)
+            Style::default().fg(Color::Rgb(255, 140, 0))
         } else {
             Style::default().fg(Color::DarkGray)
         };
@@ -572,8 +588,9 @@ impl SettingsView {
         if let Some(parent) = std::path::Path::new(&settings_path).parent() {
             let _ = std::fs::create_dir_all(parent);
         }
-        if let Err(e) = std::fs::write(&settings_path, json) {
-            eprintln!("Failed to save settings to {}: {}", settings_path, e);
+        match std::fs::write(&settings_path, json) {
+            Ok(_) => info!("Settings saved to {}", settings_path),
+            Err(e) => error!("Failed to save settings to {}: {}", settings_path, e),
         }
     }
 }

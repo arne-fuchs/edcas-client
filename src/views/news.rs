@@ -111,7 +111,7 @@ impl NewsView {
         lines.push(Line::from(Span::styled(
             "Elite Dangerous Commander Assistant System",
             Style::default()
-                .fg(Color::Yellow)
+                .fg(Color::Rgb(255, 140, 0))
                 .add_modifier(Modifier::BOLD),
         )));
         lines.push(Line::from(""));
@@ -142,7 +142,7 @@ impl NewsView {
                 lines.push(Line::from(Span::styled(
                     &article.title,
                     Style::default()
-                        .fg(Color::Yellow)
+                        .fg(Color::Rgb(255, 140, 0))
                         .add_modifier(Modifier::BOLD),
                 )));
                 lines.push(Line::from(""));

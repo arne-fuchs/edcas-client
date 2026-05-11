@@ -7,6 +7,7 @@ mod mining;
 mod news;
 mod settings;
 mod stations;
+mod system;
 
 pub use about::AboutView;
 pub use carriers::CarriersView;
@@ -17,3 +18,4 @@ pub use mining::MiningView;
 pub use news::NewsView;
 pub use settings::SettingsView;
 pub use stations::StationsView;
+pub use system::SystemView;

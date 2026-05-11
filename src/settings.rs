@@ -25,6 +25,13 @@ pub struct Settings {
     pub stars: HashMap<String, Icon>,
     #[serde(default = "HashMap::default")]
     pub planets: HashMap<String, Icon>,
+    /// Base URL of the edcas-eddn REST API, e.g. "http://localhost:3000"
+    #[serde(default = "default_api_url")]
+    pub api_url: String,
+}
+
+fn default_api_url() -> String {
+    "http://localhost:3000".into()
 }
 
 impl Default for Settings {

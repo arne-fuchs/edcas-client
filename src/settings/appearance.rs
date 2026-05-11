@@ -7,5 +7,5 @@ pub struct AppearanceSettings {
 }
 
 fn default_color() -> String {
-    "purple".to_string()
+    "orange".to_string()
 }

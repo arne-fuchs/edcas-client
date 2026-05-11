@@ -1,4 +1,3 @@
-use bus::BusReader;
 use tracing::{debug, error};
 use std::fmt::Display;
 use std::str::FromStr;
@@ -48,12 +47,6 @@ fn default_journal_directory() -> String {
         error!("Unknown OS!");
         String::default()
     }
-}
-
-pub struct JournalReadStatus {
-    pub current_log: u32,
-    pub total_logs: u32,
-    pub log_index_updates: BusReader<i64>,
 }
 
 #[derive(Clone, Serialize, Deserialize, Default)]
