@@ -5,4 +5,5 @@ pub enum ViewEvent {
     NextTab,
     PrevTab,
     SettingsChanged,
+    OpenFactions(String),
 }

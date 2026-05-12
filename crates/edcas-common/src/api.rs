@@ -159,28 +159,29 @@ pub struct CarrierQuery {
     pub limit: Option<i64>,
 }
 
-/// One row = faction presence in a single system.
+/// One entry per unique faction; presences lists every system the faction inhabits.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct FactionResponse {
     pub name: String,
-    pub system_address: i64,
-    pub system_name: String,
     pub government: Option<String>,
     pub allegiance: Option<String>,
-    pub happiness: Option<String>,
-    pub influence: Option<f32>,
-    pub states: Vec<FactionStateResponse>,
+    pub presences: Vec<FactionPresence>,
 }
 
+/// The faction's presence in one specific system.
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct FactionStateResponse {
-    pub state: String,
-    pub status: String,
+pub struct FactionPresence {
+    pub system_address: i64,
+    pub system_name: String,
+    pub influence: f32,
+    pub happiness: Option<String>,
+    pub active_states: Vec<String>,
+    pub pending_states: Vec<String>,
+    pub recovering_states: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct FactionQuery {
     pub name: Option<String>,
-    pub system_name: Option<String>,
     pub limit: Option<i64>,
 }

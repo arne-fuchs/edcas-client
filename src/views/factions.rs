@@ -24,27 +24,27 @@ enum FocusArea {
 
 #[derive(Clone, Copy, PartialEq)]
 enum DetailTab {
-    Overview,
-    States,
+    Info,
+    Systems,
 }
 
 impl DetailTab {
     fn next(self) -> Option<Self> {
         match self {
-            Self::Overview => Some(Self::States),
-            Self::States => None,
+            Self::Info => Some(Self::Systems),
+            Self::Systems => None,
         }
     }
     fn prev(self) -> Option<Self> {
         match self {
-            Self::Overview => None,
-            Self::States => Some(Self::Overview),
+            Self::Info => None,
+            Self::Systems => Some(Self::Info),
         }
     }
     fn label(self) -> &'static str {
         match self {
-            Self::Overview => "Overview",
-            Self::States => "States",
+            Self::Info => "Info",
+            Self::Systems => "Systems",
         }
     }
 }
@@ -54,11 +54,14 @@ pub struct FactionsView {
     search_state: SearchState,
     results: Vec<FactionResponse>,
     selected_idx: usize,
+    selected_system: usize,
     list_scroll: usize,
     detail_scroll: usize,
     status_msg: String,
+    copy_msg: Option<String>,
     focus: FocusArea,
     detail_tab: DetailTab,
+    clipboard: Option<arboard::Clipboard>,
 }
 
 impl FactionsView {
@@ -68,11 +71,16 @@ impl FactionsView {
             search_state: SearchState::Idle,
             results: Vec::new(),
             selected_idx: 0,
+            selected_system: 0,
             list_scroll: 0,
             detail_scroll: 0,
             status_msg: "Press Enter to search".into(),
+            copy_msg: None,
             focus: FocusArea::List,
-            detail_tab: DetailTab::Overview,
+            detail_tab: DetailTab::Info,
+            // Kept alive for the duration of the view so the X11/Wayland
+            // background clipboard-serving thread keeps running after set_text.
+            clipboard: arboard::Clipboard::new().ok(),
         }
     }
 
@@ -84,22 +92,22 @@ impl FactionsView {
         self.status_msg = format!("Searching for '{}'…", self.search_query);
         let query = FactionQuery {
             name: Some(self.search_query.clone()),
-            system_name: None,
-            limit: Some(200),
+            limit: Some(100),
         };
         match api.search_factions(&query) {
             Ok(results) => {
                 let count = results.len();
                 self.results = results;
                 self.selected_idx = 0;
+                self.selected_system = 0;
                 self.list_scroll = 0;
                 self.detail_scroll = 0;
                 self.focus = FocusArea::List;
-                self.detail_tab = DetailTab::Overview;
+                self.detail_tab = DetailTab::Info;
                 self.status_msg = if count == 0 {
                     format!("No factions found for '{}'", self.search_query)
                 } else {
-                    format!("{count} presence(s) found")
+                    format!("{count} faction(s) found")
                 };
             }
             Err(e) => {
@@ -110,7 +118,6 @@ impl FactionsView {
 
     fn build_list_lines(&self) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
-
         lines.push(Line::from(vec![
             Span::styled("Search: ", Style::default().fg(Color::Cyan)),
             Span::styled(
@@ -129,6 +136,12 @@ impl FactionsView {
             self.status_msg.clone(),
             Style::default().fg(Color::DarkGray),
         )));
+        if let Some(ref msg) = self.copy_msg {
+            lines.push(Line::from(Span::styled(
+                msg.clone(),
+                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            )));
+        }
         lines.push(Line::from(""));
 
         if self.results.is_empty() {
@@ -147,21 +160,13 @@ impl FactionsView {
             } else {
                 Style::default().fg(Color::White)
             };
-            let influence_str = faction
-                .influence
-                .map(|inf| format!(" ({:.1}%)", inf * 100.0))
-                .unwrap_or_default();
+            let systems = faction.presences.len();
+            let sys_label = if systems == 1 { "1 system".to_string() } else { format!("{systems} systems") };
             lines.push(Line::from(Span::styled(
-                format!(
-                    " {}{} — {}",
-                    truncate(&faction.name, 26),
-                    influence_str,
-                    truncate(&faction.system_name, 20),
-                ),
+                format!(" {:<38} {}", faction.name, sys_label),
                 style,
             )));
         }
-
         lines
     }
 
@@ -171,7 +176,7 @@ impl FactionsView {
             .bg(Color::Rgb(255, 140, 0))
             .add_modifier(Modifier::BOLD);
         let tab_inactive = Style::default().fg(Color::Rgb(255, 140, 0));
-        let tabs = [DetailTab::Overview, DetailTab::States];
+        let tabs = [DetailTab::Info, DetailTab::Systems];
         let tab_spans: Vec<Span> = tabs
             .iter()
             .flat_map(|&t| {
@@ -184,7 +189,7 @@ impl FactionsView {
 
         if let Some(faction) = self.results.get(self.selected_idx) {
             lines.push(Line::from(Span::styled(
-                format!("── {} — {} ──", faction.name, faction.system_name),
+                format!("── {} ──", faction.name),
                 Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
             )));
         }
@@ -201,66 +206,21 @@ impl FactionsView {
         };
 
         match self.detail_tab {
-            DetailTab::Overview => self.overview_body(faction),
-            DetailTab::States => self.states_body(faction),
+            DetailTab::Info => info_body(faction),
+            DetailTab::Systems => systems_body(faction, self.selected_system, self.focus == FocusArea::Detail),
         }
     }
 
-    fn overview_body(&self, faction: &FactionResponse) -> Vec<Line<'static>> {
-        let mut lines = Vec::new();
-        lines.push(Line::from(format!(
-            "System:      {}",
-            faction.system_name
-        )));
-        if let Some(ref gov) = faction.government {
-            lines.push(Line::from(format!("Government:  {gov}")));
-        }
-        if let Some(ref alleg) = faction.allegiance {
-            lines.push(Line::from(format!("Allegiance:  {alleg}")));
-        }
-        if let Some(ref hap) = faction.happiness {
-            lines.push(Line::from(format!("Happiness:   {hap}")));
-        }
-        if let Some(inf) = faction.influence {
-            let pct = inf * 100.0;
-            let filled = (pct / 100.0 * 30.0).round() as usize;
-            let bar_color = if pct < 15.0 {
-                Color::Red
-            } else if pct < 40.0 {
-                Color::Yellow
-            } else {
-                Color::Green
-            };
-            lines.push(Line::from(vec![
-                Span::raw(format!("Influence:   {:>5.1}%  [", pct)),
-                Span::styled("█".repeat(filled), Style::default().fg(bar_color)),
-                Span::styled("░".repeat(30 - filled), Style::default().fg(Color::DarkGray)),
-                Span::raw("]"),
-            ]));
-        }
-        lines
+    /// Keep detail_scroll so the selected system row stays visible.
+    /// Body layout: line 0 = column header, line 1 = separator, line N+2 = presence[N].
+    fn sync_system_scroll(&mut self) {
+        self.detail_scroll = self.selected_system.saturating_sub(1);
     }
 
-    fn states_body(&self, faction: &FactionResponse) -> Vec<Line<'static>> {
-        if faction.states.is_empty() {
-            return vec![Line::from(Span::styled(
-                "No active states.",
-                Style::default().fg(Color::DarkGray),
-            ))];
-        }
-        let mut lines = Vec::new();
-        lines.push(Line::from(Span::styled(
-            format!("{:<32} {}", "State", "Status"),
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-        )));
-        lines.push(Line::from(Span::styled(
-            "─".repeat(44),
-            Style::default().fg(Color::DarkGray),
-        )));
-        for s in &faction.states {
-            lines.push(Line::from(format!("{:<32} {}", s.state, s.status)));
-        }
-        lines
+    pub fn prefill_search(&mut self, name: &str, api: &ApiClient) {
+        self.search_query = name.to_string();
+        self.search_state = SearchState::Idle;
+        self.do_search(api);
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient) -> ViewEvent {
@@ -274,12 +234,8 @@ impl FactionsView {
                     self.search_state = SearchState::Idle;
                     self.do_search(api);
                 }
-                KeyCode::Backspace => {
-                    self.search_query.pop();
-                }
-                KeyCode::Char(c) => {
-                    self.search_query.push(c);
-                }
+                KeyCode::Backspace => { self.search_query.pop(); }
+                KeyCode::Char(c)   => { self.search_query.push(c); }
                 _ => {}
             }
             return ViewEvent::Consumed;
@@ -295,9 +251,14 @@ impl FactionsView {
                 FocusArea::List => {
                     if self.selected_idx > 0 {
                         self.selected_idx -= 1;
+                        self.selected_system = 0;
                         self.detail_scroll = 0;
-                        self.detail_tab = DetailTab::Overview;
+                        self.detail_tab = DetailTab::Info;
                     }
+                }
+                FocusArea::Detail if self.detail_tab == DetailTab::Systems => {
+                    self.selected_system = self.selected_system.saturating_sub(1);
+                    self.sync_system_scroll();
                 }
                 FocusArea::Detail => {
                     self.detail_scroll = self.detail_scroll.saturating_sub(1);
@@ -307,14 +268,37 @@ impl FactionsView {
                 FocusArea::List => {
                     if self.selected_idx + 1 < self.results.len() {
                         self.selected_idx += 1;
+                        self.selected_system = 0;
                         self.detail_scroll = 0;
-                        self.detail_tab = DetailTab::Overview;
+                        self.detail_tab = DetailTab::Info;
                     }
+                }
+                FocusArea::Detail if self.detail_tab == DetailTab::Systems => {
+                    let max = self.results.get(self.selected_idx)
+                        .map(|f| f.presences.len().saturating_sub(1))
+                        .unwrap_or(0);
+                    self.selected_system = (self.selected_system + 1).min(max);
+                    self.sync_system_scroll();
                 }
                 FocusArea::Detail => {
                     self.detail_scroll += 1;
                 }
             },
+            KeyCode::Char('c') => {
+                if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Systems {
+                    if let Some(faction) = self.results.get(self.selected_idx) {
+                        if let Some(presence) = faction.presences.get(self.selected_system) {
+                            let name = presence.system_name.trim().to_string();
+                            self.copy_msg = Some(match self.clipboard.as_mut().map(|cb| cb.set_text(&name)) {
+                                Some(Ok(())) => format!("Copied: {name}"),
+                                Some(Err(e)) => format!("Clipboard error: {e}"),
+                                None => "Clipboard unavailable".to_string(),
+                            });
+                        }
+                    }
+                    return ViewEvent::Consumed;
+                }
+            }
             KeyCode::Char('d') | KeyCode::Right => match self.focus {
                 FocusArea::List => {
                     if !self.results.is_empty() {
@@ -350,19 +334,22 @@ impl FactionsView {
     pub fn render(&self, frame: &mut Frame, area: Rect) {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(40), Constraint::Percentage(60)])
+            .constraints([Constraint::Percentage(35), Constraint::Percentage(65)])
             .split(area);
 
         let active_border = Style::default().fg(Color::Rgb(255, 140, 0));
         let inactive_border = Style::default().fg(Color::White);
 
-        // ── Left: list ───────────────────────────────────────────
+        // ── Left: faction list ───────────────────────────────────
         let list_lines = self.build_list_lines();
         let list_height = chunks[0].height.saturating_sub(2) as usize;
-        let list_scroll = if self.selected_idx + 3 >= self.list_scroll + list_height {
-            (self.selected_idx + 4).saturating_sub(list_height)
-        } else if self.selected_idx + 3 < self.list_scroll {
-            self.selected_idx + 3
+        // 3 header lines before results
+        let header_lines = 3usize;
+        let list_item_row = self.selected_idx + header_lines;
+        let list_scroll = if list_item_row + 1 >= self.list_scroll + list_height {
+            (list_item_row + 2).saturating_sub(list_height)
+        } else if list_item_row < self.list_scroll + header_lines {
+            list_item_row.saturating_sub(header_lines)
         } else {
             self.list_scroll
         };
@@ -383,7 +370,7 @@ impl FactionsView {
             chunks[0],
         );
 
-        // ── Right: detail — fixed header + scrollable body ───────
+        // ── Right: detail ────────────────────────────────────────
         let detail_block = Block::default()
             .title(" Faction Details — Enter to search ")
             .borders(Borders::ALL)
@@ -415,6 +402,296 @@ impl FactionsView {
             detail_split[1],
         );
     }
+}
+
+// ── Info tab ─────────────────────────────────────────────────────────────────
+
+fn info_body(faction: &FactionResponse) -> Vec<Line<'static>> {
+    let mut lines = Vec::new();
+
+    if let Some(ref gov) = faction.government {
+        lines.push(section_header(&format!("Government: {gov}")));
+        for l in government_lines(gov) {
+            lines.push(l);
+        }
+        lines.push(Line::from(""));
+    }
+
+    if let Some(ref alleg) = faction.allegiance {
+        lines.push(section_header(&format!("Allegiance: {alleg}")));
+        for l in allegiance_lines(alleg) {
+            lines.push(l);
+        }
+        lines.push(Line::from(""));
+    }
+
+    if lines.is_empty() {
+        lines.push(Line::from(Span::styled(
+            "No government / allegiance data available.",
+            Style::default().fg(Color::DarkGray),
+        )));
+    }
+
+    lines
+}
+
+fn section_header(text: &str) -> Line<'static> {
+    Line::from(Span::styled(
+        text.to_owned(),
+        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+    ))
+}
+
+fn bullet(text: &str) -> Line<'static> {
+    Line::from(Span::styled(
+        format!("  · {text}"),
+        Style::default().fg(Color::White),
+    ))
+}
+
+fn dim(text: &str) -> Line<'static> {
+    Line::from(Span::styled(
+        format!("  {text}"),
+        Style::default().fg(Color::DarkGray),
+    ))
+}
+
+fn label_line(label: &str, value: &str, color: Color) -> Line<'static> {
+    Line::from(vec![
+        Span::styled(format!("  {:<14}", label), Style::default().fg(Color::DarkGray)),
+        Span::styled(value.to_owned(), Style::default().fg(color)),
+    ])
+}
+
+fn government_lines(gov: &str) -> Vec<Line<'static>> {
+    match gov {
+        "Anarchy" => vec![
+            dim("No formal laws or enforcement. Individual strength determines survival."),
+            dim("Security forces are absent or entirely corrupt."),
+            Line::from(""),
+            label_line("Illegal:", "Nothing — no laws are enforced", Color::Green),
+            label_line("Legal:", "Everything, including narcotics, weapons, slaves", Color::Cyan),
+            label_line("Security:", "None — pirates thrive here", Color::Red),
+            label_line("Trade risk:", "Very high — no protection for traders", Color::Red),
+        ],
+        "Communism" => vec![
+            dim("State ownership of all production. Resources are allocated centrally"),
+            dim("for the common good. Equality is prioritised over individual freedom."),
+            Line::from(""),
+            label_line("Illegal:", "Narcotics, combat stabilisers, civilian weapons", Color::Yellow),
+            label_line("Legal:", "Most standard goods and commodities", Color::Cyan),
+            label_line("Security:", "Moderate to high", Color::Green),
+            label_line("Trade:", "State-controlled; black markets common", Color::DarkGray),
+        ],
+        "Confederacy" => vec![
+            dim("A loose alliance of autonomous member states sharing common defence"),
+            dim("and trade agreements. Local authorities retain significant autonomy."),
+            Line::from(""),
+            label_line("Illegal:", "Narcotics, some weapons (varies by station)", Color::Yellow),
+            label_line("Legal:", "Most goods; weapon laws vary per port", Color::Cyan),
+            label_line("Security:", "Moderate", Color::Green),
+        ],
+        "Corporate" => vec![
+            dim("A megacorporation exercises governmental authority. Every policy"),
+            dim("decision is driven by profit. Workers are assets; shareholders rule."),
+            Line::from(""),
+            label_line("Illegal:", "Narcotics (reduce productivity), unsanctioned weapons", Color::Yellow),
+            label_line("Legal:", "Most goods if profitable; grey-market tolerant", Color::Cyan),
+            label_line("Security:", "Moderate — corporate security forces", Color::Green),
+            label_line("Trade:", "Strong markets; corporations control supply", Color::Green),
+        ],
+        "Cooperative" => vec![
+            dim("Collectively owned and democratically managed. Members share profits"),
+            dim("and governance equally. Community wellbeing is the primary goal."),
+            Line::from(""),
+            label_line("Illegal:", "Narcotics, unregulated weapons", Color::Yellow),
+            label_line("Legal:", "Most standard goods and services", Color::Cyan),
+            label_line("Security:", "Moderate — community watch", Color::Green),
+        ],
+        "Democracy" => vec![
+            dim("Elected representatives govern in the name of the people. Laws"),
+            dim("balance individual freedoms with collective security."),
+            Line::from(""),
+            label_line("Illegal:", "Narcotics, unregulated weapons, combat stabilisers", Color::Yellow),
+            label_line("Legal:", "Most commercial goods; personal sidearms (licensed)", Color::Cyan),
+            label_line("Security:", "Moderate to high", Color::Green),
+        ],
+        "Dictatorship" => vec![
+            dim("A single autocrat holds absolute power. Order is maintained through"),
+            dim("strict law enforcement and loyal security forces. Dissent is crushed."),
+            Line::from(""),
+            label_line("Illegal:", "Narcotics, weapons, opposition materials, many goods", Color::Red),
+            label_line("Legal:", "State-approved goods only", Color::Cyan),
+            label_line("Security:", "Very high — harsh penalties", Color::Red),
+            label_line("Trade:", "Restricted; state has monopoly on key goods", Color::Yellow),
+        ],
+        "Feudal" => vec![
+            dim("Noble hierarchy governs by hereditary right. Vassals owe loyalty and"),
+            dim("service to their liege lords. Might and lineage determine status."),
+            Line::from(""),
+            label_line("Illegal:", "Weapons for commoners, narcotics", Color::Yellow),
+            label_line("Legal:", "Slaves (in many feudal systems), agricultural goods", Color::Cyan),
+            label_line("Security:", "High for nobility; low for common areas", Color::Yellow),
+        ],
+        "Imperial" => vec![
+            dim("Imperial hierarchy based on rank, honour and duty. Service to the"),
+            dim("Empire is paramount. Social mobility exists through demonstrated loyalty."),
+            Line::from(""),
+            label_line("Illegal:", "Chattel slaves, narcotics, advanced personal weapons", Color::Red),
+            label_line("Legal:", "Imperial Slaves (bond-servants with rights and a contract)", Color::Cyan),
+            label_line("Security:", "High — Imperial Navy patrols", Color::Green),
+            label_line("Note:", "Imperial Slaves ≠ chattel slavery; bond ends after term", Color::DarkGray),
+        ],
+        "Patronage" => vec![
+            dim("Powerful patrons extend protection in exchange for loyalty and service."),
+            dim("Political power flows through personal relationships, not institutions."),
+            Line::from(""),
+            label_line("Illegal:", "Narcotics, weapons (varies by patron)", Color::Yellow),
+            label_line("Legal:", "Goods approved by the ruling patron", Color::Cyan),
+            label_line("Security:", "Moderate — patron's private forces", Color::Yellow),
+        ],
+        "Prison Colony" => vec![
+            dim("A penal authority administers this system. Security forces are wardens."),
+            dim("Residents are either prisoners, guards, or support staff."),
+            Line::from(""),
+            label_line("Illegal:", "Almost everything beyond basic necessities", Color::Red),
+            label_line("Legal:", "Heavily regulated basic goods only", Color::Cyan),
+            label_line("Security:", "Maximum — entire system is a prison", Color::Red),
+            label_line("Trade:", "Extremely restricted; smuggling very risky", Color::Red),
+        ],
+        "Theocracy" => vec![
+            dim("Sacred law governs all aspects of life. Religious authorities hold"),
+            dim("ultimate temporal power. Deviation from doctrine is a criminal offence."),
+            Line::from(""),
+            label_line("Illegal:", "Narcotics, personal weapons, goods deemed heretical", Color::Red),
+            label_line("Legal:", "Goods and services aligned with religious doctrine", Color::Cyan),
+            label_line("Security:", "Very high — zealous enforcement", Color::Red),
+            label_line("Trade:", "Restricted to approved goods", Color::Yellow),
+        ],
+        "None" => vec![
+            dim("No established government. Laws and security vary unpredictably."),
+        ],
+        other => vec![
+            dim(&format!("Government type '{other}' — no detailed information available.")),
+        ],
+    }
+}
+
+fn allegiance_lines(alleg: &str) -> Vec<Line<'static>> {
+    match alleg {
+        "Federation" => vec![
+            dim("Member of the Galactic Federation. Values democracy, individual rights"),
+            dim("and rule of law. Bureaucratic governance; strong Federal Navy."),
+            bullet("Federal credits and rank can be earned through missions"),
+            bullet("Anti-slavery: chattel and Imperial slaves are illegal in Fed space"),
+            bullet("Strong presence in the Sol neighbourhood and core worlds"),
+        ],
+        "Empire" => vec![
+            dim("Subject of the Galactic Empire. Values honour, rank, duty and tradition."),
+            dim("Social hierarchy is rigid but meritocratic through demonstrated service."),
+            bullet("Imperial rank earned through trade, combat and patron missions"),
+            bullet("Imperial Slaves are legal — a regulated bond-servant system"),
+            bullet("Narcotics and chattel slaves are illegal in Imperial space"),
+        ],
+        "Alliance" => vec![
+            dim("Member of the Alliance of Independent Systems. Values sovereignty,"),
+            dim("cooperation and mutual defence without imposing cultural uniformity."),
+            bullet("Loosely governed — member systems retain local laws"),
+            bullet("Focused on exploration, trade and defence"),
+            bullet("No unified stance on slaves or narcotics; local laws apply"),
+        ],
+        "Independent" => vec![
+            dim("No allegiance to a major power. Laws and policies are set entirely"),
+            dim("by the local governing faction. Expect wide variation between systems."),
+            bullet("Check local station laws before trading sensitive goods"),
+            bullet("Often targets of powerplay expansion from the major factions"),
+        ],
+        "Pilots Federation" | "PilotsFederation" => vec![
+            dim("Governed by the Pilots Federation — the guild of licensed commanders."),
+            dim("Mostly neutral; these systems serve as training grounds and safe zones."),
+            bullet("Rebuy penalties do not apply in Pilots Federation space"),
+            bullet("Combat is illegal — these are protected starter systems"),
+        ],
+        other => vec![
+            dim(&format!("Allegiance '{other}' — no detailed information available.")),
+        ],
+    }
+}
+
+// ── Systems tab ───────────────────────────────────────────────────────────────
+
+fn systems_body(faction: &FactionResponse, selected: usize, focused: bool) -> Vec<Line<'static>> {
+    if faction.presences.is_empty() {
+        return vec![Line::from(Span::styled(
+            "No system presence data available.",
+            Style::default().fg(Color::DarkGray),
+        ))];
+    }
+
+    let mut lines = Vec::new();
+
+    let hint = if focused {
+        " — w/s: select  c: copy name"
+    } else {
+        ""
+    };
+    lines.push(Line::from(Span::styled(
+        format!("{:<30} {:>6}  {:<20}  {:<20}{hint}", "System", "Inf%", "Active State", "Pending"),
+        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(Span::styled(
+        "─".repeat(78),
+        Style::default().fg(Color::DarkGray),
+    )));
+
+    for (i, p) in faction.presences.iter().enumerate() {
+        let pct = p.influence * 100.0;
+        let inf_color = if pct < 15.0 {
+            Color::Red
+        } else if pct < 40.0 {
+            Color::Yellow
+        } else {
+            Color::Green
+        };
+
+        let active = if p.active_states.is_empty() {
+            "—".to_string()
+        } else {
+            p.active_states.join(", ")
+        };
+        let pending = if p.pending_states.is_empty() {
+            "—".to_string()
+        } else {
+            p.pending_states.join(", ")
+        };
+
+        let is_selected = focused && i == selected;
+
+        if is_selected {
+            let row = format!(
+                " {:<29} {:>5.1}%  {:<20}  {:<20}",
+                truncate(&p.system_name, 29),
+                pct,
+                truncate(&active, 20),
+                truncate(&pending, 20),
+            );
+            lines.push(Line::from(Span::styled(
+                row,
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Rgb(255, 140, 0))
+                    .add_modifier(Modifier::BOLD),
+            )));
+        } else {
+            lines.push(Line::from(vec![
+                Span::raw(format!(" {:<29} ", truncate(&p.system_name, 29))),
+                Span::styled(format!("{:>5.1}%", pct), Style::default().fg(inf_color)),
+                Span::raw(format!("  {:<20}  {}", truncate(&active, 20), pending)),
+            ]));
+        }
+    }
+
+    lines
 }
 
 fn truncate(s: &str, max: usize) -> String {

@@ -1,3 +1,5 @@
+use std::cmp::Ordering;
+
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
@@ -10,18 +12,19 @@ use crate::journal_reader::JournalData;
 use crate::views::ViewEvent;
 
 pub struct SystemView {
-    scroll_offset: usize,
+    selected_faction: usize,
 }
 
 impl SystemView {
     pub fn new() -> Self {
-        Self {
-            scroll_offset: 0,
-        }
+        Self { selected_faction: 0 }
     }
 
-    fn build_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
+    /// Returns rendered lines plus the starting line index of each faction
+    /// (in influence-descending order), so render can auto-scroll to the selection.
+    fn build_lines(&self, journal: &JournalData) -> (Vec<Line<'static>>, Vec<usize>) {
         let mut lines = Vec::new();
+        let mut faction_starts: Vec<usize> = Vec::new();
 
         if let Some(system) = &journal.current_system {
             lines.push(Line::from(Span::styled(
@@ -34,9 +37,7 @@ impl SystemView {
 
             lines.push(Line::from(Span::styled(
                 "System Information",
-                Style::default()
-                    .fg(Color::Cyan)
-                    .add_modifier(Modifier::UNDERLINED),
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::UNDERLINED),
             )));
             lines.push(Line::from(format!("  Coordinates: ({:.2}, {:.2}, {:.2})",
                 system.coords.0, system.coords.1, system.coords.2)));
@@ -52,15 +53,17 @@ impl SystemView {
             lines.push(Line::from(format!("  Population: {}", format_population(system.population))));
             lines.push(Line::from(""));
 
-            if !system.controlling_power.as_ref().unwrap_or(&String::new()).is_empty() || !system.powers.is_empty() {
+            let has_power = system.controlling_power.as_ref().map(|p| !p.is_empty()).unwrap_or(false)
+                || !system.powers.is_empty();
+            if has_power {
                 lines.push(Line::from(Span::styled(
                     "Powerplay",
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::UNDERLINED),
+                    Style::default().fg(Color::Cyan).add_modifier(Modifier::UNDERLINED),
                 )));
                 if let Some(ref power) = system.controlling_power {
-                    lines.push(Line::from(format!("  Controlling Power: {}", power)));
+                    if !power.is_empty() {
+                        lines.push(Line::from(format!("  Controlling Power: {}", power)));
+                    }
                 }
                 if !system.powers.is_empty() {
                     lines.push(Line::from(format!("  Powers Present: {}", system.powers.join(", "))));
@@ -70,23 +73,36 @@ impl SystemView {
 
             if !system.factions.is_empty() {
                 let mut sorted = system.factions.clone();
-                sorted.sort_by(|a, b| b.influence.partial_cmp(&a.influence).unwrap_or(std::cmp::Ordering::Equal));
+                sorted.sort_by(|a, b| b.influence.partial_cmp(&a.influence).unwrap_or(Ordering::Equal));
 
                 lines.push(Line::from(Span::styled(
-                    format!("Factions ({})", sorted.len()),
-                    Style::default()
-                        .fg(Color::Cyan)
-                        .add_modifier(Modifier::UNDERLINED),
+                    format!("Factions ({}) — w/s: select  space: open in Factions tab", sorted.len()),
+                    Style::default().fg(Color::Cyan).add_modifier(Modifier::UNDERLINED),
                 )));
 
-                for faction in &sorted {
-                    let controlling = faction.name == system.system_faction;
-                    let name_style = if controlling {
+                let selected = self.selected_faction.min(sorted.len().saturating_sub(1));
+
+                for (i, faction) in sorted.iter().enumerate() {
+                    faction_starts.push(lines.len());
+
+                    let is_selected = i == selected;
+                    let is_controlling = faction.name == system.system_faction;
+
+                    let name_style = if is_selected {
+                        Style::default()
+                            .fg(Color::Black)
+                            .bg(Color::Rgb(255, 140, 0))
+                            .add_modifier(Modifier::BOLD)
+                    } else if is_controlling {
                         Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
                     } else {
                         Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
                     };
-                    let tag = if controlling { " ★" } else { "" };
+
+                    let tag = if is_controlling { " ★" } else { "" };
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("  {:<36}{}", faction.name, tag), name_style),
+                    ]));
 
                     let pct = faction.influence * 100.0;
                     let filled = (faction.influence * 20.0).round() as usize;
@@ -97,10 +113,6 @@ impl SystemView {
                     } else {
                         Color::Green
                     };
-
-                    lines.push(Line::from(vec![
-                        Span::styled(format!("  {:<36}{}", faction.name, tag), name_style),
-                    ]));
                     lines.push(Line::from(vec![
                         Span::raw(format!("    Influence: {:>5.1}%  [", pct)),
                         Span::styled("█".repeat(filled), Style::default().fg(bar_color)),
@@ -134,18 +146,40 @@ impl SystemView {
             lines.push(Line::from("Jump to a system to see information here."));
         }
 
-        lines
+        (lines, faction_starts)
     }
 
-    pub fn handle_key(&mut self, key: &KeyEvent, _journal: &JournalData) -> ViewEvent {
+    pub fn handle_key(&mut self, key: &KeyEvent, journal: &JournalData) -> ViewEvent {
+        let faction_count = journal
+            .current_system
+            .as_ref()
+            .map(|s| s.factions.len())
+            .unwrap_or(0);
+
         match key.code {
             KeyCode::Char('w') | KeyCode::Up => {
-                if self.scroll_offset > 0 {
-                    self.scroll_offset -= 1;
+                if faction_count > 0 {
+                    self.selected_faction = self.selected_faction.saturating_sub(1);
+                    return ViewEvent::Consumed;
                 }
             }
             KeyCode::Char('s') | KeyCode::Down => {
-                self.scroll_offset += 1;
+                if faction_count > 0 {
+                    self.selected_faction = (self.selected_faction + 1).min(faction_count - 1);
+                    return ViewEvent::Consumed;
+                }
+            }
+            KeyCode::Char(' ') => {
+                if let Some(system) = &journal.current_system {
+                    if !system.factions.is_empty() {
+                        let mut sorted = system.factions.clone();
+                        sorted.sort_by(|a, b| {
+                            b.influence.partial_cmp(&a.influence).unwrap_or(Ordering::Equal)
+                        });
+                        let idx = self.selected_faction.min(sorted.len() - 1);
+                        return ViewEvent::OpenFactions(sorted[idx].name.clone());
+                    }
+                }
             }
             _ => {}
         }
@@ -153,25 +187,31 @@ impl SystemView {
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData) {
-        let lines = self.build_lines(journal);
+        let (lines, faction_starts) = self.build_lines(journal);
 
-        let content_height = lines.len();
         let visible_height = area.height.saturating_sub(2) as usize;
+        let content_height = lines.len();
 
-        let mut paragraph = Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .title(" System ")
-                    .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White)),
-            );
+        // auto-scroll to keep the selected faction in view
+        let scroll = if !faction_starts.is_empty() {
+            let selected = self.selected_faction.min(faction_starts.len() - 1);
+            faction_starts[selected].saturating_sub(1)
+        } else {
+            0
+        };
+        let max_scroll = content_height.saturating_sub(visible_height);
 
-        if content_height > visible_height {
-            let max_scroll = content_height.saturating_sub(visible_height);
-            paragraph = paragraph.scroll((self.scroll_offset.min(max_scroll) as u16, 0));
-        }
-
-        frame.render_widget(paragraph, area);
+        frame.render_widget(
+            Paragraph::new(lines)
+                .block(
+                    Block::default()
+                        .title(" System ")
+                        .borders(Borders::ALL)
+                        .style(Style::default().fg(Color::White)),
+                )
+                .scroll((scroll.min(max_scroll) as u16, 0)),
+            area,
+        );
     }
 }
 

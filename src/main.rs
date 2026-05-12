@@ -354,6 +354,12 @@ impl App {
                 self.restart_journal_reader();
                 return;
             }
+            ViewEvent::OpenFactions(name) => {
+                info!("Opening factions tab for: {}", name);
+                self.factions.prefill_search(&name, &self.api);
+                self.view = AppView::Factions;
+                return;
+            }
             ViewEvent::None | ViewEvent::Quit => {}
         }
 

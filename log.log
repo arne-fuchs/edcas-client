@@ -1,147 +1,444 @@
-[2m2026-05-12T09:11:19.560058Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m381:[0m EDCAS client starting
-[2m2026-05-12T09:11:19.560114Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m384:[0m CLI arguments: ["target/debug/edcas-client"]
-[2m2026-05-12T09:11:19.560181Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m398:[0m Terminal raw mode enabled
-[2m2026-05-12T09:11:19.564968Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m93:[0m Journal logs: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T09:11:19.565000Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m119:[0m Graphics path: /home/arne/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics
-[2m2026-05-12T09:11:19.565017Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m136:[0m Settings loaded
-[2m2026-05-12T09:11:19.565025Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m140:[0m Journal directory configured: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T09:11:19.565039Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m150:[0m Starting journal reader for directory: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T09:11:19.565048Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m592:[0m Initializing journal reader for: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T09:11:19.565195Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m600:[0m Loading existing journal files from: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T09:11:19.568391Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m696:[0m Loading journal file: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
-[2m2026-05-12T09:11:19.571036Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m256:[0m Location: Antliae Sector KM-W c1-6
-[2m2026-05-12T09:11:19.580143Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Mozart Sanctuary
-[2m2026-05-12T09:11:19.580176Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Kopernik Reach
-[2m2026-05-12T09:11:19.580189Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shakespeare Legacy
-[2m2026-05-12T09:11:19.580200Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Fermi Reach
-[2m2026-05-12T09:11:19.580212Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T09:11:19.580227Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: H.g.wells Installation
-[2m2026-05-12T09:11:19.580243Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
-[2m2026-05-12T09:11:19.580257Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Archimedes Vision
-[2m2026-05-12T09:11:19.580270Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nimoy Legacy
-[2m2026-05-12T09:11:19.580305Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
-[2m2026-05-12T09:11:19.584708Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m354:[0m Docked at Nimoy Legacy (market_id=4248978179)
-[2m2026-05-12T09:11:19.587159Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m247:[0m FSDJump to Antliae Sector RD-T b3-3
-[2m2026-05-12T09:11:19.588741Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
-[2m2026-05-12T09:11:19.588768Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Hochburg-Carrier
-[2m2026-05-12T09:11:19.588782Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T09:11:19.588794Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
-[2m2026-05-12T09:11:19.590347Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m354:[0m Docked at Bujold Relay (market_id=3539844864)
-[2m2026-05-12T09:11:19.593956Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Double Meteor Manufacturing
-[2m2026-05-12T09:11:19.593992Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
-[2m2026-05-12T09:11:19.594005Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
-[2m2026-05-12T09:11:19.594016Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Velazquez Gateway
-[2m2026-05-12T09:11:19.594030Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shepherd Ring
-[2m2026-05-12T09:11:19.594047Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T09:11:19.594061Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Secret Cattle Acres
-[2m2026-05-12T09:11:19.594073Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Capital Justice Ministry
-[2m2026-05-12T09:11:19.594243Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m247:[0m FSDJump to Benapem
-[2m2026-05-12T09:11:19.596251Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Double Meteor Manufacturing
-[2m2026-05-12T09:11:19.596281Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
-[2m2026-05-12T09:11:19.596298Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
-[2m2026-05-12T09:11:19.596316Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Velazquez Gateway
-[2m2026-05-12T09:11:19.596336Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shepherd Ring
-[2m2026-05-12T09:11:19.596356Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T09:11:19.596374Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Secret Cattle Acres
-[2m2026-05-12T09:11:19.596391Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Capital Justice Ministry
-[2m2026-05-12T09:11:19.598848Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 2
-[2m2026-05-12T09:11:19.598935Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 1
-[2m2026-05-12T09:11:19.599007Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 5
-[2m2026-05-12T09:11:19.599114Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 3
-[2m2026-05-12T09:11:19.599214Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 6
-[2m2026-05-12T09:11:19.599311Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 3 a
-[2m2026-05-12T09:11:19.599352Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem
-[2m2026-05-12T09:11:19.599415Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 4
-[2m2026-05-12T09:11:19.599532Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 7
-[2m2026-05-12T09:11:19.614281Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m605:[0m Loaded 9 bodies from existing files
-[2m2026-05-12T09:11:19.616858Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m733:[0m Journal file changed to: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
-[2m2026-05-12T09:11:19.618658Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m256:[0m Location: Antliae Sector KM-W c1-6
-[2m2026-05-12T09:11:19.626876Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Mozart Sanctuary
-[2m2026-05-12T09:11:19.626957Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Kopernik Reach
-[2m2026-05-12T09:11:19.626991Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shakespeare Legacy
-[2m2026-05-12T09:11:19.627018Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Fermi Reach
-[2m2026-05-12T09:11:19.627047Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T09:11:19.627063Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: H.g.wells Installation
-[2m2026-05-12T09:11:19.627082Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
-[2m2026-05-12T09:11:19.627096Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Archimedes Vision
-[2m2026-05-12T09:11:19.627111Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nimoy Legacy
-[2m2026-05-12T09:11:19.627126Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
-[2m2026-05-12T09:11:19.630694Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m354:[0m Docked at Nimoy Legacy (market_id=4248978179)
-[2m2026-05-12T09:11:19.632948Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m247:[0m FSDJump to Antliae Sector RD-T b3-3
-[2m2026-05-12T09:11:19.634483Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
-[2m2026-05-12T09:11:19.634508Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Hochburg-Carrier
-[2m2026-05-12T09:11:19.634522Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T09:11:19.634535Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
-[2m2026-05-12T09:11:19.636118Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m354:[0m Docked at Bujold Relay (market_id=3539844864)
-[2m2026-05-12T09:11:19.639628Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Double Meteor Manufacturing
-[2m2026-05-12T09:11:19.639667Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
-[2m2026-05-12T09:11:19.639686Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
-[2m2026-05-12T09:11:19.639707Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Velazquez Gateway
-[2m2026-05-12T09:11:19.639732Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shepherd Ring
-[2m2026-05-12T09:11:19.639749Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T09:11:19.639763Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Secret Cattle Acres
-[2m2026-05-12T09:11:19.639775Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Capital Justice Ministry
-[2m2026-05-12T09:11:19.639803Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to [2600:9000:28c5:6a00:c:bfa0:6b00:93a1]:443
-[2m2026-05-12T09:11:19.639943Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m247:[0m FSDJump to Benapem
-[2m2026-05-12T09:11:19.641403Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Double Meteor Manufacturing
-[2m2026-05-12T09:11:19.641429Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
-[2m2026-05-12T09:11:19.641445Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
-[2m2026-05-12T09:11:19.641459Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Velazquez Gateway
-[2m2026-05-12T09:11:19.641473Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shepherd Ring
-[2m2026-05-12T09:11:19.641488Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T09:11:19.641502Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Secret Cattle Acres
-[2m2026-05-12T09:11:19.641515Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Capital Justice Ministry
-[2m2026-05-12T09:11:19.643093Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 2
-[2m2026-05-12T09:11:19.643178Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 1
-[2m2026-05-12T09:11:19.643273Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 5
-[2m2026-05-12T09:11:19.643379Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 3
-[2m2026-05-12T09:11:19.643485Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 6
-[2m2026-05-12T09:11:19.643586Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 3 a
-[2m2026-05-12T09:11:19.643627Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem
-[2m2026-05-12T09:11:19.643709Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 4
-[2m2026-05-12T09:11:19.643808Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 7
-[2m2026-05-12T09:11:19.659639Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to [2600:9000:28c5:6a00:c:bfa0:6b00:93a1]:443
-[2m2026-05-12T09:11:19.794988Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", community.elitedangerous.com)
-[2m2026-05-12T09:11:19.875001Z[0m [34mDEBUG[0m [2medcas_client::views::news[0m[2m:[0m [2msrc/views/news.rs[0m[2m:[0m[2m90:[0m Success fetching galnet 15 articles
-[2m2026-05-12T09:11:19.877357Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m430:[0m Entering main application loop
-[2m2026-05-12T09:11:19.877378Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
-[2m2026-05-12T09:11:19.877489Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
-[2m2026-05-12T09:11:19.877524Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
-[2m2026-05-12T09:11:19.877580Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
-[2m2026-05-12T09:11:19.892412Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to 77.90.1.37:443
-[2m2026-05-12T09:11:19.911437Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to 77.90.1.37:443
-[2m2026-05-12T09:11:19.966863Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", edcas.de)
-[2m2026-05-12T09:11:20.456067Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:20.456105Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m367:[0m Tab changed to: System
-[2m2026-05-12T09:11:24.248053Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
-[2m2026-05-12T09:11:24.248177Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
-[2m2026-05-12T09:11:24.721582Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('s'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:24.721621Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
-[2m2026-05-12T09:11:24.721726Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
-[2m2026-05-12T09:11:25.436303Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('w'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:26.417303Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('s'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:26.645500Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('w'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:26.974368Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:26.974405Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m367:[0m Tab changed to: Explorer
-[2m2026-05-12T09:11:27.239242Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:27.239284Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m371:[0m Tab changed to: System
-[2m2026-05-12T09:11:27.949370Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:27.949407Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m367:[0m Tab changed to: Explorer
-[2m2026-05-12T09:11:29.718448Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:29.718501Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m367:[0m Tab changed to: Mining
-[2m2026-05-12T09:11:30.422508Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:30.422547Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m367:[0m Tab changed to: Inventory
-[2m2026-05-12T09:11:31.373443Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:31.373485Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m367:[0m Tab changed to: Stations
-[2m2026-05-12T09:11:32.190496Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:32.190537Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m371:[0m Tab changed to: Inventory
-[2m2026-05-12T09:11:34.938965Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:34.939003Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m367:[0m Tab changed to: Stations
-[2m2026-05-12T09:11:37.291568Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:37.291608Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m371:[0m Tab changed to: Inventory
-[2m2026-05-12T09:11:37.462644Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:37.462689Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m371:[0m Tab changed to: Mining
-[2m2026-05-12T09:11:37.609683Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:37.609725Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m371:[0m Tab changed to: Explorer
-[2m2026-05-12T09:11:37.759532Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m439:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T09:11:37.759582Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m371:[0m Tab changed to: System
+[2m2026-05-12T10:02:26.855819Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m EDCAS client starting
+[2m2026-05-12T10:02:26.855874Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m390:[0m CLI arguments: ["target/debug/edcas-client"]
+[2m2026-05-12T10:02:26.855944Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m404:[0m Terminal raw mode enabled
+[2m2026-05-12T10:02:26.857307Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m93:[0m Journal logs: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T10:02:26.857328Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m119:[0m Graphics path: /home/arne/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics
+[2m2026-05-12T10:02:26.857341Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m136:[0m Settings loaded
+[2m2026-05-12T10:02:26.857347Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m140:[0m Journal directory configured: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T10:02:26.857354Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m150:[0m Starting journal reader for directory: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T10:02:26.857361Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m592:[0m Initializing journal reader for: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T10:02:26.857454Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m600:[0m Loading existing journal files from: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T10:02:26.860176Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m696:[0m Loading journal file: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
+[2m2026-05-12T10:02:26.862092Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m256:[0m Location: Antliae Sector KM-W c1-6
+[2m2026-05-12T10:02:26.871578Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Mozart Sanctuary
+[2m2026-05-12T10:02:26.871617Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Kopernik Reach
+[2m2026-05-12T10:02:26.871641Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shakespeare Legacy
+[2m2026-05-12T10:02:26.871663Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Fermi Reach
+[2m2026-05-12T10:02:26.871687Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-12T10:02:26.871710Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: H.g.wells Installation
+[2m2026-05-12T10:02:26.871738Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
+[2m2026-05-12T10:02:26.871761Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Archimedes Vision
+[2m2026-05-12T10:02:26.871785Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nimoy Legacy
+[2m2026-05-12T10:02:26.871833Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
+[2m2026-05-12T10:02:26.875587Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m354:[0m Docked at Nimoy Legacy (market_id=4248978179)
+[2m2026-05-12T10:02:26.877324Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m247:[0m FSDJump to Antliae Sector RD-T b3-3
+[2m2026-05-12T10:02:26.878852Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
+[2m2026-05-12T10:02:26.878885Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Hochburg-Carrier
+[2m2026-05-12T10:02:26.878916Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-12T10:02:26.878944Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
+[2m2026-05-12T10:02:26.880522Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m354:[0m Docked at Bujold Relay (market_id=3539844864)
+[2m2026-05-12T10:02:26.883903Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Double Meteor Manufacturing
+[2m2026-05-12T10:02:26.883935Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
+[2m2026-05-12T10:02:26.883964Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
+[2m2026-05-12T10:02:26.883991Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Velazquez Gateway
+[2m2026-05-12T10:02:26.884018Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shepherd Ring
+[2m2026-05-12T10:02:26.884045Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-12T10:02:26.884069Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Secret Cattle Acres
+[2m2026-05-12T10:02:26.884094Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Capital Justice Ministry
+[2m2026-05-12T10:02:26.884251Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m247:[0m FSDJump to Benapem
+[2m2026-05-12T10:02:26.885709Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Double Meteor Manufacturing
+[2m2026-05-12T10:02:26.885739Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
+[2m2026-05-12T10:02:26.885768Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
+[2m2026-05-12T10:02:26.885791Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Velazquez Gateway
+[2m2026-05-12T10:02:26.885819Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shepherd Ring
+[2m2026-05-12T10:02:26.885846Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-12T10:02:26.885871Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Secret Cattle Acres
+[2m2026-05-12T10:02:26.885897Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Capital Justice Ministry
+[2m2026-05-12T10:02:26.887558Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 2
+[2m2026-05-12T10:02:26.887658Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 1
+[2m2026-05-12T10:02:26.887752Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 5
+[2m2026-05-12T10:02:26.887871Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 3
+[2m2026-05-12T10:02:26.887985Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 6
+[2m2026-05-12T10:02:26.888100Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 3 a
+[2m2026-05-12T10:02:26.888158Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem
+[2m2026-05-12T10:02:26.888239Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 4
+[2m2026-05-12T10:02:26.888350Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 7
+[2m2026-05-12T10:02:26.929200Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m605:[0m Loaded 9 bodies from existing files
+[2m2026-05-12T10:02:26.932198Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m733:[0m Journal file changed to: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
+[2m2026-05-12T10:02:26.933842Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to [2600:9000:28c5:cc00:c:bfa0:6b00:93a1]:443
+[2m2026-05-12T10:02:26.934031Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m256:[0m Location: Antliae Sector KM-W c1-6
+[2m2026-05-12T10:02:26.942439Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Mozart Sanctuary
+[2m2026-05-12T10:02:26.942495Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Kopernik Reach
+[2m2026-05-12T10:02:26.942520Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shakespeare Legacy
+[2m2026-05-12T10:02:26.942548Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Fermi Reach
+[2m2026-05-12T10:02:26.942578Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-12T10:02:26.942604Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: H.g.wells Installation
+[2m2026-05-12T10:02:26.942639Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
+[2m2026-05-12T10:02:26.942666Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Archimedes Vision
+[2m2026-05-12T10:02:26.942695Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nimoy Legacy
+[2m2026-05-12T10:02:26.942722Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
+[2m2026-05-12T10:02:26.946023Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m354:[0m Docked at Nimoy Legacy (market_id=4248978179)
+[2m2026-05-12T10:02:26.947834Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m247:[0m FSDJump to Antliae Sector RD-T b3-3
+[2m2026-05-12T10:02:26.949338Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
+[2m2026-05-12T10:02:26.949364Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Hochburg-Carrier
+[2m2026-05-12T10:02:26.949389Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-12T10:02:26.949415Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
+[2m2026-05-12T10:02:26.951238Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m354:[0m Docked at Bujold Relay (market_id=3539844864)
+[2m2026-05-12T10:02:26.952651Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to [2600:9000:28c5:cc00:c:bfa0:6b00:93a1]:443
+[2m2026-05-12T10:02:26.955040Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Double Meteor Manufacturing
+[2m2026-05-12T10:02:26.955067Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
+[2m2026-05-12T10:02:26.955089Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
+[2m2026-05-12T10:02:26.955112Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Velazquez Gateway
+[2m2026-05-12T10:02:26.955133Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shepherd Ring
+[2m2026-05-12T10:02:26.955156Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-12T10:02:26.955177Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Secret Cattle Acres
+[2m2026-05-12T10:02:26.955195Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Capital Justice Ministry
+[2m2026-05-12T10:02:26.955383Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m247:[0m FSDJump to Benapem
+[2m2026-05-12T10:02:26.956811Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Double Meteor Manufacturing
+[2m2026-05-12T10:02:26.956832Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
+[2m2026-05-12T10:02:26.956844Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
+[2m2026-05-12T10:02:26.956858Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Velazquez Gateway
+[2m2026-05-12T10:02:26.956872Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Shepherd Ring
+[2m2026-05-12T10:02:26.956888Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-12T10:02:26.956902Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Secret Cattle Acres
+[2m2026-05-12T10:02:26.956915Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m340:[0m FSSSignalDiscovered: Capital Justice Ministry
+[2m2026-05-12T10:02:26.958476Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 2
+[2m2026-05-12T10:02:26.958573Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 1
+[2m2026-05-12T10:02:26.958652Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 5
+[2m2026-05-12T10:02:26.958755Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 3
+[2m2026-05-12T10:02:26.958852Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 6
+[2m2026-05-12T10:02:26.958975Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 3 a
+[2m2026-05-12T10:02:26.959030Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem
+[2m2026-05-12T10:02:26.959098Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 4
+[2m2026-05-12T10:02:26.959214Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m274:[0m Scan: Benapem 7
+[2m2026-05-12T10:02:27.077032Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", community.elitedangerous.com)
+[2m2026-05-12T10:02:27.158661Z[0m [34mDEBUG[0m [2medcas_client::views::news[0m[2m:[0m [2msrc/views/news.rs[0m[2m:[0m[2m90:[0m Success fetching galnet 15 articles
+[2m2026-05-12T10:02:27.161405Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m436:[0m Entering main application loop
+[2m2026-05-12T10:02:27.161436Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:27.161530Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:27.161565Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:27.161640Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:27.177227Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to 77.90.1.37:443
+[2m2026-05-12T10:02:27.197820Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to 77.90.1.37:443
+[2m2026-05-12T10:02:27.244192Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", edcas.de)
+[2m2026-05-12T10:02:27.396859Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:27.396900Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m373:[0m Tab changed to: System
+[2m2026-05-12T10:02:27.575118Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:27.575176Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m373:[0m Tab changed to: Explorer
+[2m2026-05-12T10:02:27.708325Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:27.708372Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m373:[0m Tab changed to: Mining
+[2m2026-05-12T10:02:27.828001Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:27.828054Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m373:[0m Tab changed to: Inventory
+[2m2026-05-12T10:02:27.959017Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:27.959052Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m373:[0m Tab changed to: Stations
+[2m2026-05-12T10:02:28.522007Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:28.522057Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m373:[0m Tab changed to: Carriers
+[2m2026-05-12T10:02:28.793095Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:28.793137Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m373:[0m Tab changed to: Factions
+[2m2026-05-12T10:02:29.249060Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Enter, modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:29.920471Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('L'), modifiers: KeyModifiers(SHIFT), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:30.061118Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:30.172849Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('g'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:30.366096Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('i'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:30.439093Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('o'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:30.556113Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('n'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:30.729485Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char(' '), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:31.032221Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('L'), modifiers: KeyModifiers(SHIFT), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:31.183147Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('X'), modifiers: KeyModifiers(SHIFT), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:31.489174Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('V'), modifiers: KeyModifiers(SHIFT), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:31.619302Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('I'), modifiers: KeyModifiers(SHIFT), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:31.876164Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Enter, modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:31.879076Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to 77.90.1.37:443
+[2m2026-05-12T10:02:31.896609Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to 77.90.1.37:443
+[2m2026-05-12T10:02:31.953755Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", edcas.de)
+[2m2026-05-12T10:02:34.133638Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Right, modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:34.560240Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:34.560359Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:34.674332Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Left, modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:35.199178Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('d'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:35.510214Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('d'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:35.616934Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:35.617058Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:37.244378Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('c'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:02:40.189020Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:40.189137Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:42.106147Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:42.106302Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:42.639256Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:42.639407Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:43.172150Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:43.172279Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:43.703090Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:43.703250Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:46.151587Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:46.151726Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:48.176900Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:48.177030Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:48.708909Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:48.709120Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:49.241672Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:49.241842Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:50.199441Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:50.199576Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:51.264632Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:51.264772Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:52.224282Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:52.224410Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:53.181141Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:53.181350Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:53.716571Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:53.716699Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:55.741836Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:55.741978Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:58.730915Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:58.731073Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:59.263477Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:59.263745Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:02:59.801652Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:02:59.801782Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:00.227468Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:00.227599Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:02.255486Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:02.255638Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:03.321989Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:03.322175Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:06.838392Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:06.838536Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:07.800577Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:07.800732Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:08.334928Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:08.335059Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:08.868207Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:08.868373Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:12.386394Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:12.386533Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:12.813417Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:12.813561Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:16.333730Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:16.333855Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:17.398079Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:17.398208Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:19.847292Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:19.847440Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:20.379903Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:20.380018Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:21.871951Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:21.872071Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:23.899792Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:23.899963Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:25.393464Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:25.393586Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:28.910939Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:28.911080Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:30.933820Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:30.933958Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:38.499972Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:38.500107Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:39.032460Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:39.032575Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:39.565745Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:39.565887Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:44.042590Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:44.042738Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:46.600338Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:46.600511Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:51.606784Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:51.606897Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:52.138465Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:52.138602Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:54.586716Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:54.586832Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:56.608623Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:56.608770Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:57.671398Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:57.671544Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:03:58.630001Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:03:58.630147Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:01.184316Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:01.184482Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:03.206782Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:03.206929Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:03.633968Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:03.634100Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:06.192846Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:06.192993Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:06.725461Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:06.725587Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:07.684753Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:07.684877Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:08.750568Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:08.750713Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:12.273804Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:12.273935Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:14.729219Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:14.729377Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:19.306148Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:19.306265Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:36.885220Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:36.885336Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:38.910656Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:38.910806Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:43.911620Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:43.911737Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:49.983461Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:49.983585Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:57.544981Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:57.545120Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:04:57.971174Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:04:57.971302Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:03.077786Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:03.077936Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:10.115435Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:10.115659Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:12.565213Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:12.565369Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:13.099116Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:13.099340Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:18.107039Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:18.107185Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:24.716465Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:24.716602Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:27.168463Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:27.168631Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:31.745940Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:31.746159Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:36.760463Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:36.760616Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:41.231767Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:41.231883Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:41.762789Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:41.762906Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:42.293949Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:42.294077Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:42.824769Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:42.824937Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:43.251668Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:43.251819Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:51.876886Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:51.876999Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:53.902328Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:53.902454Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:54.330804Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:54.330921Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:55.823866Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:55.824015Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:56.889383Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:56.889529Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:57.422739Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:57.422900Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:58.382269Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:58.382414Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:05:59.873392Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:05:59.873555Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:04.456843Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:04.456955Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:08.931299Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:08.931431Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:13.937480Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:13.937618Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:17.461902Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:17.462029Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:24.497631Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:24.497740Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:26.522841Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:26.522962Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:35.576437Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:35.576580Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:36.108367Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:36.108523Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:41.117842Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:41.117977Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:42.607441Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:42.607593Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:48.241461Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:48.241583Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:48.668284Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:48.668405Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:49.201587Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:49.201747Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:49.732789Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:49.732912Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:50.158991Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:50.159168Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:54.740555Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:54.740709Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:56.762103Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:56.762227Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:06:57.293228Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:06:57.293353Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:00.811463Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:00.811613Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:02.307471Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:02.307609Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:04.758737Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:04.758853Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:05.822827Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:05.822966Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:10.299108Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:10.299242Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:16.366662Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:16.366788Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:18.921124Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:18.921276Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:29.463495Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:29.463707Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:31.488085Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:31.488218Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:35.964003Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:35.964194Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:41.498739Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:41.498926Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:42.031983Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:42.032122Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:45.015957Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:45.016072Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:50.547822Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:50.547958Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:54.063466Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:54.063624Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:57.149761Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:57.149919Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:57.576269Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:57.576409Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:07:58.107143Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:07:58.107296Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:03.644581Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:03.644716Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:05.670005Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:05.670135Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:06.202177Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:06.202295Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:07.692938Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:07.693057Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:08.652125Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:08.652283Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:09.717695Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:09.717846Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:10.146100Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:10.146229Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:14.720412Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:14.720566Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:19.724105Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:19.724237Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:20.788635Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:20.788789Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:24.305121Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:24.305246Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:27.814314Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:27.814497Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:34.312832Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:34.312952Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:34.843916Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:34.844033Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:35.377831Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:35.378006Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:35.910395Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:35.910548Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:38.891816Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:38.891952Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:08:50.497960Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:08:50.498129Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:09:01.055604Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:09:01.055788Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:09:02.677880Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Down, modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:09:02.886414Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Down, modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:09:03.663904Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:09:03.663953Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m377:[0m Tab changed to: Carriers
+[2m2026-05-12T10:09:05.734844Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:09:05.734895Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m377:[0m Tab changed to: Stations
+[2m2026-05-12T10:09:06.052810Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m445:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T10:09:06.052853Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m377:[0m Tab changed to: Inventory
+[2m2026-05-12T10:09:06.052862Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:09:06.052961Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes
+[2m2026-05-12T10:09:19.093936Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m184:[0m Journal update received: system=Benapem, bodies=9
+[2m2026-05-12T10:09:19.094066Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 9 bodies, 1 tree nodes

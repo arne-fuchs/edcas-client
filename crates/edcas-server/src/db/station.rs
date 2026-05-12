@@ -107,7 +107,16 @@ pub async fn insert_commodities(
             "INSERT INTO commodity_listening
                 (market_id, name, mean_price, buy_price, stock, stock_bracket,
                  sell_price, demand, demand_bracket, journal_id)
-             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
+             VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+             ON CONFLICT (market_id, name) DO UPDATE SET
+                mean_price    = EXCLUDED.mean_price,
+                buy_price     = EXCLUDED.buy_price,
+                stock         = EXCLUDED.stock,
+                stock_bracket = EXCLUDED.stock_bracket,
+                sell_price    = EXCLUDED.sell_price,
+                demand        = EXCLUDED.demand,
+                demand_bracket = EXCLUDED.demand_bracket,
+                journal_id    = EXCLUDED.journal_id",
             &[
                 &event.market_id,
                 &commodity.name,
@@ -145,7 +154,13 @@ pub async fn insert_outfitting(
     for module in &event.modules {
         tx.execute(
             "INSERT INTO modul_listening (market_id, id, category, name, cost, ship, journal_id)
-             VALUES ($1,$2,$3,$4,$5,$6,$7)",
+             VALUES ($1,$2,$3,$4,$5,$6,$7)
+             ON CONFLICT (market_id, id) DO UPDATE SET
+                category   = EXCLUDED.category,
+                name       = EXCLUDED.name,
+                cost       = EXCLUDED.cost,
+                ship       = EXCLUDED.ship,
+                journal_id = EXCLUDED.journal_id",
             &[
                 &event.market_id,
                 &module.id,
@@ -180,7 +195,11 @@ pub async fn insert_shipyard(
     for ship in &event.ships {
         tx.execute(
             "INSERT INTO ship_listening (market_id, id, name, basevalue, journal_id)
-             VALUES ($1,$2,$3,$4,$5)",
+             VALUES ($1,$2,$3,$4,$5)
+             ON CONFLICT (market_id, id) DO UPDATE SET
+                name       = EXCLUDED.name,
+                basevalue  = EXCLUDED.basevalue,
+                journal_id = EXCLUDED.journal_id",
             &[
                 &event.market_id,
                 &ship.id,
