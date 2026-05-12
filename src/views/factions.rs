@@ -7,6 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use std::collections::HashSet;
 
 use crate::api_client::ApiClient;
 use crate::views::ViewEvent;
@@ -53,12 +54,13 @@ pub struct FactionsView {
     search_query: String,
     search_state: SearchState,
     results: Vec<FactionResponse>,
+    pinned_names: HashSet<String>,
+    pinned_results: Vec<FactionResponse>,
     selected_idx: usize,
     selected_system: usize,
     list_scroll: usize,
     detail_scroll: usize,
     status_msg: String,
-    copy_msg: Option<String>,
     focus: FocusArea,
     detail_tab: DetailTab,
     clipboard: Option<arboard::Clipboard>,
@@ -66,22 +68,105 @@ pub struct FactionsView {
 
 impl FactionsView {
     pub fn new() -> Self {
+        let pins = crate::pins::Pins::load();
         Self {
             search_query: String::new(),
             search_state: SearchState::Idle,
             results: Vec::new(),
+            pinned_names: pins.factions,
+            pinned_results: Vec::new(),
             selected_idx: 0,
             selected_system: 0,
             list_scroll: 0,
             detail_scroll: 0,
-            status_msg: "Press Enter to search".into(),
-            copy_msg: None,
+            status_msg: "Press Enter to search  |  p: pin/unpin".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Info,
             // Kept alive for the duration of the view so the X11/Wayland
             // background clipboard-serving thread keeps running after set_text.
             clipboard: arboard::Clipboard::new().ok(),
         }
+    }
+
+    pub fn on_enter(&mut self, api: &ApiClient) {
+        if !self.pinned_names.is_empty() && self.pinned_results.is_empty() {
+            self.refresh_pins(api);
+        }
+    }
+
+    fn refresh_pins(&mut self, api: &ApiClient) {
+        self.pinned_results.clear();
+        let names: Vec<String> = self.pinned_names.iter().cloned().collect();
+        for name in names {
+            let query = FactionQuery { name: Some(name.clone()), limit: Some(10) };
+            if let Ok(results) = api.search_factions(&query) {
+                // The LIKE search may return multiple; find exact match.
+                if let Some(f) = results.into_iter().find(|f| f.name == name) {
+                    self.pinned_results.push(f);
+                }
+            }
+        }
+        self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+    }
+
+    fn save_pins(&self) {
+        let mut pins = crate::pins::Pins::load();
+        pins.factions = self.pinned_names.clone();
+        pins.save();
+    }
+
+    fn display_count(&self) -> usize {
+        let n_search = self.results.iter()
+            .filter(|f| !self.pinned_names.contains(&f.name))
+            .count();
+        self.pinned_results.len() + n_search
+    }
+
+    fn selected_faction(&self) -> Option<&FactionResponse> {
+        let n = self.pinned_results.len();
+        if self.selected_idx < n {
+            self.pinned_results.get(self.selected_idx)
+        } else {
+            let j = self.selected_idx - n;
+            self.results.iter()
+                .filter(|f| !self.pinned_names.contains(&f.name))
+                .nth(j)
+        }
+    }
+
+    fn toggle_pin(&mut self, api: &ApiClient) {
+        let n = self.pinned_results.len();
+        if self.selected_idx < n {
+            // Unpin
+            let name = self.pinned_results[self.selected_idx].name.clone();
+            self.pinned_names.remove(&name);
+            self.pinned_results.remove(self.selected_idx);
+            let total = self.display_count();
+            if total > 0 {
+                self.selected_idx = self.selected_idx.min(total - 1);
+            } else {
+                self.selected_idx = 0;
+            }
+        } else {
+            // Pin
+            let j = self.selected_idx - n;
+            if let Some(faction) = self.results.iter()
+                .filter(|f| !self.pinned_names.contains(&f.name))
+                .nth(j)
+                .cloned()
+            {
+                let name = faction.name.clone();
+                self.pinned_names.insert(name.clone());
+                self.pinned_results.push(faction);
+                self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+                if let Some(pos) = self.pinned_results.iter().position(|f| f.name == name) {
+                    self.selected_idx = pos;
+                }
+            } else if !self.pinned_names.is_empty() {
+                self.refresh_pins(api);
+            }
+        }
+        self.save_pins();
     }
 
     fn do_search(&mut self, api: &ApiClient) {
@@ -116,6 +201,17 @@ impl FactionsView {
         }
     }
 
+    fn visual_row_of_selected(&self) -> usize {
+        let header = 3usize;
+        let n = self.pinned_results.len();
+        let has_separator = n > 0 && !self.results.is_empty();
+        if self.selected_idx < n {
+            header + self.selected_idx
+        } else {
+            header + self.selected_idx + if has_separator { 1 } else { 0 }
+        }
+    }
+
     fn build_list_lines(&self) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
         lines.push(Line::from(vec![
@@ -125,48 +221,61 @@ impl FactionsView {
                 Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
             ),
             Span::styled(
-                match self.search_state {
-                    SearchState::Typing => "_",
-                    SearchState::Idle => "",
-                },
+                match self.search_state { SearchState::Typing => "_", SearchState::Idle => "" },
                 Style::default().fg(Color::Yellow),
             ),
         ]));
-        lines.push(Line::from(Span::styled(
-            self.status_msg.clone(),
-            Style::default().fg(Color::DarkGray),
-        )));
-        if let Some(ref msg) = self.copy_msg {
-            lines.push(Line::from(Span::styled(
-                msg.clone(),
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
-            )));
-        }
+        lines.push(Line::from(Span::styled(self.status_msg.clone(), Style::default().fg(Color::DarkGray))));
         lines.push(Line::from(""));
 
-        if self.results.is_empty() {
+        let n = self.pinned_results.len();
+
+        // Pinned section
+        for (i, faction) in self.pinned_results.iter().enumerate() {
+            let selected = i == self.selected_idx;
+            let style = if selected {
+                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::Yellow)
+            };
+            let sys_label = match faction.presences.len() { 1 => "1 system".to_string(), s => format!("{s} systems") };
+            lines.push(Line::from(Span::styled(
+                format!(" ★ {:<36} {}", faction.name, sys_label),
+                style,
+            )));
+        }
+
+        // Separator + search section
+        let deduped: Vec<&FactionResponse> = self.results.iter()
+            .filter(|f| !self.pinned_names.contains(&f.name))
+            .collect();
+
+        if !deduped.is_empty() && n > 0 {
+            lines.push(Line::from(Span::styled(
+                "─── Search ──────────────────────────────",
+                Style::default().fg(Color::DarkGray),
+            )));
+        } else if deduped.is_empty() && n == 0 {
             lines.push(Line::from("No results."));
             lines.push(Line::from("Press Enter to search."));
             return lines;
         }
 
-        for (i, faction) in self.results.iter().enumerate() {
+        for (j, faction) in deduped.iter().enumerate() {
+            let i = n + j;
             let selected = i == self.selected_idx;
             let style = if selected {
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Rgb(255, 140, 0))
-                    .add_modifier(Modifier::BOLD)
+                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };
-            let systems = faction.presences.len();
-            let sys_label = if systems == 1 { "1 system".to_string() } else { format!("{systems} systems") };
+            let sys_label = match faction.presences.len() { 1 => "1 system".to_string(), s => format!("{s} systems") };
             lines.push(Line::from(Span::styled(
-                format!(" {:<38} {}", faction.name, sys_label),
+                format!("   {:<36} {}", faction.name, sys_label),
                 style,
             )));
         }
+
         lines
     }
 
@@ -187,7 +296,7 @@ impl FactionsView {
 
         let mut lines = vec![Line::from(tab_spans)];
 
-        if let Some(faction) = self.results.get(self.selected_idx) {
+        if let Some(faction) = self.selected_faction() {
             lines.push(Line::from(Span::styled(
                 format!("── {} ──", faction.name),
                 Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
@@ -198,7 +307,7 @@ impl FactionsView {
     }
 
     fn build_detail_body_lines(&self) -> Vec<Line<'static>> {
-        let Some(faction) = self.results.get(self.selected_idx) else {
+        let Some(faction) = self.selected_faction() else {
             return vec![Line::from(Span::styled(
                 "Select a faction from the list.",
                 Style::default().fg(Color::DarkGray),
@@ -247,6 +356,12 @@ impl FactionsView {
                 self.search_state = SearchState::Typing;
                 self.status_msg = "Typing… (Enter to search, Esc to cancel)".into();
             }
+            KeyCode::Char('p') => {
+                if self.display_count() > 0 {
+                    self.toggle_pin(api);
+                }
+                return ViewEvent::Consumed;
+            }
             KeyCode::Char('w') | KeyCode::Up => match self.focus {
                 FocusArea::List => {
                     if self.selected_idx > 0 {
@@ -266,7 +381,7 @@ impl FactionsView {
             },
             KeyCode::Char('s') | KeyCode::Down => match self.focus {
                 FocusArea::List => {
-                    if self.selected_idx + 1 < self.results.len() {
+                    if self.selected_idx + 1 < self.display_count() {
                         self.selected_idx += 1;
                         self.selected_system = 0;
                         self.detail_scroll = 0;
@@ -274,7 +389,7 @@ impl FactionsView {
                     }
                 }
                 FocusArea::Detail if self.detail_tab == DetailTab::Systems => {
-                    let max = self.results.get(self.selected_idx)
+                    let max = self.selected_faction()
                         .map(|f| f.presences.len().saturating_sub(1))
                         .unwrap_or(0);
                     self.selected_system = (self.selected_system + 1).min(max);
@@ -286,14 +401,12 @@ impl FactionsView {
             },
             KeyCode::Char('c') => {
                 if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Systems {
-                    if let Some(faction) = self.results.get(self.selected_idx) {
+                    if let Some(faction) = self.selected_faction() {
                         if let Some(presence) = faction.presences.get(self.selected_system) {
                             let name = presence.system_name.trim().to_string();
-                            self.copy_msg = Some(match self.clipboard.as_mut().map(|cb| cb.set_text(&name)) {
-                                Some(Ok(())) => format!("Copied: {name}"),
-                                Some(Err(e)) => format!("Clipboard error: {e}"),
-                                None => "Clipboard unavailable".to_string(),
-                            });
+                            if let Some(cb) = self.clipboard.as_mut() {
+                                let _ = cb.set_text(&name);
+                            }
                         }
                     }
                     return ViewEvent::Consumed;
@@ -301,7 +414,7 @@ impl FactionsView {
             }
             KeyCode::Char('d') | KeyCode::Right => match self.focus {
                 FocusArea::List => {
-                    if !self.results.is_empty() {
+                    if self.display_count() > 0 {
                         self.focus = FocusArea::Detail;
                         self.detail_scroll = 0;
                     }
@@ -343,13 +456,11 @@ impl FactionsView {
         // ── Left: faction list ───────────────────────────────────
         let list_lines = self.build_list_lines();
         let list_height = chunks[0].height.saturating_sub(2) as usize;
-        // 3 header lines before results
-        let header_lines = 3usize;
-        let list_item_row = self.selected_idx + header_lines;
-        let list_scroll = if list_item_row + 1 >= self.list_scroll + list_height {
-            (list_item_row + 2).saturating_sub(list_height)
-        } else if list_item_row < self.list_scroll + header_lines {
-            list_item_row.saturating_sub(header_lines)
+        let row = self.visual_row_of_selected();
+        let list_scroll = if row + 1 >= self.list_scroll + list_height {
+            (row + 2).saturating_sub(list_height)
+        } else if row < self.list_scroll {
+            row.saturating_sub(1)
         } else {
             self.list_scroll
         };
@@ -687,6 +798,46 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool) -> Ve
                 Span::raw(format!(" {:<29} ", truncate(&p.system_name, 29))),
                 Span::styled(format!("{:>5.1}%", pct), Style::default().fg(inf_color)),
                 Span::raw(format!("  {:<20}  {}", truncate(&active, 20), pending)),
+            ]));
+        }
+
+        // Conflict / war info line
+        if let Some(ref c) = p.conflict {
+            let score_color = if c.our_won_days > c.opponent_won_days {
+                Color::Green
+            } else if c.our_won_days < c.opponent_won_days {
+                Color::Red
+            } else {
+                Color::Yellow
+            };
+            let war_label = match c.war_type.as_str() {
+                "Election" => "Election",
+                "CivilWar" => "Civil War",
+                _ => "War",
+            };
+            let score = format!("{}:{}", c.our_won_days, c.opponent_won_days);
+            let winner = if c.our_won_days > c.opponent_won_days {
+                "Winning"
+            } else if c.our_won_days < c.opponent_won_days {
+                "Losing"
+            } else {
+                "Tied"
+            };
+            lines.push(Line::from(vec![
+                Span::styled(
+                    format!("   ↳ {war_label} vs "),
+                    Style::default().fg(Color::DarkGray),
+                ),
+                Span::styled(
+                    truncate(&c.opponent_name, 28),
+                    Style::default().fg(Color::White),
+                ),
+                Span::styled("  Score: ", Style::default().fg(Color::DarkGray)),
+                Span::styled(score, Style::default().fg(score_color).add_modifier(Modifier::BOLD)),
+                Span::styled(
+                    format!("  ({winner})"),
+                    Style::default().fg(score_color),
+                ),
             ]));
         }
     }

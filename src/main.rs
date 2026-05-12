@@ -35,6 +35,7 @@ use crate::views::{
 mod api_client;
 mod cli;
 mod journal_reader;
+mod pins;
 mod settings;
 mod views;
 
@@ -341,11 +342,13 @@ impl App {
             ViewEvent::NextTab => {
                 self.view = self.view.next();
                 info!("Tab changed to: {}", TABS[self.view.index()]);
+                self.on_tab_enter();
                 return;
             }
             ViewEvent::PrevTab => {
                 self.view = self.view.prev();
                 info!("Tab changed to: {}", TABS[self.view.index()]);
+                self.on_tab_enter();
                 return;
             }
             ViewEvent::SettingsChanged => {
@@ -371,11 +374,22 @@ impl App {
             crossterm::event::KeyCode::Char('e') => {
                 self.view = self.view.next();
                 info!("Tab changed to: {}", TABS[self.view.index()]);
+                self.on_tab_enter();
             }
             crossterm::event::KeyCode::Char('q') => {
                 self.view = self.view.prev();
                 info!("Tab changed to: {}", TABS[self.view.index()]);
+                self.on_tab_enter();
             }
+            _ => {}
+        }
+    }
+
+    fn on_tab_enter(&mut self) {
+        match self.view {
+            AppView::Stations => self.stations.on_enter(&self.api),
+            AppView::Carriers => self.carriers.on_enter(&self.api),
+            AppView::Factions => self.factions.on_enter(&self.api),
             _ => {}
         }
     }

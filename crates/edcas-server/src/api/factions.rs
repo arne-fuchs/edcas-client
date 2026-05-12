@@ -1,5 +1,5 @@
 use deadpool_postgres::Pool;
-use edcas_common::api::{FactionPresence, FactionResponse};
+use edcas_common::api::{ConflictInfo, FactionPresence, FactionResponse};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{get, State};
@@ -93,6 +93,8 @@ async fn fetch_presences(
             }
         }
 
+        let conflict = fetch_conflict(&client, faction_name, saddr).await?;
+
         presences.push(FactionPresence {
             system_address: saddr,
             system_name: row.get("system_name"),
@@ -101,8 +103,47 @@ async fn fetch_presences(
             active_states: active,
             pending_states: pending,
             recovering_states: recovering,
+            conflict,
         });
     }
 
     Ok(presences)
+}
+
+async fn fetch_conflict(
+    client: &tokio_postgres::Client,
+    faction_name: &str,
+    system_address: i64,
+) -> Result<Option<ConflictInfo>, Status> {
+    let rows = client
+        .query(
+            "SELECT wt.value as war_type, c.status,
+                    CASE WHEN c.faction1_name = $1 THEN c.faction1_won_days ELSE c.faction2_won_days END as our_won_days,
+                    CASE WHEN c.faction1_name = $1 THEN c.faction2_won_days ELSE c.faction1_won_days END as opp_won_days,
+                    CASE WHEN c.faction1_name = $1 THEN c.faction2_name    ELSE c.faction1_name    END as opponent_name,
+                    CASE WHEN c.faction1_name = $1 THEN c.faction1_stake   ELSE c.faction2_stake   END as our_stake,
+                    CASE WHEN c.faction1_name = $1 THEN c.faction2_stake   ELSE c.faction1_stake   END as opp_stake
+             FROM conflicts c
+             LEFT JOIN war_type wt ON c.war_type = wt.id
+             WHERE c.system_address = $2
+               AND (c.faction1_name = $1 OR c.faction2_name = $1)
+             LIMIT 1",
+            &[&faction_name, &system_address],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    if let Some(row) = rows.first() {
+        Ok(Some(ConflictInfo {
+            war_type: row.get::<_, Option<String>>("war_type").unwrap_or_default(),
+            status: row.get::<_, Option<String>>("status").unwrap_or_default(),
+            opponent_name: row.get::<_, Option<String>>("opponent_name").unwrap_or_default(),
+            our_won_days: row.get::<_, Option<i32>>("our_won_days").unwrap_or(0),
+            opponent_won_days: row.get::<_, Option<i32>>("opp_won_days").unwrap_or(0),
+            our_stake: row.get("our_stake"),
+            opponent_stake: row.get("opp_stake"),
+        }))
+    } else {
+        Ok(None)
+    }
 }

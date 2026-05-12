@@ -156,6 +156,7 @@ pub struct CarrierQuery {
     pub name: Option<String>,
     pub callsign: Option<String>,
     pub system_name: Option<String>,
+    pub market_id: Option<i64>,
     pub limit: Option<i64>,
 }
 
@@ -178,6 +179,19 @@ pub struct FactionPresence {
     pub active_states: Vec<String>,
     pub pending_states: Vec<String>,
     pub recovering_states: Vec<String>,
+    pub conflict: Option<ConflictInfo>,
+}
+
+/// Conflict data for war-like states (War, CivilWar, Election).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConflictInfo {
+    pub war_type: String,
+    pub status: String,
+    pub opponent_name: String,
+    pub our_won_days: i32,
+    pub opponent_won_days: i32,
+    pub our_stake: Option<String>,
+    pub opponent_stake: Option<String>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
