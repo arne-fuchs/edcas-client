@@ -1,26 +1,59 @@
+use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
 use edcas_common::api::{ConstructionDepotResponse, ConstructionDepotSubmission, ConstructionResourceResponse};
 
-pub async fn upsert_depot(pool: &Pool, submission: &ConstructionDepotSubmission) -> anyhow::Result<()> {
+pub async fn upsert_depot(
+    pool: &Pool,
+    event_timestamp: DateTime<Utc>,
+    submission: &ConstructionDepotSubmission,
+) -> anyhow::Result<()> {
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
+
+    // Skip if existing data is newer.
+    if let Some(row) = tx
+        .query_opt(
+            "SELECT last_updated FROM construction_depots WHERE market_id=$1",
+            &[&submission.market_id],
+        )
+        .await?
+    {
+        let existing: DateTime<Utc> = row.get(0);
+        if existing > event_timestamp {
+            tx.commit().await?;
+            return Ok(());
+        }
+    }
+
+    let station_name = if submission.station_name.is_empty() {
+        // Preserve the existing name if this source doesn't know it.
+        tx.query_opt(
+                "SELECT station_name FROM construction_depots WHERE market_id=$1",
+                &[&submission.market_id],
+            )
+            .await?
+            .map(|r| r.get::<_, String>(0))
+            .unwrap_or_default()
+    } else {
+        submission.station_name.clone()
+    };
 
     tx.execute(
         "INSERT INTO construction_depots
             (market_id, system_address, station_name, progress,
              construction_complete, construction_failed, last_updated)
-         VALUES ($1,$2,$3,$4,$5,$6,NOW())
+         VALUES ($1,$2,$3,$4,$5,$6,$7)
          ON CONFLICT (market_id) DO UPDATE SET
             system_address=$2, station_name=$3, progress=$4,
-            construction_complete=$5, construction_failed=$6,
-            last_updated=NOW()",
+            construction_complete=$5, construction_failed=$6, last_updated=$7",
         &[
             &submission.market_id,
             &submission.system_address,
-            &submission.station_name,
+            &station_name,
             &submission.progress,
             &submission.construction_complete,
             &submission.construction_failed,
+            &event_timestamp,
         ],
     )
     .await?;

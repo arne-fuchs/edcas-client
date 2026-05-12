@@ -1,17 +1,21 @@
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::event_shim::{KeyCode, KeyEvent};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, List, ListItem, Paragraph, Wrap},
+    widgets::{Block, Borders, Gauge, List, ListItem, Paragraph, Wrap},
     Frame,
 };
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::PathBuf;
 use std::str::FromStr;
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::mpsc;
 use tracing::{info, warn, error};
 
-use crate::journal_reader::find_latest_journal_file;
+#[cfg(not(target_arch = "wasm32"))]
+use crate::journal_reader::{find_latest_journal_file, start_bulk_upload, BulkUploadProgress};
 
 use crate::settings::Settings;
 use crate::settings::icons::Icon;
@@ -91,6 +95,10 @@ pub struct SettingsView {
     edit_buffer: String,
     content_scroll: usize,
     focus: FocusArea,
+    #[cfg(not(target_arch = "wasm32"))]
+    bulk_upload_rx: Option<mpsc::Receiver<BulkUploadProgress>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    bulk_upload_progress: Option<BulkUploadProgress>,
 }
 
 enum FocusArea {
@@ -109,6 +117,10 @@ impl SettingsView {
             edit_buffer: String::new(),
             content_scroll: 0,
             focus: FocusArea::Sidebar,
+            #[cfg(not(target_arch = "wasm32"))]
+            bulk_upload_rx: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            bulk_upload_progress: None,
         }
     }
 
@@ -216,9 +228,15 @@ impl SettingsView {
                                 self.toggle_enabled(settings);
                                 return ViewEvent::SettingsChanged;
                             }
-                            CellType::Button(_) => {
+                            CellType::Button("[ Open in default app ]") => {
+                                #[cfg(not(target_arch = "wasm32"))]
                                 self.open_current_log(settings);
                             }
+                            CellType::Button("[ Upload All Journal Logs ]") => {
+                                #[cfg(not(target_arch = "wasm32"))]
+                                self.start_bulk_upload(settings);
+                            }
+                            CellType::Button(_) => {}
                             _ => {}
                         }
                     }
@@ -310,6 +328,12 @@ impl SettingsView {
                     cells: vec![
                         CellType::Label("API URL".to_string()),
                         CellType::StringValue(settings.api_url.clone()),
+                    ],
+                },
+                GridRow {
+                    cells: vec![
+                        CellType::Label("Upload History".to_string()),
+                        CellType::Button("[ Upload All Journal Logs ]"),
                     ],
                 },
             ],
@@ -423,6 +447,43 @@ impl SettingsView {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    fn start_bulk_upload(&mut self, settings: &Settings) {
+        let api_url = settings.api_url.trim().to_string();
+        if api_url.is_empty() {
+            warn!("API URL not configured — cannot upload journal history");
+            return;
+        }
+        let dir = settings.journal_reader.journal_directory.trim().to_string();
+        if dir.is_empty() {
+            warn!("Journal directory not configured");
+            return;
+        }
+        info!("Starting bulk journal upload from: {}", dir);
+        let rx = start_bulk_upload(PathBuf::from(dir), api_url);
+        self.bulk_upload_rx = Some(rx);
+        self.bulk_upload_progress = None;
+    }
+
+    pub fn poll_bulk_upload(&mut self) {
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(ref rx) = self.bulk_upload_rx {
+            // Drain all pending updates, keeping the last one.
+            let mut last = None;
+            while let Ok(p) = rx.try_recv() {
+                last = Some(p);
+            }
+            if let Some(p) = last {
+                let done = p.done || p.error.is_some();
+                self.bulk_upload_progress = Some(p);
+                if done {
+                    self.bulk_upload_rx = None;
+                }
+            }
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
     fn open_current_log(&self, settings: &Settings) {
         let dir = &settings.journal_reader.journal_directory;
         if dir.is_empty() {
@@ -516,6 +577,47 @@ impl SettingsView {
     }
 
     fn render_content(&self, frame: &mut Frame, area: Rect, settings: &Settings) {
+        // Reserve 3 rows at the bottom for the progress bar when uploading.
+        #[cfg(not(target_arch = "wasm32"))]
+        let (content_area, progress_area) = if self.bulk_upload_progress.is_some() {
+            let chunks = Layout::default()
+                .direction(Direction::Vertical)
+                .constraints([Constraint::Min(1), Constraint::Length(3)])
+                .split(area);
+            (chunks[0], Some(chunks[1]))
+        } else {
+            (area, None)
+        };
+        #[cfg(target_arch = "wasm32")]
+        let (content_area, progress_area): (Rect, Option<Rect>) = (area, None);
+
+        #[cfg(not(target_arch = "wasm32"))]
+        if let (Some(area), Some(ref prog)) = (progress_area, &self.bulk_upload_progress) {
+            let ratio = if prog.total_files == 0 {
+                0.0
+            } else {
+                prog.current_file as f64 / prog.total_files as f64
+            };
+            let label = if prog.done {
+                format!("Done — {} files, {} lines uploaded", prog.total_files, prog.lines_done)
+            } else if let Some(ref e) = prog.error {
+                format!("Error: {e}")
+            } else {
+                format!(
+                    "Uploading: file {}/{} — {} lines",
+                    prog.current_file, prog.total_files, prog.lines_done
+                )
+            };
+            let gauge = Gauge::default()
+                .block(Block::default().borders(Borders::ALL))
+                .gauge_style(Style::default().fg(Color::Rgb(255, 140, 0)).bg(Color::DarkGray))
+                .ratio(ratio)
+                .label(label);
+            frame.render_widget(gauge, area);
+        }
+        let _ = progress_area;
+
+        let area = content_area;
         let grid = self.build_grid(settings);
         let mut lines: Vec<Line> = vec![
             Line::from(Span::styled(
@@ -624,17 +726,25 @@ impl SettingsView {
     }
 
     pub fn save_settings(&self, settings: &Settings) {
-        let json = serde_json::to_string_pretty(settings).expect("Failed to serialize settings");
-        let settings_path = std::env::var("HOME")
-            .map(|home| format!("{}/.config/edcas-client/settings.json", home))
-            .unwrap_or_else(|_| "settings.json".to_string());
-
-        if let Some(parent) = std::path::Path::new(&settings_path).parent() {
-            let _ = std::fs::create_dir_all(parent);
+        #[cfg(target_arch = "wasm32")]
+        {
+            settings.save_wasm();
+            return;
         }
-        match std::fs::write(&settings_path, json) {
-            Ok(_) => info!("Settings saved to {}", settings_path),
-            Err(e) => error!("Failed to save settings to {}: {}", settings_path, e),
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let json = serde_json::to_string_pretty(settings).expect("Failed to serialize settings");
+            let settings_path = std::env::var("HOME")
+                .map(|home| format!("{}/.config/edcas-client/settings.json", home))
+                .unwrap_or_else(|_| "settings.json".to_string());
+
+            if let Some(parent) = std::path::Path::new(&settings_path).parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            match std::fs::write(&settings_path, json) {
+                Ok(_) => tracing::info!("Settings saved to {}", settings_path),
+                Err(e) => tracing::error!("Failed to save settings to {}: {}", settings_path, e),
+            }
         }
     }
 }

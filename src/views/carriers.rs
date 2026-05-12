@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::event_shim::{KeyCode, KeyEvent};
 use edcas_common::api::{CarrierQuery, CarrierResponse};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -11,6 +11,9 @@ use std::collections::HashSet;
 
 use crate::api_client::ApiClient;
 use crate::views::ViewEvent;
+
+#[cfg(target_arch = "wasm32")]
+use std::{cell::RefCell, rc::Rc};
 
 enum SearchState {
     Idle,
@@ -70,6 +73,8 @@ pub struct CarriersView {
     status_msg: String,
     focus: FocusArea,
     detail_tab: DetailTab,
+    #[cfg(target_arch = "wasm32")]
+    pending_search: Rc<RefCell<Option<Vec<CarrierResponse>>>>,
 }
 
 impl CarriersView {
@@ -87,15 +92,37 @@ impl CarriersView {
             status_msg: "Press Enter to search  |  p: pin/unpin".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Overview,
+            #[cfg(target_arch = "wasm32")]
+            pending_search: Rc::new(RefCell::new(None)),
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn poll_search(&mut self) {
+        if let Some(results) = self.pending_search.borrow_mut().take() {
+            let count = results.len();
+            self.results = results;
+            self.selected_idx = 0;
+            self.list_scroll = 0;
+            self.detail_scroll = 0;
+            self.focus = FocusArea::List;
+            self.detail_tab = DetailTab::Overview;
+            self.status_msg = if count == 0 {
+                format!("No carriers found for '{}'", self.search_query)
+            } else {
+                format!("{count} carrier(s) found")
+            };
         }
     }
 
     pub fn on_enter(&mut self, api: &ApiClient) {
+        #[cfg(not(target_arch = "wasm32"))]
         if !self.pinned_ids.is_empty() && self.pinned_results.is_empty() {
             self.refresh_pins(api);
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn refresh_pins(&mut self, api: &ApiClient) {
         self.pinned_results.clear();
         let ids: Vec<i64> = self.pinned_ids.iter().copied().collect();
@@ -162,12 +189,14 @@ impl CarriersView {
                     self.selected_idx = pos;
                 }
             } else if !self.pinned_ids.is_empty() {
+                #[cfg(not(target_arch = "wasm32"))]
                 self.refresh_pins(api);
             }
         }
         self.save_pins();
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn do_search(&mut self, api: &ApiClient) {
         if self.search_query.is_empty() {
             self.status_msg = "Enter a search term first".into();
@@ -198,6 +227,28 @@ impl CarriersView {
             }
             Err(e) => { self.status_msg = format!("API error: {e}"); }
         }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn do_search(&mut self, api: &ApiClient) {
+        if self.search_query.is_empty() {
+            self.status_msg = "Enter a search term first".into();
+            return;
+        }
+        self.status_msg = format!("Searching for '{}'…", self.search_query);
+        let pending = Rc::clone(&self.pending_search);
+        let api = api.clone();
+        let query = CarrierQuery {
+            name: Some(self.search_query.clone()),
+            callsign: None,
+            system_name: None,
+            market_id: None,
+            limit: Some(50),
+        };
+        wasm_bindgen_futures::spawn_local(async move {
+            let results = api.search_carriers(query).await;
+            *pending.borrow_mut() = Some(results);
+        });
     }
 
     fn build_list_lines(&self) -> Vec<Line<'static>> {

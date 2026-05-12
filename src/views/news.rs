@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::event_shim::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
@@ -52,56 +52,64 @@ impl NewsView {
     }
 
     fn fetch_articles(&mut self) {
-        let client = reqwest::blocking::Client::new();
-        let response_result = client
-            .get("https://community.elitedangerous.com/en/galnet")
-            .header(
-                "User-Agent",
-                "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0",
-            )
-            .header(
-                "Accept",
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-            )
-            .header("Accept-Language", "en-US,en;q=0.5")
-            .header("Referer", "https://www.duckduckgo.com")
-            .send();
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let client = reqwest::blocking::Client::new();
+            let response_result = client
+                .get("https://community.elitedangerous.com/en/galnet")
+                .header(
+                    "User-Agent",
+                    "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0",
+                )
+                .header(
+                    "Accept",
+                    "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+                )
+                .header("Accept-Language", "en-US,en;q=0.5")
+                .header("Referer", "https://www.duckduckgo.com")
+                .send();
 
-        match response_result {
-            Ok(response) => match response.text() {
-                Ok(html) => {
-                    use select::document::Document;
-                    use select::predicate::{Attr, Name, Predicate};
-                    let document = Document::from(html.as_str());
-                    let mut articles: Vec<Article> = Vec::new();
+            match response_result {
+                Ok(response) => match response.text() {
+                    Ok(html) => {
+                        use select::document::Document;
+                        use select::predicate::{Attr, Name, Predicate};
+                        let document = Document::from(html.as_str());
+                        let mut articles: Vec<Article> = Vec::new();
 
-                    for div_article in document.find(Name("div").and(Attr("class", "article"))) {
-                        if let Some(title_elem) = div_article.find(Name("a")).next() {
-                            let title = title_elem.text();
-                            let mut list = div_article.find(Name("p"));
-                            if let (Some(date_elem), Some(text_elem)) = (list.next(), list.next()) {
-                                let date = date_elem.text();
-                                let text = text_elem.text();
-                                articles.push(Article { title, date, text });
+                        for div_article in document.find(Name("div").and(Attr("class", "article"))) {
+                            if let Some(title_elem) = div_article.find(Name("a")).next() {
+                                let title = title_elem.text();
+                                let mut list = div_article.find(Name("p"));
+                                if let (Some(date_elem), Some(text_elem)) = (list.next(), list.next()) {
+                                    let date = date_elem.text();
+                                    let text = text_elem.text();
+                                    articles.push(Article { title, date, text });
+                                }
                             }
                         }
-                    }
 
-                    tracing::debug!("Success fetching galnet {} articles", articles.len());
-                    self.articles = articles;
-                    self.loading = false;
-                }
+                        tracing::debug!("Success fetching galnet {} articles", articles.len());
+                        self.articles = articles;
+                        self.loading = false;
+                    }
+                    Err(err) => {
+                        tracing::error!("Couldn't parse html site from galnet: {}", err);
+                        self.error = Some(format!("Couldn't parse Galnet page: {}", err));
+                        self.loading = false;
+                    }
+                },
                 Err(err) => {
-                    tracing::error!("Couldn't parse html site from galnet: {}", err);
-                    self.error = Some(format!("Couldn't parse Galnet page: {}", err));
+                    tracing::error!("Couldn't fetch galnet page: {}", err);
+                    self.error = Some(format!("Couldn't fetch Galnet page: {}", err));
                     self.loading = false;
                 }
-            },
-            Err(err) => {
-                tracing::error!("Couldn't fetch galnet page: {}", err);
-                self.error = Some(format!("Couldn't fetch Galnet page: {}", err));
-                self.loading = false;
             }
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            self.loading = false;
+            self.error = Some("Galnet not available in browser build".into());
         }
     }
 

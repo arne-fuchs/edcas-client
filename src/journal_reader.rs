@@ -1,15 +1,23 @@
 use std::collections::HashMap;
+#[cfg(not(target_arch = "wasm32"))]
 use std::fs::{File, OpenOptions};
+#[cfg(not(target_arch = "wasm32"))]
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::{Path, PathBuf};
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::atomic::{AtomicBool, Ordering};
+#[cfg(not(target_arch = "wasm32"))]
 use std::sync::mpsc;
+#[cfg(not(target_arch = "wasm32"))]
 use std::thread;
+#[cfg(not(target_arch = "wasm32"))]
 use std::time::{Duration, SystemTime};
 
 use edcas_common::api::{ConstructionDepotSubmission, ConstructionResourceSubmission};
-use edcas_common::journal::{CarrierJump, ColonisationConstructionDepot, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan};
+use edcas_common::journal::{CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan};
 use tracing::{debug, error, info, warn};
+use serde_json;
 
 #[derive(Clone)]
 pub struct FactionInfo {
@@ -201,6 +209,49 @@ pub struct OnFootInventory {
     pub data: Vec<InventoryItem>,
 }
 
+#[derive(Clone, Default, Debug)]
+pub struct ShipModule {
+    pub slot: String,
+    pub item: String,
+    pub power: f32,
+    pub priority: u8,
+}
+
+#[derive(Clone, Default, Debug)]
+pub struct PilotData {
+    pub name: String,
+    pub credits: i64,
+    pub ship_type: String,
+    pub ship_name: String,
+    pub ship_ident: String,
+    pub fuel_level: f32,
+    pub fuel_capacity: f32,
+    pub game_mode: String,
+    pub horizons: bool,
+    pub odyssey: bool,
+    pub rank_combat: u8,
+    pub rank_trade: u8,
+    pub rank_explore: u8,
+    pub rank_soldier: u8,
+    pub rank_exobiologist: u8,
+    pub rank_empire: u8,
+    pub rank_federation: u8,
+    pub rank_cqc: u8,
+    pub progress_combat: u8,
+    pub progress_trade: u8,
+    pub progress_explore: u8,
+    pub progress_soldier: u8,
+    pub progress_exobiologist: u8,
+    pub progress_empire: u8,
+    pub progress_federation: u8,
+    pub progress_cqc: u8,
+    pub reputation_empire: f32,
+    pub reputation_federation: f32,
+    pub reputation_alliance: f32,
+    pub power: String,
+    pub power_merits: i64,
+}
+
 /// A construction depot the player has visited, ready to submit to the server.
 #[derive(Clone)]
 pub struct ConstructionDepotData {
@@ -230,6 +281,8 @@ pub struct JournalData {
     pub cargo: Vec<CargoItem>,
     pub backpack: OnFootInventory,
     pub shiplocker: OnFootInventory,
+    pub modules: Vec<ShipModule>,
+    pub pilot: PilotData,
     /// Most recently visited construction depots, keyed by market_id.
     pub construction_depots: HashMap<i64, ConstructionDepotData>,
     /// (market_id, station_name, system_name) of the last Docked event.
@@ -251,6 +304,8 @@ impl JournalData {
             cargo: Vec::new(),
             backpack: OnFootInventory::default(),
             shiplocker: OnFootInventory::default(),
+            modules: Vec::new(),
+            pilot: PilotData::default(),
             construction_depots: HashMap::new(),
             last_docked: None,
         }
@@ -366,12 +421,64 @@ impl JournalData {
                 self.discovered_signals.push(DiscoveredSignal::from_event(&e));
             }
             None => {
-                // Check for events not in the typed enum (Materials)
+                // Handle events not in the typed enum
+                #[cfg(not(target_arch = "wasm32"))]
                 if let Ok(v) = serde_json::from_str::<serde_json::Value>(trimmed) {
-                    if v.get("event").and_then(|e| e.as_str()) == Some("Materials") {
-                        self.materials_raw = parse_inventory_array(&v["Raw"]);
-                        self.materials_manufactured = parse_inventory_array(&v["Manufactured"]);
-                        self.materials_encoded = parse_inventory_array(&v["Encoded"]);
+                    match v.get("event").and_then(|e| e.as_str()) {
+                        Some("Materials") => {
+                            self.materials_raw = parse_inventory_array(&v["Raw"]);
+                            self.materials_manufactured = parse_inventory_array(&v["Manufactured"]);
+                            self.materials_encoded = parse_inventory_array(&v["Encoded"]);
+                        }
+                        Some("Commander") => {
+                            self.pilot.name = v["Name"].as_str().unwrap_or("").to_string();
+                        }
+                        Some("LoadGame") => {
+                            if let Some(name) = v["Commander"].as_str() {
+                                if !name.is_empty() { self.pilot.name = name.to_string(); }
+                            }
+                            self.pilot.credits = v["Credits"].as_i64().unwrap_or(0);
+                            self.pilot.ship_type = v["Ship_Localised"].as_str()
+                                .or_else(|| v["Ship"].as_str())
+                                .unwrap_or("").to_string();
+                            self.pilot.ship_name = v["ShipName"].as_str().unwrap_or("").to_string();
+                            self.pilot.ship_ident = v["ShipIdent"].as_str().unwrap_or("").to_string();
+                            self.pilot.fuel_level = v["FuelLevel"].as_f64().unwrap_or(0.0) as f32;
+                            self.pilot.fuel_capacity = v["FuelCapacity"].as_f64().unwrap_or(0.0) as f32;
+                            self.pilot.game_mode = v["GameMode"].as_str().unwrap_or("").to_string();
+                            self.pilot.horizons = v["Horizons"].as_bool().unwrap_or(false);
+                            self.pilot.odyssey = v["Odyssey"].as_bool().unwrap_or(false);
+                        }
+                        Some("Rank") => {
+                            self.pilot.rank_combat = v["Combat"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.rank_trade = v["Trade"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.rank_explore = v["Explore"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.rank_soldier = v["Soldier"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.rank_exobiologist = v["Exobiologist"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.rank_empire = v["Empire"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.rank_federation = v["Federation"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.rank_cqc = v["CQC"].as_u64().unwrap_or(0) as u8;
+                        }
+                        Some("Progress") => {
+                            self.pilot.progress_combat = v["Combat"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.progress_trade = v["Trade"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.progress_explore = v["Explore"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.progress_soldier = v["Soldier"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.progress_exobiologist = v["Exobiologist"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.progress_empire = v["Empire"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.progress_federation = v["Federation"].as_u64().unwrap_or(0) as u8;
+                            self.pilot.progress_cqc = v["CQC"].as_u64().unwrap_or(0) as u8;
+                        }
+                        Some("Reputation") => {
+                            self.pilot.reputation_empire = v["Empire"].as_f64().unwrap_or(0.0) as f32;
+                            self.pilot.reputation_federation = v["Federation"].as_f64().unwrap_or(0.0) as f32;
+                            self.pilot.reputation_alliance = v["Alliance"].as_f64().unwrap_or(0.0) as f32;
+                        }
+                        Some("Powerplay") => {
+                            self.pilot.power = v["Power"].as_str().unwrap_or("").to_string();
+                            self.pilot.power_merits = v["Merits"].as_i64().unwrap_or(0);
+                        }
+                        _ => {}
                     }
                 }
             }
@@ -636,18 +743,51 @@ fn body_from_scan(e: &Scan) -> BodyScan {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+#[derive(Clone, Debug)]
+pub struct BulkUploadProgress {
+    pub current_file: usize,
+    pub total_files: usize,
+    pub lines_done: u64,
+    pub done: bool,
+    pub error: Option<String>,
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 pub struct JournalReader {
     handle: Option<thread::JoinHandle<()>>,
     should_stop: std::sync::Arc<AtomicBool>,
     receiver: mpsc::Receiver<JournalData>,
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 impl JournalReader {
-    pub fn start(journal_dir: PathBuf) -> Self {
+    pub fn start(journal_dir: PathBuf, api_url: Option<String>) -> Self {
         info!("Initializing journal reader for: {}", journal_dir.display());
         let (tx, rx) = mpsc::channel();
         let should_stop = std::sync::Arc::new(AtomicBool::new(false));
         let stop_flag = should_stop.clone();
+
+        let upload_tx_opt = api_url.filter(|u| !u.is_empty()).map(|url| {
+            let (upload_tx, upload_rx) = mpsc::channel::<String>();
+            thread::spawn(move || {
+                let client = reqwest::blocking::Client::builder()
+                    .timeout(Duration::from_secs(5))
+                    .build()
+                    .unwrap();
+                let endpoint = format!("{}/api/v1/journal/event", url);
+                for raw_line in upload_rx {
+                    if let Ok(message) = serde_json::from_str::<serde_json::Value>(&raw_line) {
+                        let wrapper = serde_json::json!({
+                            "$schemaRef": "edcas-client-upload/v1",
+                            "message": message
+                        });
+                        let _ = client.post(&endpoint).json(&wrapper).send();
+                    }
+                }
+            });
+            upload_tx
+        });
 
         let handle = thread::spawn(move || {
             let mut journal_data = JournalData::new();
@@ -657,10 +797,11 @@ impl JournalReader {
             load_cargo_file(&journal_dir.join("Cargo.json"), &mut journal_data);
             journal_data.backpack = load_onfoot_file(&journal_dir.join("Backpack.json"));
             journal_data.shiplocker = load_onfoot_file(&journal_dir.join("ShipLocker.json"));
+            load_modules_file(&journal_dir.join("ModulesInfo.json"), &mut journal_data);
             info!("Loaded {} bodies from existing files", journal_data.bodies.len());
             let _ = tx.send(journal_data.clone());
 
-            watch_latest_file(&journal_dir, &mut journal_data, &tx, &stop_flag);
+            watch_latest_file(&journal_dir, &mut journal_data, &tx, &stop_flag, &upload_tx_opt);
         });
 
         Self {
@@ -682,18 +823,125 @@ impl JournalReader {
         }
     }
 
-    pub fn restart(&mut self, journal_dir: PathBuf) {
+    pub fn restart(&mut self, journal_dir: PathBuf, api_url: Option<String>) {
         self.stop();
-        *self = Self::start(journal_dir);
+        *self = Self::start(journal_dir, api_url);
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+/// Starts a background thread that uploads all journal files (oldest first) to the server.
+/// Returns a receiver that yields progress updates.
+pub fn start_bulk_upload(
+    journal_dir: PathBuf,
+    api_url: String,
+) -> mpsc::Receiver<BulkUploadProgress> {
+    let (progress_tx, progress_rx) = mpsc::channel();
+    thread::spawn(move || {
+        let mut files = find_all_journal_files(&journal_dir);
+        files.reverse(); // oldest first
+        let total = files.len();
+        if total == 0 {
+            let _ = progress_tx.send(BulkUploadProgress {
+                current_file: 0,
+                total_files: 0,
+                lines_done: 0,
+                done: true,
+                error: Some("No journal files found".into()),
+            });
+            return;
+        }
+
+        let client = match reqwest::blocking::Client::builder()
+            .timeout(Duration::from_secs(10))
+            .build()
+        {
+            Ok(c) => c,
+            Err(e) => {
+                let _ = progress_tx.send(BulkUploadProgress {
+                    current_file: 0,
+                    total_files: total,
+                    lines_done: 0,
+                    done: true,
+                    error: Some(format!("Failed to create HTTP client: {e}")),
+                });
+                return;
+            }
+        };
+        let endpoint = format!("{}/api/v1/journal/event", api_url);
+        info!("Starting single-event upload to {}", endpoint);
+        let mut lines_done: u64 = 0;
+        let mut send_errors: u64 = 0;
+
+        for (i, file) in files.iter().enumerate() {
+            if let Ok(content) = std::fs::read_to_string(file) {
+                for line in content.lines() {
+                    let trimmed = line.trim();
+                    if trimmed.is_empty() {
+                        continue;
+                    }
+                    // Skip events over 64 KB — these are large inventory snapshots
+                    // (ShipLocker, Backpack, NavRoute) that have no server handler.
+                    if trimmed.len() > 65_536 {
+                        continue;
+                    }
+                    if let Ok(message) = serde_json::from_str::<serde_json::Value>(trimmed) {
+                        let event_type = message.get("event")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("unknown")
+                            .to_string();
+                        let body = serde_json::json!({
+                            "$schemaRef": "edcas-client-upload/v1",
+                            "message": message
+                        });
+                        let result = client.post(&endpoint).json(&body).send();
+                        // On transport error, retry once — stale keep-alive connections
+                        // get closed by nginx between requests.
+                        let result = match result {
+                            Err(ref e) if e.is_request() || e.is_connect() => {
+                                client.post(&endpoint).json(&body).send()
+                            }
+                            other => other,
+                        };
+                        match result {
+                            Err(e) => {
+                                error!("Send failed ({event_type}): {e:#}");
+                                send_errors += 1;
+                            }
+                            Ok(r) if !r.status().is_success() && r.status().as_u16() != 204 => {
+                                error!("Send failed ({event_type}): HTTP {}", r.status());
+                                send_errors += 1;
+                            }
+                            Ok(_) => {}
+                        }
+                        lines_done += 1;
+                    }
+                }
+            }
+            let _ = progress_tx.send(BulkUploadProgress {
+                current_file: i + 1,
+                total_files: total,
+                lines_done,
+                done: i + 1 == total,
+                error: if send_errors > 0 {
+                    Some(format!("{send_errors} send error(s) — check log for details"))
+                } else {
+                    None
+                },
+            });
+        }
+    });
+    progress_rx
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 impl Drop for JournalReader {
     fn drop(&mut self) {
         self.should_stop.store(true, Ordering::SeqCst);
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn parse_inventory_array(arr: &serde_json::Value) -> Vec<InventoryItem> {
     arr.as_array()
         .map(|items| {
@@ -710,6 +958,7 @@ fn parse_inventory_array(arr: &serde_json::Value) -> Vec<InventoryItem> {
         .unwrap_or_default()
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn load_cargo_file(path: &Path, data: &mut JournalData) {
     let Ok(content) = std::fs::read_to_string(path) else { return };
     let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) else { return };
@@ -727,6 +976,20 @@ fn load_cargo_file(path: &Path, data: &mut JournalData) {
         .unwrap_or_default();
 }
 
+#[cfg(not(target_arch = "wasm32"))]
+fn load_modules_file(path: &Path, data: &mut JournalData) {
+    let Ok(text) = std::fs::read_to_string(path) else { return };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else { return };
+    let Some(arr) = v["Modules"].as_array() else { return };
+    data.modules = arr.iter().map(|m| ShipModule {
+        slot:     m["Slot"].as_str().unwrap_or("").to_string(),
+        item:     m["Item"].as_str().unwrap_or("").to_string(),
+        power:    m["Power"].as_f64().unwrap_or(0.0) as f32,
+        priority: m["Priority"].as_u64().unwrap_or(0) as u8,
+    }).collect();
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn load_onfoot_file(path: &Path) -> OnFootInventory {
     let Ok(content) = std::fs::read_to_string(path) else { return OnFootInventory::default() };
     let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) else { return OnFootInventory::default() };
@@ -738,6 +1001,7 @@ fn load_onfoot_file(path: &Path) -> OnFootInventory {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn load_existing_files(dir: &Path, data: &mut JournalData) {
     if !dir.exists() || !dir.is_dir() {
         warn!("Journal directory does not exist: {}", dir.display());
@@ -762,17 +1026,20 @@ fn load_existing_files(dir: &Path, data: &mut JournalData) {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn watch_latest_file(
     dir: &Path,
     data: &mut JournalData,
     tx: &mpsc::Sender<JournalData>,
     stop_flag: &AtomicBool,
+    upload_tx: &Option<mpsc::Sender<String>>,
 ) {
     let mut last_file: Option<PathBuf> = None;
     let mut last_position: u64 = 0;
     let mut last_cargo_mtime: Option<SystemTime> = None;
     let mut last_backpack_mtime: Option<SystemTime> = None;
     let mut last_shiplocker_mtime: Option<SystemTime> = None;
+    let mut last_modules_mtime: Option<SystemTime> = None;
 
     loop {
         if stop_flag.load(Ordering::SeqCst) {
@@ -802,6 +1069,9 @@ fn watch_latest_file(
                             let trimmed = line.trim().to_owned();
                             if !trimmed.is_empty() {
                                 data.process_line(&trimmed);
+                                if let Some(ref up_tx) = upload_tx {
+                                    let _ = up_tx.send(trimmed);
+                                }
                                 changed = true;
                             }
                         }
@@ -839,6 +1109,15 @@ fn watch_latest_file(
             }
         }
 
+        let modules_path = dir.join("ModulesInfo.json");
+        if let Ok(mtime) = modules_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_modules_mtime {
+                last_modules_mtime = Some(mtime);
+                load_modules_file(&modules_path, data);
+                changed = true;
+            }
+        }
+
         if changed {
             let _ = tx.send(data.clone());
         }
@@ -847,6 +1126,7 @@ fn watch_latest_file(
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn read_file_lines(path: &Path, data: &mut JournalData) {
     match File::open(path) {
         Ok(file) => {
@@ -859,6 +1139,7 @@ fn read_file_lines(path: &Path, data: &mut JournalData) {
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn find_all_journal_files(dir: &Path) -> Vec<PathBuf> {
     let Ok(read_dir) = std::fs::read_dir(dir) else {
         return Vec::new();
@@ -880,10 +1161,12 @@ pub fn find_all_journal_files(dir: &Path) -> Vec<PathBuf> {
     files.into_iter().map(|(path, _)| path).collect()
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 pub fn find_latest_journal_file(dir: &Path) -> Option<PathBuf> {
     find_all_journal_files(dir).into_iter().next()
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn load_previous_scans_for_system(path: &Path, system_address: i64, data: &mut JournalData) {
     let file = match File::open(path) {
         Ok(f) => f,
@@ -989,6 +1272,7 @@ fn load_previous_scans_for_system(path: &Path, system_address: i64, data: &mut J
     }
 }
 
+#[cfg(not(target_arch = "wasm32"))]
 fn parse_journal_timestamp(filename: &str) -> Option<u64> {
     // Journal.YYYY-MM-DDTHHMMSS.NN.log
     let parts: Vec<&str> = filename.split('.').collect();

@@ -1,9 +1,15 @@
+use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
 use edcas_common::journal::{CarrierJump, FsdJump, Location};
 
 use super::tables::lookup_or_insert;
 
-pub async fn insert_fsd_jump(pool: &Pool, journal_id: i64, event: &FsdJump) -> anyhow::Result<()> {
+pub async fn insert_fsd_jump(
+    pool: &Pool,
+    journal_id: i64,
+    event_timestamp: DateTime<Utc>,
+    event: &FsdJump,
+) -> anyhow::Result<()> {
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
 
@@ -33,17 +39,19 @@ pub async fn insert_fsd_jump(pool: &Pool, journal_id: i64, event: &FsdJump) -> a
     tx.execute(
         "INSERT INTO star_systems
             (system_address, name, x, y, z, allegiance, economy, second_economy, government,
-             security, population, controlling_power, journal_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+             security, population, controlling_power, journal_id, event_timestamp)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
          ON CONFLICT (system_address) DO UPDATE SET
             name=$2, x=$3, y=$4, z=$5, allegiance=$6, economy=$7, second_economy=$8,
-            government=$9, security=$10, population=$11, controlling_power=$12, journal_id=$13",
+            government=$9, security=$10, population=$11, controlling_power=$12,
+            journal_id=$13, event_timestamp=$14
+         WHERE EXCLUDED.event_timestamp >= star_systems.event_timestamp",
         &[
             &event.system_address,
             &event.star_system,
             &x, &y, &z,
             &allegiance, &economy, &second_economy, &government, &security,
-            &event.population, &controlling_power, &journal_id,
+            &event.population, &controlling_power, &journal_id, &event_timestamp,
         ],
     )
     .await?;
@@ -78,7 +86,12 @@ pub async fn insert_fsd_jump(pool: &Pool, journal_id: i64, event: &FsdJump) -> a
     Ok(())
 }
 
-pub async fn insert_location(pool: &Pool, journal_id: i64, event: &Location) -> anyhow::Result<()> {
+pub async fn insert_location(
+    pool: &Pool,
+    journal_id: i64,
+    event_timestamp: DateTime<Utc>,
+    event: &Location,
+) -> anyhow::Result<()> {
     let fsdjump_like = FsdJump {
         timestamp: event.timestamp.clone(),
         star_system: event.star_system.clone(),
@@ -105,7 +118,7 @@ pub async fn insert_location(pool: &Pool, journal_id: i64, event: &Location) -> 
         horizons: event.horizons,
         odyssey: event.odyssey,
     };
-    insert_fsd_jump(pool, journal_id, &fsdjump_like).await?;
+    insert_fsd_jump(pool, journal_id, event_timestamp, &fsdjump_like).await?;
 
     if event.docked {
         if let (Some(market_id), Some(station_name), Some(station_type)) =
@@ -132,14 +145,19 @@ pub async fn insert_location(pool: &Pool, journal_id: i64, event: &Location) -> 
                 horizons: event.horizons,
                 odyssey: event.odyssey,
             };
-            super::station::insert_docked(pool, journal_id, &docked).await?;
+            super::station::insert_docked(pool, journal_id, event_timestamp, &docked).await?;
         }
     }
 
     Ok(())
 }
 
-pub async fn insert_carrier_jump(pool: &Pool, journal_id: i64, event: &CarrierJump) -> anyhow::Result<()> {
+pub async fn insert_carrier_jump(
+    pool: &Pool,
+    journal_id: i64,
+    event_timestamp: DateTime<Utc>,
+    event: &CarrierJump,
+) -> anyhow::Result<()> {
     let fsdjump_like = FsdJump {
         timestamp: event.timestamp.clone(),
         star_system: event.star_system.clone(),
@@ -166,9 +184,8 @@ pub async fn insert_carrier_jump(pool: &Pool, journal_id: i64, event: &CarrierJu
         horizons: event.horizons,
         odyssey: event.odyssey,
     };
-    insert_fsd_jump(pool, journal_id, &fsdjump_like).await?;
+    insert_fsd_jump(pool, journal_id, event_timestamp, &fsdjump_like).await?;
 
-    // Insert station record for the carrier itself
     if let (Some(market_id), Some(station_name), Some(station_type)) =
         (event.market_id, &event.station_name, &event.station_type)
     {
@@ -193,7 +210,7 @@ pub async fn insert_carrier_jump(pool: &Pool, journal_id: i64, event: &CarrierJu
             horizons: event.horizons,
             odyssey: event.odyssey,
         };
-        super::station::insert_docked(pool, journal_id, &docked).await?;
+        super::station::insert_docked(pool, journal_id, event_timestamp, &docked).await?;
     }
 
     Ok(())

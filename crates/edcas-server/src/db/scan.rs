@@ -1,17 +1,28 @@
+use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
 use edcas_common::journal::{FssBodySignals, SaaSignalsFound, Scan};
 
 use super::tables::lookup_or_insert;
 
-pub async fn insert_scan(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Result<()> {
+pub async fn insert_scan(
+    pool: &Pool,
+    journal_id: i64,
+    event_timestamp: DateTime<Utc>,
+    event: &Scan,
+) -> anyhow::Result<()> {
     if event.is_star() {
-        insert_star(pool, journal_id, event).await
+        insert_star(pool, journal_id, event_timestamp, event).await
     } else {
-        insert_body(pool, journal_id, event).await
+        insert_body(pool, journal_id, event_timestamp, event).await
     }
 }
 
-async fn insert_star(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Result<()> {
+async fn insert_star(
+    pool: &Pool,
+    journal_id: i64,
+    event_timestamp: DateTime<Utc>,
+    event: &Scan,
+) -> anyhow::Result<()> {
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
 
@@ -26,11 +37,12 @@ async fn insert_star(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Resu
     tx.execute(
         "INSERT INTO star
             (id, system_address, name, stellar_mass, radius, surface_temperature,
-             star_type, luminosity, age_my, journal_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+             star_type, luminosity, age_my, journal_id, event_timestamp)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
          ON CONFLICT ON CONSTRAINT star_pkey DO UPDATE SET
             stellar_mass=$4, radius=$5, surface_temperature=$6,
-            star_type=$7, luminosity=$8, age_my=$9, journal_id=$10",
+            star_type=$7, luminosity=$8, age_my=$9, journal_id=$10, event_timestamp=$11
+         WHERE EXCLUDED.event_timestamp >= star.event_timestamp",
         &[
             &event.body_id,
             &event.system_address,
@@ -42,6 +54,7 @@ async fn insert_star(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Resu
             &event.luminosity,
             &event.age_my,
             &journal_id,
+            &event_timestamp,
         ],
     )
     .await?;
@@ -75,7 +88,12 @@ async fn insert_star(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Resu
     Ok(())
 }
 
-async fn insert_body(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Result<()> {
+async fn insert_body(
+    pool: &Pool,
+    journal_id: i64,
+    event_timestamp: DateTime<Utc>,
+    event: &Scan,
+) -> anyhow::Result<()> {
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
 
@@ -121,15 +139,16 @@ async fn insert_body(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Resu
              tidal_lock, volcanism, mapped, atmosphere, mean_anomaly, planet_class,
              eccentricity, ascending_node, orbital_period, semi_major_axis, atmosphere_type,
              rotation_period, surface_gravity, terraform_state, surface_pressure,
-             orbital_inclination, surface_temperature, distance, journal_id)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27)
+             orbital_inclination, surface_temperature, distance, journal_id, event_timestamp)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24,$25,$26,$27,$28)
          ON CONFLICT ON CONSTRAINT body_pkey DO UPDATE SET
             mass_em=$4, radius=$5, landable=$6, axial_tilt=$7, periapsis=$8, tidal_lock=$9,
             volcanism=$10, mapped=$11, atmosphere=$12, mean_anomaly=$13, planet_class=$14,
             eccentricity=$15, ascending_node=$16, orbital_period=$17, semi_major_axis=$18,
             atmosphere_type=$19, rotation_period=$20, surface_gravity=$21, terraform_state=$22,
             surface_pressure=$23, orbital_inclination=$24, surface_temperature=$25,
-            distance=$26, journal_id=$27",
+            distance=$26, journal_id=$27, event_timestamp=$28
+         WHERE EXCLUDED.event_timestamp >= body.event_timestamp",
         &[
             &event.body_id,
             &event.system_address,
@@ -158,6 +177,7 @@ async fn insert_body(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Resu
             &event.surface_temperature,
             &event.distance_from_arrival_ls,
             &journal_id,
+            &event_timestamp,
         ],
     )
     .await?;

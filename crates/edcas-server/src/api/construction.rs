@@ -1,3 +1,4 @@
+use chrono::Utc;
 use deadpool_postgres::Pool;
 use edcas_common::api::{ConstructionDepotResponse, ConstructionDepotSubmission};
 use rocket::http::Status;
@@ -26,7 +27,7 @@ pub async fn submit_construction_depot(
     pool: &State<Pool>,
     submission: Json<ConstructionDepotSubmission>,
 ) -> Result<Status, Status> {
-    db::construction::upsert_depot(pool, &submission)
+    db::construction::upsert_depot(pool, Utc::now(), &submission)
         .await
         .map(|_| Status::NoContent)
         .map_err(|_| Status::InternalServerError)

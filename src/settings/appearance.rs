@@ -6,6 +6,12 @@ pub struct AppearanceSettings {
     pub color: String,
 }
 
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        Self { color: default_color() }
+    }
+}
+
 fn default_color() -> String {
     "orange".to_string()
 }

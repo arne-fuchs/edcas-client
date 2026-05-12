@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+use crate::event_shim::{KeyCode, KeyEvent, KeyModifiers};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -8,12 +8,15 @@ use ratatui::{
 };
 use std::collections::HashSet;
 
-use edcas_common::api::{ConstructionDepotResponse, ConstructionQuery, ConstructionResourceResponse};
+use edcas_common::api::{ConstructionDepotResponse, ConstructionQuery};
 
 use crate::api_client::ApiClient;
 use crate::journal_reader::JournalData;
 use crate::pins::Pins;
 use crate::views::ViewEvent;
+
+#[cfg(target_arch = "wasm32")]
+use std::{cell::RefCell, rc::Rc};
 
 enum FocusArea {
     List,
@@ -30,6 +33,8 @@ pub struct ConstructionView {
     scroll_offset: usize,
     detail_scroll: usize,
     focus: FocusArea,
+    #[cfg(target_arch = "wasm32")]
+    pending_search: Rc<RefCell<Option<Vec<ConstructionDepotResponse>>>>,
 }
 
 impl ConstructionView {
@@ -45,13 +50,26 @@ impl ConstructionView {
             scroll_offset: 0,
             detail_scroll: 0,
             focus: FocusArea::List,
+            #[cfg(target_arch = "wasm32")]
+            pending_search: Rc::new(RefCell::new(None)),
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn poll_search(&mut self) {
+        if let Some(results) = self.pending_search.borrow_mut().take() {
+            self.results = results;
+            self.selected_idx = 0;
+            self.scroll_offset = 0;
         }
     }
 
     pub fn on_enter(&mut self, api: &ApiClient) {
+        #[cfg(not(target_arch = "wasm32"))]
         self.refresh_pins(api);
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn refresh_pins(&mut self, api: &ApiClient) {
         self.pinned_results.clear();
         for &mid in &self.pinned_ids.clone() {
@@ -74,6 +92,7 @@ impl ConstructionView {
         pins.save();
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn toggle_pin(&mut self, api: &ApiClient) {
         if let Some(depot) = self.selected_item() {
             let mid = depot.market_id;
@@ -82,10 +101,7 @@ impl ConstructionView {
                 self.pinned_results.retain(|d| d.market_id != mid);
             } else {
                 self.pinned_ids.insert(mid);
-                let query = ConstructionQuery {
-                    market_id: Some(mid),
-                    ..Default::default()
-                };
+                let query = ConstructionQuery { market_id: Some(mid), ..Default::default() };
                 if let Ok(mut res) = api.search_construction_depots(&query) {
                     if let Some(d) = res.pop() {
                         self.pinned_results.push(d);
@@ -97,17 +113,32 @@ impl ConstructionView {
         }
     }
 
+    #[cfg(target_arch = "wasm32")]
+    fn toggle_pin(&mut self, _api: &ApiClient) {
+        if let Some(depot) = self.selected_item() {
+            let mid = depot.market_id;
+            if self.pinned_ids.contains(&mid) {
+                self.pinned_ids.remove(&mid);
+                self.pinned_results.retain(|d| d.market_id != mid);
+            } else {
+                self.pinned_ids.insert(mid);
+            }
+            self.save_pins();
+        }
+    }
+
     /// Pin a depot from local journal data (when docked at one).
     pub fn pin_local_depot(
         &mut self,
         api: &ApiClient,
         journal: &JournalData,
     ) {
-        // Submit to server first so it's searchable by others
-        for depot in journal.construction_depots.values() {
-            let _ = api.submit_construction_depot(&depot.submission);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            for depot in journal.construction_depots.values() {
+                let _ = api.submit_construction_depot(&depot.submission);
+            }
         }
-        // Pin all locally-known depots
         for depot in journal.construction_depots.values() {
             let mid = depot.submission.market_id;
             if !self.pinned_ids.contains(&mid) {
@@ -115,6 +146,7 @@ impl ConstructionView {
             }
         }
         self.save_pins();
+        #[cfg(not(target_arch = "wasm32"))]
         self.refresh_pins(api);
     }
 
@@ -160,23 +192,39 @@ impl ConstructionView {
         self.selected_idx
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn do_search(&mut self, api: &ApiClient) {
         if self.search_input.trim().is_empty() && self.pinned_ids.is_empty() {
             self.results.clear();
             return;
         }
         let query = ConstructionQuery {
-            name: if self.search_input.trim().is_empty() {
-                None
-            } else {
-                Some(self.search_input.trim().to_string())
-            },
+            name: if self.search_input.trim().is_empty() { None } else { Some(self.search_input.trim().to_string()) },
             limit: Some(50),
             ..Default::default()
         };
         self.results = api.search_construction_depots(&query).unwrap_or_default();
         self.selected_idx = 0;
         self.scroll_offset = 0;
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn do_search(&mut self, api: &ApiClient) {
+        if self.search_input.trim().is_empty() && self.pinned_ids.is_empty() {
+            self.results.clear();
+            return;
+        }
+        let pending = Rc::clone(&self.pending_search);
+        let api = api.clone();
+        let query = ConstructionQuery {
+            name: if self.search_input.trim().is_empty() { None } else { Some(self.search_input.trim().to_string()) },
+            limit: Some(50),
+            ..Default::default()
+        };
+        wasm_bindgen_futures::spawn_local(async move {
+            let results = api.search_construction_depots(query).await;
+            *pending.borrow_mut() = Some(results);
+        });
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData) -> ViewEvent {

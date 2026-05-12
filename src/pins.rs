@@ -1,6 +1,5 @@
 use serde::{Deserialize, Serialize};
 use std::collections::HashSet;
-use std::path::PathBuf;
 
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Pins {
@@ -16,28 +15,55 @@ pub struct Pins {
 
 impl Pins {
     pub fn load() -> Self {
-        let path = Self::path();
-        std::fs::read_to_string(&path)
-            .ok()
-            .and_then(|data| serde_json::from_str(&data).ok())
-            .unwrap_or_default()
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            use std::path::PathBuf;
+            let path = Self::native_path();
+            std::fs::read_to_string(&path)
+                .ok()
+                .and_then(|data| serde_json::from_str(&data).ok())
+                .unwrap_or_default()
+        }
+        #[cfg(target_arch = "wasm32")]
+        {
+            web_sys::window()
+                .and_then(|w| w.local_storage().ok().flatten())
+                .and_then(|s| s.get_item("edcas_pins").ok().flatten())
+                .and_then(|data| serde_json::from_str(&data).ok())
+                .unwrap_or_default()
+        }
     }
 
     pub fn save(&self) {
-        let path = Self::path();
-        if let Some(parent) = path.parent() {
-            let _ = std::fs::create_dir_all(parent);
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            use std::path::PathBuf;
+            let path = Self::native_path();
+            if let Some(parent) = path.parent() {
+                let _ = std::fs::create_dir_all(parent);
+            }
+            if let Ok(data) = serde_json::to_string_pretty(self) {
+                let _ = std::fs::write(path, data);
+            }
         }
-        if let Ok(data) = serde_json::to_string_pretty(self) {
-            let _ = std::fs::write(path, data);
+        #[cfg(target_arch = "wasm32")]
+        {
+            if let Ok(data) = serde_json::to_string(self) {
+                if let Some(storage) = web_sys::window()
+                    .and_then(|w| w.local_storage().ok().flatten())
+                {
+                    let _ = storage.set_item("edcas_pins", &data);
+                }
+            }
         }
     }
 
-    fn path() -> PathBuf {
+    #[cfg(not(target_arch = "wasm32"))]
+    fn native_path() -> std::path::PathBuf {
         if let Ok(home) = std::env::var("HOME") {
-            PathBuf::from(home).join(".config/edcas-client/pins.json")
+            std::path::PathBuf::from(home).join(".config/edcas-client/pins.json")
         } else {
-            PathBuf::from("pins.json")
+            std::path::PathBuf::from("pins.json")
         }
     }
 }

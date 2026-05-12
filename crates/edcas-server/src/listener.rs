@@ -3,13 +3,13 @@ use std::thread;
 use std::time::Duration;
 
 use anyhow::Context;
-use chrono::Utc;
 use deadpool_postgres::Pool;
 use edcas_common::journal::JournalEvent;
 use flate2::read::ZlibDecoder;
 use tracing::{error, info, warn};
 
 use crate::db;
+use crate::stats;
 
 /// EDDN message wrapper — the `message` field contains the actual journal event.
 #[derive(serde::Deserialize)]
@@ -49,10 +49,19 @@ pub fn spawn_listener(eddn_url: String, pool: Pool) {
                         }
                     };
 
+                    stats::EDDN_RECEIVED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
                     let pool_clone = pool.clone();
                     handle.spawn(async move {
-                        if let Err(e) = handle_message(&json_str, &pool_clone).await {
-                            error!("failed to handle EDDN message: {e:#}");
+                        match handle_message(&json_str, &pool_clone).await {
+                            Ok(dispatched) => {
+                                if dispatched {
+                                    stats::EDDN_DISPATCHED.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                }
+                            }
+                            Err(e) => {
+                                stats::EDDN_ERRORS.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+                                error!("failed to handle EDDN message: {e:#}");
+                            }
                         }
                     });
                 }
@@ -65,85 +74,22 @@ pub fn spawn_listener(eddn_url: String, pool: Pool) {
     });
 }
 
-async fn handle_message(json_str: &str, pool: &Pool) -> anyhow::Result<()> {
+/// Returns `true` if the event was recognised and dispatched to the DB.
+async fn handle_message(json_str: &str, pool: &Pool) -> anyhow::Result<bool> {
     let wrapper: EddnMessage =
         serde_json::from_str(json_str).context("parsing EDDN wrapper")?;
 
-    // Record the raw event for auditing
-    let journal_id = insert_raw_event(pool, &wrapper.schema_ref, &wrapper.message).await?;
+    let (journal_id, event_ts) =
+        db::insert_raw_event(pool, &wrapper.schema_ref, &wrapper.message).await?;
 
-    // Dispatch to the appropriate DB inserter
     let event = match JournalEvent::from_eddn_message(wrapper.message) {
         Some(e) => e,
-        None => return Ok(()), // unhandled event type — not an error
+        None => return Ok(false),
     };
 
-    match event {
-        JournalEvent::FsdJump(ref e) => db::travel::insert_fsd_jump(pool, journal_id, e).await?,
-        JournalEvent::Location(ref e) => db::travel::insert_location(pool, journal_id, e).await?,
-        JournalEvent::CarrierJump(ref e) => {
-            db::travel::insert_carrier_jump(pool, journal_id, e).await?
-        }
-        JournalEvent::Scan(ref e) => db::scan::insert_scan(pool, journal_id, e).await?,
-        JournalEvent::Docked(ref e) => db::station::insert_docked(pool, journal_id, e).await?,
-        JournalEvent::Commodities(ref e) => {
-            db::station::insert_commodities(pool, journal_id, e).await?
-        }
-        JournalEvent::Outfitting(ref e) => {
-            db::station::insert_outfitting(pool, journal_id, e).await?
-        }
-        JournalEvent::Shipyard(ref e) => db::station::insert_shipyard(pool, journal_id, e).await?,
-        JournalEvent::SaaSignalsFound(ref e) => {
-            db::scan::insert_saa_signals(pool, journal_id, e).await?
-        }
-        JournalEvent::FssBodySignals(ref e) => {
-            db::scan::insert_fss_body_signals(pool, journal_id, e).await?
-        }
-        JournalEvent::ColonisationConstructionDepot(ref e) => {
-            let submission = edcas_common::api::ConstructionDepotSubmission {
-                market_id: e.market_id,
-                system_address: e.system_address,
-                station_name: String::new(), // EDDN doesn't carry station name
-                progress: e.construction_progress,
-                construction_complete: e.construction_complete,
-                construction_failed: e.construction_failed,
-                resources: e.resources.iter().map(|r| edcas_common::api::ConstructionResourceSubmission {
-                    name: r.name.clone(),
-                    display_name: r.display_name().to_string(),
-                    required_amount: r.required_amount,
-                    provided_amount: r.provided_amount,
-                    payment: r.payment,
-                }).collect(),
-            };
-            db::construction::upsert_depot(pool, &submission).await?;
-        }
-        // Raw-events only — no typed table
-        JournalEvent::ScanBaryCentre(_) | JournalEvent::FssSignalDiscovered(_) => {}
-    }
+    db::dispatch_event(pool, journal_id, event_ts, event).await?;
 
-    Ok(())
-}
-
-async fn insert_raw_event(
-    pool: &Pool,
-    schema_ref: &str,
-    message: &serde_json::Value,
-) -> anyhow::Result<i64> {
-    let client = pool.get().await?;
-    let event_type = message
-        .get("event")
-        .and_then(|v| v.as_str())
-        .unwrap_or("unknown");
-    let now = Utc::now();
-    let row = client
-        .query_one(
-            "INSERT INTO journal_events (timestamp, event_type, schema_ref, data)
-             VALUES ($1, $2, $3, $4)
-             RETURNING id",
-            &[&now, &event_type, &schema_ref, message],
-        )
-        .await?;
-    Ok(row.get(0))
+    Ok(true)
 }
 
 fn decompress(bytes: &[u8]) -> anyhow::Result<String> {

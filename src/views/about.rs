@@ -5,7 +5,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::event_shim::{KeyCode, KeyEvent};
 use crate::views::ViewEvent;
 
 pub struct AboutView {
@@ -82,8 +82,12 @@ fn blank() -> Line<'static> {
     Line::from("")
 }
 
+include!("logo_lines.rs");
+
 fn build_lines() -> Vec<Line<'static>> {
-    vec![
+    let mut lines = logo_lines();
+    lines.push(blank());
+    lines.extend(vec![
         Line::from(Span::styled(
             "EDCAS — Elite Dangerous Commander Assistant System",
             Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
@@ -179,5 +183,6 @@ fn build_lines() -> Vec<Line<'static>> {
         // ── General scrolling hint ────────────────────────────────
         heading("This screen"),
         ctrl("w / s  or  ↑/↓",   "Scroll up / down"),
-    ]
+    ]);
+    lines
 }

@@ -1,6 +1,7 @@
+#[cfg(not(target_arch = "wasm32"))]
 use std::path::{Path, PathBuf};
 
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::event_shim::{KeyCode, KeyEvent};
 use ratatui::{
     layout::Rect,
     style::{Color, Modifier, Style},
@@ -9,6 +10,7 @@ use ratatui::{
     Frame,
 };
 
+#[cfg(not(target_arch = "wasm32"))]
 use crate::journal_reader::find_latest_journal_file;
 use crate::views::ViewEvent;
 
@@ -17,7 +19,9 @@ pub struct LogView {
     scroll_x: usize,
     auto_scroll: bool,
     cached_lines: Vec<String>,
+    #[cfg(not(target_arch = "wasm32"))]
     last_path: Option<PathBuf>,
+    #[cfg(not(target_arch = "wasm32"))]
     last_file_len: u64,
 }
 
@@ -28,7 +32,9 @@ impl LogView {
             scroll_x: 0,
             auto_scroll: true,
             cached_lines: Vec::new(),
+            #[cfg(not(target_arch = "wasm32"))]
             last_path: None,
+            #[cfg(not(target_arch = "wasm32"))]
             last_file_len: 0,
         }
     }
@@ -63,6 +69,7 @@ impl LogView {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn refresh_if_changed(&mut self, journal_dir: &str) {
         if journal_dir.is_empty() {
             return;
@@ -81,6 +88,9 @@ impl LogView {
         self.last_path = Some(path);
         self.last_file_len = current_len;
     }
+
+    #[cfg(target_arch = "wasm32")]
+    fn refresh_if_changed(&mut self, _journal_dir: &str) {}
 
     pub fn render(&mut self, frame: &mut Frame, area: Rect, journal_dir: &str) {
         let visible_rows = area.height.saturating_sub(2) as usize;

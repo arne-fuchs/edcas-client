@@ -2,6 +2,7 @@ mod api;
 mod config;
 mod db;
 mod listener;
+mod stats;
 
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -26,9 +27,14 @@ async fn main() -> anyhow::Result<()> {
     listener::spawn_listener(cfg.eddn_url.clone(), pool.clone());
     info!("EDDN listener started, connecting to {}", cfg.eddn_url);
 
+    stats::spawn_stats_logger();
+    info!("Stats logger started (logs every 60 s)");
+
     let rocket_cfg = rocket::Config {
         port: cfg.api_port,
         address: std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED),
+        limits: rocket::data::Limits::default()
+            .limit("json", rocket::data::ByteUnit::Mebibyte(50)),
         ..rocket::Config::default()
     };
 
@@ -47,6 +53,8 @@ async fn main() -> anyhow::Result<()> {
                 api::factions::search_factions,
                 api::construction::search_construction_depots,
                 api::construction::submit_construction_depot,
+                api::journal::ingest_event,
+                api::journal::ingest_events,
             ],
         )
         .launch()

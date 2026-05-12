@@ -1,4 +1,4 @@
-use crossterm::event::{KeyCode, KeyEvent};
+use crate::event_shim::{KeyCode, KeyEvent};
 use edcas_common::api::{FactionQuery, FactionResponse};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -11,6 +11,9 @@ use std::collections::HashSet;
 
 use crate::api_client::ApiClient;
 use crate::views::ViewEvent;
+
+#[cfg(target_arch = "wasm32")]
+use std::{cell::RefCell, rc::Rc};
 
 enum SearchState {
     Idle,
@@ -63,7 +66,10 @@ pub struct FactionsView {
     status_msg: String,
     focus: FocusArea,
     detail_tab: DetailTab,
+    #[cfg(not(target_arch = "wasm32"))]
     clipboard: Option<arboard::Clipboard>,
+    #[cfg(target_arch = "wasm32")]
+    pending_search: Rc<RefCell<Option<Vec<FactionResponse>>>>,
 }
 
 impl FactionsView {
@@ -84,23 +90,46 @@ impl FactionsView {
             detail_tab: DetailTab::Info,
             // Kept alive for the duration of the view so the X11/Wayland
             // background clipboard-serving thread keeps running after set_text.
+            #[cfg(not(target_arch = "wasm32"))]
             clipboard: arboard::Clipboard::new().ok(),
+            #[cfg(target_arch = "wasm32")]
+            pending_search: Rc::new(RefCell::new(None)),
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn poll_search(&mut self) {
+        if let Some(results) = self.pending_search.borrow_mut().take() {
+            let count = results.len();
+            self.results = results;
+            self.selected_idx = 0;
+            self.selected_system = 0;
+            self.list_scroll = 0;
+            self.detail_scroll = 0;
+            self.focus = FocusArea::List;
+            self.detail_tab = DetailTab::Info;
+            self.status_msg = if count == 0 {
+                format!("No factions found for '{}'", self.search_query)
+            } else {
+                format!("{count} faction(s) found")
+            };
         }
     }
 
     pub fn on_enter(&mut self, api: &ApiClient) {
+        #[cfg(not(target_arch = "wasm32"))]
         if !self.pinned_names.is_empty() && self.pinned_results.is_empty() {
             self.refresh_pins(api);
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn refresh_pins(&mut self, api: &ApiClient) {
         self.pinned_results.clear();
         let names: Vec<String> = self.pinned_names.iter().cloned().collect();
         for name in names {
             let query = FactionQuery { name: Some(name.clone()), limit: Some(10) };
             if let Ok(results) = api.search_factions(&query) {
-                // The LIKE search may return multiple; find exact match.
                 if let Some(f) = results.into_iter().find(|f| f.name == name) {
                     self.pinned_results.push(f);
                 }
@@ -163,22 +192,21 @@ impl FactionsView {
                     self.selected_idx = pos;
                 }
             } else if !self.pinned_names.is_empty() {
+                #[cfg(not(target_arch = "wasm32"))]
                 self.refresh_pins(api);
             }
         }
         self.save_pins();
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
     fn do_search(&mut self, api: &ApiClient) {
         if self.search_query.is_empty() {
             self.status_msg = "Enter a search term first".into();
             return;
         }
         self.status_msg = format!("Searching for '{}'…", self.search_query);
-        let query = FactionQuery {
-            name: Some(self.search_query.clone()),
-            limit: Some(100),
-        };
+        let query = FactionQuery { name: Some(self.search_query.clone()), limit: Some(100) };
         match api.search_factions(&query) {
             Ok(results) => {
                 let count = results.len();
@@ -195,10 +223,24 @@ impl FactionsView {
                     format!("{count} faction(s) found")
                 };
             }
-            Err(e) => {
-                self.status_msg = format!("API error: {e}");
-            }
+            Err(e) => { self.status_msg = format!("API error: {e}"); }
         }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn do_search(&mut self, api: &ApiClient) {
+        if self.search_query.is_empty() {
+            self.status_msg = "Enter a search term first".into();
+            return;
+        }
+        self.status_msg = format!("Searching for '{}'…", self.search_query);
+        let pending = Rc::clone(&self.pending_search);
+        let api = api.clone();
+        let query = FactionQuery { name: Some(self.search_query.clone()), limit: Some(100) };
+        wasm_bindgen_futures::spawn_local(async move {
+            let results = api.search_factions(query).await;
+            *pending.borrow_mut() = Some(results);
+        });
     }
 
     fn visual_row_of_selected(&self) -> usize {
@@ -404,6 +446,7 @@ impl FactionsView {
                     if let Some(faction) = self.selected_faction() {
                         if let Some(presence) = faction.presences.get(self.selected_system) {
                             let name = presence.system_name.trim().to_string();
+                            #[cfg(not(target_arch = "wasm32"))]
                             if let Some(cb) = self.clipboard.as_mut() {
                                 let _ = cb.set_text(&name);
                             }

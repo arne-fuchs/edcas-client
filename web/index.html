@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>EDCAS — Elite Dangerous Commander Assistant System</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"/>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: monospace;
+    }
+    #terminal-container {
+      border: 1px solid #333;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #loading {
+      color: #ff8c00;
+      font-size: 16px;
+      padding: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div id="loading">Loading EDCAS…</div>
+  <div id="terminal-container">
+    <div id="terminal"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+  <script type="module">
+    import init, { push_key_event, on_resize } from './pkg/edcas_client.js';
+
+    const term = new Terminal({
+      cols: 120,
+      rows: 40,
+      fontFamily: "'Courier New', 'Lucida Console', monospace",
+      fontSize: 14,
+      theme: {
+        background: '#000000',
+        foreground: '#cccccc',
+        cursor: '#ff8c00',
+      },
+      cursorBlink: false,
+      convertEol: false,
+    });
+
+    term.open(document.getElementById('terminal'));
+
+    // Callback used by Rust WasmBackend.flush()
+    window.xterm_write = (data) => term.write(data);
+
+    await init();
+
+    document.getElementById('loading').style.display = 'none';
+
+    term.onKey(({ domEvent: e }) => {
+      e.preventDefault();
+      push_key_event(e.key, e.ctrlKey, e.shiftKey, e.altKey);
+    });
+
+    term.onResize(({ cols, rows }) => {
+      on_resize(cols, rows);
+    });
+
+    // Fit terminal to current size when window resizes
+    window.addEventListener('resize', () => {
+      // xterm.js FitAddon would handle this automatically;
+      // for now just notify Rust of the current size
+      on_resize(term.cols, term.rows);
+    });
+
+    term.focus();
+  </script>
+</body>
+</html>

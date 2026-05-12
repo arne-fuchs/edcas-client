@@ -136,11 +136,12 @@ CREATE TABLE signal_type (
 -- typed tables. schema_ref is the EDDN schema URL.
 
 CREATE TABLE journal_events (
-    id          BIGSERIAL PRIMARY KEY,
-    timestamp   TIMESTAMPTZ NOT NULL,
-    event_type  VARCHAR(255) NOT NULL,
-    schema_ref  VARCHAR(512),
-    data        JSONB NOT NULL
+    id              BIGSERIAL PRIMARY KEY,
+    timestamp       TIMESTAMPTZ NOT NULL,
+    event_timestamp TIMESTAMPTZ,
+    event_type      VARCHAR(255) NOT NULL,
+    schema_ref      VARCHAR(512),
+    data            JSONB NOT NULL
 );
 
 -- ── Star systems ─────────────────────────────────────────────
@@ -158,7 +159,8 @@ CREATE TABLE star_systems (
     security        INTEGER REFERENCES security(id),
     population      BIGINT,
     controlling_power INTEGER REFERENCES power(id),
-    journal_id      BIGINT REFERENCES journal_events(id) NOT NULL
+    journal_id      BIGINT REFERENCES journal_events(id) NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z'
 );
 
 -- ── Factions ─────────────────────────────────────────────────
@@ -218,6 +220,7 @@ CREATE TABLE star (
     luminosity          VARCHAR(10),
     age_my              INTEGER,
     journal_id          BIGINT REFERENCES journal_events(id),
+    event_timestamp     TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z',
     PRIMARY KEY (id, system_address)
 );
 
@@ -251,6 +254,7 @@ CREATE TABLE body (
     surface_temperature REAL,
     distance            REAL,
     journal_id          BIGINT REFERENCES journal_events(id),
+    event_timestamp     TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z',
     PRIMARY KEY (id, system_address)
 );
 
@@ -331,7 +335,8 @@ CREATE TABLE stations (
     faction_name    VARCHAR(255),
     government      INTEGER REFERENCES government(id),
     economy         INTEGER REFERENCES economy_type(id),
-    journal_id      BIGINT REFERENCES journal_events(id) NOT NULL
+    journal_id      BIGINT REFERENCES journal_events(id) NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z'
 );
 
 CREATE TABLE station_services (
@@ -374,29 +379,32 @@ CREATE TABLE commodity_listening (
     demand          INTEGER,
     demand_bracket  INTEGER,
     journal_id      BIGINT REFERENCES journal_events(id) NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z',
     PRIMARY KEY (market_id, name)
 );
 
 -- Outfitting (Outfitting EDDN schema)
 -- id is the module's internal identifier string (e.g. "Hpt_Mining_Laser_Fixed_Medium")
 CREATE TABLE modul_listening (
-    market_id   BIGINT,
-    id          VARCHAR(255) NOT NULL,
-    category    VARCHAR(255),
-    name        VARCHAR(255),
-    cost        INTEGER,
-    ship        VARCHAR(255),
-    journal_id  BIGINT REFERENCES journal_events(id) NOT NULL,
+    market_id       BIGINT,
+    id              VARCHAR(255) NOT NULL,
+    category        VARCHAR(255),
+    name            VARCHAR(255),
+    cost            INTEGER,
+    ship            VARCHAR(255),
+    journal_id      BIGINT REFERENCES journal_events(id) NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z',
     PRIMARY KEY (market_id, id)
 );
 
 -- Shipyard (Shipyard EDDN schema)
 CREATE TABLE ship_listening (
-    market_id   BIGINT,
-    id          VARCHAR(255) NOT NULL,
-    name        VARCHAR(255),
-    basevalue   INTEGER,
-    journal_id  BIGINT REFERENCES journal_events(id) NOT NULL,
+    market_id       BIGINT,
+    id              VARCHAR(255) NOT NULL,
+    name            VARCHAR(255),
+    basevalue       INTEGER,
+    journal_id      BIGINT REFERENCES journal_events(id) NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z',
     PRIMARY KEY (market_id, id)
 );
 
@@ -436,3 +444,16 @@ CREATE INDEX idx_fss_body_signals_system         ON fss_body_signals (system_add
 CREATE INDEX idx_saa_signals_system              ON saa_signals (system_address);
 CREATE INDEX idx_construction_depots_system      ON construction_depots (system_address);
 CREATE INDEX idx_construction_depots_name        ON construction_depots (LOWER(station_name));
+
+-- ── Migration: add event_timestamp to existing databases ─────
+-- Run these ALTER TABLE statements on an existing database
+-- (skip if applying schema.sql fresh to a new database).
+--
+-- ALTER TABLE journal_events    ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ;
+-- ALTER TABLE star_systems  ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
+-- ALTER TABLE stations      ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
+-- ALTER TABLE star           ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
+-- ALTER TABLE body           ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
+-- ALTER TABLE commodity_listening ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
+-- ALTER TABLE modul_listening     ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
+-- ALTER TABLE ship_listening      ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
