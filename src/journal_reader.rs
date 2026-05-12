@@ -11,6 +11,18 @@ use edcas_common::journal::{CarrierJump, FsdJump, FssSignalDiscovered, JournalEv
 use tracing::{debug, error, info, warn};
 
 #[derive(Clone)]
+pub struct FactionInfo {
+    pub name: String,
+    pub influence: f32,
+    pub government: String,
+    pub allegiance: String,
+    pub happiness: String,
+    pub active_states: Vec<String>,
+    pub pending_states: Vec<String>,
+    pub recovering_states: Vec<String>,
+}
+
+#[derive(Clone)]
 pub struct SystemData {
     pub name: String,
     pub system_address: i64,
@@ -24,7 +36,7 @@ pub struct SystemData {
     pub body: String,
     pub body_id: i32,
     pub body_type: String,
-    pub factions: Vec<String>,
+    pub factions: Vec<FactionInfo>,
     pub system_faction: String,
     pub controlling_power: Option<String>,
     pub powers: Vec<String>,
@@ -368,6 +380,31 @@ impl JournalData {
     }
 }
 
+fn faction_info_from_journal(f: &edcas_common::journal::types::Faction) -> FactionInfo {
+    FactionInfo {
+        name: f.name.clone(),
+        influence: f.influence,
+        government: f.government.clone(),
+        allegiance: f.allegiance.clone(),
+        happiness: f.happiness.clone(),
+        active_states: f
+            .active_states
+            .as_ref()
+            .map(|s| s.iter().map(|x| x.state.clone()).collect())
+            .unwrap_or_default(),
+        pending_states: f
+            .pending_states
+            .as_ref()
+            .map(|s| s.iter().map(|x| x.state.clone()).collect())
+            .unwrap_or_default(),
+        recovering_states: f
+            .recovering_states
+            .as_ref()
+            .map(|s| s.iter().map(|x| x.state.clone()).collect())
+            .unwrap_or_default(),
+    }
+}
+
 fn system_from_fsdjump(e: &FsdJump) -> SystemData {
     let coords = coords_from_star_pos(&e.star_pos);
     SystemData {
@@ -386,7 +423,7 @@ fn system_from_fsdjump(e: &FsdJump) -> SystemData {
         factions: e
             .factions
             .as_ref()
-            .map(|f| f.iter().map(|x| x.name.clone()).collect())
+            .map(|f| f.iter().map(faction_info_from_journal).collect())
             .unwrap_or_default(),
         system_faction: e
             .system_faction
@@ -416,7 +453,7 @@ fn system_from_location(e: &Location) -> SystemData {
         factions: e
             .factions
             .as_ref()
-            .map(|f| f.iter().map(|x| x.name.clone()).collect())
+            .map(|f| f.iter().map(faction_info_from_journal).collect())
             .unwrap_or_default(),
         system_faction: e
             .system_faction
@@ -446,7 +483,7 @@ fn system_from_carrier_jump(e: &CarrierJump) -> SystemData {
         factions: e
             .factions
             .as_ref()
-            .map(|f| f.iter().map(|x| x.name.clone()).collect())
+            .map(|f| f.iter().map(faction_info_from_journal).collect())
             .unwrap_or_default(),
         system_faction: e
             .system_faction

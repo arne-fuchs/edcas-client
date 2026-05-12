@@ -44,6 +44,7 @@ async fn main() -> anyhow::Result<()> {
                 api::systems::get_system_bodies,
                 api::stations::search_stations,
                 api::carriers::search_carriers,
+                api::factions::search_factions,
             ],
         )
         .launch()

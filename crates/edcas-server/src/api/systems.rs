@@ -1,5 +1,5 @@
 use deadpool_postgres::Pool;
-use edcas_common::api::{BodyResponse, MaterialResponse, ParentResponse, RingResponse, SystemResponse};
+use edcas_common::api::{BodyResponse, MaterialResponse, ParentResponse, RingResponse, SystemFactionInfo, SystemResponse};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{get, State};
@@ -30,20 +30,25 @@ pub async fn get_system(
 
     match row {
         None => Err(Status::NotFound),
-        Some(r) => Ok(Json(SystemResponse {
-            system_address: r.get("system_address"),
-            name: r.get("name"),
-            x: r.get::<_, f32>("x"),
-            y: r.get::<_, f32>("y"),
-            z: r.get::<_, f32>("z"),
-            allegiance: r.get("allegiance"),
-            economy: r.get("economy"),
-            second_economy: r.get("second_economy"),
-            government: r.get("government"),
-            security: r.get("security"),
-            population: r.get("population"),
-            controlling_power: r.get("controlling_power"),
-        })),
+        Some(r) => {
+            let addr: i64 = r.get("system_address");
+            let factions = fetch_system_factions(&client, addr).await?;
+            Ok(Json(SystemResponse {
+                system_address: addr,
+                name: r.get("name"),
+                x: r.get::<_, f32>("x"),
+                y: r.get::<_, f32>("y"),
+                z: r.get::<_, f32>("z"),
+                allegiance: r.get("allegiance"),
+                economy: r.get("economy"),
+                second_economy: r.get("second_economy"),
+                government: r.get("government"),
+                security: r.get("security"),
+                population: r.get("population"),
+                controlling_power: r.get("controlling_power"),
+                factions,
+            }))
+        }
     }
 }
 
@@ -139,6 +144,67 @@ pub async fn get_system_bodies(
 
     bodies.sort_by_key(|b| b.distance_from_arrival_ls.map(|d| (d * 100.0) as i64).unwrap_or(0));
     Ok(Json(bodies))
+}
+
+async fn fetch_system_factions(
+    client: &tokio_postgres::Client,
+    system_address: i64,
+) -> Result<Vec<SystemFactionInfo>, Status> {
+    let rows = client
+        .query(
+            "SELECT f.name, f.influence, g.value as government, a.value as allegiance, h.value as happiness
+             FROM factions f
+             LEFT JOIN government g ON f.government = g.id
+             LEFT JOIN allegiance a ON f.allegiance = a.id
+             LEFT JOIN happiness h ON f.happiness = h.id
+             WHERE f.system_address = $1
+             ORDER BY f.influence DESC NULLS LAST",
+            &[&system_address],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    let mut result = Vec::new();
+    for row in &rows {
+        let name: String = row.get("name");
+        let state_rows = client
+            .query(
+                "SELECT fsn.value as state, fs.status
+                 FROM faction_states fs
+                 LEFT JOIN faction_state_name fsn ON fs.state = fsn.id
+                 WHERE fs.faction_name = $1 AND fs.system_address = $2",
+                &[&name, &system_address],
+            )
+            .await
+            .map_err(|_| Status::InternalServerError)?;
+
+        let mut active = Vec::new();
+        let mut pending = Vec::new();
+        let mut recovering = Vec::new();
+        for sr in &state_rows {
+            let state: String = sr.get::<_, Option<String>>("state").unwrap_or_default();
+            let status: String = sr.get("status");
+            match status.as_str() {
+                "Active" => active.push(state),
+                "Pending" => pending.push(state),
+                "Recovering" => recovering.push(state),
+                _ => active.push(state),
+            }
+        }
+
+        result.push(SystemFactionInfo {
+            influence: row.get::<_, Option<f32>>("influence").unwrap_or(0.0),
+            government: row.get("government"),
+            allegiance: row.get("allegiance"),
+            happiness: row.get("happiness"),
+            active_states: active,
+            pending_states: pending,
+            recovering_states: recovering,
+            name,
+        });
+    }
+
+    Ok(result)
 }
 
 async fn fetch_rings(

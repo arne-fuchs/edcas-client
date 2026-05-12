@@ -1,4 +1,4 @@
-use edcas_common::api::{BodyResponse, CarrierQuery, CarrierResponse, StationQuery, StationResponse};
+use edcas_common::api::{BodyResponse, CarrierQuery, CarrierResponse, FactionQuery, FactionResponse, StationQuery, StationResponse};
 
 pub struct ApiClient {
     base_url: String,
@@ -38,6 +38,16 @@ impl ApiClient {
 
     pub fn search_carriers(&self, query: &CarrierQuery) -> anyhow::Result<Vec<CarrierResponse>> {
         let url = format!("{}/api/v1/carriers", self.base_url);
+        let resp = self.client.get(&url).query(query).send()?;
+        if resp.status().is_success() {
+            Ok(resp.json()?)
+        } else {
+            Ok(vec![])
+        }
+    }
+
+    pub fn search_factions(&self, query: &FactionQuery) -> anyhow::Result<Vec<FactionResponse>> {
+        let url = format!("{}/api/v1/factions", self.base_url);
         let resp = self.client.get(&url).query(query).send()?;
         if resp.status().is_success() {
             Ok(resp.json()?)

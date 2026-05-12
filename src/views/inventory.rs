@@ -71,68 +71,59 @@ impl InventoryView {
 
     fn build_body_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
         match self.tab {
-            Tab::Materials => self.materials_lines(journal),
+            Tab::Materials | Tab::ShipLocker => vec![], // rendered separately as columns
             Tab::Cargo => self.cargo_lines(journal),
             Tab::Backpack => self.onfoot_lines(&journal.backpack, "Backpack"),
-            Tab::ShipLocker => self.onfoot_lines(&journal.shiplocker, "Ship Locker"),
         }
     }
 
-    fn materials_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
-        let mut lines = Vec::new();
-        let sections = [
-            ("Raw", &journal.materials_raw, Color::Green),
-            ("Manufactured", &journal.materials_manufactured, Color::Yellow),
-            ("Encoded", &journal.materials_encoded, Color::Cyan),
-        ];
-
-        for (label, items, color) in &sections {
-            if items.is_empty() {
-                continue;
-            }
-            lines.push(Line::from(Span::styled(
+    fn materials_column_header(label: &str, color: Color, name_w: usize) -> Vec<Line<'static>> {
+        vec![
+            Line::from(Span::styled(
                 format!("── {label} ──"),
-                Style::default().fg(*color).add_modifier(Modifier::BOLD),
-            )));
-            lines.push(Line::from(Span::styled(
-                format!("  {:<28} {:>9}  {}", "Material", "Count", "Progress"),
+                Style::default().fg(color).add_modifier(Modifier::BOLD),
+            )),
+            Line::from(Span::styled(
+                format!("  {:<name_w$} Count  Progress", "Material"),
                 Style::default().fg(Color::DarkGray),
-            )));
-            let mut sorted: Vec<&InventoryItem> = items.iter().collect();
-            sorted.sort_by(|a, b| b.count.cmp(&a.count));
-            for item in sorted {
-                let name = if item.localised.is_empty() { &item.name } else { &item.localised };
-                let max = material_cap(&item.name);
-                let count = item.count.min(max);
-                let ratio = count as f32 / max as f32;
-                let filled = (ratio * 20.0).round() as usize;
-                let bar_color = if ratio < 0.25 {
-                    Color::Red
-                } else if ratio < 0.75 {
-                    Color::Yellow
-                } else {
-                    Color::Green
-                };
-                let bar_filled = "█".repeat(filled);
-                let bar_empty = "░".repeat(20 - filled);
-                let count_str = format!("{:>4}/{:<4}", count, max);
-                lines.push(Line::from(vec![
-                    Span::raw(format!("  {:<28} {} [", truncate_name(name, 28), count_str)),
-                    Span::styled(bar_filled, Style::default().fg(bar_color)),
-                    Span::styled(bar_empty, Style::default().fg(Color::DarkGray)),
-                    Span::raw("]"),
-                ]));
-            }
-            lines.push(Line::from(""));
-        }
+            )),
+        ]
+    }
 
-        if lines.is_empty() {
-            lines.push(Line::from(Span::styled(
-                "No materials data. The Materials event is written to the journal at startup.",
+    fn materials_column_body(items: &[InventoryItem], col_width: usize) -> Vec<Line<'static>> {
+        if items.is_empty() {
+            return vec![Line::from(Span::styled(
+                "  Empty.",
                 Style::default().fg(Color::DarkGray),
-            )));
+            ))];
         }
-        lines
+        // layout: "  {name} {count:>3}/{max:<3} [{bar}]"
+        //          2 + name_w + 1 + 7 + 3 + bar_w + 1 = name_w + bar_w + 14
+        let bar_w = (col_width / 5).max(4).min(20);
+        let name_w = col_width.saturating_sub(bar_w + 14).max(4);
+
+        let mut sorted: Vec<&InventoryItem> = items.iter().collect();
+        sorted.sort_by(|a, b| b.count.cmp(&a.count));
+
+        sorted.iter().map(|item| {
+            let name = if item.localised.is_empty() { &item.name } else { &item.localised };
+            let max = material_cap(&item.name);
+            let count = item.count.min(max);
+            let ratio = count as f32 / max as f32;
+            let filled = (ratio * bar_w as f32).round() as usize;
+            let bar_color = if ratio < 0.25 { Color::Red }
+                else if ratio < 0.75 { Color::Yellow }
+                else { Color::Green };
+            Line::from(vec![
+                Span::raw(format!(
+                    "  {:<name_w$} {:>3}/{:<3} [",
+                    truncate_name(name, name_w), count, max,
+                )),
+                Span::styled("█".repeat(filled), Style::default().fg(bar_color)),
+                Span::styled("░".repeat(bar_w - filled), Style::default().fg(Color::DarkGray)),
+                Span::raw("]"),
+            ])
+        }).collect()
     }
 
     fn cargo_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
@@ -206,6 +197,34 @@ impl InventoryView {
         lines
     }
 
+    fn onfoot_column_header(label: &str, color: Color, name_w: usize) -> Vec<Line<'static>> {
+        vec![
+            Line::from(Span::styled(
+                format!("── {label} ──"),
+                Style::default().fg(color).add_modifier(Modifier::BOLD),
+            )),
+            Line::from(Span::styled(
+                format!("  {:<name_w$} {:>5}", "Name", "Count"),
+                Style::default().fg(Color::DarkGray),
+            )),
+        ]
+    }
+
+    fn onfoot_column_body(items: &[InventoryItem], col_width: usize) -> Vec<Line<'static>> {
+        if items.is_empty() {
+            return vec![Line::from(Span::styled(
+                "  Empty.",
+                Style::default().fg(Color::DarkGray),
+            ))];
+        }
+        // layout: "  {name:<name_w} {:>5}"  = 2 + name_w + 1 + 5 = name_w + 8
+        let name_w = col_width.saturating_sub(8).max(4);
+        items.iter().map(|item| {
+            let name = if item.localised.is_empty() { &item.name } else { &item.localised };
+            Line::from(format!("  {:<name_w$} {:>5}", truncate_name(name, name_w), item.count))
+        }).collect()
+    }
+
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
         match key.code {
             KeyCode::Char('w') | KeyCode::Up => {
@@ -249,14 +268,101 @@ impl InventoryView {
 
         frame.render_widget(Paragraph::new(header), split[0]);
 
-        let body = self.build_body_lines(journal);
-        let body_height = split[1].height as usize;
-        let max_scroll = body.len().saturating_sub(body_height);
+        if self.tab == Tab::Materials {
+            let cols = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Ratio(1, 3),
+                    Constraint::Ratio(1, 3),
+                    Constraint::Ratio(1, 3),
+                ])
+                .split(split[1]);
 
-        frame.render_widget(
-            Paragraph::new(body).scroll((self.scroll.min(max_scroll) as u16, 0)),
-            split[1],
-        );
+            let sections: [(&str, &Vec<InventoryItem>, Color); 3] = [
+                ("Raw", &journal.materials_raw, Color::Green),
+                ("Manufactured", &journal.materials_manufactured, Color::Yellow),
+                ("Encoded", &journal.materials_encoded, Color::Cyan),
+            ];
+
+            let mut max_scroll = 0usize;
+            for (i, (label, items, color)) in sections.iter().enumerate() {
+                let col = cols[i];
+                let col_w = col.width as usize;
+                let name_w = col_w.saturating_sub((col_w / 5).max(4).min(20) + 14).max(4);
+
+                let col_hdr = Self::materials_column_header(label, *color, name_w);
+                let col_hdr_h = col_hdr.len() as u16;
+
+                let col_split = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Length(col_hdr_h), Constraint::Min(0)])
+                    .split(col);
+
+                frame.render_widget(Paragraph::new(col_hdr), col_split[0]);
+
+                let body = Self::materials_column_body(items, col_w);
+                let body_h = col_split[1].height as usize;
+                max_scroll = max_scroll.max(body.len().saturating_sub(body_h));
+
+                frame.render_widget(
+                    Paragraph::new(body).scroll((self.scroll.min(max_scroll) as u16, 0)),
+                    col_split[1],
+                );
+            }
+        } else if self.tab == Tab::ShipLocker {
+            let cols = Layout::default()
+                .direction(Direction::Horizontal)
+                .constraints([
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                    Constraint::Ratio(1, 4),
+                ])
+                .split(split[1]);
+
+            let inv = &journal.shiplocker;
+            let sections: [(&str, &Vec<InventoryItem>, Color); 4] = [
+                ("Items", &inv.items, Color::Green),
+                ("Components", &inv.components, Color::Yellow),
+                ("Consumables", &inv.consumables, Color::Magenta),
+                ("Data", &inv.data, Color::Cyan),
+            ];
+
+            let mut max_scroll = 0usize;
+            for (i, (label, items, color)) in sections.iter().enumerate() {
+                let col = cols[i];
+                let col_w = col.width as usize;
+                let name_w = col_w.saturating_sub(8).max(4);
+
+                let col_hdr = Self::onfoot_column_header(label, *color, name_w);
+                let col_hdr_h = col_hdr.len() as u16;
+
+                let col_split = Layout::default()
+                    .direction(Direction::Vertical)
+                    .constraints([Constraint::Length(col_hdr_h), Constraint::Min(0)])
+                    .split(col);
+
+                frame.render_widget(Paragraph::new(col_hdr), col_split[0]);
+
+                let body = Self::onfoot_column_body(items, col_w);
+                let body_h = col_split[1].height as usize;
+                max_scroll = max_scroll.max(body.len().saturating_sub(body_h));
+
+                frame.render_widget(
+                    Paragraph::new(body).scroll((self.scroll.min(max_scroll) as u16, 0)),
+                    col_split[1],
+                );
+            }
+        } else {
+            let body = self.build_body_lines(journal);
+            let body_height = split[1].height as usize;
+            let max_scroll = body.len().saturating_sub(body_height);
+
+            frame.render_widget(
+                Paragraph::new(body).scroll((self.scroll.min(max_scroll) as u16, 0)),
+                split[1],
+            );
+        }
     }
 }
 

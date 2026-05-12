@@ -69,20 +69,64 @@ impl SystemView {
             }
 
             if !system.factions.is_empty() {
+                let mut sorted = system.factions.clone();
+                sorted.sort_by(|a, b| b.influence.partial_cmp(&a.influence).unwrap_or(std::cmp::Ordering::Equal));
+
                 lines.push(Line::from(Span::styled(
-                    format!("Factions ({})", system.factions.len()),
+                    format!("Factions ({})", sorted.len()),
                     Style::default()
                         .fg(Color::Cyan)
                         .add_modifier(Modifier::UNDERLINED),
                 )));
-                for faction in system.factions.iter() {
-                    let controlling = if faction == &system.system_faction { " [Controlling]" } else { "" };
-                    lines.push(Line::from(Span::styled(
-                        format!("  {}{}", faction, controlling),
-                        Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
-                    )));
+
+                for faction in &sorted {
+                    let controlling = faction.name == system.system_faction;
+                    let name_style = if controlling {
+                        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                    };
+                    let tag = if controlling { " ★" } else { "" };
+
+                    let pct = faction.influence * 100.0;
+                    let filled = (faction.influence * 20.0).round() as usize;
+                    let bar_color = if pct < 15.0 {
+                        Color::Red
+                    } else if pct < 40.0 {
+                        Color::Yellow
+                    } else {
+                        Color::Green
+                    };
+
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("  {:<36}{}", faction.name, tag), name_style),
+                    ]));
+                    lines.push(Line::from(vec![
+                        Span::raw(format!("    Influence: {:>5.1}%  [", pct)),
+                        Span::styled("█".repeat(filled), Style::default().fg(bar_color)),
+                        Span::styled("░".repeat(20 - filled), Style::default().fg(Color::DarkGray)),
+                        Span::raw("]"),
+                    ]));
+
+                    let mut state_parts: Vec<String> = Vec::new();
+                    if !faction.active_states.is_empty() {
+                        state_parts.push(format!("Active: {}", faction.active_states.join(", ")));
+                    }
+                    if !faction.pending_states.is_empty() {
+                        state_parts.push(format!("Pending: {}", faction.pending_states.join(", ")));
+                    }
+                    if !faction.recovering_states.is_empty() {
+                        state_parts.push(format!("Recovering: {}", faction.recovering_states.join(", ")));
+                    }
+                    if !state_parts.is_empty() {
+                        lines.push(Line::from(Span::styled(
+                            format!("    {}", state_parts.join("  |  ")),
+                            Style::default().fg(Color::DarkGray),
+                        )));
+                    }
+
+                    lines.push(Line::from(""));
                 }
-                lines.push(Line::from(""));
             }
         } else {
             lines.push(Line::from("No system data available."));

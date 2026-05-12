@@ -15,6 +15,19 @@ pub struct SystemResponse {
     pub security: Option<String>,
     pub population: Option<i64>,
     pub controlling_power: Option<String>,
+    pub factions: Vec<SystemFactionInfo>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SystemFactionInfo {
+    pub name: String,
+    pub influence: f32,
+    pub government: Option<String>,
+    pub allegiance: Option<String>,
+    pub happiness: Option<String>,
+    pub active_states: Vec<String>,
+    pub pending_states: Vec<String>,
+    pub recovering_states: Vec<String>,
 }
 
 /// GET /api/v1/systems/:address/bodies
@@ -142,6 +155,32 @@ pub struct StationQuery {
 pub struct CarrierQuery {
     pub name: Option<String>,
     pub callsign: Option<String>,
+    pub system_name: Option<String>,
+    pub limit: Option<i64>,
+}
+
+/// One row = faction presence in a single system.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FactionResponse {
+    pub name: String,
+    pub system_address: i64,
+    pub system_name: String,
+    pub government: Option<String>,
+    pub allegiance: Option<String>,
+    pub happiness: Option<String>,
+    pub influence: Option<f32>,
+    pub states: Vec<FactionStateResponse>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FactionStateResponse {
+    pub state: String,
+    pub status: String,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct FactionQuery {
+    pub name: Option<String>,
     pub system_name: Option<String>,
     pub limit: Option<i64>,
 }
