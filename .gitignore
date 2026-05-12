@@ -12,3 +12,5 @@ edcas-client.deb
 custom_graphics_override.xml
 log
 tmp.json
+log.log
+postgres_data

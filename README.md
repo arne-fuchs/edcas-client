@@ -1,10 +1,6 @@
 ![logo](assets/graphics/logo/edcas.png)
 
 # Elite Dangerous Commander Assistant System
-# VERSION 0.4.0 coming!
-```
-Current release is broken since there is a whole rebuild of the edcas econsystem. Stay tuned!
-```
 
 Shows system information compact for explorer.
 

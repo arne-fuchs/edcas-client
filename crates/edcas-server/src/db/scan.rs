@@ -29,7 +29,7 @@ async fn insert_star(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Resu
              star_type, luminosity, age_my, journal_id)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          ON CONFLICT ON CONSTRAINT star_pkey DO UPDATE SET
-            stellar_mass=$3, radius=$4, surface_temperature=$5,
+            stellar_mass=$4, radius=$5, surface_temperature=$6,
             star_type=$7, luminosity=$8, age_my=$9, journal_id=$10",
         &[
             &event.body_id,

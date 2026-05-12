@@ -168,7 +168,7 @@ CREATE TABLE star_systems (
 
 CREATE TABLE factions (
     name            VARCHAR(255) NOT NULL,
-    system_address  BIGINT REFERENCES star_systems(system_address),
+    system_address  BIGINT,
     government      INTEGER REFERENCES government(id),
     allegiance      INTEGER REFERENCES allegiance(id),
     happiness       INTEGER REFERENCES happiness(id),
@@ -193,7 +193,7 @@ CREATE TABLE faction_states (
 -- System conflicts (one row per conflict, faction data inlined).
 CREATE TABLE conflicts (
     id                  BIGSERIAL PRIMARY KEY,
-    system_address      BIGINT REFERENCES star_systems(system_address),
+    system_address      BIGINT,
     war_type            INTEGER REFERENCES war_type(id),
     status              VARCHAR(50),
     faction1_name       VARCHAR(255),
@@ -209,7 +209,7 @@ CREATE TABLE conflicts (
 
 CREATE TABLE star (
     id                  INTEGER NOT NULL,
-    system_address      BIGINT REFERENCES star_systems(system_address),
+    system_address      BIGINT,
     name                VARCHAR(255) NOT NULL,
     stellar_mass        REAL,
     radius              REAL,
@@ -225,7 +225,7 @@ CREATE TABLE star (
 
 CREATE TABLE body (
     id                  INTEGER NOT NULL,
-    system_address      BIGINT REFERENCES star_systems(system_address),
+    system_address      BIGINT,
     name                VARCHAR(255) NOT NULL,
     mass_em             REAL,
     radius              REAL,
@@ -325,7 +325,7 @@ CREATE TABLE saa_signals (
 
 CREATE TABLE stations (
     market_id       BIGINT PRIMARY KEY,
-    system_address  BIGINT REFERENCES star_systems(system_address),
+    system_address  BIGINT,
     name            VARCHAR(255) NOT NULL,
     type            INTEGER REFERENCES station_type(id),
     faction_name    VARCHAR(255),
@@ -364,7 +364,7 @@ CREATE TABLE station_landing_pads (
 -- Commodity market (Commodities EDDN schema)
 -- name stored as VARCHAR — commodity name is stable and unique
 CREATE TABLE commodity_listening (
-    market_id       BIGINT REFERENCES stations(market_id),
+    market_id       BIGINT,
     name            VARCHAR(255) NOT NULL,
     mean_price      INTEGER,
     buy_price       INTEGER,
@@ -380,7 +380,7 @@ CREATE TABLE commodity_listening (
 -- Outfitting (Outfitting EDDN schema)
 -- id is the module's internal identifier string (e.g. "Hpt_Mining_Laser_Fixed_Medium")
 CREATE TABLE modul_listening (
-    market_id   BIGINT REFERENCES stations(market_id),
+    market_id   BIGINT,
     id          VARCHAR(255) NOT NULL,
     category    VARCHAR(255),
     name        VARCHAR(255),
@@ -392,7 +392,7 @@ CREATE TABLE modul_listening (
 
 -- Shipyard (Shipyard EDDN schema)
 CREATE TABLE ship_listening (
-    market_id   BIGINT REFERENCES stations(market_id),
+    market_id   BIGINT,
     id          VARCHAR(255) NOT NULL,
     name        VARCHAR(255),
     basevalue   INTEGER,

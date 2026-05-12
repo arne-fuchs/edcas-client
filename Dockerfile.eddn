@@ -1,36 +1,48 @@
 # ── Stage 1: dependency cache ───────────────────────────────
-# Copy only manifests and build with stub sources.
-# This layer is invalidated only when Cargo.toml / Cargo.lock change,
-# so iterating on application code is fast.
+# Copy only the server crate manifests and build with stub sources.
+# We generate a minimal workspace Cargo.toml here so that edcas-client
+# (which pulls in reqwest/OpenSSL and the TUI stack) is never part of
+# this build. The layer is invalidated only when Cargo.lock or either
+# crate's Cargo.toml changes, so iterating on application code is fast.
 FROM rust:1-bookworm AS deps
 
 RUN apt-get update \
- && apt-get install -y --no-install-recommends libzmq3-dev pkg-config \
+ && apt-get install -y --no-install-recommends libzmq3-dev pkg-config cmake \
  && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /build
 
-COPY Cargo.toml Cargo.lock ./
+COPY Cargo.lock ./
 COPY crates/edcas-common/Cargo.toml crates/edcas-common/
-COPY crates/edcas-server/Cargo.toml   crates/edcas-server/
+COPY crates/edcas-server/Cargo.toml crates/edcas-server/
 
-# Minimal stubs — enough for cargo to resolve and compile every dependency
-RUN mkdir -p src crates/edcas-common/src crates/edcas-server/src \
- && echo 'fn main(){}' > src/main.rs \
+# Minimal workspace — only the two server-relevant crates
+RUN printf '[workspace]\nmembers = ["crates/edcas-common", "crates/edcas-server"]\nresolver = "2"\n' \
+    > Cargo.toml
+
+# Stub sources — enough for cargo to compile every third-party dependency
+RUN mkdir -p crates/edcas-common/src crates/edcas-server/src \
  && touch crates/edcas-common/src/lib.rs \
  && echo 'fn main(){}' > crates/edcas-server/src/main.rs \
  && cargo build --release --bin edcas-server \
  # Remove our own compiled artefacts so the next stage rebuilds them
  # from real source. Third-party deps stay cached.
+ # Note: Rust library artefacts carry a "lib" prefix, so both the plain
+ # and lib-prefixed patterns are needed. Fingerprints must also be wiped
+ # so cargo does not skip recompilation based on stale metadata.
  && rm -rf target/release/deps/edcas_server* \
+            target/release/deps/libedcas_server* \
             target/release/deps/edcas_common* \
+            target/release/deps/libedcas_common* \
+            target/release/.fingerprint/edcas-server-* \
+            target/release/.fingerprint/edcas-common-* \
             target/release/edcas-server
 
 # ── Stage 2: real build ──────────────────────────────────────
 FROM deps AS builder
 
 COPY crates/edcas-common/src crates/edcas-common/src
-COPY crates/edcas-server/src   crates/edcas-server/src
+COPY crates/edcas-server/src crates/edcas-server/src
 
 RUN cargo build --release --bin edcas-server
 

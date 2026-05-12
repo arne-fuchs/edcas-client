@@ -80,6 +80,35 @@ pub struct StationResponse {
     pub services: Vec<String>,
     pub landing_pads: Option<LandingPadsResponse>,
     pub dist_from_star_ls: Option<f32>,
+    pub commodities: Vec<CommodityResponse>,
+    pub modules: Vec<ModuleResponse>,
+    pub ships: Vec<ShipResponse>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CommodityResponse {
+    pub name: String,
+    pub mean_price: i32,
+    pub buy_price: i32,
+    pub stock: i32,
+    pub sell_price: i32,
+    pub demand: i32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ModuleResponse {
+    pub id: String,
+    pub name: Option<String>,
+    pub category: Option<String>,
+    pub cost: i32,
+    pub ship: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ShipResponse {
+    pub id: String,
+    pub name: Option<String>,
+    pub basevalue: i32,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -315,22 +315,6 @@ impl App {
     }
 
     fn handle_key(&mut self, key: &crossterm::event::KeyEvent) {
-        if key.code == crossterm::event::KeyCode::Char('x') {
-            self.should_quit = true;
-            return;
-        }
-
-        if key.code == crossterm::event::KeyCode::Char('e') {
-            self.view = self.view.next();
-            info!("Tab changed to: {}", TABS[self.view.index()]);
-            return;
-        }
-        if key.code == crossterm::event::KeyCode::Char('q') {
-            self.view = self.view.prev();
-            info!("Tab changed to: {}", TABS[self.view.index()]);
-            return;
-        }
-
         let event = match self.view {
             AppView::News => self.news.handle_key(key),
             AppView::System => self.system.handle_key(key, &self.journal),
@@ -345,18 +329,38 @@ impl App {
         };
 
         match event {
+            ViewEvent::Consumed => return,
             ViewEvent::NextTab => {
                 self.view = self.view.next();
                 info!("Tab changed to: {}", TABS[self.view.index()]);
+                return;
             }
             ViewEvent::PrevTab => {
                 self.view = self.view.prev();
                 info!("Tab changed to: {}", TABS[self.view.index()]);
+                return;
             }
             ViewEvent::SettingsChanged => {
                 info!("Settings changed, saving and restarting journal reader");
                 self.settings_view.save_settings(&self.settings);
                 self.restart_journal_reader();
+                return;
+            }
+            ViewEvent::None | ViewEvent::Quit => {}
+        }
+
+        // Global shortcuts — only reached when the active view did not consume the key
+        match key.code {
+            crossterm::event::KeyCode::Char('x') => {
+                self.should_quit = true;
+            }
+            crossterm::event::KeyCode::Char('e') => {
+                self.view = self.view.next();
+                info!("Tab changed to: {}", TABS[self.view.index()]);
+            }
+            crossterm::event::KeyCode::Char('q') => {
+                self.view = self.view.prev();
+                info!("Tab changed to: {}", TABS[self.view.index()]);
             }
             _ => {}
         }

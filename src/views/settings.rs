@@ -129,7 +129,7 @@ impl SettingsView {
                 }
                 _ => {}
             }
-            return ViewEvent::None;
+            return ViewEvent::Consumed;
         }
 
         match key.code {

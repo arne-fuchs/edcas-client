@@ -1,5 +1,8 @@
 use deadpool_postgres::Pool;
-use edcas_common::api::{LandingPadsResponse, StationEconomyResponse, StationResponse};
+use edcas_common::api::{
+    CommodityResponse, LandingPadsResponse, ModuleResponse, ShipResponse,
+    StationEconomyResponse, StationResponse,
+};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{get, State};
@@ -61,6 +64,9 @@ pub(crate) async fn query_stations(
         let economies = fetch_economies(&client, mid).await?;
         let services = fetch_services(&client, mid).await?;
         let landing_pads = fetch_landing_pads(&client, mid).await?;
+        let commodities = fetch_commodities(&client, mid).await?;
+        let modules = fetch_modules(&client, mid).await?;
+        let ships = fetch_ships(&client, mid).await?;
 
         results.push(StationResponse {
             market_id: mid,
@@ -75,6 +81,9 @@ pub(crate) async fn query_stations(
             services,
             landing_pads,
             dist_from_star_ls: None,
+            commodities,
+            modules,
+            ships,
         });
     }
 
@@ -143,4 +152,84 @@ async fn fetch_landing_pads(
         medium: r.get("medium"),
         large: r.get("large"),
     }))
+}
+
+async fn fetch_commodities(
+    client: &tokio_postgres::Client,
+    market_id: i64,
+) -> Result<Vec<CommodityResponse>, Status> {
+    let rows = client
+        .query(
+            "SELECT name, mean_price, buy_price, stock, sell_price, demand
+             FROM commodity_listening
+             WHERE market_id = $1
+             ORDER BY name",
+            &[&market_id],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    Ok(rows
+        .iter()
+        .map(|r| CommodityResponse {
+            name: r.get("name"),
+            mean_price: r.get("mean_price"),
+            buy_price: r.get("buy_price"),
+            stock: r.get("stock"),
+            sell_price: r.get("sell_price"),
+            demand: r.get("demand"),
+        })
+        .collect())
+}
+
+async fn fetch_modules(
+    client: &tokio_postgres::Client,
+    market_id: i64,
+) -> Result<Vec<ModuleResponse>, Status> {
+    let rows = client
+        .query(
+            "SELECT id, name, category, cost, ship
+             FROM modul_listening
+             WHERE market_id = $1
+             ORDER BY category, name",
+            &[&market_id],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    Ok(rows
+        .iter()
+        .map(|r| ModuleResponse {
+            id: r.get("id"),
+            name: r.get("name"),
+            category: r.get("category"),
+            cost: r.get("cost"),
+            ship: r.get("ship"),
+        })
+        .collect())
+}
+
+async fn fetch_ships(
+    client: &tokio_postgres::Client,
+    market_id: i64,
+) -> Result<Vec<ShipResponse>, Status> {
+    let rows = client
+        .query(
+            "SELECT id, name, basevalue
+             FROM ship_listening
+             WHERE market_id = $1
+             ORDER BY name",
+            &[&market_id],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    Ok(rows
+        .iter()
+        .map(|r| ShipResponse {
+            id: r.get("id"),
+            name: r.get("name"),
+            basevalue: r.get("basevalue"),
+        })
+        .collect())
 }

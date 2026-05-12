@@ -1,5 +1,4 @@
 use std::io::Read;
-use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
@@ -21,8 +20,11 @@ struct EddnMessage {
 }
 
 pub fn spawn_listener(eddn_url: String, pool: Pool) {
+    // Capture the handle here, while we are still inside the Tokio runtime.
+    // thread::spawn creates a plain OS thread with no Tokio context, so
+    // Handle::current() would panic if called from inside the closure.
+    let handle = tokio::runtime::Handle::current();
     thread::spawn(move || {
-        let rt = tokio::runtime::Handle::current();
         let context = zmq::Context::new();
         let subscriber = context
             .socket(zmq::SUB)
@@ -48,7 +50,7 @@ pub fn spawn_listener(eddn_url: String, pool: Pool) {
                     };
 
                     let pool_clone = pool.clone();
-                    rt.spawn(async move {
+                    handle.spawn(async move {
                         if let Err(e) = handle_message(&json_str, &pool_clone).await {
                             error!("failed to handle EDDN message: {e:#}");
                         }
