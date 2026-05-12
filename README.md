@@ -16,10 +16,6 @@ Shows system information compact for explorer.
 
 ![Screenshot of settings panel](assets/graphics/screenshots/settings-screenshot.jpg "Settings Panel")
 
-<h2>Gui or tui? Your choice!</h2>
-
-![Screenshot of tui](assets/graphics/screenshots/tui.png "Tui")
-
 <h2>And much more!</h2>
 
 ## Features
@@ -59,13 +55,6 @@ In the same folder run:
 makepkg -i
 ```
 
-## Command Options
-
-| Option            | Description                                              | Example            |
-|-------------------|----------------------------------------------------------|--------------------|
-| --version         | Prints version into terminal                             |                    |
-| --upload-journal  | Uploads Journal to EDCAS network                         |                    |
-
 # Build it yourself
 
 ## Build Requirements
@@ -78,44 +67,6 @@ makepkg -i
 ```bash
 sudo apt install cmake pkg-config build-essential git libwayland-dev libglib2.0-dev libgdk3.0-cil-dev libappindicator3-dev libsoup-3.0-dev libwebkit2gtk-4.1-dev libxdo-dev
 ```
-
-### Arch
-
-#TODO
-```bash
-
-```
-
-## Addings wasm target
-
-```bash
-rustup toolchain install stable
-rustup target add wasm32-unknown-unknown
-```
-## build dioxus from source
-This requieres some compiling time since we need the pre--release from dioxus
-```bash
-cargo install dioxus-cli@0.7.0-rc.0
-```
-If something fails, look up <a href=https://dioxuslabs.com/learn/0.7/getting_started/ > here </a>.
-
-## Building
-
-Clone the repo & cd
-
-```bash
-git clone https://github.com/arne-fuchs/edcas-client.git cd edcas-client
-```
-
-## Run via dioxus
-
-```bash
-dioxus serve --fullstack --release
-```
-
-# Important notice about running debug
-
-Running debug will requiere a server instance running locally and therefor needs additional setup, which is not documented yet.
 
 ## Standard directories
 

@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc;
 use std::thread;
-use std::time::Duration;
+use std::time::{Duration, SystemTime};
 
 use edcas_common::journal::{CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan};
 use tracing::{debug, error, info, warn};
@@ -162,6 +162,29 @@ pub struct StationData {
     pub market_id: i64,
 }
 
+#[derive(Clone, Default)]
+pub struct InventoryItem {
+    pub name: String,
+    pub localised: String,
+    pub count: i32,
+}
+
+#[derive(Clone, Default)]
+pub struct CargoItem {
+    pub name: String,
+    pub localised: String,
+    pub count: i32,
+    pub stolen: i32,
+}
+
+#[derive(Clone, Default)]
+pub struct OnFootInventory {
+    pub items: Vec<InventoryItem>,
+    pub components: Vec<InventoryItem>,
+    pub consumables: Vec<InventoryItem>,
+    pub data: Vec<InventoryItem>,
+}
+
 #[derive(Clone)]
 pub struct JournalData {
     pub current_system: Option<SystemData>,
@@ -170,6 +193,12 @@ pub struct JournalData {
     pub saa_data: HashMap<i32, SaaBodyData>,
     pub stations: Vec<StationData>,
     pub discovered_signals: Vec<DiscoveredSignal>,
+    pub materials_raw: Vec<InventoryItem>,
+    pub materials_manufactured: Vec<InventoryItem>,
+    pub materials_encoded: Vec<InventoryItem>,
+    pub cargo: Vec<CargoItem>,
+    pub backpack: OnFootInventory,
+    pub shiplocker: OnFootInventory,
 }
 
 impl JournalData {
@@ -181,6 +210,12 @@ impl JournalData {
             saa_data: HashMap::new(),
             stations: Vec::new(),
             discovered_signals: Vec::new(),
+            materials_raw: Vec::new(),
+            materials_manufactured: Vec::new(),
+            materials_encoded: Vec::new(),
+            cargo: Vec::new(),
+            backpack: OnFootInventory::default(),
+            shiplocker: OnFootInventory::default(),
         }
     }
 
@@ -292,6 +327,16 @@ impl JournalData {
             Some(JournalEvent::FssSignalDiscovered(e)) => {
                 debug!("FSSSignalDiscovered: {}", e.signal_name);
                 self.discovered_signals.push(DiscoveredSignal::from_event(&e));
+            }
+            None => {
+                // Check for events not in the typed enum (Materials)
+                if let Ok(v) = serde_json::from_str::<serde_json::Value>(trimmed) {
+                    if v.get("event").and_then(|e| e.as_str()) == Some("Materials") {
+                        self.materials_raw = parse_inventory_array(&v["Raw"]);
+                        self.materials_manufactured = parse_inventory_array(&v["Manufactured"]);
+                        self.materials_encoded = parse_inventory_array(&v["Encoded"]);
+                    }
+                }
             }
             Some(JournalEvent::Docked(e)) => {
                 debug!("Docked at {} (market_id={})", e.station_name, e.market_id);
@@ -517,6 +562,9 @@ impl JournalReader {
 
             info!("Loading existing journal files from: {}", journal_dir.display());
             load_existing_files(&journal_dir, &mut journal_data);
+            load_cargo_file(&journal_dir.join("Cargo.json"), &mut journal_data);
+            journal_data.backpack = load_onfoot_file(&journal_dir.join("Backpack.json"));
+            journal_data.shiplocker = load_onfoot_file(&journal_dir.join("ShipLocker.json"));
             info!("Loaded {} bodies from existing files", journal_data.bodies.len());
             let _ = tx.send(journal_data.clone());
 
@@ -554,6 +602,50 @@ impl Drop for JournalReader {
     }
 }
 
+fn parse_inventory_array(arr: &serde_json::Value) -> Vec<InventoryItem> {
+    arr.as_array()
+        .map(|items| {
+            items.iter().filter_map(|item| {
+                let name = item.get("Name")?.as_str()?.to_owned();
+                let localised = item.get("Name_Localised")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or(&name)
+                    .to_owned();
+                let count = item.get("Count").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+                Some(InventoryItem { name, localised, count })
+            }).collect()
+        })
+        .unwrap_or_default()
+}
+
+fn load_cargo_file(path: &Path, data: &mut JournalData) {
+    let Ok(content) = std::fs::read_to_string(path) else { return };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) else { return };
+    data.cargo = v["Inventory"].as_array()
+        .map(|items| items.iter().filter_map(|item| {
+            let name = item.get("Name")?.as_str()?.to_owned();
+            let localised = item.get("Name_Localised")
+                .and_then(|v| v.as_str())
+                .unwrap_or(&name)
+                .to_owned();
+            let count = item.get("Count").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+            let stolen = item.get("Stolen").and_then(|v| v.as_i64()).unwrap_or(0) as i32;
+            Some(CargoItem { name, localised, count, stolen })
+        }).collect())
+        .unwrap_or_default();
+}
+
+fn load_onfoot_file(path: &Path) -> OnFootInventory {
+    let Ok(content) = std::fs::read_to_string(path) else { return OnFootInventory::default() };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) else { return OnFootInventory::default() };
+    OnFootInventory {
+        items: parse_inventory_array(&v["Items"]),
+        components: parse_inventory_array(&v["Components"]),
+        consumables: parse_inventory_array(&v["Consumables"]),
+        data: parse_inventory_array(&v["Data"]),
+    }
+}
+
 fn load_existing_files(dir: &Path, data: &mut JournalData) {
     if !dir.exists() || !dir.is_dir() {
         warn!("Journal directory does not exist: {}", dir.display());
@@ -586,12 +678,18 @@ fn watch_latest_file(
 ) {
     let mut last_file: Option<PathBuf> = None;
     let mut last_position: u64 = 0;
+    let mut last_cargo_mtime: Option<SystemTime> = None;
+    let mut last_backpack_mtime: Option<SystemTime> = None;
+    let mut last_shiplocker_mtime: Option<SystemTime> = None;
 
     loop {
         if stop_flag.load(Ordering::SeqCst) {
             return;
         }
 
+        let mut changed = false;
+
+        // ── Journal file ──────────────────────────────────────────
         if let Some(active) = find_latest_journal_file(dir) {
             let file_changed = last_file.as_ref() != Some(&active);
             if file_changed {
@@ -601,14 +699,13 @@ fn watch_latest_file(
                 data.clear();
                 read_file_lines(&active, data);
                 last_position = active.metadata().map(|m| m.len()).unwrap_or(0);
-                let _ = tx.send(data.clone());
+                changed = true;
             } else if let Ok(metadata) = active.metadata() {
                 let file_size = metadata.len();
                 if file_size > last_position {
                     if let Ok(mut file) = OpenOptions::new().read(true).open(&active) {
                         let _ = file.seek(SeekFrom::Start(last_position));
                         let reader = BufReader::new(file);
-                        let mut changed = false;
                         for line in reader.lines().flatten() {
                             let trimmed = line.trim().to_owned();
                             if !trimmed.is_empty() {
@@ -617,12 +714,41 @@ fn watch_latest_file(
                             }
                         }
                         last_position = file_size;
-                        if changed {
-                            let _ = tx.send(data.clone());
-                        }
                     }
                 }
             }
+        }
+
+        // ── Inventory JSON files ──────────────────────────────────
+        let cargo_path = dir.join("Cargo.json");
+        if let Ok(mtime) = cargo_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_cargo_mtime {
+                last_cargo_mtime = Some(mtime);
+                load_cargo_file(&cargo_path, data);
+                changed = true;
+            }
+        }
+
+        let backpack_path = dir.join("Backpack.json");
+        if let Ok(mtime) = backpack_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_backpack_mtime {
+                last_backpack_mtime = Some(mtime);
+                data.backpack = load_onfoot_file(&backpack_path);
+                changed = true;
+            }
+        }
+
+        let shiplocker_path = dir.join("ShipLocker.json");
+        if let Ok(mtime) = shiplocker_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_shiplocker_mtime {
+                last_shiplocker_mtime = Some(mtime);
+                data.shiplocker = load_onfoot_file(&shiplocker_path);
+                changed = true;
+            }
+        }
+
+        if changed {
+            let _ = tx.send(data.clone());
         }
 
         thread::sleep(Duration::from_millis(500));

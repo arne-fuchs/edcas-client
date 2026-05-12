@@ -28,7 +28,7 @@ use crate::journal_reader::{
     BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData, JournalReader, ParentType,
 };
 use crate::views::{
-    AboutView, CarriersView, ExplorerView, LogView, MaterialsView, MiningView, NewsView,
+    AboutView, CarriersView, ExplorerView, InventoryView, LogView, MiningView, NewsView,
     SettingsView, StationsView, SystemView, ViewEvent,
 };
 
@@ -45,7 +45,7 @@ const TABS: &[&str] = &[
     "System",
     "Explorer",
     "Mining",
-    "Materials",
+    "Inventory",
     "Stations",
     "Carriers",
     "Log",
@@ -116,7 +116,7 @@ struct App {
     system: SystemView,
     explorer: ExplorerView,
     mining: MiningView,
-    materials: MaterialsView,
+    inventory: InventoryView,
     stations: StationsView,
     carriers: CarriersView,
     log_view: LogView,
@@ -160,7 +160,7 @@ impl App {
             system: SystemView::new(),
             explorer: ExplorerView::new(),
             mining: MiningView::new(),
-            materials: MaterialsView::new(),
+            inventory: InventoryView::new(),
             stations: StationsView::new(),
             carriers: CarriersView::new(),
             log_view: LogView::new(),
@@ -274,7 +274,7 @@ impl App {
             AppView::System => self.system.render(frame, area, &self.journal),
             AppView::Explorer => self.explorer.render(frame, area),
             AppView::Mining => self.mining.render(frame, area, &self.journal),
-            AppView::Materials => self.materials.render(frame, area, &self.journal),
+            AppView::Materials => self.inventory.render(frame, area, &self.journal),
             AppView::Stations => self.stations.render(frame, area),
             AppView::Carriers => self.carriers.render(frame, area),
             AppView::Log => self.log_view.render(frame, area, &self.settings.journal_reader.journal_directory),
@@ -320,7 +320,7 @@ impl App {
             AppView::System => self.system.handle_key(key, &self.journal),
             AppView::Explorer => self.explorer.handle_key(key),
             AppView::Mining => self.mining.handle_key(key),
-            AppView::Materials => self.materials.handle_key(key),
+            AppView::Materials => self.inventory.handle_key(key),
             AppView::Stations => self.stations.handle_key(key, &self.api),
             AppView::Carriers => self.carriers.handle_key(key, &self.api),
             AppView::Log => self.log_view.handle_key(key),

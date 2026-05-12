@@ -165,14 +165,7 @@ impl CarriersView {
         lines
     }
 
-    fn build_detail_lines(&self) -> Vec<Line<'static>> {
-        let Some(carrier) = self.results.get(self.selected_idx) else {
-            return vec![Line::from(Span::styled(
-                "Select a carrier from the list.",
-                Style::default().fg(Color::DarkGray),
-            ))];
-        };
-
+    fn build_detail_header_lines(&self) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
 
         // Tab bar
@@ -195,23 +188,74 @@ impl CarriersView {
             })
             .collect();
         lines.push(Line::from(tab_spans));
-        lines.push(Line::from(""));
+
+        let Some(carrier) = self.results.get(self.selected_idx) else {
+            return lines;
+        };
 
         match self.detail_tab {
-            DetailTab::Overview => self.render_overview(carrier, &mut lines),
-            DetailTab::Market => self.render_market(carrier, &mut lines),
-            DetailTab::Outfitting => self.render_outfitting(carrier, &mut lines),
-            DetailTab::Shipyard => self.render_shipyard(carrier, &mut lines),
+            DetailTab::Overview => {
+                lines.push(Line::from(Span::styled(
+                    format!("── {} ──", carrier.name),
+                    Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                )));
+            }
+            DetailTab::Market => {
+                lines.push(Line::from(Span::styled(
+                    format!(
+                        "{:<28} {:>8} {:>8} {:>8} {:>8} {:>8}",
+                        "Commodity", "Buy", "Sell", "Mean", "Stock", "Demand"
+                    ),
+                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                )));
+                lines.push(Line::from(Span::styled(
+                    "─".repeat(70),
+                    Style::default().fg(Color::DarkGray),
+                )));
+            }
+            DetailTab::Outfitting => {
+                lines.push(Line::from(Span::styled(
+                    format!("{:<38} {:>12}", "Module", "Cost"),
+                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                )));
+                lines.push(Line::from(Span::styled(
+                    "─".repeat(52),
+                    Style::default().fg(Color::DarkGray),
+                )));
+            }
+            DetailTab::Shipyard => {
+                lines.push(Line::from(Span::styled(
+                    format!("{:<38} {:>14}", "Ship", "Base Value"),
+                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                )));
+                lines.push(Line::from(Span::styled(
+                    "─".repeat(54),
+                    Style::default().fg(Color::DarkGray),
+                )));
+            }
         }
 
         lines
     }
 
-    fn render_overview(&self, carrier: &CarrierResponse, lines: &mut Vec<Line<'static>>) {
-        lines.push(Line::from(Span::styled(
-            format!("── {} ──", carrier.name),
-            Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
-        )));
+    fn build_detail_body_lines(&self) -> Vec<Line<'static>> {
+        let Some(carrier) = self.results.get(self.selected_idx) else {
+            return vec![Line::from(Span::styled(
+                "Select a carrier from the list.",
+                Style::default().fg(Color::DarkGray),
+            ))];
+        };
+
+        match self.detail_tab {
+            DetailTab::Overview => self.overview_body(carrier),
+            DetailTab::Market => self.market_body(carrier),
+            DetailTab::Outfitting => self.outfitting_body(carrier),
+            DetailTab::Shipyard => self.shipyard_body(carrier),
+        }
+    }
+
+    fn overview_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
+        let mut lines = Vec::new();
         lines.push(Line::from(format!("System:    {}", carrier.system_name)));
         lines.push(Line::from(format!("Market ID: {}", carrier.market_id)));
         if let Some(ref faction) = carrier.faction_name {
@@ -223,33 +267,20 @@ impl CarriersView {
                 lines.push(Line::from(format!("  {}", chunk.join(", "))));
             }
         }
+        lines
     }
 
-    fn render_market(&self, carrier: &CarrierResponse, lines: &mut Vec<Line<'static>>) {
+    fn market_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
         if carrier.commodities.is_empty() {
-            lines.push(Line::from(Span::styled(
+            return vec![Line::from(Span::styled(
                 "No market data available.",
                 Style::default().fg(Color::DarkGray),
-            )));
-            return;
+            ))];
         }
-
-        lines.push(Line::from(Span::styled(
-            format!(
-                "{:<28} {:>8} {:>8} {:>8} {:>8} {:>8}",
-                "Commodity", "Buy", "Sell", "Mean", "Stock", "Demand"
-            ),
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-        )));
-        lines.push(Line::from(Span::styled(
-            "─".repeat(70),
-            Style::default().fg(Color::DarkGray),
-        )));
-
-        for c in &carrier.commodities {
+        carrier.commodities.iter().map(|c| {
             let buy = if c.buy_price > 0 { format!("{:>8}", c.buy_price) } else { format!("{:>8}", "-") };
             let sell = if c.sell_price > 0 { format!("{:>8}", c.sell_price) } else { format!("{:>8}", "-") };
-            lines.push(Line::from(format!(
+            Line::from(format!(
                 "{:<28} {} {} {:>8} {:>8} {:>8}",
                 truncate(&c.name, 28),
                 buy,
@@ -257,28 +288,18 @@ impl CarriersView {
                 c.mean_price,
                 c.stock,
                 c.demand,
-            )));
-        }
+            ))
+        }).collect()
     }
 
-    fn render_outfitting(&self, carrier: &CarrierResponse, lines: &mut Vec<Line<'static>>) {
+    fn outfitting_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
         if carrier.modules.is_empty() {
-            lines.push(Line::from(Span::styled(
+            return vec![Line::from(Span::styled(
                 "No outfitting data available.",
                 Style::default().fg(Color::DarkGray),
-            )));
-            return;
+            ))];
         }
-
-        lines.push(Line::from(Span::styled(
-            format!("{:<38} {:>12}", "Module", "Cost"),
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-        )));
-        lines.push(Line::from(Span::styled(
-            "─".repeat(52),
-            Style::default().fg(Color::DarkGray),
-        )));
-
+        let mut lines = Vec::new();
         let mut last_cat = String::new();
         for m in &carrier.modules {
             let cat = m.category.as_deref().unwrap_or("");
@@ -296,31 +317,21 @@ impl CarriersView {
             let cost = if m.cost > 0 { format!("{:>12}", m.cost) } else { format!("{:>12}", "-") };
             lines.push(Line::from(format!("  {:<36} {}", truncate(name, 36), cost)));
         }
+        lines
     }
 
-    fn render_shipyard(&self, carrier: &CarrierResponse, lines: &mut Vec<Line<'static>>) {
+    fn shipyard_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
         if carrier.ships.is_empty() {
-            lines.push(Line::from(Span::styled(
+            return vec![Line::from(Span::styled(
                 "No shipyard data available.",
                 Style::default().fg(Color::DarkGray),
-            )));
-            return;
+            ))];
         }
-
-        lines.push(Line::from(Span::styled(
-            format!("{:<38} {:>14}", "Ship", "Base Value"),
-            Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-        )));
-        lines.push(Line::from(Span::styled(
-            "─".repeat(54),
-            Style::default().fg(Color::DarkGray),
-        )));
-
-        for s in &carrier.ships {
+        carrier.ships.iter().map(|s| {
             let name = s.name.as_deref().unwrap_or(&s.id);
             let val = if s.basevalue > 0 { format!("{:>14}", s.basevalue) } else { format!("{:>14}", "-") };
-            lines.push(Line::from(format!("{:<38} {}", truncate(name, 38), val)));
-        }
+            Line::from(format!("{:<38} {}", truncate(name, 38), val))
+        }).collect()
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient) -> ViewEvent {
@@ -416,7 +427,7 @@ impl CarriersView {
         let active_border = Style::default().fg(Color::Rgb(255, 140, 0));
         let inactive_border = Style::default().fg(Color::White);
 
-        // Left: search + results list
+        // ── Left: list ───────────────────────────────────────────
         let list_lines = self.build_list_lines();
         let list_height = chunks[0].height.saturating_sub(2) as usize;
         let list_scroll = if self.selected_idx + 3 >= self.list_scroll + list_height {
@@ -443,25 +454,39 @@ impl CarriersView {
             chunks[0],
         );
 
-        // Right: detail panel
-        let detail_lines = self.build_detail_lines();
-        let detail_height = chunks[1].height.saturating_sub(2) as usize;
-        let detail_max_scroll = detail_lines.len().saturating_sub(detail_height);
+        // ── Right: detail — fixed header + scrollable body ───────
+        let detail_block = Block::default()
+            .title(" Carrier Details — Enter to search ")
+            .borders(Borders::ALL)
+            .border_style(if self.focus == FocusArea::Detail {
+                active_border
+            } else {
+                inactive_border
+            });
+        let detail_inner = detail_block.inner(chunks[1]);
+        frame.render_widget(detail_block, chunks[1]);
+
+        let header_lines = self.build_detail_header_lines();
+        let header_height = header_lines.len() as u16;
+
+        let detail_split = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([
+                Constraint::Length(header_height),
+                Constraint::Min(0),
+            ])
+            .split(detail_inner);
+
+        frame.render_widget(Paragraph::new(header_lines), detail_split[0]);
+
+        let body_lines = self.build_detail_body_lines();
+        let body_height = detail_split[1].height as usize;
+        let body_max_scroll = body_lines.len().saturating_sub(body_height);
 
         frame.render_widget(
-            Paragraph::new(detail_lines)
-                .block(
-                    Block::default()
-                        .title(" Carrier Details — Enter to search ")
-                        .borders(Borders::ALL)
-                        .border_style(if self.focus == FocusArea::Detail {
-                            active_border
-                        } else {
-                            inactive_border
-                        }),
-                )
-                .scroll((self.detail_scroll.min(detail_max_scroll) as u16, 0)),
-            chunks[1],
+            Paragraph::new(body_lines)
+                .scroll((self.detail_scroll.min(body_max_scroll) as u16, 0)),
+            detail_split[1],
         );
     }
 }
