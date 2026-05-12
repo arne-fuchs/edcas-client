@@ -199,3 +199,56 @@ pub struct FactionQuery {
     pub name: Option<String>,
     pub limit: Option<i64>,
 }
+
+/// GET /api/v1/construction-depots — query params: name, system_name, market_id, limit
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConstructionDepotResponse {
+    pub market_id: i64,
+    pub system_address: i64,
+    pub system_name: String,
+    pub station_name: String,
+    pub progress: f32,
+    pub construction_complete: bool,
+    pub construction_failed: bool,
+    pub last_updated: String,
+    pub resources: Vec<ConstructionResourceResponse>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConstructionResourceResponse {
+    pub name: String,
+    pub display_name: String,
+    pub required_amount: i32,
+    pub provided_amount: i32,
+    pub payment: i64,
+}
+
+/// Query parameters for construction depot search
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct ConstructionQuery {
+    pub name: Option<String>,
+    pub system_name: Option<String>,
+    pub market_id: Option<i64>,
+    pub limit: Option<i64>,
+}
+
+/// POST /api/v1/construction-depots — client submits depot data from journal
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConstructionDepotSubmission {
+    pub market_id: i64,
+    pub system_address: i64,
+    pub station_name: String,
+    pub progress: f32,
+    pub construction_complete: bool,
+    pub construction_failed: bool,
+    pub resources: Vec<ConstructionResourceSubmission>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ConstructionResourceSubmission {
+    pub name: String,
+    pub display_name: String,
+    pub required_amount: i32,
+    pub provided_amount: i32,
+    pub payment: i64,
+}

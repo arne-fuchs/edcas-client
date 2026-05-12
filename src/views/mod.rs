@@ -1,10 +1,10 @@
 mod about;
 mod carriers;
+mod construction;
 mod event;
 mod explorer;
 mod factions;
 mod inventory;
-mod log;
 mod mining;
 mod news;
 mod settings;
@@ -13,11 +13,11 @@ mod system;
 
 pub use about::AboutView;
 pub use carriers::CarriersView;
+pub use construction::ConstructionView;
 pub use event::ViewEvent;
 pub use explorer::ExplorerView;
 pub use factions::FactionsView;
 pub use inventory::InventoryView;
-pub use log::LogView;
 pub use mining::MiningView;
 pub use news::NewsView;
 pub use settings::SettingsView;

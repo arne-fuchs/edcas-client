@@ -28,8 +28,8 @@ use crate::journal_reader::{
     BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData, JournalReader, ParentType,
 };
 use crate::views::{
-    AboutView, CarriersView, ExplorerView, FactionsView, InventoryView, LogView, MiningView,
-    NewsView, SettingsView, StationsView, SystemView, ViewEvent,
+    AboutView, CarriersView, ConstructionView, ExplorerView, FactionsView, InventoryView,
+    MiningView, NewsView, SettingsView, StationsView, SystemView, ViewEvent,
 };
 
 mod api_client;
@@ -50,7 +50,7 @@ const TABS: &[&str] = &[
     "Stations",
     "Carriers",
     "Factions",
-    "Log",
+    "Construction",
     "Settings",
     "About",
 ];
@@ -66,7 +66,7 @@ enum AppView {
     Stations = 5,
     Carriers = 6,
     Factions = 7,
-    Log = 8,
+    Construction = 8,
     Settings = 9,
     About = 10,
 }
@@ -81,8 +81,8 @@ impl AppView {
             AppView::Materials => AppView::Stations,
             AppView::Stations => AppView::Carriers,
             AppView::Carriers => AppView::Factions,
-            AppView::Factions => AppView::Log,
-            AppView::Log => AppView::Settings,
+            AppView::Factions => AppView::Construction,
+            AppView::Construction => AppView::Settings,
             AppView::Settings => AppView::About,
             AppView::About => AppView::News,
         }
@@ -98,8 +98,8 @@ impl AppView {
             AppView::Stations => AppView::Materials,
             AppView::Carriers => AppView::Stations,
             AppView::Factions => AppView::Carriers,
-            AppView::Log => AppView::Factions,
-            AppView::Settings => AppView::Log,
+            AppView::Construction => AppView::Factions,
+            AppView::Settings => AppView::Construction,
             AppView::About => AppView::Settings,
         }
     }
@@ -125,7 +125,7 @@ struct App {
     stations: StationsView,
     carriers: CarriersView,
     factions: FactionsView,
-    log_view: LogView,
+    construction: ConstructionView,
     settings_view: SettingsView,
     about: AboutView,
     should_quit: bool,
@@ -170,7 +170,7 @@ impl App {
             stations: StationsView::new(),
             carriers: CarriersView::new(),
             factions: FactionsView::new(),
-            log_view: LogView::new(),
+            construction: ConstructionView::new(),
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
@@ -198,6 +198,17 @@ impl App {
                     });
                 }
 
+                // Submit any new construction depots to server (background)
+                if !data.construction_depots.is_empty() && !self.settings.api_url.is_empty() {
+                    for depot in data.construction_depots.values() {
+                        let base_url = self.settings.api_url.clone();
+                        let submission = depot.submission.clone();
+                        std::thread::spawn(move || {
+                            let client = ApiClient::new(base_url);
+                            let _ = client.submit_construction_depot(&submission);
+                        });
+                    }
+                }
                 self.journal = data;
                 self.explorer.update(&self.journal);
             }
@@ -285,7 +296,7 @@ impl App {
             AppView::Stations => self.stations.render(frame, area),
             AppView::Carriers => self.carriers.render(frame, area),
             AppView::Factions => self.factions.render(frame, area),
-            AppView::Log => self.log_view.render(frame, area, &self.settings.journal_reader.journal_directory),
+            AppView::Construction => self.construction.render(frame, area, &self.journal),
             AppView::Settings => self.settings_view.render(frame, area, &self.settings),
             AppView::About => self.about.render(frame, area),
         }
@@ -332,7 +343,7 @@ impl App {
             AppView::Stations => self.stations.handle_key(key, &self.api),
             AppView::Carriers => self.carriers.handle_key(key, &self.api),
             AppView::Factions => self.factions.handle_key(key, &self.api),
-            AppView::Log => self.log_view.handle_key(key),
+            AppView::Construction => self.construction.handle_key(key, &self.api, &self.journal),
             AppView::Settings => self.settings_view.handle_key(key, &mut self.settings),
             AppView::About => self.about.handle_key(key),
         };
@@ -390,6 +401,7 @@ impl App {
             AppView::Stations => self.stations.on_enter(&self.api),
             AppView::Carriers => self.carriers.on_enter(&self.api),
             AppView::Factions => self.factions.on_enter(&self.api),
+            AppView::Construction => self.construction.on_enter(&self.api),
             _ => {}
         }
     }

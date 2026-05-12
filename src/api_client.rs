@@ -1,4 +1,8 @@
-use edcas_common::api::{BodyResponse, CarrierQuery, CarrierResponse, FactionQuery, FactionResponse, StationQuery, StationResponse};
+use edcas_common::api::{
+    BodyResponse, CarrierQuery, CarrierResponse, ConstructionDepotResponse,
+    ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse,
+    StationQuery, StationResponse,
+};
 
 pub struct ApiClient {
     base_url: String,
@@ -54,5 +58,24 @@ impl ApiClient {
         } else {
             Ok(vec![])
         }
+    }
+
+    pub fn search_construction_depots(
+        &self,
+        query: &ConstructionQuery,
+    ) -> anyhow::Result<Vec<ConstructionDepotResponse>> {
+        let url = format!("{}/api/v1/construction-depots", self.base_url);
+        let resp = self.client.get(&url).query(query).send()?;
+        if resp.status().is_success() {
+            Ok(resp.json()?)
+        } else {
+            Ok(vec![])
+        }
+    }
+
+    pub fn submit_construction_depot(&self, submission: &ConstructionDepotSubmission) -> anyhow::Result<()> {
+        let url = format!("{}/api/v1/construction-depots", self.base_url);
+        self.client.post(&url).json(submission).send()?;
+        Ok(())
     }
 }

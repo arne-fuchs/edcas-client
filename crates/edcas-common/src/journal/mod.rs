@@ -1,8 +1,10 @@
+pub mod colonisation;
 pub mod scan;
 pub mod station;
 pub mod travel;
 pub mod types;
 
+pub use colonisation::ColonisationConstructionDepot;
 pub use scan::{FssBodySignals, FssSignalDiscovered, SaaSignalsFound, Scan, ScanBaryCentre};
 pub use station::{Commodities, Docked, Outfitting, Shipyard};
 pub use travel::{CarrierJump, FsdJump, Location};
@@ -25,6 +27,7 @@ pub enum JournalEvent {
     Commodities(Commodities),
     Outfitting(Outfitting),
     Shipyard(Shipyard),
+    ColonisationConstructionDepot(ColonisationConstructionDepot),
 }
 
 impl JournalEvent {
@@ -93,6 +96,11 @@ impl JournalEvent {
             "Docked" => serde_json::from_value::<Docked>(value)
                 .ok()
                 .map(Self::Docked),
+            "ColonisationConstructionDepot" => {
+                serde_json::from_value::<ColonisationConstructionDepot>(value)
+                    .ok()
+                    .map(Self::ColonisationConstructionDepot)
+            }
             _ => None,
         }
     }
@@ -111,6 +119,7 @@ impl JournalEvent {
             Self::Commodities(_) => "commodities",
             Self::Outfitting(_) => "outfitting",
             Self::Shipyard(_) => "shipyard",
+            Self::ColonisationConstructionDepot(_) => "ColonisationConstructionDepot",
         }
     }
 }

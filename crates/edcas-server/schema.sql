@@ -402,12 +402,37 @@ CREATE TABLE ship_listening (
 
 -- ── Indexes ──────────────────────────────────────────────────
 
-CREATE INDEX idx_journal_events_type      ON journal_events (event_type);
-CREATE INDEX idx_star_systems_name        ON star_systems (name);
-CREATE INDEX idx_body_system              ON body (system_address);
-CREATE INDEX idx_star_system              ON star (system_address);
-CREATE INDEX idx_factions_system          ON factions (system_address);
-CREATE INDEX idx_stations_name            ON stations (name);
-CREATE INDEX idx_stations_system          ON stations (system_address);
-CREATE INDEX idx_fss_body_signals_system  ON fss_body_signals (system_address);
-CREATE INDEX idx_saa_signals_system       ON saa_signals (system_address);
+-- ── Colonisation construction depots ───────────────────────
+
+CREATE TABLE construction_depots (
+    market_id               BIGINT PRIMARY KEY,
+    system_address          BIGINT NOT NULL,
+    station_name            VARCHAR(255) NOT NULL,
+    progress                REAL NOT NULL DEFAULT 0,
+    construction_complete   BOOLEAN NOT NULL DEFAULT FALSE,
+    construction_failed     BOOLEAN NOT NULL DEFAULT FALSE,
+    last_updated            TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    journal_id              BIGINT REFERENCES journal_events(id)
+);
+
+CREATE TABLE construction_resources (
+    market_id       BIGINT NOT NULL REFERENCES construction_depots(market_id) ON DELETE CASCADE,
+    name            VARCHAR(255) NOT NULL,
+    display_name    VARCHAR(255) NOT NULL,
+    required_amount INTEGER NOT NULL,
+    provided_amount INTEGER NOT NULL DEFAULT 0,
+    payment         BIGINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (market_id, name)
+);
+
+CREATE INDEX idx_journal_events_type             ON journal_events (event_type);
+CREATE INDEX idx_star_systems_name               ON star_systems (name);
+CREATE INDEX idx_body_system                     ON body (system_address);
+CREATE INDEX idx_star_system                     ON star (system_address);
+CREATE INDEX idx_factions_system                 ON factions (system_address);
+CREATE INDEX idx_stations_name                   ON stations (name);
+CREATE INDEX idx_stations_system                 ON stations (system_address);
+CREATE INDEX idx_fss_body_signals_system         ON fss_body_signals (system_address);
+CREATE INDEX idx_saa_signals_system              ON saa_signals (system_address);
+CREATE INDEX idx_construction_depots_system      ON construction_depots (system_address);
+CREATE INDEX idx_construction_depots_name        ON construction_depots (LOWER(station_name));

@@ -202,6 +202,10 @@ pub struct FssSignalDiscovered {
     pub time_remaining: Option<f32>,
     #[serde(rename = "IsStation", default)]
     pub is_station: bool,
+    #[serde(rename = "BodyID")]
+    pub body_id: Option<i32>,
+    #[serde(rename = "BodyName")]
+    pub body_name: Option<String>,
     #[serde(rename = "horizons", default)]
     pub horizons: bool,
     #[serde(rename = "odyssey", default)]

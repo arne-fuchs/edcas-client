@@ -99,6 +99,24 @@ async fn handle_message(json_str: &str, pool: &Pool) -> anyhow::Result<()> {
         JournalEvent::FssBodySignals(ref e) => {
             db::scan::insert_fss_body_signals(pool, journal_id, e).await?
         }
+        JournalEvent::ColonisationConstructionDepot(ref e) => {
+            let submission = edcas_common::api::ConstructionDepotSubmission {
+                market_id: e.market_id,
+                system_address: e.system_address,
+                station_name: String::new(), // EDDN doesn't carry station name
+                progress: e.construction_progress,
+                construction_complete: e.construction_complete,
+                construction_failed: e.construction_failed,
+                resources: e.resources.iter().map(|r| edcas_common::api::ConstructionResourceSubmission {
+                    name: r.name.clone(),
+                    display_name: r.display_name().to_string(),
+                    required_amount: r.required_amount,
+                    provided_amount: r.provided_amount,
+                    payment: r.payment,
+                }).collect(),
+            };
+            db::construction::upsert_depot(pool, &submission).await?;
+        }
         // Raw-events only — no typed table
         JournalEvent::ScanBaryCentre(_) | JournalEvent::FssSignalDiscovered(_) => {}
     }

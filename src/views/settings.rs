@@ -7,8 +7,11 @@ use ratatui::{
     Frame,
 };
 use std::collections::HashMap;
+use std::path::PathBuf;
 use std::str::FromStr;
 use tracing::{info, warn, error};
+
+use crate::journal_reader::find_latest_journal_file;
 
 use crate::settings::Settings;
 use crate::settings::icons::Icon;
@@ -60,6 +63,7 @@ enum CellType {
     BoolValue(bool),
     EnumValue(Vec<&'static str>),
     ToggleEnabled(bool),
+    Button(&'static str),
 }
 
 impl CellType {
@@ -194,18 +198,15 @@ impl SettingsView {
                     }
                 }
             },
-            KeyCode::Char(' ') => {
+            KeyCode::Char(' ') | KeyCode::Enter => {
                 if matches!(self.focus, FocusArea::Content) {
                     let grid = self.build_grid(settings);
                     if self.row < grid.len() && self.col < grid[self.row].cells.len() {
-                        let cell = &grid[self.row].cells[self.col];
+                        let cell = grid[self.row].cells[self.col].clone();
                         match cell {
-                            CellType::StringValue(_) => {
+                            CellType::StringValue(ref s) => {
                                 self.editing = true;
-                                self.edit_buffer = match cell {
-                                    CellType::StringValue(s) => s.clone(),
-                                    _ => String::new(),
-                                };
+                                self.edit_buffer = s.clone();
                             }
                             CellType::BoolValue(_) => {
                                 settings.explorer.include_system_name = !settings.explorer.include_system_name;
@@ -214,6 +215,9 @@ impl SettingsView {
                             CellType::ToggleEnabled(_) => {
                                 self.toggle_enabled(settings);
                                 return ViewEvent::SettingsChanged;
+                            }
+                            CellType::Button(_) => {
+                                self.open_current_log(settings);
                             }
                             _ => {}
                         }
@@ -288,6 +292,12 @@ impl SettingsView {
                     cells: vec![
                         CellType::Label("Journal Directory".to_string()),
                         CellType::StringValue(settings.journal_reader.journal_directory.clone()),
+                    ],
+                },
+                GridRow {
+                    cells: vec![
+                        CellType::Label("Current Log File".to_string()),
+                        CellType::Button("[ Open in default app ]"),
                     ],
                 },
                 GridRow {
@@ -381,7 +391,8 @@ impl SettingsView {
                         info!("Updated journal directory: '{}'", value);
                         settings.journal_reader.journal_directory = value;
                     }
-                    1 => {
+                    // row 1 is the Button row — not editable, no action needed here
+                    2 => {
                         if let Ok(action) = ActionAtShutdownSignal::from_str(&value) {
                             info!("Updated shutdown action: {}", action);
                             settings.journal_reader.action_at_shutdown_signal = action;
@@ -389,7 +400,7 @@ impl SettingsView {
                             warn!("Invalid shutdown action value: '{}'", value);
                         }
                     }
-                    2 => {
+                    3 => {
                         info!("Updated API URL: '{}'", value);
                         settings.api_url = value;
                     }
@@ -408,6 +419,25 @@ impl SettingsView {
                     }
                 }
                 _ => {}
+            }
+        }
+    }
+
+    fn open_current_log(&self, settings: &Settings) {
+        let dir = &settings.journal_reader.journal_directory;
+        if dir.is_empty() {
+            warn!("Journal directory not configured");
+            return;
+        }
+        match find_latest_journal_file(&PathBuf::from(dir)) {
+            Some(path) => {
+                info!("Opening log file: {}", path.display());
+                if let Err(e) = opener::open(&path) {
+                    error!("Failed to open log file: {}", e);
+                }
+            }
+            None => {
+                warn!("No journal log file found in: {}", dir);
             }
         }
     }
@@ -530,13 +560,14 @@ impl SettingsView {
                     }
                     CellType::BoolValue(b) => if *b { "true" } else { "false" }.to_string(),
                     CellType::EnumValue(_) => {
-                        if self.section == SettingsSection::JournalReader && row_idx == 1 {
+                        if self.section == SettingsSection::JournalReader && row_idx == 2 {
                             settings.journal_reader.action_at_shutdown_signal.to_string()
                         } else {
                             String::new()
                         }
                     }
                     CellType::ToggleEnabled(b) => if *b { "Yes" } else { "No" }.to_string(),
+                    CellType::Button(label) => label.to_string(),
                 };
 
                 let style = if is_editing {
@@ -555,12 +586,15 @@ impl SettingsView {
                     Style::default().fg(Color::Green)
                 } else if matches!(cell, CellType::ToggleEnabled(false)) {
                     Style::default().fg(Color::Red)
+                } else if matches!(cell, CellType::Button(_)) {
+                    Style::default().fg(Color::Rgb(255, 140, 0))
                 } else {
                     Style::default().fg(Color::White)
                 };
 
                 let padding = match cell {
                     CellType::Label(_) => 35,
+                    CellType::Button(_) => 0,
                     CellType::StringValue(_) => 12,
                     _ => 10,
                 };

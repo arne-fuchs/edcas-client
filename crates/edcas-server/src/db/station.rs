@@ -7,6 +7,9 @@ pub async fn insert_docked(pool: &Pool, journal_id: i64, event: &Docked) -> anyh
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
 
+    // Serialise concurrent writes for the same market to prevent deadlocks.
+    tx.execute("SELECT pg_advisory_xact_lock($1)", &[&event.market_id]).await?;
+
     let station_type =
         lookup_or_insert(&tx, "station_type", &event.station_type, journal_id).await?;
     let government =
@@ -96,6 +99,8 @@ pub async fn insert_commodities(
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
 
+    tx.execute("SELECT pg_advisory_xact_lock($1)", &[&event.market_id]).await?;
+
     tx.execute(
         "DELETE FROM commodity_listening WHERE market_id=$1",
         &[&event.market_id],
@@ -145,6 +150,8 @@ pub async fn insert_outfitting(
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
 
+    tx.execute("SELECT pg_advisory_xact_lock($1)", &[&event.market_id]).await?;
+
     tx.execute(
         "DELETE FROM modul_listening WHERE market_id=$1",
         &[&event.market_id],
@@ -185,6 +192,8 @@ pub async fn insert_shipyard(
 ) -> anyhow::Result<()> {
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
+
+    tx.execute("SELECT pg_advisory_xact_lock($1)", &[&event.market_id]).await?;
 
     tx.execute(
         "DELETE FROM ship_listening WHERE market_id=$1",

@@ -6,15 +6,11 @@ Shows system information compact for explorer.
 
 <h2>Gotta see all those planets!</h2>
 
-![Screenshot of explorer panel](assets/graphics/screenshots/explorer-screenshot.jpg "Explorer Panel")
+![Screenshot of explorer panel](assets/graphics/screenshots/explorer-screenshot.png "Explorer Panel")
 
 <h2>Track your materials!</h2>
 
-![Screenshot of materials panel](assets/graphics/screenshots/materials-screenshot.jpg "Materials Panel")
-
-<h2>Make it truly yours!</h2>
-
-![Screenshot of settings panel](assets/graphics/screenshots/settings-screenshot.jpg "Settings Panel")
+![Screenshot of materials panel](assets/graphics/screenshots/materials-screenshot.png "Materials Panel")
 
 <h2>And much more!</h2>
 
@@ -24,10 +20,10 @@ Shows system information compact for explorer.
 * List signals found in system to find Raxxla ASAP
 * Get help mining by showing relevant data
 * Keep track of your materials
-* Apply graphic override configurations (with presets or your own!)
-* Always keep track of what the feds are doing in the news tab
+* Keep track of your constructions you'll never finish
+* Keep track of what the feds are doing in the news tab
 * Written in rust so you know its good
-* Data sharing and pulling over a decentralized, open sourced network
+* All open source
 
 ## Installation
 

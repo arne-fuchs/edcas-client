@@ -7,7 +7,8 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::{Duration, SystemTime};
 
-use edcas_common::journal::{CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan};
+use edcas_common::api::{ConstructionDepotSubmission, ConstructionResourceSubmission};
+use edcas_common::journal::{CarrierJump, ColonisationConstructionDepot, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan};
 use tracing::{debug, error, info, warn};
 
 #[derive(Clone)]
@@ -118,6 +119,8 @@ pub struct DiscoveredSignal {
     pub threat_level: Option<i32>,
     pub time_remaining: Option<f32>,
     pub is_station: bool,
+    /// Set when the journal includes `BodyID` — lets us attach this signal to a body in the tree.
+    pub body_id: Option<i32>,
 }
 
 impl DiscoveredSignal {
@@ -136,6 +139,7 @@ impl DiscoveredSignal {
             threat_level: e.threat_level,
             time_remaining: e.time_remaining,
             is_station: e.is_station,
+            body_id: e.body_id,
         }
     }
 }
@@ -197,6 +201,21 @@ pub struct OnFootInventory {
     pub data: Vec<InventoryItem>,
 }
 
+/// A construction depot the player has visited, ready to submit to the server.
+#[derive(Clone)]
+pub struct ConstructionDepotData {
+    pub submission: ConstructionDepotSubmission,
+}
+
+impl ConstructionDepotData {
+    pub fn progress(&self) -> f32 {
+        self.submission.progress
+    }
+    pub fn station_name(&self) -> &str {
+        &self.submission.station_name
+    }
+}
+
 #[derive(Clone)]
 pub struct JournalData {
     pub current_system: Option<SystemData>,
@@ -211,6 +230,10 @@ pub struct JournalData {
     pub cargo: Vec<CargoItem>,
     pub backpack: OnFootInventory,
     pub shiplocker: OnFootInventory,
+    /// Most recently visited construction depots, keyed by market_id.
+    pub construction_depots: HashMap<i64, ConstructionDepotData>,
+    /// (market_id, station_name, system_name) of the last Docked event.
+    pub last_docked: Option<(i64, String, String)>,
 }
 
 impl JournalData {
@@ -228,6 +251,8 @@ impl JournalData {
             cargo: Vec::new(),
             backpack: OnFootInventory::default(),
             shiplocker: OnFootInventory::default(),
+            construction_depots: HashMap::new(),
+            last_docked: None,
         }
     }
 
@@ -352,6 +377,11 @@ impl JournalData {
             }
             Some(JournalEvent::Docked(e)) => {
                 debug!("Docked at {} (market_id={})", e.station_name, e.market_id);
+                self.last_docked = Some((
+                    e.market_id,
+                    e.station_name.clone(),
+                    e.star_system.clone(),
+                ));
                 let station = StationData {
                     name: e.station_name.clone(),
                     station_type: e.station_type.clone(),
@@ -365,6 +395,31 @@ impl JournalData {
                 if !self.stations.iter().any(|s| s.market_id == station.market_id) {
                     self.stations.push(station);
                 }
+            }
+            Some(JournalEvent::ColonisationConstructionDepot(e)) => {
+                debug!("ColonisationConstructionDepot for market_id={}", e.market_id);
+                let station_name = self
+                    .last_docked
+                    .as_ref()
+                    .filter(|(mid, _, _)| *mid == e.market_id)
+                    .map(|(_, name, _)| name.clone())
+                    .unwrap_or_else(|| format!("Depot {}", e.market_id));
+                let submission = ConstructionDepotSubmission {
+                    market_id: e.market_id,
+                    system_address: e.system_address,
+                    station_name,
+                    progress: e.construction_progress,
+                    construction_complete: e.construction_complete,
+                    construction_failed: e.construction_failed,
+                    resources: e.resources.iter().map(|r| ConstructionResourceSubmission {
+                        name: r.name.clone(),
+                        display_name: r.display_name().to_string(),
+                        required_amount: r.required_amount,
+                        provided_amount: r.provided_amount,
+                        payment: r.payment,
+                    }).collect(),
+                };
+                self.construction_depots.insert(e.market_id, ConstructionDepotData { submission });
             }
             _ => {}
         }

@@ -45,6 +45,8 @@ async fn main() -> anyhow::Result<()> {
                 api::stations::search_stations,
                 api::carriers::search_carriers,
                 api::factions::search_factions,
+                api::construction::search_construction_depots,
+                api::construction::submit_construction_depot,
             ],
         )
         .launch()

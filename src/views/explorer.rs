@@ -33,6 +33,8 @@ enum NodeType {
     SectionHeader,
     Station(StationData),
     Signal(DiscoveredSignal),
+    /// A bio/geo signal attached to a body; FlatNode.body_id is the parent body.
+    BodySignal(BodySignal),
 }
 
 struct FlatNode {
@@ -96,6 +98,7 @@ impl ExplorerView {
                 &self.system_name,
                 &self.fss_signals,
                 &self.saa_data,
+                &self.discovered_signals,
             );
         }
         if !self.stations.is_empty() {
@@ -132,10 +135,15 @@ impl ExplorerView {
                 });
             }
         }
-        if !self.discovered_signals.is_empty() {
+        // Only show signals that have no body association in the flat section.
+        // Signals with a body_id are already rendered under their body in the tree.
+        let unassociated: Vec<&DiscoveredSignal> = self.discovered_signals.iter()
+            .filter(|s| s.body_id.is_none())
+            .collect();
+        if !unassociated.is_empty() {
             self.flat_nodes.push(FlatNode {
                 tree_prefix: String::new(),
-                short_name: format!("Signals ({})", self.discovered_signals.len()),
+                short_name: format!("System Signals ({})", unassociated.len()),
                 body_id: -1,
                 distance_ls: 0.0,
                 has_rings: false,
@@ -148,7 +156,7 @@ impl ExplorerView {
                 geo_signal_count: 0,
                 node_type: NodeType::SectionHeader,
             });
-            for sig in &self.discovered_signals {
+            for sig in unassociated {
                 self.flat_nodes.push(FlatNode {
                     tree_prefix: String::new(),
                     short_name: sig.display_name.clone(),
@@ -170,7 +178,8 @@ impl ExplorerView {
 
     fn get_selected_body(&self) -> Option<&BodyScan> {
         let node = self.flat_nodes.get(self.selected_idx)?;
-        if !matches!(node.node_type, NodeType::Body) {
+        // Both Body nodes and BodySignal nodes store a valid body_id
+        if !matches!(node.node_type, NodeType::Body | NodeType::BodySignal(_)) {
             return None;
         }
         find_body_in_tree(&self.tree, node.body_id)
@@ -289,6 +298,35 @@ impl ExplorerView {
                         Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
                     ]));
                 }
+                NodeType::BodySignal(ref sig) => {
+                    let (icon, color) = if sig.is_biological() {
+                        ("🌿", Color::Green)
+                    } else if sig.is_geological() {
+                        ("🌋", Color::Yellow)
+                    } else {
+                        ("◆", Color::White)
+                    };
+                    let style = if is_selected {
+                        Style::default().fg(color).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(color)
+                    };
+                    let name_style = if is_selected {
+                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(Color::White)
+                    };
+                    let prefix_style = if is_selected {
+                        Style::default().fg(Color::Rgb(255, 140, 0))
+                    } else {
+                        Style::default().fg(Color::DarkGray)
+                    };
+                    lines.push(Line::from(vec![
+                        Span::styled(node.tree_prefix.clone(), prefix_style),
+                        Span::styled(format!("{icon} "), style),
+                        Span::styled(node.short_name.clone(), name_style),
+                    ]));
+                }
                 NodeType::Signal(ref sig) => {
                     let (icon, base_color) = signal_icon(sig);
                     let icon_style = if is_selected {
@@ -305,12 +343,26 @@ impl ExplorerView {
                         .filter(|&t| t > 0)
                         .map(|t| format!("  ⚠{}", t))
                         .unwrap_or_default();
-                    lines.push(Line::from(vec![
-                        Span::styled("  ", Style::default().fg(Color::DarkGray)),
-                        Span::styled(format!("{} ", icon), icon_style),
-                        Span::styled(node.short_name.clone(), name_style),
-                        Span::styled(threat_str, Style::default().fg(Color::Red)),
-                    ]));
+                    if node.tree_prefix.is_empty() {
+                        lines.push(Line::from(vec![
+                            Span::styled("  ", Style::default().fg(Color::DarkGray)),
+                            Span::styled(format!("{} ", icon), icon_style),
+                            Span::styled(node.short_name.clone(), name_style),
+                            Span::styled(threat_str, Style::default().fg(Color::Red)),
+                        ]));
+                    } else {
+                        let prefix_style = if is_selected {
+                            Style::default().fg(Color::Rgb(255, 140, 0))
+                        } else {
+                            Style::default().fg(Color::DarkGray)
+                        };
+                        lines.push(Line::from(vec![
+                            Span::styled(node.tree_prefix.clone(), prefix_style),
+                            Span::styled(format!("{} ", icon), icon_style),
+                            Span::styled(node.short_name.clone(), name_style),
+                            Span::styled(threat_str, Style::default().fg(Color::Red)),
+                        ]));
+                    }
                 }
                 NodeType::Body => {
                     let (icon, icon_style) = node_icon(node);
@@ -381,6 +433,11 @@ impl ExplorerView {
             }
             if matches!(node.node_type, NodeType::SectionHeader) {
                 return lines;
+            }
+            // For a body signal node, show the parent body's full detail
+            if matches!(node.node_type, NodeType::BodySignal(_)) {
+                // body_id holds the parent body; fall through to body detail rendering below
+                // by leaving the node type as-is and letting get_selected_body handle it
             }
         }
 
@@ -605,6 +662,7 @@ fn flatten_node(
     system_name: &str,
     fss_signals: &HashMap<i32, Vec<BodySignal>>,
     saa_data: &HashMap<i32, SaaBodyData>,
+    discovered_signals: &[DiscoveredSignal],
 ) {
     let connector = if is_last { "└─ " } else { "├─ " };
     let continuation = if is_last { "   " } else { "│  " };
@@ -647,9 +705,72 @@ fn flatten_node(
         node_type: NodeType::Body,
     });
 
-    let n = node.children.len();
+    // Collect signals for this body (prefer SAA over FSS)
+    let body_signals: Vec<BodySignal> = if let Some(saa) = saa_data.get(&node.body_id) {
+        saa.signals.clone()
+    } else if let Some(sigs) = fss_signals.get(&node.body_id) {
+        sigs.clone()
+    } else {
+        Vec::new()
+    };
+
+    let n_children = node.children.len();
+    let n_sigs = body_signals.len();
+    let disc_sigs: Vec<&DiscoveredSignal> = discovered_signals
+        .iter()
+        .filter(|s| s.body_id == Some(node.body_id))
+        .collect();
+    let n_disc = disc_sigs.len();
+
+    // Orbital children — only "last" if there are no signal children after them
     for (i, child) in node.children.iter().enumerate() {
-        flatten_node(child, &child_prefix, i == n - 1, result, system_name, fss_signals, saa_data);
+        let is_last = i == n_children - 1 && n_sigs == 0 && n_disc == 0;
+        flatten_node(child, &child_prefix, is_last, result, system_name, fss_signals, saa_data, discovered_signals);
+    }
+
+    // Bio/geo signal children, appended after orbital children
+    for (j, sig) in body_signals.iter().enumerate() {
+        let is_last = j == n_sigs - 1 && n_disc == 0;
+        let sig_connector = if is_last { "└─ " } else { "├─ " };
+        let sig_prefix = format!("{}{}", child_prefix, sig_connector);
+        let label = format!("{} ×{}", sig.display_type(), sig.count);
+        result.push(FlatNode {
+            tree_prefix: sig_prefix,
+            short_name: label,
+            body_id: node.body_id,
+            distance_ls: 0.0,
+            has_rings: false,
+            landable: false,
+            planet_class: String::new(),
+            star_type: String::new(),
+            is_barycentre: false,
+            composition: None,
+            bio_signal_count: 0,
+            geo_signal_count: 0,
+            node_type: NodeType::BodySignal(sig.clone()),
+        });
+    }
+
+    // Body-associated system signals (FssSignalDiscovered with BodyID)
+    for (k, sig) in disc_sigs.iter().enumerate() {
+        let is_last = k == n_disc - 1;
+        let sig_connector = if is_last { "└─ " } else { "├─ " };
+        let sig_prefix = format!("{}{}", child_prefix, sig_connector);
+        result.push(FlatNode {
+            tree_prefix: sig_prefix,
+            short_name: sig.display_name.clone(),
+            body_id: node.body_id,
+            distance_ls: 0.0,
+            has_rings: false,
+            landable: false,
+            planet_class: String::new(),
+            star_type: String::new(),
+            is_barycentre: false,
+            composition: None,
+            bio_signal_count: 0,
+            geo_signal_count: 0,
+            node_type: NodeType::Signal((*sig).clone()),
+        });
     }
 }
 
