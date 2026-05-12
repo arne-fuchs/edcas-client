@@ -2,7 +2,7 @@
 members = [
     ".",
     "crates/edcas-common",
-    "crates/edcas-eddn",
+    "crates/edcas-server",
 ]
 resolver = "2"
 

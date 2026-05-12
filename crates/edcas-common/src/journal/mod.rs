@@ -3,7 +3,7 @@ pub mod station;
 pub mod travel;
 pub mod types;
 
-pub use scan::{FssBodySignals, SaaSignalsFound, Scan, ScanBaryCentre};
+pub use scan::{FssBodySignals, FssSignalDiscovered, SaaSignalsFound, Scan, ScanBaryCentre};
 pub use station::{Commodities, Docked, Outfitting, Shipyard};
 pub use travel::{CarrierJump, FsdJump, Location};
 
@@ -20,6 +20,7 @@ pub enum JournalEvent {
     ScanBaryCentre(ScanBaryCentre),
     SaaSignalsFound(SaaSignalsFound),
     FssBodySignals(FssBodySignals),
+    FssSignalDiscovered(FssSignalDiscovered),
     Docked(Docked),
     Commodities(Commodities),
     Outfitting(Outfitting),
@@ -86,6 +87,9 @@ impl JournalEvent {
             "FSSBodySignals" => serde_json::from_value::<FssBodySignals>(value)
                 .ok()
                 .map(Self::FssBodySignals),
+            "FSSSignalDiscovered" => serde_json::from_value::<FssSignalDiscovered>(value)
+                .ok()
+                .map(Self::FssSignalDiscovered),
             "Docked" => serde_json::from_value::<Docked>(value)
                 .ok()
                 .map(Self::Docked),
@@ -102,6 +106,7 @@ impl JournalEvent {
             Self::ScanBaryCentre(_) => "ScanBaryCentre",
             Self::SaaSignalsFound(_) => "SAASignalsFound",
             Self::FssBodySignals(_) => "FSSBodySignals",
+            Self::FssSignalDiscovered(_) => "FSSSignalDiscovered",
             Self::Docked(_) => "Docked",
             Self::Commodities(_) => "commodities",
             Self::Outfitting(_) => "outfitting",

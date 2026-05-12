@@ -296,6 +296,12 @@ impl SettingsView {
                         CellType::StringValue(settings.journal_reader.action_at_shutdown_signal.to_string()),
                     ],
                 },
+                GridRow {
+                    cells: vec![
+                        CellType::Label("API URL".to_string()),
+                        CellType::StringValue(settings.api_url.clone()),
+                    ],
+                },
             ],
             SettingsSection::GraphicsEditor => vec![GridRow {
                 cells: vec![
@@ -382,6 +388,10 @@ impl SettingsView {
                         } else {
                             warn!("Invalid shutdown action value: '{}'", value);
                         }
+                    }
+                    2 => {
+                        info!("Updated API URL: '{}'", value);
+                        settings.api_url = value;
                     }
                     _ => {}
                 },

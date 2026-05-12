@@ -31,7 +31,7 @@ pub struct Settings {
 }
 
 fn default_api_url() -> String {
-    "http://localhost:3000".into()
+    "https://edcas.de".into()
 }
 
 impl Default for Settings {

@@ -1,126 +1,262 @@
-[2m2026-05-11T08:10:34.389715Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m321:[0m EDCAS client starting
-[2m2026-05-11T08:10:34.389772Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m324:[0m CLI arguments: ["target/debug/edcas-client"]
-[2m2026-05-11T08:10:34.389845Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m338:[0m Terminal raw mode enabled
-[2m2026-05-11T08:10:34.391206Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m93:[0m Journal logs: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-11T08:10:34.391227Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m119:[0m Graphics path: /home/arne/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics
-[2m2026-05-11T08:10:34.391240Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m122:[0m Settings loaded
-[2m2026-05-11T08:10:34.391246Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m126:[0m Journal directory configured: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-11T08:10:34.391253Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m136:[0m Starting journal reader for directory: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-11T08:10:34.391260Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m356:[0m Initializing journal reader for: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-11T08:10:34.391364Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m364:[0m Loading existing journal files from: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-11T08:10:34.395197Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m409:[0m Loading journal file: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-11T074214.01.log
-[2m2026-05-11T08:10:34.396456Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m124:[0m Location: Antliae Sector KM-W c1-6
-[2m2026-05-11T08:10:34.404609Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Antliae Sector RD-T b3-1
-[2m2026-05-11T08:10:34.406289Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Chokota
-[2m2026-05-11T08:10:34.408170Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Crucis Sector KH-V b2-2
-[2m2026-05-11T08:10:34.409814Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to LTT 4350
-[2m2026-05-11T08:10:34.411540Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Akandi
-[2m2026-05-11T08:10:34.412790Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Akandi B
-[2m2026-05-11T08:10:34.412849Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Akandi C
-[2m2026-05-11T08:10:34.413711Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Shinrarta Dezhra
-[2m2026-05-11T08:10:34.420234Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Gluscap
-[2m2026-05-11T08:10:34.422005Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Gadjali
-[2m2026-05-11T08:10:34.422948Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Gadjali A
-[2m2026-05-11T08:10:34.423019Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Gadjali B
-[2m2026-05-11T08:10:34.423904Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Crucis Sector FG-X b1-6
-[2m2026-05-11T08:10:34.425641Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Benapem
-[2m2026-05-11T08:10:34.427331Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Antliae Sector HR-W c1-13
-[2m2026-05-11T08:10:34.429026Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Antliae Sector KM-W c1-6
-[2m2026-05-11T08:10:34.430728Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 5
-[2m2026-05-11T08:10:34.430846Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 5
-[2m2026-05-11T08:10:34.430925Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 4
-[2m2026-05-11T08:10:34.430960Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 1
-[2m2026-05-11T08:10:34.431031Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 2
-[2m2026-05-11T08:10:34.431117Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 11
-[2m2026-05-11T08:10:34.431212Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 8
-[2m2026-05-11T08:10:34.431286Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 6
-[2m2026-05-11T08:10:34.431324Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 3
-[2m2026-05-11T08:10:34.431397Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 4 a
-[2m2026-05-11T08:10:34.431496Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 1
-[2m2026-05-11T08:10:34.431579Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A
-[2m2026-05-11T08:10:34.431662Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 7
-[2m2026-05-11T08:10:34.431696Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 2
-[2m2026-05-11T08:10:34.431765Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 9
-[2m2026-05-11T08:10:34.431848Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 10
-[2m2026-05-11T08:10:34.431884Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 4
-[2m2026-05-11T08:10:34.431958Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 7
-[2m2026-05-11T08:10:34.432057Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 2
-[2m2026-05-11T08:10:34.432130Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 9
-[2m2026-05-11T08:10:34.432200Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 6
-[2m2026-05-11T08:10:34.432298Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 1
-[2m2026-05-11T08:10:34.432353Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B
-[2m2026-05-11T08:10:34.432427Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 4
-[2m2026-05-11T08:10:34.432504Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 8
-[2m2026-05-11T08:10:34.432603Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 3
-[2m2026-05-11T08:10:34.432676Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 3
-[2m2026-05-11T08:10:34.438387Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m366:[0m Loaded 28 bodies from existing files
-[2m2026-05-11T08:10:34.441061Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m433:[0m Journal file changed to: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-11T074214.01.log
-[2m2026-05-11T08:10:34.442069Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m124:[0m Location: Antliae Sector KM-W c1-6
-[2m2026-05-11T08:10:34.449766Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Antliae Sector RD-T b3-1
-[2m2026-05-11T08:10:34.451412Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Chokota
-[2m2026-05-11T08:10:34.453124Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Crucis Sector KH-V b2-2
-[2m2026-05-11T08:10:34.454325Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to [2600:9000:28c5:3000:c:bfa0:6b00:93a1]:443
-[2m2026-05-11T08:10:34.454772Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to LTT 4350
-[2m2026-05-11T08:10:34.456504Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Akandi
-[2m2026-05-11T08:10:34.457727Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Akandi B
-[2m2026-05-11T08:10:34.457811Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Akandi C
-[2m2026-05-11T08:10:34.458677Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Shinrarta Dezhra
-[2m2026-05-11T08:10:34.464980Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Gluscap
-[2m2026-05-11T08:10:34.466734Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Gadjali
-[2m2026-05-11T08:10:34.467532Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Gadjali A
-[2m2026-05-11T08:10:34.467602Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Gadjali B
-[2m2026-05-11T08:10:34.468505Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Crucis Sector FG-X b1-6
-[2m2026-05-11T08:10:34.470173Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Benapem
-[2m2026-05-11T08:10:34.472028Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Antliae Sector HR-W c1-13
-[2m2026-05-11T08:10:34.473368Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to [2600:9000:28c5:3000:c:bfa0:6b00:93a1]:443
-[2m2026-05-11T08:10:34.473769Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m119:[0m FSDJump to Antliae Sector KM-W c1-6
-[2m2026-05-11T08:10:34.475434Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 5
-[2m2026-05-11T08:10:34.475550Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 5
-[2m2026-05-11T08:10:34.475627Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 4
-[2m2026-05-11T08:10:34.475662Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 1
-[2m2026-05-11T08:10:34.475732Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 2
-[2m2026-05-11T08:10:34.475847Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 11
-[2m2026-05-11T08:10:34.475964Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 8
-[2m2026-05-11T08:10:34.476043Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 6
-[2m2026-05-11T08:10:34.476081Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 3
-[2m2026-05-11T08:10:34.476154Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 4 a
-[2m2026-05-11T08:10:34.476227Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 1
-[2m2026-05-11T08:10:34.476289Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A
-[2m2026-05-11T08:10:34.476360Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 7
-[2m2026-05-11T08:10:34.476394Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 2
-[2m2026-05-11T08:10:34.476479Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 9
-[2m2026-05-11T08:10:34.476565Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 10
-[2m2026-05-11T08:10:34.476601Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 4
-[2m2026-05-11T08:10:34.476674Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 7
-[2m2026-05-11T08:10:34.476773Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 2
-[2m2026-05-11T08:10:34.476846Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 9
-[2m2026-05-11T08:10:34.476916Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 6
-[2m2026-05-11T08:10:34.477027Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 1
-[2m2026-05-11T08:10:34.477086Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B
-[2m2026-05-11T08:10:34.477156Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 4
-[2m2026-05-11T08:10:34.477251Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 8
-[2m2026-05-11T08:10:34.477351Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 A 3
-[2m2026-05-11T08:10:34.477432Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m134:[0m Scan: Antliae Sector KM-W c1-6 B 3
-[2m2026-05-11T08:10:34.559647Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", community.elitedangerous.com)
-[2m2026-05-11T08:10:34.648358Z[0m [34mDEBUG[0m [2medcas_client::views::news[0m[2m:[0m [2msrc/views/news.rs[0m[2m:[0m[2m90:[0m Success fetching galnet 15 articles
-[2m2026-05-11T08:10:34.650565Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m370:[0m Entering main application loop
-[2m2026-05-11T08:10:34.650598Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m166:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
-[2m2026-05-11T08:10:34.650731Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m49:[0m Explorer updated with 28 bodies, 7 tree nodes
-[2m2026-05-11T08:10:34.650784Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m166:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
-[2m2026-05-11T08:10:34.650878Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m49:[0m Explorer updated with 28 bodies, 7 tree nodes
-[2m2026-05-11T08:10:35.768326Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m379:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-11T08:10:35.768387Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m278:[0m Tab changed to: System
-[2m2026-05-11T08:10:39.315196Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m379:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-11T08:10:39.315238Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m278:[0m Tab changed to: Explorer
-[2m2026-05-11T08:10:44.123376Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m166:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
-[2m2026-05-11T08:10:44.123548Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m49:[0m Explorer updated with 28 bodies, 7 tree nodes
-[2m2026-05-11T08:10:44.548142Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m166:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
-[2m2026-05-11T08:10:44.548331Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m49:[0m Explorer updated with 28 bodies, 7 tree nodes
-[2m2026-05-11T08:11:01.660773Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m166:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
-[2m2026-05-11T08:11:01.660926Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m49:[0m Explorer updated with 28 bodies, 7 tree nodes
-[2m2026-05-11T08:11:21.877762Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m166:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
-[2m2026-05-11T08:11:21.877965Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m49:[0m Explorer updated with 28 bodies, 7 tree nodes
-[2m2026-05-11T08:11:23.796390Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m166:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
-[2m2026-05-11T08:11:23.796552Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m49:[0m Explorer updated with 28 bodies, 7 tree nodes
-[2m2026-05-11T08:11:24.863007Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m166:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
-[2m2026-05-11T08:11:24.863238Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m49:[0m Explorer updated with 28 bodies, 7 tree nodes
+[2m2026-05-12T06:44:17.646111Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m369:[0m EDCAS client starting
+[2m2026-05-12T06:44:17.646156Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m372:[0m CLI arguments: ["target/debug/edcas-client"]
+[2m2026-05-12T06:44:17.646215Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m386:[0m Terminal raw mode enabled
+[2m2026-05-12T06:44:17.647616Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m93:[0m Journal logs: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T06:44:17.647654Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m119:[0m Graphics path: /home/arne/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics
+[2m2026-05-12T06:44:17.647668Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m131:[0m Settings loaded
+[2m2026-05-12T06:44:17.647675Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m135:[0m Journal directory configured: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T06:44:17.647686Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m145:[0m Starting journal reader for directory: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T06:44:17.647693Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m510:[0m Initializing journal reader for: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T06:44:17.647812Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m518:[0m Loading existing journal files from: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-12T06:44:17.650658Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m567:[0m Loading journal file: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
+[2m2026-05-12T06:44:17.651729Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m209:[0m Location: Antliae Sector KM-W c1-6
+[2m2026-05-12T06:44:17.653347Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m575:[0m Backfilling scans from previous journal: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-11T224849.01.log
+[2m2026-05-12T06:44:17.668874Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m575:[0m Backfilling scans from previous journal: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-11T200732.01.log
+[2m2026-05-12T06:44:17.675590Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m575:[0m Backfilling scans from previous journal: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-11T142412.01.log
+[2m2026-05-12T06:44:17.703180Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m520:[0m Loaded 28 bodies from existing files
+[2m2026-05-12T06:44:17.706195Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m598:[0m Journal file changed to: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
+[2m2026-05-12T06:44:17.707207Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m209:[0m Location: Antliae Sector KM-W c1-6
+[2m2026-05-12T06:44:17.719573Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to [2600:9000:28c5:ba00:c:bfa0:6b00:93a1]:443
+[2m2026-05-12T06:44:17.737340Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to [2600:9000:28c5:ba00:c:bfa0:6b00:93a1]:443
+[2m2026-05-12T06:44:17.885200Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", community.elitedangerous.com)
+[2m2026-05-12T06:44:17.965147Z[0m [34mDEBUG[0m [2medcas_client::views::news[0m[2m:[0m [2msrc/views/news.rs[0m[2m:[0m[2m90:[0m Success fetching galnet 15 articles
+[2m2026-05-12T06:44:17.967281Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m418:[0m Entering main application loop
+[2m2026-05-12T06:44:17.967301Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=28
+[2m2026-05-12T06:44:17.967444Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 28 bodies, 7 tree nodes
+[2m2026-05-12T06:44:17.967499Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:44:17.967515Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:44:18.556779Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:18.556821Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: System
+[2m2026-05-12T06:44:18.735662Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:18.735700Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Explorer
+[2m2026-05-12T06:44:18.785860Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to 77.90.1.37:443
+[2m2026-05-12T06:44:18.802836Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to 77.90.1.37:443
+[2m2026-05-12T06:44:18.840960Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", edcas.de)
+[2m2026-05-12T06:44:19.180635Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:19.180687Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Mining
+[2m2026-05-12T06:44:19.639028Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:19.639084Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Explorer
+[2m2026-05-12T06:44:22.745138Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:22.745180Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Mining
+[2m2026-05-12T06:44:23.073793Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:23.073844Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Materials
+[2m2026-05-12T06:44:23.344683Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:23.344720Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Stations
+[2m2026-05-12T06:44:23.604742Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:23.604779Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Carriers
+[2m2026-05-12T06:44:23.831860Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:23.831911Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Log
+[2m2026-05-12T06:44:24.308822Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:24.308862Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Settings
+[2m2026-05-12T06:44:25.115713Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:25.115755Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Log
+[2m2026-05-12T06:44:32.818667Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:44:32.818718Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:44:41.461705Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:41.461748Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Carriers
+[2m2026-05-12T06:44:41.654350Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:41.654411Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Stations
+[2m2026-05-12T06:44:41.938461Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:41.938508Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Carriers
+[2m2026-05-12T06:44:42.615436Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:44:42.615472Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Log
+[2m2026-05-12T06:44:42.947987Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:44:42.948046Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:45:36.256390Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:45:36.256444Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:45:47.516968Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:47.517008Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Carriers
+[2m2026-05-12T06:45:47.658091Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:47.658137Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Stations
+[2m2026-05-12T06:45:47.808060Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:47.808096Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Materials
+[2m2026-05-12T06:45:47.971068Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:47.971112Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Mining
+[2m2026-05-12T06:45:48.116074Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:48.116118Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Explorer
+[2m2026-05-12T06:45:48.443047Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:48.443083Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: System
+[2m2026-05-12T06:45:49.054252Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:49.054293Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: News
+[2m2026-05-12T06:45:49.693112Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:49.693146Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: System
+[2m2026-05-12T06:45:49.862241Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:49.862287Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Explorer
+[2m2026-05-12T06:45:50.027080Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:50.027119Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Mining
+[2m2026-05-12T06:45:50.567051Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:50.567086Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m325:[0m Tab changed to: Materials
+[2m2026-05-12T06:45:51.140186Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:51.140225Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Mining
+[2m2026-05-12T06:45:51.422191Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m427:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-12T06:45:51.422228Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m330:[0m Tab changed to: Explorer
+[2m2026-05-12T06:45:54.298178Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:45:54.298227Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:45:54.825198Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:45:54.825245Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:45:55.353285Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:45:55.353339Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:00.848781Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:00.848833Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:02.431288Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:02.431338Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:04.435221Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:04.435269Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:07.921670Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:07.921726Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:11.407839Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:11.407890Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:12.992735Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:12.992787Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:15.000776Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:15.000821Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:17.428088Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:17.428135Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:19.964301Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:19.964361Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:22.501463Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:22.501528Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:23.981043Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:23.981089Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:27.052198Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:27.052264Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:31.598032Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:31.598106Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:32.547184Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:32.547237Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:33.604701Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:33.604747Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:35.611402Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:35.611458Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:37.087804Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:37.087851Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:38.566194Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:38.566246Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:41.102834Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:41.102885Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:43.638273Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:43.638318Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:44.588351Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:44.588398Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:45.645862Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:45.645917Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:48.183970Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:48.184024Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:51.669579Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:51.669628Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:52.196763Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:52.196818Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:53.146459Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:53.146504Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:53.673691Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:53.673768Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:54.200457Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:54.200499Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:55.152455Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:55.152505Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:57.264851Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:57.264897Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:46:58.214219Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:46:58.214272Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:00.753438Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:00.753500Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:06.784725Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:06.784774Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:10.268206Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:10.268262Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:11.326190Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:11.326239Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:15.864725Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:15.864773Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:22.311922Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:22.311969Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:23.894815Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:23.894865Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:26.849026Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:26.849066Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:28.856889Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:28.856932Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:29.912064Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:29.912119Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:33.402465Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:33.402521Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:34.459771Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:34.459825Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:36.463203Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:36.463255Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:38.997858Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:38.997901Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:43.534972Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:43.535020Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:45.014463Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:45.014513Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:45.542403Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:45.542465Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:47.548057Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:47.548101Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:47.970017Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:47.970054Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:50.499875Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:50.499923Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:52.506235Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:52.506288Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:56.620780Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:56.620832Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:47:58.098857Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:47:58.098915Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:00.635983Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:00.636029Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:05.072661Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:05.072706Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:09.195464Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:09.195517Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:10.151002Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:10.151044Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:14.697310Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:14.697363Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:16.177453Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:16.177499Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:19.241040Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:19.241086Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:20.717584Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:20.717634Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:22.723794Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:22.723837Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:24.730385Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:24.730433Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:25.259193Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:25.259246Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:27.266002Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:27.266073Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:29.799013Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:29.799060Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:34.334227Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:34.334275Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:37.291492Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:37.291546Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:38.874755Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:38.874799Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:43.836431Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:43.836492Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:49.854689Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:49.854743Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:51.441418Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:51.441494Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:51.864741Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:51.864787Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:52.920277Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:52.920320Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:53.447281Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:53.447342Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:53.872460Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:53.872504Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:54.401341Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:54.401384Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:54.927959Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:54.928007Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:55.455069Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:55.455114Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:48:55.876886Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:48:55.876936Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-12T06:49:09.498150Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m178:[0m Journal update received: system=Antliae Sector KM-W c1-6, bodies=0
+[2m2026-05-12T06:49:09.498206Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m71:[0m Explorer updated with 0 bodies, 0 tree nodes

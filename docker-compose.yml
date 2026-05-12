@@ -1,0 +1,59 @@
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: edcas
+      POSTGRES_PASSWORD: edcas
+      POSTGRES_DB: edcas
+      # C locale avoids locale collation overhead on string-heavy tables
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+    # Tuned for a write-heavy workload (~20 EDDN events/sec, each writing
+    # to multiple normalised tables inside a transaction).
+    command: >
+      postgres
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c work_mem=16MB
+      -c maintenance_work_mem=128MB
+      -c wal_buffers=64MB
+      -c max_wal_size=2GB
+      -c checkpoint_completion_target=0.9
+      -c synchronous_commit=off
+      -c max_connections=50
+      -c random_page_cost=1.1
+      -c effective_io_concurrency=200
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      # Schema is applied automatically on first start by the official
+      # postgres image running every *.sql file in initdb.d/.
+      - ./crates/edcas-server/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U edcas -d edcas"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  edcas-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.eddn
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: postgres
+      DB_USER: edcas
+      DB_PASSWORD: edcas
+      DB_NAME: edcas
+      DB_PORT: 5432
+      API_PORT: 3000
+      EDDN_URL: tcp://eddn.edcd.io:9500
+      RUST_LOG: edcas_server=info
+    ports:
+      - "3000:3000"
+
+volumes:
+  postgres_data:

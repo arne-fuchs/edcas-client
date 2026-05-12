@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::fs::{File, OpenOptions};
 use std::io::{BufRead, BufReader, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
@@ -6,7 +7,7 @@ use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
 
-use edcas_common::journal::{CarrierJump, FsdJump, JournalEvent, Location, Scan};
+use edcas_common::journal::{CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan};
 use tracing::{debug, error, info, warn};
 
 #[derive(Clone)]
@@ -90,9 +91,85 @@ pub struct BodyMaterial {
 }
 
 #[derive(Clone)]
+pub struct BodySignal {
+    pub signal_type: String,
+    pub signal_type_localised: Option<String>,
+    pub count: i32,
+}
+
+#[derive(Clone)]
+pub struct DiscoveredSignal {
+    pub display_name: String,
+    pub uss_type: Option<String>,
+    pub spawning_state: Option<String>,
+    pub spawning_faction: Option<String>,
+    pub threat_level: Option<i32>,
+    pub time_remaining: Option<f32>,
+    pub is_station: bool,
+}
+
+impl DiscoveredSignal {
+    pub fn from_event(e: &FssSignalDiscovered) -> Self {
+        let display_name = e.signal_name_localised
+            .as_deref()
+            .unwrap_or_else(|| clean_signal_name(&e.signal_name))
+            .to_string();
+        let uss_type = e.uss_type_localised.clone().or_else(|| e.uss_type.clone());
+        let spawning_state = e.spawning_state_localised.clone().or_else(|| e.spawning_state.clone());
+        Self {
+            display_name,
+            uss_type,
+            spawning_state,
+            spawning_faction: e.spawning_faction.clone(),
+            threat_level: e.threat_level,
+            time_remaining: e.time_remaining,
+            is_station: e.is_station,
+        }
+    }
+}
+
+fn clean_signal_name(raw: &str) -> &str {
+    raw.trim_start_matches('$').trim_end_matches(';')
+}
+
+impl BodySignal {
+    pub fn is_biological(&self) -> bool {
+        self.signal_type.contains("Biological")
+    }
+    pub fn is_geological(&self) -> bool {
+        self.signal_type.contains("Geological")
+    }
+    pub fn display_type(&self) -> &str {
+        self.signal_type_localised.as_deref().unwrap_or(&self.signal_type)
+    }
+}
+
+#[derive(Clone)]
+pub struct SaaBodyData {
+    pub signals: Vec<BodySignal>,
+    pub genuses: Vec<String>,
+}
+
+#[derive(Clone)]
+pub struct StationData {
+    pub name: String,
+    pub station_type: String,
+    pub dist_from_star_ls: f32,
+    pub services: Vec<String>,
+    pub economy: String,
+    pub faction: String,
+    pub government: String,
+    pub market_id: i64,
+}
+
+#[derive(Clone)]
 pub struct JournalData {
     pub current_system: Option<SystemData>,
     pub bodies: Vec<BodyScan>,
+    pub fss_signals: HashMap<i32, Vec<BodySignal>>,
+    pub saa_data: HashMap<i32, SaaBodyData>,
+    pub stations: Vec<StationData>,
+    pub discovered_signals: Vec<DiscoveredSignal>,
 }
 
 impl JournalData {
@@ -100,6 +177,10 @@ impl JournalData {
         Self {
             current_system: None,
             bodies: Vec::new(),
+            fss_signals: HashMap::new(),
+            saa_data: HashMap::new(),
+            stations: Vec::new(),
+            discovered_signals: Vec::new(),
         }
     }
 
@@ -119,27 +200,51 @@ impl JournalData {
                 debug!("FSDJump to {}", e.star_system);
                 self.current_system = Some(system_from_fsdjump(&e));
                 self.bodies.clear();
+                self.fss_signals.clear();
+                self.saa_data.clear();
+                self.stations.clear();
+                self.discovered_signals.clear();
             }
             Some(JournalEvent::Location(e)) => {
                 debug!("Location: {}", e.star_system);
                 self.current_system = Some(system_from_location(&e));
                 self.bodies.clear();
+                self.fss_signals.clear();
+                self.saa_data.clear();
+                self.stations.clear();
+                self.discovered_signals.clear();
             }
             Some(JournalEvent::CarrierJump(e)) => {
                 debug!("CarrierJump to {}", e.star_system);
                 self.current_system = Some(system_from_carrier_jump(&e));
                 self.bodies.clear();
+                self.fss_signals.clear();
+                self.saa_data.clear();
+                self.stations.clear();
+                self.discovered_signals.clear();
             }
             Some(JournalEvent::Scan(e)) => {
                 debug!("Scan: {}", e.body_name);
                 self.bodies.push(body_from_scan(&e));
             }
             Some(JournalEvent::ScanBaryCentre(e)) => {
-                // Barycentre has no useful display data; add a placeholder so the tree renders
+                let parents = e.parents.as_ref()
+                    .map(|pv| pv.iter()
+                        .filter_map(|p| p.parent_id().map(|pid| BodyParent {
+                            body_id: pid,
+                            parent_type: match p.parent_type() {
+                                "Star" => ParentType::Star,
+                                "Planet" => ParentType::Planet,
+                                "Ring" => ParentType::Ring,
+                                _ => ParentType::Null,
+                            },
+                        }))
+                        .collect())
+                    .unwrap_or_default();
                 self.bodies.push(BodyScan {
                     body_id: e.body_id,
                     body_name: format!("{} Barycentre", e.star_system),
-                    planet_class: "Barycentre".into(),
+                    planet_class: String::new(),
                     landable: false,
                     scan_type: "AutoScan".into(),
                     distance_from_arrival_ls: e.distance_from_arrival_ls,
@@ -152,12 +257,57 @@ impl JournalData {
                     atmosphere: String::new(),
                     terraform_state: String::new(),
                     star_type: String::new(),
-                    parents: vec![],
+                    parents,
                     rings: vec![],
                     materials: vec![],
                     estimated_value: 0,
                     composition: None,
                 });
+            }
+            Some(JournalEvent::FssBodySignals(e)) => {
+                debug!("FSSBodySignals for body {}", e.body_id);
+                let signals = e.signals.iter().map(|s| BodySignal {
+                    signal_type: s.signal_type.clone(),
+                    signal_type_localised: s.signal_type_localised.clone(),
+                    count: s.count,
+                }).collect();
+                self.fss_signals.insert(e.body_id, signals);
+            }
+            Some(JournalEvent::SaaSignalsFound(e)) => {
+                debug!("SAASignalsFound for body {}", e.body_id);
+                let signals = e.signals.iter().map(|s| BodySignal {
+                    signal_type: s.signal_type.clone(),
+                    signal_type_localised: s.signal_type_localised.clone(),
+                    count: s.count,
+                }).collect();
+                let genuses = e.genuses.as_ref()
+                    .map(|gv| gv.iter()
+                        .map(|g| g.genus_localised.clone().unwrap_or_else(|| {
+                            g.genus.trim_end_matches(';').replace('_', " ")
+                        }))
+                        .collect())
+                    .unwrap_or_default();
+                self.saa_data.insert(e.body_id, SaaBodyData { signals, genuses });
+            }
+            Some(JournalEvent::FssSignalDiscovered(e)) => {
+                debug!("FSSSignalDiscovered: {}", e.signal_name);
+                self.discovered_signals.push(DiscoveredSignal::from_event(&e));
+            }
+            Some(JournalEvent::Docked(e)) => {
+                debug!("Docked at {} (market_id={})", e.station_name, e.market_id);
+                let station = StationData {
+                    name: e.station_name.clone(),
+                    station_type: e.station_type.clone(),
+                    dist_from_star_ls: e.dist_from_star_ls.unwrap_or(0.0),
+                    services: e.station_services.clone().unwrap_or_default(),
+                    economy: e.station_economy.clone(),
+                    faction: e.station_faction.as_ref().map(|f| f.name.clone()).unwrap_or_default(),
+                    government: e.station_government.clone(),
+                    market_id: e.market_id,
+                };
+                if !self.stations.iter().any(|s| s.market_id == station.market_id) {
+                    self.stations.push(station);
+                }
             }
             _ => {}
         }
@@ -166,6 +316,10 @@ impl JournalData {
     pub fn clear(&mut self) {
         self.current_system = None;
         self.bodies.clear();
+        self.fss_signals.clear();
+        self.saa_data.clear();
+        self.stations.clear();
+        self.discovered_signals.clear();
     }
 }
 
@@ -405,11 +559,22 @@ fn load_existing_files(dir: &Path, data: &mut JournalData) {
         warn!("Journal directory does not exist: {}", dir.display());
         return;
     }
-    if let Some(active_file) = find_latest_journal_file(dir) {
-        info!("Loading journal file: {}", active_file.display());
-        read_file_lines(&active_file, data);
-    } else {
+    let files = find_all_journal_files(dir);
+    if files.is_empty() {
         warn!("No journal file found in: {}", dir.display());
+        return;
+    }
+    info!("Loading journal file: {}", files[0].display());
+    read_file_lines(&files[0], data);
+
+    // When the latest file starts with a Location (same system, new game session),
+    // the scans from the previous session are in older files — backfill them.
+    if data.current_system.is_some() && data.bodies.is_empty() {
+        let system_address = data.current_system.as_ref().unwrap().system_address;
+        for prev_file in files.iter().skip(1).take(3) {
+            info!("Backfilling scans from previous journal: {}", prev_file.display());
+            load_previous_scans_for_system(prev_file, system_address, data);
+        }
     }
 }
 
@@ -476,9 +641,11 @@ fn read_file_lines(path: &Path, data: &mut JournalData) {
     }
 }
 
-fn find_latest_journal_file(dir: &Path) -> Option<PathBuf> {
-    let mut files: Vec<_> = std::fs::read_dir(dir)
-        .ok()?
+pub fn find_all_journal_files(dir: &Path) -> Vec<PathBuf> {
+    let Ok(read_dir) = std::fs::read_dir(dir) else {
+        return Vec::new();
+    };
+    let mut files: Vec<_> = read_dir
         .filter_map(|e| e.ok())
         .filter(|e| {
             e.path()
@@ -491,9 +658,117 @@ fn find_latest_journal_file(dir: &Path) -> Option<PathBuf> {
             parse_journal_timestamp(&name).map(|ts| (e.path(), ts))
         })
         .collect();
-
     files.sort_by(|a, b| b.1.cmp(&a.1));
-    files.into_iter().next().map(|(path, _)| path)
+    files.into_iter().map(|(path, _)| path).collect()
+}
+
+pub fn find_latest_journal_file(dir: &Path) -> Option<PathBuf> {
+    find_all_journal_files(dir).into_iter().next()
+}
+
+fn load_previous_scans_for_system(path: &Path, system_address: i64, data: &mut JournalData) {
+    let file = match File::open(path) {
+        Ok(f) => f,
+        Err(e) => {
+            error!("Failed to open previous journal file {}: {}", path.display(), e);
+            return;
+        }
+    };
+
+    let mut current_sys_addr: Option<i64> = None;
+    let reader = BufReader::new(file);
+    for line in reader.lines().flatten() {
+        let trimmed = line.trim().to_owned();
+        if trimmed.is_empty() {
+            continue;
+        }
+        let value: serde_json::Value = match serde_json::from_str(&trimmed) {
+            Ok(v) => v,
+            Err(_) => continue,
+        };
+        match JournalEvent::from_json(value) {
+            Some(JournalEvent::FsdJump(e)) => {
+                current_sys_addr = Some(e.system_address);
+            }
+            Some(JournalEvent::Location(e)) => {
+                current_sys_addr = Some(e.system_address);
+            }
+            Some(JournalEvent::CarrierJump(e)) => {
+                current_sys_addr = Some(e.system_address);
+            }
+            Some(JournalEvent::Scan(e)) if current_sys_addr == Some(system_address) => {
+                if !data.bodies.iter().any(|b| b.body_id == e.body_id) {
+                    data.bodies.push(body_from_scan(&e));
+                }
+            }
+            Some(JournalEvent::ScanBaryCentre(e)) if current_sys_addr == Some(system_address) => {
+                if !data.bodies.iter().any(|b| b.body_id == e.body_id) {
+                    let parents = e.parents.as_ref()
+                        .map(|pv| pv.iter()
+                            .filter_map(|p| p.parent_id().map(|pid| BodyParent {
+                                body_id: pid,
+                                parent_type: match p.parent_type() {
+                                    "Star" => ParentType::Star,
+                                    "Planet" => ParentType::Planet,
+                                    "Ring" => ParentType::Ring,
+                                    _ => ParentType::Null,
+                                },
+                            }))
+                            .collect())
+                        .unwrap_or_default();
+                    data.bodies.push(BodyScan {
+                        body_id: e.body_id,
+                        body_name: format!("{} Barycentre", e.star_system),
+                        planet_class: String::new(),
+                        landable: false,
+                        scan_type: "AutoScan".into(),
+                        distance_from_arrival_ls: e.distance_from_arrival_ls,
+                        radius: 0.0,
+                        mass_em: 0.0,
+                        surface_temperature: 0.0,
+                        surface_gravity: 0.0,
+                        tidal_lock: false,
+                        volcanism: String::new(),
+                        atmosphere: String::new(),
+                        terraform_state: String::new(),
+                        star_type: String::new(),
+                        parents,
+                        rings: vec![],
+                        materials: vec![],
+                        estimated_value: 0,
+                        composition: None,
+                    });
+                }
+            }
+            Some(JournalEvent::FssBodySignals(e)) if current_sys_addr == Some(system_address) => {
+                data.fss_signals.entry(e.body_id).or_insert_with(|| {
+                    e.signals.iter().map(|s| BodySignal {
+                        signal_type: s.signal_type.clone(),
+                        signal_type_localised: s.signal_type_localised.clone(),
+                        count: s.count,
+                    }).collect()
+                });
+            }
+            Some(JournalEvent::SaaSignalsFound(e)) if current_sys_addr == Some(system_address) => {
+                data.saa_data.entry(e.body_id).or_insert_with(|| {
+                    let signals = e.signals.iter().map(|s| BodySignal {
+                        signal_type: s.signal_type.clone(),
+                        signal_type_localised: s.signal_type_localised.clone(),
+                        count: s.count,
+                    }).collect();
+                    let genuses = e.genuses.as_ref()
+                        .map(|gv| gv.iter()
+                            .map(|g| g.genus_localised.clone().unwrap_or_else(|| {
+                                g.genus.trim_end_matches(';').replace('_', " ")
+                            }))
+                            .collect())
+                        .unwrap_or_default();
+                    SaaBodyData { signals, genuses }
+                });
+            }
+            _ => {}
+        }
+    }
 }
 
 fn parse_journal_timestamp(filename: &str) -> Option<u64> {

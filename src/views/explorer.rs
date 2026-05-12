@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use crossterm::event::{KeyCode, KeyEvent};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -7,7 +9,11 @@ use ratatui::{
     Frame,
 };
 use tracing::debug;
-use crate::journal_reader::{JournalData, BodyScan, TreeNode, build_body_tree, BodyComposition as JournalBodyComposition};
+
+use crate::journal_reader::{
+    BodyComposition as JournalBodyComposition, BodyScan, BodySignal, DiscoveredSignal, JournalData,
+    SaaBodyData, StationData, TreeNode, build_body_tree,
+};
 use crate::views::ViewEvent;
 
 pub struct ExplorerView {
@@ -16,12 +22,21 @@ pub struct ExplorerView {
     flat_nodes: Vec<FlatNode>,
     scroll_offset: usize,
     system_name: String,
+    fss_signals: HashMap<i32, Vec<BodySignal>>,
+    saa_data: HashMap<i32, SaaBodyData>,
+    stations: Vec<StationData>,
+    discovered_signals: Vec<DiscoveredSignal>,
+}
+
+enum NodeType {
+    Body,
+    SectionHeader,
+    Station(StationData),
+    Signal(DiscoveredSignal),
 }
 
 struct FlatNode {
-    /// ASCII tree drawing prefix, e.g. "│  ├─ "
     tree_prefix: String,
-    /// Body name with system-name prefix stripped
     short_name: String,
     body_id: i32,
     distance_ls: f32,
@@ -31,6 +46,9 @@ struct FlatNode {
     star_type: String,
     is_barycentre: bool,
     composition: Option<JournalBodyComposition>,
+    bio_signal_count: i32,
+    geo_signal_count: i32,
+    node_type: NodeType,
 }
 
 impl ExplorerView {
@@ -41,6 +59,10 @@ impl ExplorerView {
             flat_nodes: Vec::new(),
             scroll_offset: 0,
             system_name: String::new(),
+            fss_signals: HashMap::new(),
+            saa_data: HashMap::new(),
+            stations: Vec::new(),
+            discovered_signals: Vec::new(),
         }
     }
 
@@ -52,6 +74,10 @@ impl ExplorerView {
             .map(|s| s.name.clone())
             .unwrap_or_default();
         self.tree = tree;
+        self.fss_signals = journal.fss_signals.clone();
+        self.saa_data = journal.saa_data.clone();
+        self.stations = journal.stations.clone();
+        self.discovered_signals = journal.discovered_signals.clone();
         self.rebuild_flat_nodes();
         if self.selected_idx >= self.flat_nodes.len() {
             self.selected_idx = self.flat_nodes.len().saturating_sub(1);
@@ -62,17 +88,95 @@ impl ExplorerView {
         self.flat_nodes.clear();
         let n = self.tree.len();
         for (i, node) in self.tree.iter().enumerate() {
-            flatten_node(node, "", i == n - 1, &mut self.flat_nodes, &self.system_name);
+            flatten_node(
+                node,
+                "",
+                i == n - 1,
+                &mut self.flat_nodes,
+                &self.system_name,
+                &self.fss_signals,
+                &self.saa_data,
+            );
+        }
+        if !self.stations.is_empty() {
+            self.flat_nodes.push(FlatNode {
+                tree_prefix: String::new(),
+                short_name: "Stations".into(),
+                body_id: -1,
+                distance_ls: 0.0,
+                has_rings: false,
+                landable: false,
+                planet_class: String::new(),
+                star_type: String::new(),
+                is_barycentre: false,
+                composition: None,
+                bio_signal_count: 0,
+                geo_signal_count: 0,
+                node_type: NodeType::SectionHeader,
+            });
+            for station in &self.stations {
+                self.flat_nodes.push(FlatNode {
+                    tree_prefix: String::new(),
+                    short_name: station.name.clone(),
+                    body_id: -1,
+                    distance_ls: station.dist_from_star_ls,
+                    has_rings: false,
+                    landable: false,
+                    planet_class: String::new(),
+                    star_type: String::new(),
+                    is_barycentre: false,
+                    composition: None,
+                    bio_signal_count: 0,
+                    geo_signal_count: 0,
+                    node_type: NodeType::Station(station.clone()),
+                });
+            }
+        }
+        if !self.discovered_signals.is_empty() {
+            self.flat_nodes.push(FlatNode {
+                tree_prefix: String::new(),
+                short_name: format!("Signals ({})", self.discovered_signals.len()),
+                body_id: -1,
+                distance_ls: 0.0,
+                has_rings: false,
+                landable: false,
+                planet_class: String::new(),
+                star_type: String::new(),
+                is_barycentre: false,
+                composition: None,
+                bio_signal_count: 0,
+                geo_signal_count: 0,
+                node_type: NodeType::SectionHeader,
+            });
+            for sig in &self.discovered_signals {
+                self.flat_nodes.push(FlatNode {
+                    tree_prefix: String::new(),
+                    short_name: sig.display_name.clone(),
+                    body_id: -1,
+                    distance_ls: 0.0,
+                    has_rings: false,
+                    landable: false,
+                    planet_class: String::new(),
+                    star_type: String::new(),
+                    is_barycentre: false,
+                    composition: None,
+                    bio_signal_count: 0,
+                    geo_signal_count: 0,
+                    node_type: NodeType::Signal(sig.clone()),
+                });
+            }
         }
     }
 
     fn get_selected_body(&self) -> Option<&BodyScan> {
-        let node_id = self.flat_nodes.get(self.selected_idx)?.body_id;
-        find_body_in_tree(&self.tree, node_id)
+        let node = self.flat_nodes.get(self.selected_idx)?;
+        if !matches!(node.node_type, NodeType::Body) {
+            return None;
+        }
+        find_body_in_tree(&self.tree, node.body_id)
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
-        let prev = self.selected_idx;
         match key.code {
             KeyCode::Char('w') | KeyCode::Up => {
                 if self.selected_idx > 0 {
@@ -99,12 +203,9 @@ impl ExplorerView {
             }
             _ => {}
         }
-        let _ = prev;
         ViewEvent::None
     }
 
-    /// Keep the selected tree row within the visible window.
-    /// Line 0 is the system header; flat_nodes[i] is at line i+1.
     fn auto_scroll(&mut self, visible_height: usize) {
         if visible_height == 0 {
             return;
@@ -120,7 +221,6 @@ impl ExplorerView {
     fn build_tree_lines(&self) -> Vec<Line<'static>> {
         let mut lines: Vec<Line<'static>> = Vec::new();
 
-        // System header
         let header_text = if self.system_name.is_empty() {
             "Unknown System".to_string()
         } else {
@@ -149,60 +249,121 @@ impl ExplorerView {
         for (idx, node) in self.flat_nodes.iter().enumerate() {
             let is_selected = idx == self.selected_idx;
 
-            let (icon, icon_style) = node_icon(node);
-            let icon_style = if is_selected {
-                icon_style.add_modifier(Modifier::BOLD)
-            } else {
-                icon_style
-            };
-
-            let name_style = if is_selected {
-                Style::default()
-                    .fg(Color::White)
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                icon_style
-            };
-
-            let prefix_style = if is_selected {
-                Style::default().fg(Color::Rgb(255, 140, 0))
-            } else {
-                Style::default().fg(Color::DarkGray)
-            };
-
-            let dist_str = if node.distance_ls > 0.0 {
-                format!("  {:>8.1} Ls", node.distance_ls)
-            } else {
-                String::new()
-            };
-
-            let mut hints = String::new();
-            if node.has_rings {
-                hints.push_str("  ⌀");
+            match &node.node_type {
+                NodeType::SectionHeader => {
+                    lines.push(Line::from(""));
+                    let style = if is_selected {
+                        Style::default()
+                            .fg(Color::Rgb(255, 200, 100))
+                            .add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default()
+                            .fg(Color::Rgb(255, 140, 0))
+                            .add_modifier(Modifier::BOLD)
+                    };
+                    lines.push(Line::from(Span::styled(
+                        format!("─ {} ", node.short_name),
+                        style,
+                    )));
+                }
+                NodeType::Station(_) => {
+                    let name_style = if is_selected {
+                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(Color::White)
+                    };
+                    let icon_style = if is_selected {
+                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(Color::Cyan)
+                    };
+                    let dist_str = if node.distance_ls > 0.0 {
+                        format!("  {:>8.1} Ls", node.distance_ls)
+                    } else {
+                        String::new()
+                    };
+                    lines.push(Line::from(vec![
+                        Span::styled("  ", Style::default().fg(Color::DarkGray)),
+                        Span::styled("◉ ", icon_style),
+                        Span::styled(node.short_name.clone(), name_style),
+                        Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
+                    ]));
+                }
+                NodeType::Signal(ref sig) => {
+                    let (icon, base_color) = signal_icon(sig);
+                    let icon_style = if is_selected {
+                        Style::default().fg(base_color).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(base_color)
+                    };
+                    let name_style = if is_selected {
+                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(Color::White)
+                    };
+                    let threat_str = sig.threat_level
+                        .filter(|&t| t > 0)
+                        .map(|t| format!("  ⚠{}", t))
+                        .unwrap_or_default();
+                    lines.push(Line::from(vec![
+                        Span::styled("  ", Style::default().fg(Color::DarkGray)),
+                        Span::styled(format!("{} ", icon), icon_style),
+                        Span::styled(node.short_name.clone(), name_style),
+                        Span::styled(threat_str, Style::default().fg(Color::Red)),
+                    ]));
+                }
+                NodeType::Body => {
+                    let (icon, icon_style) = node_icon(node);
+                    let icon_style = if is_selected {
+                        icon_style.add_modifier(Modifier::BOLD)
+                    } else {
+                        icon_style
+                    };
+                    let name_style = if is_selected {
+                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
+                    } else {
+                        icon_style
+                    };
+                    let prefix_style = if is_selected {
+                        Style::default().fg(Color::Rgb(255, 140, 0))
+                    } else {
+                        Style::default().fg(Color::DarkGray)
+                    };
+                    let dist_str = if node.distance_ls > 0.0 {
+                        format!("  {:>8.1} Ls", node.distance_ls)
+                    } else {
+                        String::new()
+                    };
+                    let mut hints = String::new();
+                    if node.has_rings {
+                        hints.push_str("  ⌀");
+                    }
+                    if node.landable {
+                        hints.push_str("  L");
+                    }
+                    if node.bio_signal_count > 0 {
+                        hints.push_str(&format!("  Bio:{}", node.bio_signal_count));
+                    }
+                    if node.geo_signal_count > 0 {
+                        hints.push_str(&format!("  Geo:{}", node.geo_signal_count));
+                    }
+                    let display_name = if !node.star_type.is_empty() {
+                        format!("{} ({})", node.short_name, node.star_type)
+                    } else {
+                        node.short_name.clone()
+                    };
+                    let mut spans: Vec<Span<'static>> = vec![
+                        Span::styled(node.tree_prefix.clone(), prefix_style),
+                        Span::styled(format!("{} ", icon), icon_style),
+                        Span::styled(display_name, name_style),
+                        Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
+                    ];
+                    if !hints.is_empty() {
+                        spans.push(Span::styled(hints, Style::default().fg(Color::Cyan)));
+                    }
+                    lines.push(Line::from(spans));
+                }
             }
-            if node.landable {
-                hints.push_str("  L");
-            }
-
-            // Show star type in parentheses if available
-            let display_name = if !node.star_type.is_empty() {
-                format!("{} ({})", node.short_name, node.star_type)
-            } else {
-                node.short_name.clone()
-            };
-
-            let mut spans: Vec<Span<'static>> = vec![
-                Span::styled(node.tree_prefix.clone(), prefix_style),
-                Span::styled(format!("{} ", icon), icon_style),
-                Span::styled(display_name, name_style),
-                Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
-            ];
-
-            if !hints.is_empty() {
-                spans.push(Span::styled(hints, Style::default().fg(Color::Cyan)));
-            }
-
-            lines.push(Line::from(spans));
         }
 
         lines
@@ -211,7 +372,19 @@ impl ExplorerView {
     fn build_detail_lines(&self) -> Vec<Line<'static>> {
         let mut lines: Vec<Line<'static>> = Vec::new();
 
-        let Some(body) = self.get_selected_body() else {
+        if let Some(node) = self.flat_nodes.get(self.selected_idx) {
+            if let NodeType::Station(ref station) = node.node_type {
+                return build_station_detail(station);
+            }
+            if let NodeType::Signal(ref sig) = node.node_type {
+                return build_signal_detail(sig);
+            }
+            if matches!(node.node_type, NodeType::SectionHeader) {
+                return lines;
+            }
+        }
+
+        let Some(body) = self.get_selected_body().cloned() else {
             lines.push(Line::from(Span::styled(
                 "Select a body to see details.",
                 Style::default().fg(Color::DarkGray),
@@ -219,7 +392,6 @@ impl ExplorerView {
             return lines;
         };
 
-        // Name
         lines.push(Line::from(Span::styled(
             body.body_name.clone(),
             Style::default()
@@ -227,7 +399,6 @@ impl ExplorerView {
                 .add_modifier(Modifier::BOLD),
         )));
 
-        // Type
         let type_label = if !body.planet_class.is_empty() {
             body.planet_class.clone()
         } else if !body.star_type.is_empty() {
@@ -241,7 +412,6 @@ impl ExplorerView {
         )));
         lines.push(Line::from(""));
 
-        // Physical
         lines.push(section_header("Physical"));
         detail_row(&mut lines, "Distance", format!("{:.2} Ls", body.distance_from_arrival_ls));
         if body.radius > 0.0 {
@@ -258,7 +428,6 @@ impl ExplorerView {
         }
         lines.push(Line::from(""));
 
-        // Status
         lines.push(section_header("Status"));
         detail_row(&mut lines, "Landable", if body.landable { "Yes".into() } else { "No".into() });
         if body.tidal_lock {
@@ -277,14 +446,9 @@ impl ExplorerView {
             detail_row(&mut lines, "Scan", body.scan_type.clone());
         }
         if body.estimated_value > 0 {
-            detail_row(
-                &mut lines,
-                "Value",
-                format!("{} Cr", format_thousands(body.estimated_value)),
-            );
+            detail_row(&mut lines, "Value", format!("{} Cr", format_thousands(body.estimated_value)));
         }
 
-        // Rings
         if !body.rings.is_empty() {
             lines.push(Line::from(""));
             lines.push(section_header(&format!("Rings ({})", body.rings.len())));
@@ -308,7 +472,6 @@ impl ExplorerView {
             }
         }
 
-        // Composition
         if let Some(comp) = &body.composition {
             lines.push(Line::from(""));
             lines.push(section_header("Composition"));
@@ -317,27 +480,81 @@ impl ExplorerView {
             detail_row(&mut lines, "Metal", format!("{:.1}%", comp.metal * 100.0));
         }
 
-
-        // Materials
         if !body.materials.is_empty() {
             lines.push(Line::from(""));
             lines.push(section_header(&format!("Materials ({})", body.materials.len())));
             let mut mats = body.materials.clone();
-            mats.sort_by(|a, b| {
-                b.percent
-                    .partial_cmp(&a.percent)
-                    .unwrap_or(std::cmp::Ordering::Equal)
-            });
+            mats.sort_by(|a, b| b.percent.partial_cmp(&a.percent).unwrap_or(std::cmp::Ordering::Equal));
             for mat in &mats {
                 let name = capitalise(&mat.name);
                 lines.push(Line::from(vec![
                     Span::styled(format!("  {:<18}", name), Style::default().fg(Color::White)),
-                    Span::styled(
-                        format!("{:>5.1}%", mat.percent),
-                        Style::default().fg(Color::Rgb(255, 140, 0)),
-                    ),
+                    Span::styled(format!("{:>5.1}%", mat.percent), Style::default().fg(Color::Rgb(255, 140, 0))),
                 ]));
             }
+        }
+
+        // Signals — prefer SAA (detailed) over FSS (counts only)
+        let body_id = body.body_id;
+        let is_nav_beacon = body.scan_type == "NavBeaconDetail";
+        if let Some(saa) = self.saa_data.get(&body_id) {
+            lines.push(Line::from(""));
+            lines.push(section_header(&format!("Signals ({})", saa.signals.len())));
+            for sig in &saa.signals {
+                let type_name = sig.display_type().to_string();
+                let sig_style = if sig.is_biological() {
+                    Style::default().fg(Color::Green)
+                } else if sig.is_geological() {
+                    Style::default().fg(Color::Yellow)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                lines.push(Line::from(vec![
+                    Span::styled(format!("  {:<18}", type_name), sig_style),
+                    Span::styled(format!("{:>3}x", sig.count), Style::default().fg(Color::Rgb(255, 140, 0))),
+                ]));
+            }
+            if !saa.genuses.is_empty() {
+                lines.push(Line::from(""));
+                lines.push(section_header("Biological Genera"));
+                for genus in &saa.genuses {
+                    lines.push(Line::from(vec![
+                        Span::styled("  ", Style::default()),
+                        Span::styled(genus.clone(), Style::default().fg(Color::Green)),
+                    ]));
+                }
+            }
+        } else if let Some(sigs) = self.fss_signals.get(&body_id) {
+            if !sigs.is_empty() {
+                lines.push(Line::from(""));
+                lines.push(section_header(&format!("Signals ({})", sigs.len())));
+                for sig in sigs {
+                    let type_name = sig.display_type().to_string();
+                    let sig_style = if sig.is_biological() {
+                        Style::default().fg(Color::Green)
+                    } else if sig.is_geological() {
+                        Style::default().fg(Color::Yellow)
+                    } else {
+                        Style::default().fg(Color::White)
+                    };
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("  {:<18}", type_name), sig_style),
+                        Span::styled(format!("{:>3}x", sig.count), Style::default().fg(Color::Rgb(255, 140, 0))),
+                    ]));
+                }
+            }
+        } else if !body.planet_class.is_empty() {
+            lines.push(Line::from(""));
+            lines.push(section_header("Signals"));
+            let hint = if is_nav_beacon {
+                "NavBeacon doesn't include signal data."
+            } else {
+                "Use FSS scanner to detect signals."
+            };
+            lines.push(Line::from(Span::styled(
+                format!("  {}", hint),
+                Style::default().fg(Color::DarkGray),
+            )));
         }
 
         lines
@@ -352,7 +569,6 @@ impl ExplorerView {
         let tree_area = chunks[0];
         let detail_area = chunks[1];
 
-        // Tree panel
         let visible_height = tree_area.height.saturating_sub(2) as usize;
         self.auto_scroll(visible_height);
         let tree_lines = self.build_tree_lines();
@@ -367,12 +583,11 @@ impl ExplorerView {
             .scroll((self.scroll_offset as u16, 0));
         frame.render_widget(tree_paragraph, tree_area);
 
-        // Detail panel
         let detail_lines = self.build_detail_lines();
         let detail_paragraph = Paragraph::new(detail_lines)
             .block(
                 Block::default()
-                    .title(" Body Details ")
+                    .title(" Details ")
                     .borders(Borders::ALL)
                     .style(Style::default().fg(Color::White)),
             );
@@ -388,6 +603,8 @@ fn flatten_node(
     is_last: bool,
     result: &mut Vec<FlatNode>,
     system_name: &str,
+    fss_signals: &HashMap<i32, Vec<BodySignal>>,
+    saa_data: &HashMap<i32, SaaBodyData>,
 ) {
     let connector = if is_last { "└─ " } else { "├─ " };
     let continuation = if is_last { "   " } else { "│  " };
@@ -397,6 +614,18 @@ fn flatten_node(
     let body = node.data.as_ref();
     let is_barycentre = node.name.to_ascii_lowercase().contains("barycentre");
     let short_name = strip_system_prefix(&node.name, system_name);
+
+    let (bio_signal_count, geo_signal_count) = if let Some(saa) = saa_data.get(&node.body_id) {
+        let bio = saa.signals.iter().filter(|s| s.is_biological()).map(|s| s.count).sum();
+        let geo = saa.signals.iter().filter(|s| s.is_geological()).map(|s| s.count).sum();
+        (bio, geo)
+    } else if let Some(fss) = fss_signals.get(&node.body_id) {
+        let bio = fss.iter().filter(|s| s.is_biological()).map(|s| s.count).sum();
+        let geo = fss.iter().filter(|s| s.is_geological()).map(|s| s.count).sum();
+        (bio, geo)
+    } else {
+        (0, 0)
+    };
 
     result.push(FlatNode {
         tree_prefix,
@@ -413,11 +642,14 @@ fn flatten_node(
             rock: c.rock,
             metal: c.metal,
         })),
+        bio_signal_count,
+        geo_signal_count,
+        node_type: NodeType::Body,
     });
 
     let n = node.children.len();
     for (i, child) in node.children.iter().enumerate() {
-        flatten_node(child, &child_prefix, i == n - 1, result, system_name);
+        flatten_node(child, &child_prefix, i == n - 1, result, system_name, fss_signals, saa_data);
     }
 }
 
@@ -431,6 +663,98 @@ fn find_body_in_tree<'a>(nodes: &'a [TreeNode], body_id: i32) -> Option<&'a Body
         }
     }
     None
+}
+
+// ── Station detail ───────────────────────────────────────────────────────────
+
+fn build_station_detail(station: &StationData) -> Vec<Line<'static>> {
+    let mut lines: Vec<Line<'static>> = Vec::new();
+
+    lines.push(Line::from(Span::styled(
+        station.name.clone(),
+        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+    )));
+    lines.push(Line::from(Span::styled(
+        station.station_type.clone(),
+        Style::default().fg(Color::White),
+    )));
+    lines.push(Line::from(""));
+
+    lines.push(section_header("Location"));
+    if station.dist_from_star_ls > 0.0 {
+        detail_row(&mut lines, "Distance", format!("{:.2} Ls", station.dist_from_star_ls));
+    }
+    if !station.faction.is_empty() {
+        detail_row(&mut lines, "Faction", station.faction.clone());
+    }
+    if !station.government.is_empty() {
+        detail_row(&mut lines, "Government", station.government.clone());
+    }
+    if !station.economy.is_empty() {
+        detail_row(&mut lines, "Economy", station.economy.clone());
+    }
+
+    if !station.services.is_empty() {
+        lines.push(Line::from(""));
+        lines.push(section_header(&format!("Services ({})", station.services.len())));
+        for chunk in station.services.chunks(2) {
+            lines.push(Line::from(Span::styled(
+                format!("  {}", chunk.join("  •  ")),
+                Style::default().fg(Color::White),
+            )));
+        }
+    }
+
+    lines
+}
+
+// ── Signal detail ────────────────────────────────────────────────────────────
+
+fn build_signal_detail(sig: &DiscoveredSignal) -> Vec<Line<'static>> {
+    let mut lines: Vec<Line<'static>> = Vec::new();
+
+    let (icon, color) = signal_icon(sig);
+    lines.push(Line::from(vec![
+        Span::styled(format!("{} ", icon), Style::default().fg(color).add_modifier(Modifier::BOLD)),
+        Span::styled(sig.display_name.clone(), Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)),
+    ]));
+    lines.push(Line::from(""));
+
+    if let Some(ref uss_type) = sig.uss_type {
+        lines.push(section_header("USS"));
+        detail_row(&mut lines, "Type", uss_type.clone());
+        if let Some(threat) = sig.threat_level {
+            let threat_color = if threat >= 4 { Color::Red } else if threat >= 2 { Color::Rgb(255, 140, 0) } else { Color::Yellow };
+            lines.push(Line::from(vec![
+                Span::styled(format!("  {:<14}", "Threat"), Style::default().fg(Color::Cyan)),
+                Span::styled(threat.to_string(), Style::default().fg(threat_color)),
+            ]));
+        }
+        lines.push(Line::from(""));
+    }
+
+    if sig.spawning_faction.is_some() || sig.spawning_state.is_some() {
+        lines.push(section_header("Origin"));
+        if let Some(ref faction) = sig.spawning_faction {
+            detail_row(&mut lines, "Faction", faction.clone());
+        }
+        if let Some(ref state) = sig.spawning_state {
+            detail_row(&mut lines, "State", state.clone());
+        }
+        lines.push(Line::from(""));
+    }
+
+    if sig.is_station {
+        detail_row(&mut lines, "Type", "Station / Installation".into());
+    }
+
+    if let Some(remaining) = sig.time_remaining {
+        let mins = (remaining / 60.0) as u32;
+        let secs = (remaining % 60.0) as u32;
+        detail_row(&mut lines, "Expires in", format!("{}m {}s", mins, secs));
+    }
+
+    lines
 }
 
 // ── Icons & styling ──────────────────────────────────────────────────────────
@@ -467,6 +791,28 @@ fn body_class_icon(planet_class: &str) -> (&'static str, Style) {
         ("○", Style::default().fg(Color::Rgb(255, 165, 0)))
     } else {
         ("●", Style::default().fg(Color::White))
+    }
+}
+
+fn signal_icon(sig: &DiscoveredSignal) -> (&'static str, Color) {
+    if sig.uss_type.is_some() {
+        let threat = sig.threat_level.unwrap_or(0);
+        if threat >= 4 {
+            ("⚠", Color::Red)
+        } else if threat >= 2 {
+            ("⚠", Color::Rgb(255, 140, 0))
+        } else {
+            ("⚠", Color::Yellow)
+        }
+    } else if sig.is_station {
+        ("◉", Color::Cyan)
+    } else {
+        let lower = sig.display_name.to_lowercase();
+        if lower.contains("war") || lower.contains("combat") || lower.contains("conflict") {
+            ("⚔", Color::Red)
+        } else {
+            ("◆", Color::White)
+        }
     }
 }
 

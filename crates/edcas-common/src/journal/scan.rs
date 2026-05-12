@@ -120,6 +120,8 @@ pub struct ScanBaryCentre {
     pub body_id: i32,
     #[serde(rename = "DistanceFromArrivalLS", default)]
     pub distance_from_arrival_ls: f32,
+    #[serde(rename = "Parents")]
+    pub parents: Option<Vec<Parent>>,
     #[serde(rename = "SemiMajorAxis")]
     pub semi_major_axis: Option<f32>,
     #[serde(rename = "Eccentricity")]
@@ -172,6 +174,38 @@ pub struct SaaGenus {
     pub genus: String,
     #[serde(rename = "Genus_Localised")]
     pub genus_localised: Option<String>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FssSignalDiscovered {
+    #[serde(rename = "timestamp")]
+    pub timestamp: String,
+    #[serde(rename = "SystemAddress")]
+    pub system_address: i64,
+    #[serde(rename = "SignalName")]
+    pub signal_name: String,
+    #[serde(rename = "SignalName_Localised")]
+    pub signal_name_localised: Option<String>,
+    #[serde(rename = "USSType")]
+    pub uss_type: Option<String>,
+    #[serde(rename = "USSType_Localised")]
+    pub uss_type_localised: Option<String>,
+    #[serde(rename = "SpawningState")]
+    pub spawning_state: Option<String>,
+    #[serde(rename = "SpawningState_Localised")]
+    pub spawning_state_localised: Option<String>,
+    #[serde(rename = "SpawningFaction")]
+    pub spawning_faction: Option<String>,
+    #[serde(rename = "ThreatLevel")]
+    pub threat_level: Option<i32>,
+    #[serde(rename = "TimeRemaining")]
+    pub time_remaining: Option<f32>,
+    #[serde(rename = "IsStation", default)]
+    pub is_station: bool,
+    #[serde(rename = "horizons", default)]
+    pub horizons: bool,
+    #[serde(rename = "odyssey", default)]
+    pub odyssey: bool,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

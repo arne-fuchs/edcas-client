@@ -24,10 +24,12 @@ use tracing_appender::non_blocking::WorkerGuard;
 
 use crate::api_client::ApiClient;
 use crate::settings::Settings;
-use crate::journal_reader::{JournalData, JournalReader};
+use crate::journal_reader::{
+    BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData, JournalReader, ParentType,
+};
 use crate::views::{
-    AboutView, CarriersView, ExplorerView, MaterialsView, MiningView, NewsView, SettingsView,
-    StationsView, SystemView, ViewEvent,
+    AboutView, CarriersView, ExplorerView, LogView, MaterialsView, MiningView, NewsView,
+    SettingsView, StationsView, SystemView, ViewEvent,
 };
 
 mod api_client;
@@ -46,6 +48,7 @@ const TABS: &[&str] = &[
     "Materials",
     "Stations",
     "Carriers",
+    "Log",
     "Settings",
     "About",
 ];
@@ -60,8 +63,9 @@ enum AppView {
     Materials = 4,
     Stations = 5,
     Carriers = 6,
-    Settings = 7,
-    About = 8,
+    Log = 7,
+    Settings = 8,
+    About = 9,
 }
 
 impl AppView {
@@ -73,7 +77,8 @@ impl AppView {
             AppView::Mining => AppView::Materials,
             AppView::Materials => AppView::Stations,
             AppView::Stations => AppView::Carriers,
-            AppView::Carriers => AppView::Settings,
+            AppView::Carriers => AppView::Log,
+            AppView::Log => AppView::Settings,
             AppView::Settings => AppView::About,
             AppView::About => AppView::News,
         }
@@ -88,7 +93,8 @@ impl AppView {
             AppView::Materials => AppView::Mining,
             AppView::Stations => AppView::Materials,
             AppView::Carriers => AppView::Stations,
-            AppView::Settings => AppView::Carriers,
+            AppView::Log => AppView::Carriers,
+            AppView::Settings => AppView::Log,
             AppView::About => AppView::Settings,
         }
     }
@@ -104,6 +110,8 @@ struct App {
     journal: JournalData,
     journal_reader: Option<JournalReader>,
     api: ApiClient,
+    api_rx: Option<std::sync::mpsc::Receiver<Vec<edcas_common::api::BodyResponse>>>,
+    last_api_system: i64,
     news: NewsView,
     system: SystemView,
     explorer: ExplorerView,
@@ -111,6 +119,7 @@ struct App {
     materials: MaterialsView,
     stations: StationsView,
     carriers: CarriersView,
+    log_view: LogView,
     settings_view: SettingsView,
     about: AboutView,
     should_quit: bool,
@@ -145,6 +154,8 @@ impl App {
             journal,
             journal_reader,
             api,
+            api_rx: None,
+            last_api_system: 0,
             news: NewsView::new(),
             system: SystemView::new(),
             explorer: ExplorerView::new(),
@@ -152,6 +163,7 @@ impl App {
             materials: MaterialsView::new(),
             stations: StationsView::new(),
             carriers: CarriersView::new(),
+            log_view: LogView::new(),
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
@@ -164,8 +176,42 @@ impl App {
                 let system_name = data.current_system.as_ref().map(|s| s.name.clone()).unwrap_or_default();
                 let body_count = data.bodies.len();
                 info!("Journal update received: system={}, bodies={}", system_name, body_count);
+
+                let new_addr = data.current_system.as_ref().map(|s| s.system_address).unwrap_or(0);
+                if new_addr != 0 && new_addr != self.last_api_system && !self.settings.api_url.is_empty() {
+                    self.last_api_system = new_addr;
+                    let (tx, rx) = std::sync::mpsc::channel();
+                    self.api_rx = Some(rx);
+                    let base_url = self.settings.api_url.clone();
+                    std::thread::spawn(move || {
+                        let client = ApiClient::new(base_url);
+                        if let Ok(bodies) = client.get_bodies(new_addr) {
+                            let _ = tx.send(bodies);
+                        }
+                    });
+                }
+
                 self.journal = data;
                 self.explorer.update(&self.journal);
+            }
+        }
+
+        if let Some(ref rx) = self.api_rx {
+            if let Ok(api_bodies) = rx.try_recv() {
+                self.api_rx = None;
+                let local_ids: std::collections::HashSet<i32> =
+                    self.journal.bodies.iter().map(|b| b.body_id).collect();
+                let mut added = 0usize;
+                for br in &api_bodies {
+                    if !local_ids.contains(&br.id) {
+                        self.journal.bodies.push(body_from_api(br));
+                        added += 1;
+                    }
+                }
+                if added > 0 {
+                    info!("Merged {} bodies from API into explorer", added);
+                    self.explorer.update(&self.journal);
+                }
             }
         }
     }
@@ -231,6 +277,7 @@ impl App {
             AppView::Materials => self.materials.render(frame, area, &self.journal),
             AppView::Stations => self.stations.render(frame, area),
             AppView::Carriers => self.carriers.render(frame, area),
+            AppView::Log => self.log_view.render(frame, area, &self.settings.journal_reader.journal_directory),
             AppView::Settings => self.settings_view.render(frame, area, &self.settings),
             AppView::About => self.about.render(frame, area),
         }
@@ -292,6 +339,7 @@ impl App {
             AppView::Materials => self.materials.handle_key(key),
             AppView::Stations => self.stations.handle_key(key, &self.api),
             AppView::Carriers => self.carriers.handle_key(key, &self.api),
+            AppView::Log => self.log_view.handle_key(key),
             AppView::Settings => self.settings_view.handle_key(key, &mut self.settings),
             AppView::About => self.about.handle_key(key),
         };
@@ -327,7 +375,7 @@ fn main() -> Result<()> {
         match arg.as_str() {
             "--help" => {
                 println!("EDCAS client — Elite Dangerous Commander Assistant System");
-                println!("Run `edcas-eddn` (separate binary) to start the EDDN listener and API.");
+                println!("Run `edcas-server` (separate binary) to start the EDDN listener and API.");
                 exit(0);
             }
             _ => {}
@@ -385,6 +433,74 @@ fn run_app(
                 }
             }
         }
+    }
+}
+
+fn body_from_api(br: &edcas_common::api::BodyResponse) -> BodyScan {
+    let rings = br
+        .rings
+        .iter()
+        .map(|r| BodyRing {
+            name: r.name.clone(),
+            ring_class: r.ring_class.clone(),
+            mass_mt: r.mass_mt,
+            inner_rad: r.inner_rad,
+            outer_rad: r.outer_rad,
+        })
+        .collect();
+
+    let materials = br
+        .materials
+        .iter()
+        .map(|m| BodyMaterial {
+            name: m.name.clone(),
+            percent: m.percent,
+        })
+        .collect();
+
+    let parents = br
+        .parents
+        .iter()
+        .map(|p| BodyParent {
+            body_id: p.parent_id,
+            parent_type: match p.parent_type.as_str() {
+                "Star" => ParentType::Star,
+                "Planet" => ParentType::Planet,
+                "Ring" => ParentType::Ring,
+                _ => ParentType::Null,
+            },
+        })
+        .collect();
+
+    BodyScan {
+        body_id: br.id,
+        body_name: br.name.clone(),
+        planet_class: if br.is_star {
+            String::new()
+        } else {
+            br.body_class.clone().unwrap_or_default()
+        },
+        landable: br.landable,
+        scan_type: "API".into(),
+        distance_from_arrival_ls: br.distance_from_arrival_ls.unwrap_or(0.0),
+        radius: br.radius.unwrap_or(0.0),
+        mass_em: br.mass_em.unwrap_or(0.0),
+        surface_temperature: br.surface_temperature.unwrap_or(0.0),
+        surface_gravity: br.surface_gravity.unwrap_or(0.0),
+        tidal_lock: br.tidal_lock,
+        volcanism: br.volcanism.clone().unwrap_or_default(),
+        atmosphere: br.atmosphere.clone().unwrap_or_default(),
+        terraform_state: br.terraform_state.clone().unwrap_or_default(),
+        star_type: if br.is_star {
+            br.body_class.clone().unwrap_or_default()
+        } else {
+            String::new()
+        },
+        parents,
+        rings,
+        materials,
+        estimated_value: br.estimated_value.unwrap_or(0),
+        composition: None,
     }
 }
 

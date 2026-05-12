@@ -91,10 +91,14 @@ async fn handle_message(json_str: &str, pool: &Pool) -> anyhow::Result<()> {
             db::station::insert_outfitting(pool, journal_id, e).await?
         }
         JournalEvent::Shipyard(ref e) => db::station::insert_shipyard(pool, journal_id, e).await?,
-        // Scan-related events not yet persisted to separate tables
-        JournalEvent::ScanBaryCentre(_)
-        | JournalEvent::SaaSignalsFound(_)
-        | JournalEvent::FssBodySignals(_) => {}
+        JournalEvent::SaaSignalsFound(ref e) => {
+            db::scan::insert_saa_signals(pool, journal_id, e).await?
+        }
+        JournalEvent::FssBodySignals(ref e) => {
+            db::scan::insert_fss_body_signals(pool, journal_id, e).await?
+        }
+        // Raw-events only — no typed table
+        JournalEvent::ScanBaryCentre(_) | JournalEvent::FssSignalDiscovered(_) => {}
     }
 
     Ok(())
@@ -113,10 +117,10 @@ async fn insert_raw_event(
     let now = Utc::now();
     let row = client
         .query_one(
-            "INSERT INTO journal_events (timestamp, event_type, data)
-             VALUES ($1, $2, $3)
+            "INSERT INTO journal_events (timestamp, event_type, schema_ref, data)
+             VALUES ($1, $2, $3, $4)
              RETURNING id",
-            &[&now, &event_type, message],
+            &[&now, &event_type, &schema_ref, message],
         )
         .await?;
     Ok(row.get(0))

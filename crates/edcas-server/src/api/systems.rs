@@ -1,16 +1,15 @@
-use axum::{
-    extract::{Path, State},
-    http::StatusCode,
-    Json,
-};
 use deadpool_postgres::Pool;
 use edcas_common::api::{BodyResponse, MaterialResponse, ParentResponse, RingResponse, SystemResponse};
+use rocket::http::Status;
+use rocket::serde::json::Json;
+use rocket::{get, State};
 
+#[get("/api/v1/systems/<system_address>")]
 pub async fn get_system(
-    State(pool): State<Pool>,
-    Path(system_address): Path<i64>,
-) -> Result<Json<SystemResponse>, StatusCode> {
-    let client = pool.get().await.map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?;
+    pool: &State<Pool>,
+    system_address: i64,
+) -> Result<Json<SystemResponse>, Status> {
+    let client = pool.get().await.map_err(|_| Status::ServiceUnavailable)?;
     let row = client
         .query_opt(
             "SELECT ss.system_address, ss.name, ss.x, ss.y, ss.z,
@@ -27,10 +26,10 @@ pub async fn get_system(
             &[&system_address],
         )
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| Status::InternalServerError)?;
 
     match row {
-        None => Err(StatusCode::NOT_FOUND),
+        None => Err(Status::NotFound),
         Some(r) => Ok(Json(SystemResponse {
             system_address: r.get("system_address"),
             name: r.get("name"),
@@ -48,11 +47,12 @@ pub async fn get_system(
     }
 }
 
+#[get("/api/v1/systems/<system_address>/bodies")]
 pub async fn get_system_bodies(
-    State(pool): State<Pool>,
-    Path(system_address): Path<i64>,
-) -> Result<Json<Vec<BodyResponse>>, StatusCode> {
-    let client = pool.get().await.map_err(|_| StatusCode::SERVICE_UNAVAILABLE)?;
+    pool: &State<Pool>,
+    system_address: i64,
+) -> Result<Json<Vec<BodyResponse>>, Status> {
+    let client = pool.get().await.map_err(|_| Status::ServiceUnavailable)?;
 
     let body_rows = client
         .query(
@@ -76,11 +76,12 @@ pub async fn get_system_bodies(
             &[&system_address],
         )
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| Status::InternalServerError)?;
 
     let star_rows = client
         .query(
-            "SELECT s.id, s.system_address, s.name, NULL::real as mass_em, s.radius, false as landable,
+            "SELECT s.id, s.system_address, s.name,
+                    NULL::real as mass_em, s.radius, false as landable,
                     NULL::real as axial_tilt, false as tidal_lock, false as mapped, NULL::real as mean_anomaly,
                     NULL::real as eccentricity, NULL::real as ascending_node, NULL::real as orbital_period,
                     NULL::real as semi_major_axis, NULL::real as rotation_period, NULL::real as surface_gravity,
@@ -95,7 +96,7 @@ pub async fn get_system_bodies(
             &[&system_address],
         )
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| Status::InternalServerError)?;
 
     let mut bodies = Vec::new();
 
@@ -144,7 +145,7 @@ async fn fetch_rings(
     client: &tokio_postgres::Client,
     body_id: i32,
     system_address: i64,
-) -> Result<Vec<RingResponse>, StatusCode> {
+) -> Result<Vec<RingResponse>, Status> {
     let rows = client
         .query(
             "SELECT r.name, rc.value as ring_class, r.inner_rad, r.outer_rad, r.mass_mt
@@ -154,7 +155,7 @@ async fn fetch_rings(
             &[&body_id, &system_address],
         )
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| Status::InternalServerError)?;
 
     Ok(rows
         .iter()
@@ -172,7 +173,7 @@ async fn fetch_materials(
     client: &tokio_postgres::Client,
     body_id: i32,
     system_address: i64,
-) -> Result<Vec<MaterialResponse>, StatusCode> {
+) -> Result<Vec<MaterialResponse>, Status> {
     let rows = client
         .query(
             "SELECT mt.value as name, pm.percent
@@ -183,7 +184,7 @@ async fn fetch_materials(
             &[&body_id, &system_address],
         )
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| Status::InternalServerError)?;
 
     Ok(rows
         .iter()
@@ -198,7 +199,7 @@ async fn fetch_parents(
     client: &tokio_postgres::Client,
     body_id: i32,
     system_address: i64,
-) -> Result<Vec<ParentResponse>, StatusCode> {
+) -> Result<Vec<ParentResponse>, Status> {
     let rows = client
         .query(
             "SELECT type, parent_id FROM parents
@@ -206,7 +207,7 @@ async fn fetch_parents(
             &[&body_id, &system_address],
         )
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|_| Status::InternalServerError)?;
 
     Ok(rows
         .iter()

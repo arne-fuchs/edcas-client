@@ -1,5 +1,5 @@
 use deadpool_postgres::Pool;
-use edcas_common::journal::Scan;
+use edcas_common::journal::{FssBodySignals, SaaSignalsFound, Scan};
 
 use super::tables::lookup_or_insert;
 
@@ -268,6 +268,66 @@ async fn insert_body(pool: &Pool, journal_id: i64, event: &Scan) -> anyhow::Resu
                 .await?;
             }
         }
+    }
+
+    tx.commit().await?;
+    Ok(())
+}
+
+pub async fn insert_fss_body_signals(
+    pool: &Pool,
+    journal_id: i64,
+    event: &FssBodySignals,
+) -> anyhow::Result<()> {
+    let mut client = pool.get().await?;
+    let tx = client.build_transaction().start().await?;
+
+    tx.execute(
+        "DELETE FROM fss_body_signals WHERE body_id=$1 AND system_address=$2",
+        &[&event.body_id, &event.system_address],
+    )
+    .await?;
+
+    for signal in &event.signals {
+        let signal_type =
+            lookup_or_insert(&tx, "signal_type", &signal.signal_type, journal_id).await?;
+        tx.execute(
+            "INSERT INTO fss_body_signals (body_id, system_address, signal_type, count, journal_id)
+             VALUES ($1,$2,$3,$4,$5)
+             ON CONFLICT ON CONSTRAINT fss_body_signals_pkey DO UPDATE SET count=$4, journal_id=$5",
+            &[&event.body_id, &event.system_address, &signal_type, &signal.count, &journal_id],
+        )
+        .await?;
+    }
+
+    tx.commit().await?;
+    Ok(())
+}
+
+pub async fn insert_saa_signals(
+    pool: &Pool,
+    journal_id: i64,
+    event: &SaaSignalsFound,
+) -> anyhow::Result<()> {
+    let mut client = pool.get().await?;
+    let tx = client.build_transaction().start().await?;
+
+    tx.execute(
+        "DELETE FROM saa_signals WHERE body_id=$1 AND system_address=$2",
+        &[&event.body_id, &event.system_address],
+    )
+    .await?;
+
+    for signal in &event.signals {
+        let signal_type =
+            lookup_or_insert(&tx, "signal_type", &signal.signal_type, journal_id).await?;
+        tx.execute(
+            "INSERT INTO saa_signals (body_id, system_address, signal_type, count, journal_id)
+             VALUES ($1,$2,$3,$4,$5)
+             ON CONFLICT ON CONSTRAINT saa_signals_pkey DO UPDATE SET count=$4, journal_id=$5",
+            &[&event.body_id, &event.system_address, &signal_type, &signal.count, &journal_id],
+        )
+        .await?;
     }
 
     tx.commit().await?;
