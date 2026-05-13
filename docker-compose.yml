@@ -34,6 +34,14 @@ services:
             timeout: 5s
             retries: 10
 
+    edcas-web:
+        build:
+            context: .
+            dockerfile: Dockerfile.web
+        restart: unless-stopped
+        ports:
+            - "8080:80"
+
     edcas-server:
         build:
             context: .

@@ -73,6 +73,10 @@ pub struct StationsView {
     status_msg: String,
     focus: FocusArea,
     detail_tab: DetailTab,
+    #[cfg(not(target_arch = "wasm32"))]
+    clipboard: Option<arboard::Clipboard>,
+    #[cfg(target_arch = "wasm32")]
+    clipboard: (),
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<StationResponse>>>>,
 }
@@ -89,9 +93,13 @@ impl StationsView {
             selected_idx: 0,
             list_scroll: 0,
             detail_scroll: 0,
-            status_msg: "Press Enter to search  |  p: pin/unpin".into(),
+            status_msg: "Press Enter to search  |  p: pin/unpin  |  c: copy system".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Overview,
+            #[cfg(not(target_arch = "wasm32"))]
+            clipboard: arboard::Clipboard::new().ok(),
+            #[cfg(target_arch = "wasm32")]
+            clipboard: (),
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
         }
@@ -526,6 +534,17 @@ impl StationsView {
                     None => { self.focus = FocusArea::List; }
                 },
             },
+            KeyCode::Char('c') => {
+                if let Some(station) = self.selected_item() {
+                    let name = station.system_name.trim().to_string();
+                    #[cfg(not(target_arch = "wasm32"))]
+                    if let Some(cb) = self.clipboard.as_mut() {
+                        let _ = cb.set_text(&name);
+                        self.status_msg = format!("Copied: {name}");
+                    }
+                }
+                return ViewEvent::Consumed;
+            }
             _ => {}
         }
 

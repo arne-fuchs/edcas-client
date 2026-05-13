@@ -232,6 +232,35 @@ pub struct ConstructionQuery {
     pub limit: Option<i64>,
 }
 
+/// GET /api/v1/trade-routes
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TradeRouteResponse {
+    pub from_market_id: i64,
+    pub to_market_id: i64,
+    pub commodity: String,
+    pub buy_price: i32,
+    pub sell_price: i32,
+    pub profit: i32,
+    pub supply: i32,
+    pub demand: i32,
+    pub distance_ly: f32,
+    pub from_station_name: String,
+    pub to_station_name: String,
+    pub from_system_name: String,
+    pub to_system_name: String,
+    pub from_max_pad: Option<String>,
+    pub to_max_pad: Option<String>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct TradeRouteQuery {
+    pub system_address: Option<i64>,
+    pub max_distance: Option<f32>,
+    pub pad_size: Option<String>,
+    pub min_profit: Option<i32>,
+    pub limit: Option<i64>,
+}
+
 /// POST /api/v1/construction-depots — client submits depot data from journal
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ConstructionDepotSubmission {

@@ -1,0 +1,26 @@
+# ── Stage 1: build WASM package ─────────────────────────────
+FROM rust:1-bookworm AS builder
+
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends curl ca-certificates \
+ && rm -rf /var/lib/apt/lists/* \
+ && curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
+
+WORKDIR /build
+COPY . .
+
+RUN wasm-pack build --target web --out-dir web/pkg
+
+# ── Stage 2: serve with nginx ────────────────────────────────
+FROM nginx:alpine
+
+COPY --from=builder /build/web /usr/share/nginx/html
+
+# Simple config: serve static files, no directory listing
+RUN printf 'server {\n\
+    listen 80;\n\
+    root /usr/share/nginx/html;\n\
+    index index.html;\n\
+    location / { try_files $uri $uri/ /index.html; }\n\
+    location /pkg/ { add_header Cache-Control "public, max-age=31536000, immutable"; }\n\
+}\n' > /etc/nginx/conf.d/default.conf

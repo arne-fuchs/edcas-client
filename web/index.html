@@ -7,24 +7,28 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/xterm@5.3.0/css/xterm.css"/>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
+    html, body {
+      width: 100%;
+      height: 100%;
       background: #0a0a0a;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      min-height: 100vh;
-      font-family: monospace;
-    }
-    #terminal-container {
-      border: 1px solid #333;
-      border-radius: 4px;
       overflow: hidden;
     }
+    #terminal-container {
+      width: 100%;
+      height: 100%;
+    }
+    #terminal {
+      width: 100%;
+      height: 100%;
+    }
     #loading {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
       color: #ff8c00;
+      font-family: monospace;
       font-size: 16px;
-      padding: 20px;
     }
   </style>
 </head>
@@ -35,12 +39,11 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/xterm@5.3.0/lib/xterm.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
   <script type="module">
     import init, { push_key_event, on_resize } from './pkg/edcas_client.js';
 
     const term = new Terminal({
-      cols: 120,
-      rows: 40,
       fontFamily: "'Courier New', 'Lucida Console', monospace",
       fontSize: 14,
       theme: {
@@ -52,14 +55,18 @@
       convertEol: false,
     });
 
+    const fitAddon = new FitAddon.FitAddon();
+    term.loadAddon(fitAddon);
     term.open(document.getElementById('terminal'));
+    fitAddon.fit();
 
-    // Callback used by Rust WasmBackend.flush()
     window.xterm_write = (data) => term.write(data);
 
     await init();
 
     document.getElementById('loading').style.display = 'none';
+
+    on_resize(term.cols, term.rows);
 
     term.onKey(({ domEvent: e }) => {
       e.preventDefault();
@@ -70,11 +77,8 @@
       on_resize(cols, rows);
     });
 
-    // Fit terminal to current size when window resizes
     window.addEventListener('resize', () => {
-      // xterm.js FitAddon would handle this automatically;
-      // for now just notify Rust of the current size
-      on_resize(term.cols, term.rows);
+      fitAddon.fit();
     });
 
     term.focus();

@@ -55,6 +55,7 @@ async fn main() -> anyhow::Result<()> {
                 api::construction::submit_construction_depot,
                 api::journal::ingest_event,
                 api::journal::ingest_events,
+                api::trade_routes::search_trade_routes,
             ],
         )
         .launch()

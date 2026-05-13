@@ -186,40 +186,108 @@ impl ExplorerView {
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
+        let n = self.flat_nodes.len();
         match key.code {
             KeyCode::Char('w') | KeyCode::Up => {
-                if self.selected_idx > 0 {
-                    self.selected_idx -= 1;
-                }
+                self.selected_idx = self.prev_selectable(self.selected_idx);
             }
             KeyCode::Char('s') | KeyCode::Down => {
-                if self.selected_idx + 1 < self.flat_nodes.len() {
-                    self.selected_idx += 1;
-                }
+                self.selected_idx = self.next_selectable(self.selected_idx);
             }
             KeyCode::PageUp => {
-                self.selected_idx = self.selected_idx.saturating_sub(10);
+                let target = self.selected_idx.saturating_sub(10);
+                self.selected_idx = self.nearest_selectable(target);
             }
             KeyCode::PageDown => {
-                self.selected_idx =
-                    (self.selected_idx + 10).min(self.flat_nodes.len().saturating_sub(1));
+                let target = (self.selected_idx + 10).min(n.saturating_sub(1));
+                self.selected_idx = self.nearest_selectable(target);
             }
             KeyCode::Home => {
-                self.selected_idx = 0;
+                self.selected_idx = self.nearest_selectable(0);
             }
             KeyCode::End => {
-                self.selected_idx = self.flat_nodes.len().saturating_sub(1);
+                self.selected_idx = self.nearest_selectable(n.saturating_sub(1));
             }
             _ => {}
         }
         ViewEvent::None
     }
 
+    // Navigate to the previous non-header node; stay if none exists.
+    fn prev_selectable(&self, from: usize) -> usize {
+        let mut i = from;
+        while i > 0 {
+            i -= 1;
+            if !matches!(self.flat_nodes[i].node_type, NodeType::SectionHeader) {
+                return i;
+            }
+        }
+        from
+    }
+
+    // Navigate to the next non-header node; stay if none exists.
+    fn next_selectable(&self, from: usize) -> usize {
+        let mut i = from + 1;
+        while i < self.flat_nodes.len() {
+            if !matches!(self.flat_nodes[i].node_type, NodeType::SectionHeader) {
+                return i;
+            }
+            i += 1;
+        }
+        from
+    }
+
+    // Nearest non-header node to `target`: try forward then backward.
+    fn nearest_selectable(&self, target: usize) -> usize {
+        if self.flat_nodes.is_empty() {
+            return 0;
+        }
+        let target = target.min(self.flat_nodes.len() - 1);
+        if !matches!(self.flat_nodes[target].node_type, NodeType::SectionHeader) {
+            return target;
+        }
+        // Forward
+        let mut i = target + 1;
+        while i < self.flat_nodes.len() {
+            if !matches!(self.flat_nodes[i].node_type, NodeType::SectionHeader) {
+                return i;
+            }
+            i += 1;
+        }
+        // Backward
+        let mut i = target;
+        while i > 0 {
+            i -= 1;
+            if !matches!(self.flat_nodes[i].node_type, NodeType::SectionHeader) {
+                return i;
+            }
+        }
+        self.selected_idx
+    }
+
+    // Returns the 0-based line index in the rendered paragraph for flat_nodes[idx].
+    // Line 0 is the system name header. SectionHeader nodes emit an empty line
+    // followed by their text line, so nodes after a SectionHeader are further
+    // down than their flat_nodes index alone would suggest.
+    fn visual_line_of(&self, idx: usize) -> usize {
+        let mut line = 1usize; // line 0 is the system name header
+        for (i, node) in self.flat_nodes.iter().enumerate() {
+            if i == idx {
+                break;
+            }
+            match node.node_type {
+                NodeType::SectionHeader => line += 2,
+                _ => line += 1,
+            }
+        }
+        line
+    }
+
     fn auto_scroll(&mut self, visible_height: usize) {
         if visible_height == 0 {
             return;
         }
-        let selected_line = self.selected_idx + 1;
+        let selected_line = self.visual_line_of(self.selected_idx);
         if selected_line < self.scroll_offset {
             self.scroll_offset = selected_line;
         } else if selected_line >= self.scroll_offset + visible_height {
@@ -276,27 +344,27 @@ impl ExplorerView {
                     )));
                 }
                 NodeType::Station(_) => {
-                    let name_style = if is_selected {
-                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default().fg(Color::White)
-                    };
-                    let icon_style = if is_selected {
-                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default().fg(Color::Cyan)
-                    };
                     let dist_str = if node.distance_ls > 0.0 {
                         format!("  {:>8.1} Ls", node.distance_ls)
                     } else {
                         String::new()
                     };
-                    lines.push(Line::from(vec![
-                        Span::styled("  ", Style::default().fg(Color::DarkGray)),
-                        Span::styled("◉ ", icon_style),
-                        Span::styled(node.short_name.clone(), name_style),
-                        Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
-                    ]));
+                    if is_selected {
+                        lines.push(Line::from(Span::styled(
+                            format!("  ◉ {}{}", node.short_name, dist_str),
+                            Style::default()
+                                .fg(Color::Black)
+                                .bg(Color::Rgb(255, 140, 0))
+                                .add_modifier(Modifier::BOLD),
+                        )));
+                    } else {
+                        lines.push(Line::from(vec![
+                            Span::styled("  ", Style::default().fg(Color::DarkGray)),
+                            Span::styled("◉ ", Style::default().fg(Color::Cyan)),
+                            Span::styled(node.short_name.clone(), Style::default().fg(Color::White)),
+                            Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
+                        ]));
+                    }
                 }
                 NodeType::BodySignal(ref sig) => {
                     let (icon, color) = if sig.is_biological() {
@@ -306,81 +374,53 @@ impl ExplorerView {
                     } else {
                         ("◆", Color::White)
                     };
-                    let style = if is_selected {
-                        Style::default().fg(color).add_modifier(Modifier::BOLD)
+                    if is_selected {
+                        lines.push(Line::from(Span::styled(
+                            format!("{}{} {}", node.tree_prefix, icon, node.short_name),
+                            Style::default()
+                                .fg(Color::Black)
+                                .bg(Color::Rgb(255, 140, 0))
+                                .add_modifier(Modifier::BOLD),
+                        )));
                     } else {
-                        Style::default().fg(color)
-                    };
-                    let name_style = if is_selected {
-                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default().fg(Color::White)
-                    };
-                    let prefix_style = if is_selected {
-                        Style::default().fg(Color::Rgb(255, 140, 0))
-                    } else {
-                        Style::default().fg(Color::DarkGray)
-                    };
-                    lines.push(Line::from(vec![
-                        Span::styled(node.tree_prefix.clone(), prefix_style),
-                        Span::styled(format!("{icon} "), style),
-                        Span::styled(node.short_name.clone(), name_style),
-                    ]));
+                        lines.push(Line::from(vec![
+                            Span::styled(node.tree_prefix.clone(), Style::default().fg(Color::DarkGray)),
+                            Span::styled(format!("{icon} "), Style::default().fg(color)),
+                            Span::styled(node.short_name.clone(), Style::default().fg(Color::White)),
+                        ]));
+                    }
                 }
                 NodeType::Signal(ref sig) => {
                     let (icon, base_color) = signal_icon(sig);
-                    let icon_style = if is_selected {
-                        Style::default().fg(base_color).add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default().fg(base_color)
-                    };
-                    let name_style = if is_selected {
-                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
-                    } else {
-                        Style::default().fg(Color::White)
-                    };
                     let threat_str = sig.threat_level
                         .filter(|&t| t > 0)
                         .map(|t| format!("  ⚠{}", t))
                         .unwrap_or_default();
-                    if node.tree_prefix.is_empty() {
-                        lines.push(Line::from(vec![
-                            Span::styled("  ", Style::default().fg(Color::DarkGray)),
-                            Span::styled(format!("{} ", icon), icon_style),
-                            Span::styled(node.short_name.clone(), name_style),
-                            Span::styled(threat_str, Style::default().fg(Color::Red)),
-                        ]));
+                    let indent = if node.tree_prefix.is_empty() {
+                        "  ".to_string()
                     } else {
-                        let prefix_style = if is_selected {
-                            Style::default().fg(Color::Rgb(255, 140, 0))
-                        } else {
-                            Style::default().fg(Color::DarkGray)
-                        };
+                        node.tree_prefix.clone()
+                    };
+                    if is_selected {
+                        lines.push(Line::from(Span::styled(
+                            format!("{}{} {}{}", indent, icon, node.short_name, threat_str),
+                            Style::default()
+                                .fg(Color::Black)
+                                .bg(Color::Rgb(255, 140, 0))
+                                .add_modifier(Modifier::BOLD),
+                        )));
+                    } else {
+                        let prefix_style = Style::default().fg(Color::DarkGray);
                         lines.push(Line::from(vec![
-                            Span::styled(node.tree_prefix.clone(), prefix_style),
-                            Span::styled(format!("{} ", icon), icon_style),
-                            Span::styled(node.short_name.clone(), name_style),
+                            Span::styled(indent, prefix_style),
+                            Span::styled(format!("{} ", icon), Style::default().fg(base_color)),
+                            Span::styled(node.short_name.clone(), Style::default().fg(Color::White)),
                             Span::styled(threat_str, Style::default().fg(Color::Red)),
                         ]));
                     }
                 }
                 NodeType::Body => {
                     let (icon, icon_style) = node_icon(node);
-                    let icon_style = if is_selected {
-                        icon_style.add_modifier(Modifier::BOLD)
-                    } else {
-                        icon_style
-                    };
-                    let name_style = if is_selected {
-                        Style::default().fg(Color::White).add_modifier(Modifier::BOLD)
-                    } else {
-                        icon_style
-                    };
-                    let prefix_style = if is_selected {
-                        Style::default().fg(Color::Rgb(255, 140, 0))
-                    } else {
-                        Style::default().fg(Color::DarkGray)
-                    };
                     let dist_str = if node.distance_ls > 0.0 {
                         format!("  {:>8.1} Ls", node.distance_ls)
                     } else {
@@ -404,16 +444,26 @@ impl ExplorerView {
                     } else {
                         node.short_name.clone()
                     };
-                    let mut spans: Vec<Span<'static>> = vec![
-                        Span::styled(node.tree_prefix.clone(), prefix_style),
-                        Span::styled(format!("{} ", icon), icon_style),
-                        Span::styled(display_name, name_style),
-                        Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
-                    ];
-                    if !hints.is_empty() {
-                        spans.push(Span::styled(hints, Style::default().fg(Color::Cyan)));
+                    if is_selected {
+                        lines.push(Line::from(Span::styled(
+                            format!("{}{} {}{}{}", node.tree_prefix, icon, display_name, dist_str, hints),
+                            Style::default()
+                                .fg(Color::Black)
+                                .bg(Color::Rgb(255, 140, 0))
+                                .add_modifier(Modifier::BOLD),
+                        )));
+                    } else {
+                        let mut spans: Vec<Span<'static>> = vec![
+                            Span::styled(node.tree_prefix.clone(), Style::default().fg(Color::DarkGray)),
+                            Span::styled(format!("{} ", icon), icon_style),
+                            Span::styled(display_name, icon_style),
+                            Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
+                        ];
+                        if !hints.is_empty() {
+                            spans.push(Span::styled(hints, Style::default().fg(Color::Cyan)));
+                        }
+                        lines.push(Line::from(spans));
                     }
-                    lines.push(Line::from(spans));
                 }
             }
         }
@@ -521,11 +571,21 @@ impl ExplorerView {
                     .strip_prefix("eRingClass_")
                     .unwrap_or(&ring.ring_class)
                     .replace('_', " ");
-                lines.push(Line::from(vec![
+                let valuable = is_valuable_ring(&ring.ring_class);
+                let class_style = if valuable {
+                    Style::default().fg(Color::Red).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::DarkGray)
+                };
+                let mut spans = vec![
                     Span::styled("  ⌀ ", Style::default().fg(Color::Cyan)),
                     Span::styled(format!("{:<14}", short), Style::default().fg(Color::White)),
-                    Span::styled(class, Style::default().fg(Color::DarkGray)),
-                ]));
+                    Span::styled(class, class_style),
+                ];
+                if valuable {
+                    spans.push(Span::styled("  [VALUABLE]", Style::default().fg(Color::Red)));
+                }
+                lines.push(Line::from(spans));
             }
         }
 
@@ -544,9 +604,11 @@ impl ExplorerView {
             mats.sort_by(|a, b| b.percent.partial_cmp(&a.percent).unwrap_or(std::cmp::Ordering::Equal));
             for mat in &mats {
                 let name = capitalise(&mat.name);
+                let bar = material_bar(mat.percent);
                 lines.push(Line::from(vec![
                     Span::styled(format!("  {:<18}", name), Style::default().fg(Color::White)),
                     Span::styled(format!("{:>5.1}%", mat.percent), Style::default().fg(Color::Rgb(255, 140, 0))),
+                    Span::styled(format!("  {}", bar), Style::default().fg(Color::DarkGray)),
                 ]));
             }
         }
@@ -884,6 +946,8 @@ fn node_icon(node: &FlatNode) -> (&'static str, Style) {
     if node.planet_class.is_empty() {
         if node.is_barycentre {
             ("⊕", Style::default().fg(Color::DarkGray))
+        } else if node.short_name.to_ascii_lowercase().contains("belt cluster") {
+            ("◆", Style::default().fg(Color::Rgb(160, 120, 80)))
         } else {
             ("★", Style::default().fg(Color::Rgb(255, 140, 0)))
         }
@@ -979,6 +1043,17 @@ fn capitalise(s: &str) -> String {
         None => String::new(),
         Some(f) => f.to_uppercase().collect::<String>() + c.as_str(),
     }
+}
+
+fn material_bar(percent: f64) -> String {
+    let filled = (percent / 10.0).round() as usize;
+    let empty = 10usize.saturating_sub(filled);
+    format!("[{}{}]", "█".repeat(filled.min(10)), "░".repeat(empty))
+}
+
+fn is_valuable_ring(ring_class: &str) -> bool {
+    let lower = ring_class.to_lowercase();
+    lower.contains("metal") || lower.contains("rocky")
 }
 
 fn format_thousands(n: i64) -> String {

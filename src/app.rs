@@ -15,7 +15,8 @@ use crate::journal_reader::{BodyMaterial, BodyParent, BodyRing, BodyScan, Journa
 use crate::settings::Settings;
 use crate::views::{
     AboutView, CarriersView, ConstructionView, ExplorerView, FactionsView, InventoryView,
-    MiningView, ModulesView, NewsView, PilotView, SettingsView, StationsView, SystemView, ViewEvent,
+    ModulesView, NewsView, PilotView, SettingsView, StationsView, SystemView,
+    TradeRoutesView, ViewEvent,
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -28,13 +29,13 @@ pub const TABS: &[&str] = &[
     "Pilot",
     "System",
     "Explorer",
-    "Mining",
     "Inventory",
     "Modules",
     "Stations",
     "Carriers",
     "Factions",
     "Construction",
+    "Trade Routes",
     "Settings",
     "About",
 ];
@@ -46,13 +47,13 @@ pub enum AppView {
     Pilot = 1,
     System = 2,
     Explorer = 3,
-    Mining = 4,
-    Materials = 5,
-    Modules = 6,
-    Stations = 7,
-    Carriers = 8,
-    Factions = 9,
-    Construction = 10,
+    Materials = 4,
+    Modules = 5,
+    Stations = 6,
+    Carriers = 7,
+    Factions = 8,
+    Construction = 9,
+    TradeRoutes = 10,
     Settings = 11,
     About = 12,
 }
@@ -63,14 +64,14 @@ impl AppView {
             AppView::News => AppView::Pilot,
             AppView::Pilot => AppView::System,
             AppView::System => AppView::Explorer,
-            AppView::Explorer => AppView::Mining,
-            AppView::Mining => AppView::Materials,
+            AppView::Explorer => AppView::Materials,
             AppView::Materials => AppView::Modules,
             AppView::Modules => AppView::Stations,
             AppView::Stations => AppView::Carriers,
             AppView::Carriers => AppView::Factions,
             AppView::Factions => AppView::Construction,
-            AppView::Construction => AppView::Settings,
+            AppView::Construction => AppView::TradeRoutes,
+            AppView::TradeRoutes => AppView::Settings,
             AppView::Settings => AppView::About,
             AppView::About => AppView::News,
         }
@@ -82,14 +83,14 @@ impl AppView {
             AppView::Pilot => AppView::News,
             AppView::System => AppView::Pilot,
             AppView::Explorer => AppView::System,
-            AppView::Mining => AppView::Explorer,
-            AppView::Materials => AppView::Mining,
+            AppView::Materials => AppView::Explorer,
             AppView::Modules => AppView::Materials,
             AppView::Stations => AppView::Modules,
             AppView::Carriers => AppView::Stations,
             AppView::Factions => AppView::Carriers,
             AppView::Construction => AppView::Factions,
-            AppView::Settings => AppView::Construction,
+            AppView::TradeRoutes => AppView::Construction,
+            AppView::Settings => AppView::TradeRoutes,
             AppView::About => AppView::Settings,
         }
     }
@@ -114,13 +115,13 @@ pub struct App {
     pub pilot: PilotView,
     pub system: SystemView,
     pub explorer: ExplorerView,
-    pub mining: MiningView,
     pub inventory: InventoryView,
     pub modules_view: ModulesView,
     pub stations: StationsView,
     pub carriers: CarriersView,
     pub factions: FactionsView,
     pub construction: ConstructionView,
+    pub trade_routes: TradeRoutesView,
     pub settings_view: SettingsView,
     pub about: AboutView,
     pub should_quit: bool,
@@ -164,13 +165,13 @@ impl App {
             pilot: PilotView::new(),
             system: SystemView::new(),
             explorer: ExplorerView::new(),
-            mining: MiningView::new(),
             inventory: InventoryView::new(),
             modules_view: ModulesView::new(),
             stations: StationsView::new(),
             carriers: CarriersView::new(),
             factions: FactionsView::new(),
             construction: ConstructionView::new(),
+            trade_routes: TradeRoutesView::new(),
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
@@ -190,13 +191,13 @@ impl App {
             pilot: PilotView::new(),
             system: SystemView::new(),
             explorer: ExplorerView::new(),
-            mining: MiningView::new(),
             inventory: InventoryView::new(),
             modules_view: ModulesView::new(),
             stations: StationsView::new(),
             carriers: CarriersView::new(),
             factions: FactionsView::new(),
             construction: ConstructionView::new(),
+            trade_routes: TradeRoutesView::new(),
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
@@ -229,6 +230,8 @@ impl App {
                 self.explorer.update(&self.journal);
             }
         }
+
+        self.trade_routes.poll_results();
 
         if let Some(ref rx) = self.api_rx {
             if let Ok(api_bodies) = rx.try_recv() {
@@ -311,44 +314,68 @@ impl App {
             AppView::Pilot => self.pilot.render(frame, area, &self.journal),
             AppView::System => self.system.render(frame, area, &self.journal),
             AppView::Explorer => self.explorer.render(frame, area),
-            AppView::Mining => self.mining.render(frame, area, &self.journal),
             AppView::Materials => self.inventory.render(frame, area, &self.journal),
             AppView::Modules => self.modules_view.render(frame, area, &self.journal),
             AppView::Stations => self.stations.render(frame, area),
             AppView::Carriers => self.carriers.render(frame, area),
             AppView::Factions => self.factions.render(frame, area),
             AppView::Construction => self.construction.render(frame, area, &self.journal),
+            AppView::TradeRoutes => self.trade_routes.render(frame, area, &self.journal),
             AppView::Settings => self.settings_view.render(frame, area, &self.settings),
             AppView::About => self.about.render(frame, area),
         }
     }
 
-    fn render_status_bar(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let journal_info = format!("bodies: {} | ", self.journal.bodies.len());
-        let system_info = self.journal.current_system
-            .as_ref()
-            .map(|s| format!("system: {} | ", s.name))
-            .unwrap_or_default();
+    fn view_hints(&self) -> &'static [(&'static str, &'static str)] {
+        match self.view {
+            AppView::News         => &[],
+            AppView::Pilot        => &[],
+            AppView::System       => &[("w/s", "scroll")],
+            AppView::Explorer     => &[("w/s", "navigate"), ("p", "pin")],
+            AppView::Materials    => &[("w/s", "navigate"), ("a/d", "panels")],
+            AppView::Modules      => &[("w/s", "navigate")],
+            AppView::Stations     => &[("enter", "search"), ("w/s", "navigate"), ("a/d", "panels"), ("c", "copy system"), ("p", "pin")],
+            AppView::Carriers     => &[("enter", "search"), ("w/s", "navigate"), ("a/d", "panels"), ("p", "pin")],
+            AppView::Factions     => &[("enter", "search"), ("w/s", "navigate"), ("a/d", "panels"), ("c", "copy system"), ("p", "pin")],
+            AppView::Construction => &[("f", "filter"), ("enter", "search"), ("w/s", "navigate"), ("p", "pin")],
+            AppView::TradeRoutes  => &[("tab", "filter"), ("enter", "search"), ("w/s", "navigate"), ("r", "refresh")],
+            AppView::Settings     => &[("w/s", "rows"), ("a", "sidebar"), ("d", "fields"), ("space", "toggle"), ("enter", "save")],
+            AppView::About        => &[],
+        }
+    }
 
-        let editing_hint = if self.view == AppView::Settings {
-            " | w/s: rows | a: sidebar | d: fields | space: select/edit | enter: save"
-        } else {
-            ""
+    fn render_status_bar(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
+        let bg = Color::Rgb(255, 140, 0);
+        let key_style  = Style::default().fg(Color::Black).bg(bg).add_modifier(Modifier::BOLD);
+        let desc_style = Style::default().fg(Color::Black).bg(bg);
+        let sep_style  = Style::default().fg(Color::Rgb(120, 55, 0)).bg(bg);
+        let info_style = Style::default().fg(Color::Rgb(60, 25, 0)).bg(bg);
+
+        let mut spans: Vec<Span<'static>> = Vec::new();
+
+        let push_hint = |spans: &mut Vec<Span<'static>>, key: &'static str, desc: &'static str| {
+            spans.push(Span::styled(format!(" {key}"), key_style));
+            spans.push(Span::styled(format!(" {desc} "), desc_style));
         };
-        let status = format!(
-            " x: quit | q/e: tabs{} | {}{}{}",
-            editing_hint,
-            system_info,
-            journal_info,
-            TABS[self.view.index()],
-        );
-        let status_bar = Paragraph::new(status).style(
-            Style::default()
-                .fg(Color::Rgb(255, 140, 0))
-                .bg(Color::Black)
-                .add_modifier(Modifier::REVERSED),
-        );
-        frame.render_widget(status_bar, area);
+
+        push_hint(&mut spans, "x", "quit");
+        push_hint(&mut spans, "q/e", "tabs");
+
+        let hints = self.view_hints();
+        if !hints.is_empty() {
+            spans.push(Span::styled(" │ ", sep_style));
+            for (key, desc) in hints {
+                push_hint(&mut spans, key, desc);
+            }
+        }
+
+        // Right-side system info
+        let system_name = self.journal.current_system.as_ref().map(|s| s.name.as_str()).unwrap_or("—");
+        spans.push(Span::styled(" │ ", sep_style));
+        spans.push(Span::styled(format!("system "), info_style));
+        spans.push(Span::styled(format!("{system_name}"), desc_style));
+
+        frame.render_widget(Paragraph::new(Line::from(spans)), area);
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent) {
@@ -357,13 +384,13 @@ impl App {
             AppView::Pilot => self.pilot.handle_key(key),
             AppView::System => self.system.handle_key(key, &self.journal),
             AppView::Explorer => self.explorer.handle_key(key),
-            AppView::Mining => self.mining.handle_key(key),
             AppView::Materials => self.inventory.handle_key(key),
             AppView::Modules => self.modules_view.handle_key(key, &self.journal),
             AppView::Stations => self.stations.handle_key(key, &self.api),
             AppView::Carriers => self.carriers.handle_key(key, &self.api),
             AppView::Factions => self.factions.handle_key(key, &self.api),
             AppView::Construction => self.construction.handle_key(key, &self.api, &self.journal),
+            AppView::TradeRoutes => self.trade_routes.handle_key(key, &self.api, &self.journal),
             AppView::Settings => self.settings_view.handle_key(key, &mut self.settings),
             AppView::About => self.about.handle_key(key),
         };
@@ -422,6 +449,10 @@ impl App {
             AppView::Carriers => self.carriers.on_enter(&self.api),
             AppView::Factions => self.factions.on_enter(&self.api),
             AppView::Construction => self.construction.on_enter(&self.api),
+            AppView::TradeRoutes => {
+                let journal = &self.journal;
+                self.trade_routes.on_enter(&self.api, journal);
+            }
             _ => {}
         }
     }
@@ -432,6 +463,7 @@ impl App {
         self.carriers.poll_search();
         self.factions.poll_search();
         self.construction.poll_search();
+        self.trade_routes.poll_search();
     }
 }
 

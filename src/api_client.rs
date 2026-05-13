@@ -1,7 +1,7 @@
 use edcas_common::api::{
     BodyResponse, CarrierQuery, CarrierResponse, ConstructionDepotResponse,
     ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse,
-    StationQuery, StationResponse,
+    StationQuery, StationResponse, TradeRouteQuery, TradeRouteResponse,
 };
 
 // ─── Native (blocking) implementation ────────────────────────────────────────
@@ -14,6 +14,10 @@ pub struct ApiClient {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ApiClient {
+    pub fn base_url(&self) -> &str {
+        &self.base_url
+    }
+
     pub fn new(base_url: impl Into<String>) -> Self {
         Self {
             base_url: base_url.into(),
@@ -61,6 +65,12 @@ impl ApiClient {
         let url = format!("{}/api/v1/construction-depots", self.base_url);
         self.client.post(&url).json(submission).send()?;
         Ok(())
+    }
+
+    pub fn fetch_trade_routes(&self, query: &TradeRouteQuery) -> anyhow::Result<Vec<TradeRouteResponse>> {
+        let url = format!("{}/api/v1/trade-routes", self.base_url);
+        let resp = self.client.get(&url).query(query).send()?;
+        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
     }
 }
 
@@ -111,6 +121,14 @@ impl ApiClient {
 
     pub async fn search_construction_depots(&self, query: ConstructionQuery) -> Vec<ConstructionDepotResponse> {
         let url = format!("{}/api/v1/construction-depots", self.base_url);
+        match self.client.get(&url).query(&query).send().await {
+            Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
+            _ => vec![],
+        }
+    }
+
+    pub async fn fetch_trade_routes(&self, query: TradeRouteQuery) -> Vec<TradeRouteResponse> {
+        let url = format!("{}/api/v1/trade-routes", self.base_url);
         match self.client.get(&url).query(&query).send().await {
             Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
             _ => vec![],

@@ -1,340 +1,115 @@
-[2m2026-05-12T11:34:05.070743Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m413:[0m EDCAS client starting
-[2m2026-05-12T11:34:05.070793Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m416:[0m CLI arguments: ["target/debug/edcas-client"]
-[2m2026-05-12T11:34:05.070863Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m430:[0m Terminal raw mode enabled
-[2m2026-05-12T11:34:05.072462Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m93:[0m Journal logs: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T11:34:05.072496Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m119:[0m Graphics path: /home/arne/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics
-[2m2026-05-12T11:34:05.072509Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m137:[0m Settings loaded
-[2m2026-05-12T11:34:05.072516Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m141:[0m Journal directory configured: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T11:34:05.072524Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m151:[0m Starting journal reader for directory: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T11:34:05.072531Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m647:[0m Initializing journal reader for: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T11:34:05.072638Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m655:[0m Loading existing journal files from: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
-[2m2026-05-12T11:34:05.075823Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m751:[0m Loading journal file: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
-[2m2026-05-12T11:34:05.078605Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m281:[0m Location: Antliae Sector KM-W c1-6
-[2m2026-05-12T11:34:05.087858Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Mozart Sanctuary
-[2m2026-05-12T11:34:05.087895Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kopernik Reach
-[2m2026-05-12T11:34:05.087908Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shakespeare Legacy
-[2m2026-05-12T11:34:05.087920Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Fermi Reach
-[2m2026-05-12T11:34:05.087933Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.087975Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: H.g.wells Installation
-[2m2026-05-12T11:34:05.087994Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
-[2m2026-05-12T11:34:05.088008Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Archimedes Vision
-[2m2026-05-12T11:34:05.088021Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nimoy Legacy
-[2m2026-05-12T11:34:05.088034Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
-[2m2026-05-12T11:34:05.091236Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Nimoy Legacy (market_id=4248978179)
-[2m2026-05-12T11:34:05.092985Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Antliae Sector RD-T b3-3
-[2m2026-05-12T11:34:05.094541Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
-[2m2026-05-12T11:34:05.094562Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Hochburg-Carrier
-[2m2026-05-12T11:34:05.094577Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.094593Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
-[2m2026-05-12T11:34:05.096402Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Bujold Relay (market_id=3539844864)
-[2m2026-05-12T11:34:05.100135Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Double Meteor Manufacturing
-[2m2026-05-12T11:34:05.100162Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
-[2m2026-05-12T11:34:05.100176Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
-[2m2026-05-12T11:34:05.100188Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Velazquez Gateway
-[2m2026-05-12T11:34:05.100201Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shepherd Ring
-[2m2026-05-12T11:34:05.100217Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.100234Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Secret Cattle Acres
-[2m2026-05-12T11:34:05.100246Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Capital Justice Ministry
-[2m2026-05-12T11:34:05.100393Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Benapem
-[2m2026-05-12T11:34:05.102230Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Double Meteor Manufacturing
-[2m2026-05-12T11:34:05.102253Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
-[2m2026-05-12T11:34:05.102268Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
-[2m2026-05-12T11:34:05.102280Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Velazquez Gateway
-[2m2026-05-12T11:34:05.102296Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shepherd Ring
-[2m2026-05-12T11:34:05.102313Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.102328Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Secret Cattle Acres
-[2m2026-05-12T11:34:05.102344Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Capital Justice Ministry
-[2m2026-05-12T11:34:05.103932Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to [2600:9000:28c5:3800:c:bfa0:6b00:93a1]:443
-[2m2026-05-12T11:34:05.104262Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 2
-[2m2026-05-12T11:34:05.104360Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 1
-[2m2026-05-12T11:34:05.104449Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 5
-[2m2026-05-12T11:34:05.104557Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 3
-[2m2026-05-12T11:34:05.104657Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 6
-[2m2026-05-12T11:34:05.104757Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 3 a
-[2m2026-05-12T11:34:05.104799Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem
-[2m2026-05-12T11:34:05.104864Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 4
-[2m2026-05-12T11:34:05.104960Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 7
-[2m2026-05-12T11:34:05.121616Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to [2600:9000:28c5:3800:c:bfa0:6b00:93a1]:443
-[2m2026-05-12T11:34:05.156763Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Naddoddur Enterprise (market_id=3539823104)
-[2m2026-05-12T11:34:05.174324Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Hochburg-Carrier
-[2m2026-05-12T11:34:05.174358Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
-[2m2026-05-12T11:34:05.174375Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.174395Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
-[2m2026-05-12T11:34:05.174525Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Antliae Sector RD-T b3-3
-[2m2026-05-12T11:34:05.176250Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Hochburg-Carrier
-[2m2026-05-12T11:34:05.176274Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
-[2m2026-05-12T11:34:05.176288Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.176304Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
-[2m2026-05-12T11:34:05.177966Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Bujold Relay (market_id=3539844864)
-[2m2026-05-12T11:34:05.181374Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shakespeare Legacy
-[2m2026-05-12T11:34:05.181402Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.181415Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kopernik Reach
-[2m2026-05-12T11:34:05.181440Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Fermi Reach
-[2m2026-05-12T11:34:05.181454Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
-[2m2026-05-12T11:34:05.181467Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nimoy Legacy
-[2m2026-05-12T11:34:05.181479Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Mozart Sanctuary
-[2m2026-05-12T11:34:05.181490Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: H.g.wells Installation
-[2m2026-05-12T11:34:05.181503Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
-[2m2026-05-12T11:34:05.181517Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Archimedes Vision
-[2m2026-05-12T11:34:05.181651Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Antliae Sector KM-W c1-6
-[2m2026-05-12T11:34:05.183240Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shakespeare Legacy
-[2m2026-05-12T11:34:05.183264Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.183276Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kopernik Reach
-[2m2026-05-12T11:34:05.183290Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Fermi Reach
-[2m2026-05-12T11:34:05.183305Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
-[2m2026-05-12T11:34:05.183317Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nimoy Legacy
-[2m2026-05-12T11:34:05.183330Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Mozart Sanctuary
-[2m2026-05-12T11:34:05.183344Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: H.g.wells Installation
-[2m2026-05-12T11:34:05.183358Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
-[2m2026-05-12T11:34:05.183372Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Archimedes Vision
-[2m2026-05-12T11:34:05.185054Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 5
-[2m2026-05-12T11:34:05.185181Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 5
-[2m2026-05-12T11:34:05.185264Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 4
-[2m2026-05-12T11:34:05.185306Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 1
-[2m2026-05-12T11:34:05.185404Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 2
-[2m2026-05-12T11:34:05.185508Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 11
-[2m2026-05-12T11:34:05.185628Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 8
-[2m2026-05-12T11:34:05.185704Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 6
-[2m2026-05-12T11:34:05.185738Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 3
-[2m2026-05-12T11:34:05.185810Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 4 a
-[2m2026-05-12T11:34:05.185906Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 1
-[2m2026-05-12T11:34:05.185973Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A
-[2m2026-05-12T11:34:05.186077Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 7
-[2m2026-05-12T11:34:05.186120Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 2
-[2m2026-05-12T11:34:05.186193Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 9
-[2m2026-05-12T11:34:05.186300Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 10
-[2m2026-05-12T11:34:05.186341Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 4
-[2m2026-05-12T11:34:05.186433Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 7
-[2m2026-05-12T11:34:05.186572Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 2
-[2m2026-05-12T11:34:05.186651Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 9
-[2m2026-05-12T11:34:05.186723Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 6
-[2m2026-05-12T11:34:05.186826Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 1
-[2m2026-05-12T11:34:05.186884Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B
-[2m2026-05-12T11:34:05.186954Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 4
-[2m2026-05-12T11:34:05.187026Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 8
-[2m2026-05-12T11:34:05.187143Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 3
-[2m2026-05-12T11:34:05.187233Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 3
-[2m2026-05-12T11:34:05.190312Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Newfield's Inheritance
-[2m2026-05-12T11:34:05.190335Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Balmer's Progress
-[2m2026-05-12T11:34:05.190348Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Selous Legacy
-[2m2026-05-12T11:34:05.190363Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Cleopatra City
-[2m2026-05-12T11:34:05.190379Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.190394Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Thirsk City
-[2m2026-05-12T11:34:05.190407Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Collins Terminal
-[2m2026-05-12T11:34:05.190446Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kushida Town
-[2m2026-05-12T11:34:05.190462Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Charles's Inheritance
-[2m2026-05-12T11:34:05.190562Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Antliae Sector KM-W c1-25
-[2m2026-05-12T11:34:05.192041Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Newfield's Inheritance
-[2m2026-05-12T11:34:05.192061Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Balmer's Progress
-[2m2026-05-12T11:34:05.192073Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Selous Legacy
-[2m2026-05-12T11:34:05.192083Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Cleopatra City
-[2m2026-05-12T11:34:05.192097Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.192111Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Thirsk City
-[2m2026-05-12T11:34:05.192124Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Collins Terminal
-[2m2026-05-12T11:34:05.192136Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kushida Town
-[2m2026-05-12T11:34:05.192150Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Charles's Inheritance
-[2m2026-05-12T11:34:05.193786Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 4
-[2m2026-05-12T11:34:05.193901Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A
-[2m2026-05-12T11:34:05.193994Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 8
-[2m2026-05-12T11:34:05.194211Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 5
-[2m2026-05-12T11:34:05.194263Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A A Belt Cluster 4
-[2m2026-05-12T11:34:05.194367Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 8 a
-[2m2026-05-12T11:34:05.194498Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 2
-[2m2026-05-12T11:34:05.194635Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 2
-[2m2026-05-12T11:34:05.194762Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 4
-[2m2026-05-12T11:34:05.194926Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 6
-[2m2026-05-12T11:34:05.195034Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 1
-[2m2026-05-12T11:34:05.195092Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A A Belt Cluster 3
-[2m2026-05-12T11:34:05.195204Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 3
-[2m2026-05-12T11:34:05.195309Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 1
-[2m2026-05-12T11:34:05.195383Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 3
-[2m2026-05-12T11:34:05.195483Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 5
-[2m2026-05-12T11:34:05.195565Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 7
-[2m2026-05-12T11:34:05.195603Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A A Belt Cluster 2
-[2m2026-05-12T11:34:05.195655Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B
-[2m2026-05-12T11:34:05.195740Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 6
-[2m2026-05-12T11:34:05.195859Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 7
-[2m2026-05-12T11:34:05.195897Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A A Belt Cluster 1
-[2m2026-05-12T11:34:05.195993Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 3 a
-[2m2026-05-12T11:34:05.199030Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Orbital Construction Site: Legions Refegy (market_id=3960243970)
-[2m2026-05-12T11:34:05.206511Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", community.elitedangerous.com)
-[2m2026-05-12T11:34:05.226100Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m660:[0m Loaded 27 bodies from existing files
-[2m2026-05-12T11:34:05.229070Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m788:[0m Journal file changed to: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
-[2m2026-05-12T11:34:05.230910Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m281:[0m Location: Antliae Sector KM-W c1-6
-[2m2026-05-12T11:34:05.240980Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Mozart Sanctuary
-[2m2026-05-12T11:34:05.241018Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kopernik Reach
-[2m2026-05-12T11:34:05.241030Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shakespeare Legacy
-[2m2026-05-12T11:34:05.241042Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Fermi Reach
-[2m2026-05-12T11:34:05.241056Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.241070Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: H.g.wells Installation
-[2m2026-05-12T11:34:05.241088Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
-[2m2026-05-12T11:34:05.241100Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Archimedes Vision
-[2m2026-05-12T11:34:05.241113Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nimoy Legacy
-[2m2026-05-12T11:34:05.241127Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
-[2m2026-05-12T11:34:05.245172Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Nimoy Legacy (market_id=4248978179)
-[2m2026-05-12T11:34:05.247115Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Antliae Sector RD-T b3-3
-[2m2026-05-12T11:34:05.248709Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
-[2m2026-05-12T11:34:05.248741Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Hochburg-Carrier
-[2m2026-05-12T11:34:05.248758Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.248778Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
-[2m2026-05-12T11:34:05.250733Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Bujold Relay (market_id=3539844864)
-[2m2026-05-12T11:34:05.254407Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Double Meteor Manufacturing
-[2m2026-05-12T11:34:05.254439Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
-[2m2026-05-12T11:34:05.254453Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
-[2m2026-05-12T11:34:05.254468Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Velazquez Gateway
-[2m2026-05-12T11:34:05.254487Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shepherd Ring
-[2m2026-05-12T11:34:05.254503Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.254518Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Secret Cattle Acres
-[2m2026-05-12T11:34:05.254534Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Capital Justice Ministry
-[2m2026-05-12T11:34:05.254699Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Benapem
-[2m2026-05-12T11:34:05.256176Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Double Meteor Manufacturing
-[2m2026-05-12T11:34:05.256196Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: BEN-747 Bowman-class Researcher
-[2m2026-05-12T11:34:05.256208Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nusslein-Volhard Orbital
-[2m2026-05-12T11:34:05.256220Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Velazquez Gateway
-[2m2026-05-12T11:34:05.256234Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shepherd Ring
-[2m2026-05-12T11:34:05.256250Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.256263Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Secret Cattle Acres
-[2m2026-05-12T11:34:05.256277Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Capital Justice Ministry
-[2m2026-05-12T11:34:05.257880Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 2
-[2m2026-05-12T11:34:05.257961Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 1
-[2m2026-05-12T11:34:05.258038Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 5
-[2m2026-05-12T11:34:05.258140Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 3
-[2m2026-05-12T11:34:05.258238Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 6
-[2m2026-05-12T11:34:05.258334Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 3 a
-[2m2026-05-12T11:34:05.258375Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem
-[2m2026-05-12T11:34:05.258454Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 4
-[2m2026-05-12T11:34:05.258554Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Benapem 7
-[2m2026-05-12T11:34:05.285237Z[0m [34mDEBUG[0m [2medcas_client::views::news[0m[2m:[0m [2msrc/views/news.rs[0m[2m:[0m[2m90:[0m Success fetching galnet 15 articles
-[2m2026-05-12T11:34:05.288205Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m462:[0m Entering main application loop
-[2m2026-05-12T11:34:05.288226Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m185:[0m Journal update received: system=Antliae Sector KM-W c1-25, bodies=27
-[2m2026-05-12T11:34:05.288353Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m73:[0m Explorer updated with 27 bodies, 10 tree nodes
-[2m2026-05-12T11:34:05.303128Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to 77.90.1.37:443
-[2m2026-05-12T11:34:05.306896Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Naddoddur Enterprise (market_id=3539823104)
-[2m2026-05-12T11:34:05.323186Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to 77.90.1.37:443
-[2m2026-05-12T11:34:05.326500Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Hochburg-Carrier
-[2m2026-05-12T11:34:05.326554Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
-[2m2026-05-12T11:34:05.326580Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.326607Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
-[2m2026-05-12T11:34:05.326785Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Antliae Sector RD-T b3-3
-[2m2026-05-12T11:34:05.328379Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Hochburg-Carrier
-[2m2026-05-12T11:34:05.328410Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
-[2m2026-05-12T11:34:05.328443Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.328465Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
-[2m2026-05-12T11:34:05.330640Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Bujold Relay (market_id=3539844864)
-[2m2026-05-12T11:34:05.334037Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shakespeare Legacy
-[2m2026-05-12T11:34:05.334063Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.334077Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kopernik Reach
-[2m2026-05-12T11:34:05.334091Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Fermi Reach
-[2m2026-05-12T11:34:05.334104Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
-[2m2026-05-12T11:34:05.334119Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nimoy Legacy
-[2m2026-05-12T11:34:05.334132Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Mozart Sanctuary
-[2m2026-05-12T11:34:05.334147Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: H.g.wells Installation
-[2m2026-05-12T11:34:05.334162Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
-[2m2026-05-12T11:34:05.334175Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Archimedes Vision
-[2m2026-05-12T11:34:05.334310Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Antliae Sector KM-W c1-6
-[2m2026-05-12T11:34:05.335766Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Shakespeare Legacy
-[2m2026-05-12T11:34:05.335785Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.335798Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kopernik Reach
-[2m2026-05-12T11:34:05.335812Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Fermi Reach
-[2m2026-05-12T11:34:05.335826Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: FUXBAU Q2K-BHB
-[2m2026-05-12T11:34:05.335841Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Nimoy Legacy
-[2m2026-05-12T11:34:05.335855Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Mozart Sanctuary
-[2m2026-05-12T11:34:05.335868Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: H.g.wells Installation
-[2m2026-05-12T11:34:05.335881Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO79_TITLE;
-[2m2026-05-12T11:34:05.335895Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Archimedes Vision
-[2m2026-05-12T11:34:05.337493Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 5
-[2m2026-05-12T11:34:05.337606Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 5
-[2m2026-05-12T11:34:05.337684Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 4
-[2m2026-05-12T11:34:05.337720Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 1
-[2m2026-05-12T11:34:05.337790Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 2
-[2m2026-05-12T11:34:05.337884Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 11
-[2m2026-05-12T11:34:05.337989Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 8
-[2m2026-05-12T11:34:05.338063Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 6
-[2m2026-05-12T11:34:05.338097Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 3
-[2m2026-05-12T11:34:05.338182Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 4 a
-[2m2026-05-12T11:34:05.338259Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 1
-[2m2026-05-12T11:34:05.338322Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A
-[2m2026-05-12T11:34:05.338394Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 7
-[2m2026-05-12T11:34:05.338437Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 2
-[2m2026-05-12T11:34:05.338513Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 9
-[2m2026-05-12T11:34:05.338597Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 10
-[2m2026-05-12T11:34:05.338633Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A A Belt Cluster 4
-[2m2026-05-12T11:34:05.338703Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 7
-[2m2026-05-12T11:34:05.338802Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 2
-[2m2026-05-12T11:34:05.338875Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 9
-[2m2026-05-12T11:34:05.338945Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 6
-[2m2026-05-12T11:34:05.339045Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 1
-[2m2026-05-12T11:34:05.339100Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B
-[2m2026-05-12T11:34:05.339168Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 4
-[2m2026-05-12T11:34:05.339238Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 8
-[2m2026-05-12T11:34:05.339334Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 A 3
-[2m2026-05-12T11:34:05.339406Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-6 B 3
-[2m2026-05-12T11:34:05.342307Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Newfield's Inheritance
-[2m2026-05-12T11:34:05.342326Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Balmer's Progress
-[2m2026-05-12T11:34:05.342338Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Selous Legacy
-[2m2026-05-12T11:34:05.342354Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Cleopatra City
-[2m2026-05-12T11:34:05.342379Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.342405Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Thirsk City
-[2m2026-05-12T11:34:05.342433Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Collins Terminal
-[2m2026-05-12T11:34:05.342450Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kushida Town
-[2m2026-05-12T11:34:05.342469Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Charles's Inheritance
-[2m2026-05-12T11:34:05.342606Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m272:[0m FSDJump to Antliae Sector KM-W c1-25
-[2m2026-05-12T11:34:05.344343Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Newfield's Inheritance
-[2m2026-05-12T11:34:05.344367Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Balmer's Progress
-[2m2026-05-12T11:34:05.344381Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Selous Legacy
-[2m2026-05-12T11:34:05.344395Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Cleopatra City
-[2m2026-05-12T11:34:05.344410Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
-[2m2026-05-12T11:34:05.344433Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Thirsk City
-[2m2026-05-12T11:34:05.344449Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Collins Terminal
-[2m2026-05-12T11:34:05.344463Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Kushida Town
-[2m2026-05-12T11:34:05.344476Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m365:[0m FSSSignalDiscovered: Charles's Inheritance
-[2m2026-05-12T11:34:05.346224Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 4
-[2m2026-05-12T11:34:05.346328Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A
-[2m2026-05-12T11:34:05.346412Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 8
-[2m2026-05-12T11:34:05.346572Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 5
-[2m2026-05-12T11:34:05.346613Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A A Belt Cluster 4
-[2m2026-05-12T11:34:05.346712Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 8 a
-[2m2026-05-12T11:34:05.346815Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 2
-[2m2026-05-12T11:34:05.346943Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 2
-[2m2026-05-12T11:34:05.347050Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 4
-[2m2026-05-12T11:34:05.347174Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 6
-[2m2026-05-12T11:34:05.347278Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 1
-[2m2026-05-12T11:34:05.347314Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A A Belt Cluster 3
-[2m2026-05-12T11:34:05.347418Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 3
-[2m2026-05-12T11:34:05.347537Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 1
-[2m2026-05-12T11:34:05.347610Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 3
-[2m2026-05-12T11:34:05.347700Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 5
-[2m2026-05-12T11:34:05.347772Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 7
-[2m2026-05-12T11:34:05.347806Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A A Belt Cluster 2
-[2m2026-05-12T11:34:05.347857Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B
-[2m2026-05-12T11:34:05.347937Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A 6
-[2m2026-05-12T11:34:05.348051Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 7
-[2m2026-05-12T11:34:05.348088Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 A A Belt Cluster 1
-[2m2026-05-12T11:34:05.348184Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m299:[0m Scan: Antliae Sector KM-W c1-25 B 3 a
-[2m2026-05-12T11:34:05.351574Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m379:[0m Docked at Orbital Construction Site: Legions Refegy (market_id=3960243970)
-[2m2026-05-12T11:34:05.368631Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", edcas.de)
-[2m2026-05-12T11:34:05.403460Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m185:[0m Journal update received: system=Antliae Sector KM-W c1-25, bodies=27
-[2m2026-05-12T11:34:05.403670Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m73:[0m Explorer updated with 27 bodies, 10 tree nodes
-[2m2026-05-12T11:34:05.533761Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:05.533821Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m Tab changed to: System
-[2m2026-05-12T11:34:05.697424Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:05.697467Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m Tab changed to: Explorer
-[2m2026-05-12T11:34:05.852675Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:05.852715Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m Tab changed to: Mining
-[2m2026-05-12T11:34:05.991681Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:05.991721Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m Tab changed to: Inventory
-[2m2026-05-12T11:34:06.135758Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:06.135797Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m Tab changed to: Stations
-[2m2026-05-12T11:34:06.292721Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:06.292764Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m Tab changed to: Carriers
-[2m2026-05-12T11:34:06.461600Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:06.461644Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m Tab changed to: Factions
-[2m2026-05-12T11:34:06.465617Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m768:[0m connecting to 77.90.1.37:443
-[2m2026-05-12T11:34:06.484952Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::connect::http[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/connect/http.rs[0m[2m:[0m[2m771:[0m connected to 77.90.1.37:443
-[2m2026-05-12T11:34:06.546600Z[0m [34mDEBUG[0m [2mhyper_util::client::legacy::pool[0m[2m:[0m [2m/home/arne/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/hyper-util-0.1.17/src/client/legacy/pool.rs[0m[2m:[0m[2m395:[0m pooling idle connection for ("https", edcas.de)
-[2m2026-05-12T11:34:06.864559Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:06.864607Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m387:[0m Tab changed to: Construction
-[2m2026-05-12T11:34:09.553650Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('a'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:11.876759Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m471:[0m Key pressed: KeyEvent { code: Char('x'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
-[2m2026-05-12T11:34:11.876806Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m474:[0m Quit requested
-[2m2026-05-12T11:34:11.876833Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m454:[0m Application exited cleanly
+[2m2026-05-13T09:04:24.115043Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m29:[0m EDCAS client starting
+[2m2026-05-13T09:04:24.115078Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m32:[0m CLI arguments: ["target/debug/edcas-client"]
+[2m2026-05-13T09:04:24.115113Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m43:[0m Terminal raw mode enabled
+[2m2026-05-13T09:04:24.115988Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m131:[0m Journal logs: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-13T09:04:24.116015Z[0m [34mDEBUG[0m [2medcas_client::settings[0m[2m:[0m [2msrc/settings.rs[0m[2m:[0m[2m147:[0m Graphics path: /home/arne/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics
+[2m2026-05-13T09:04:24.116029Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m134:[0m Settings loaded
+[2m2026-05-13T09:04:24.116037Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m138:[0m Journal directory configured: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-13T09:04:24.116053Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m149:[0m Starting journal reader for directory: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-13T09:04:24.116063Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m766:[0m Initializing journal reader for: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-13T09:04:24.116223Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m795:[0m Loading existing journal files from: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous
+[2m2026-05-13T09:04:24.119062Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m1015:[0m Loading journal file: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-13T072407.01.log
+[2m2026-05-13T09:04:24.120837Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-13T09:04:24.120862Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Hochburg-Carrier
+[2m2026-05-13T09:04:24.120877Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
+[2m2026-05-13T09:04:24.120893Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
+[2m2026-05-13T09:04:24.121060Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m336:[0m Location: Antliae Sector RD-T b3-3
+[2m2026-05-13T09:04:24.128043Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m327:[0m FSDJump to Padhbh
+[2m2026-05-13T09:04:24.129664Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Red Spiral Unlimited
+[2m2026-05-13T09:04:24.129694Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Midgeley Landing
+[2m2026-05-13T09:04:24.129712Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-13T09:04:24.129724Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Hopkins Point
+[2m2026-05-13T09:04:24.138092Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-13T09:04:24.138141Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Hochburg-Carrier
+[2m2026-05-13T09:04:24.138163Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
+[2m2026-05-13T09:04:24.138180Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
+[2m2026-05-13T09:04:24.138290Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m327:[0m FSDJump to Antliae Sector RD-T b3-3
+[2m2026-05-13T09:04:24.139794Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-13T09:04:24.139818Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Hochburg-Carrier
+[2m2026-05-13T09:04:24.139832Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
+[2m2026-05-13T09:04:24.139848Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
+[2m2026-05-13T09:04:24.141619Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m486:[0m Docked at Bujold Relay (market_id=3539844864)
+[2m2026-05-13T09:04:24.141996Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m1023:[0m Backfilling scans from previous journal: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T221215.01.log
+[2m2026-05-13T09:04:24.195774Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m1023:[0m Backfilling scans from previous journal: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-12T074100.01.log
+[2m2026-05-13T09:04:24.266452Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m1023:[0m Backfilling scans from previous journal: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-11T224849.01.log
+[2m2026-05-13T09:04:24.278944Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m801:[0m Loaded 0 bodies from existing files
+[2m2026-05-13T09:04:24.281395Z[0m [32m INFO[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m1055:[0m Journal file changed to: /home/arne/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous/Journal.2026-05-13T072407.01.log
+[2m2026-05-13T09:04:24.282978Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-13T09:04:24.283000Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Hochburg-Carrier
+[2m2026-05-13T09:04:24.283013Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
+[2m2026-05-13T09:04:24.283026Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
+[2m2026-05-13T09:04:24.283165Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m336:[0m Location: Antliae Sector RD-T b3-3
+[2m2026-05-13T09:04:24.289079Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m327:[0m FSDJump to Padhbh
+[2m2026-05-13T09:04:24.290496Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Red Spiral Unlimited
+[2m2026-05-13T09:04:24.290527Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Midgeley Landing
+[2m2026-05-13T09:04:24.290553Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-13T09:04:24.290574Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Hopkins Point
+[2m2026-05-13T09:04:24.299423Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-13T09:04:24.299466Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Hochburg-Carrier
+[2m2026-05-13T09:04:24.299484Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
+[2m2026-05-13T09:04:24.299501Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
+[2m2026-05-13T09:04:24.299643Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m327:[0m FSDJump to Antliae Sector RD-T b3-3
+[2m2026-05-13T09:04:24.301115Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO42_TITLE;
+[2m2026-05-13T09:04:24.301135Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: Hochburg-Carrier
+[2m2026-05-13T09:04:24.301148Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: UUCC Deimos [VE] N1K-50Z
+[2m2026-05-13T09:04:24.301164Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m420:[0m FSSSignalDiscovered: $MULTIPLAYER_SCENARIO78_TITLE;
+[2m2026-05-13T09:04:24.302652Z[0m [34mDEBUG[0m [2medcas_client::journal_reader[0m[2m:[0m [2msrc/journal_reader.rs[0m[2m:[0m[2m486:[0m Docked at Bujold Relay (market_id=3539844864)
+[2m2026-05-13T09:04:24.358183Z[0m [34mDEBUG[0m [2medcas_client::views::news[0m[2m:[0m [2msrc/views/news.rs[0m[2m:[0m[2m92:[0m Success fetching galnet 15 articles
+[2m2026-05-13T09:04:24.360567Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m75:[0m Entering main application loop
+[2m2026-05-13T09:04:24.360584Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m213:[0m Journal update received: system=Antliae Sector RD-T b3-3, bodies=0
+[2m2026-05-13T09:04:24.360618Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m73:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-13T09:04:24.360640Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m213:[0m Journal update received: system=Antliae Sector RD-T b3-3, bodies=0
+[2m2026-05-13T09:04:24.360678Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m73:[0m Explorer updated with 0 bodies, 0 tree nodes
+[2m2026-05-13T09:04:24.913091Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:24.913131Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Pilot
+[2m2026-05-13T09:04:25.071940Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:25.071981Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: System
+[2m2026-05-13T09:04:25.211460Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:25.211500Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Explorer
+[2m2026-05-13T09:04:25.508152Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:25.508202Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m439:[0m Tab changed to: System
+[2m2026-05-13T09:04:25.922137Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m249:[0m Merged 27 bodies from API into explorer
+[2m2026-05-13T09:04:25.922270Z[0m [34mDEBUG[0m [2medcas_client::views::explorer[0m[2m:[0m [2msrc/views/explorer.rs[0m[2m:[0m[2m73:[0m Explorer updated with 27 bodies, 11 tree nodes
+[2m2026-05-13T09:04:29.053745Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:29.053787Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Explorer
+[2m2026-05-13T09:04:38.438223Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:38.438261Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m439:[0m Tab changed to: System
+[2m2026-05-13T09:04:42.600880Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:42.600920Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Explorer
+[2m2026-05-13T09:04:42.900385Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:42.900430Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Inventory
+[2m2026-05-13T09:04:43.066909Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:43.066950Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Modules
+[2m2026-05-13T09:04:43.227946Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:43.227987Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Stations
+[2m2026-05-13T09:04:43.389927Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:43.389965Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Carriers
+[2m2026-05-13T09:04:43.605906Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:43.605946Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Factions
+[2m2026-05-13T09:04:43.945342Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:43.945375Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Construction
+[2m2026-05-13T09:04:44.333096Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:44.333137Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m439:[0m Tab changed to: Factions
+[2m2026-05-13T09:04:44.790811Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:44.790852Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m439:[0m Tab changed to: Carriers
+[2m2026-05-13T09:04:45.073979Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:45.074021Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Factions
+[2m2026-05-13T09:04:46.848072Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:46.848107Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Construction
+[2m2026-05-13T09:04:48.116057Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:48.116094Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Trade Routes
+[2m2026-05-13T09:04:48.407111Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:48.407152Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: Settings
+[2m2026-05-13T09:04:49.167909Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('e'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:49.167954Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m434:[0m Tab changed to: About
+[2m2026-05-13T09:04:49.803128Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:49.803171Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m439:[0m Tab changed to: Settings
+[2m2026-05-13T09:04:51.900999Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:51.901041Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m439:[0m Tab changed to: Trade Routes
+[2m2026-05-13T09:04:52.233329Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:52.233372Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m439:[0m Tab changed to: Construction
+[2m2026-05-13T09:04:52.377018Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('q'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:52.377061Z[0m [32m INFO[0m [2medcas_client::app[0m[2m:[0m [2msrc/app.rs[0m[2m:[0m[2m439:[0m Tab changed to: Factions
+[2m2026-05-13T09:04:52.572364Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m85:[0m Key pressed: KeyEvent { code: Char('x'), modifiers: KeyModifiers(0x0), kind: Press, state: KeyEventState(0x0) }
+[2m2026-05-13T09:04:52.572412Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m88:[0m Quit requested
+[2m2026-05-13T09:04:52.572443Z[0m [32m INFO[0m [2medcas_client[0m[2m:[0m [2msrc/main.rs[0m[2m:[0m[2m67:[0m Application exited cleanly
