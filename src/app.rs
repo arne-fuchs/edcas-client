@@ -313,7 +313,7 @@ impl App {
             AppView::News => self.news.render(frame, area),
             AppView::Pilot => self.pilot.render(frame, area, &self.journal),
             AppView::System => self.system.render(frame, area, &self.journal),
-            AppView::Explorer => self.explorer.render(frame, area),
+            AppView::Explorer => self.explorer.render(frame, area, &self.settings),
             AppView::Materials => self.inventory.render(frame, area, &self.journal),
             AppView::Modules => self.modules_view.render(frame, area, &self.journal),
             AppView::Stations => self.stations.render(frame, area),

@@ -13,439 +13,227 @@
     "directory": ""
   },
   "icons": {
+    "bio_signal": {
+      "char": "🌿",
+      "enabled": true,
+      "color": "green"
+    },
     "geo_signal": {
       "char": "🌋",
       "enabled": true,
-      "color": "purple"
+      "color": "yellow"
     },
-    "mapped": {
-      "char": "🗺",
+    "belt_cluster": {
+      "char": "◆",
       "enabled": true,
-      "color": "purple"
-    },
-    "bio_signal": {
-      "char": "🌱",
-      "enabled": true,
-      "color": "purple"
-    },
-    "eRingClass_Icy": {
-      "char": "○",
-      "enabled": true,
-      "color": "purple"
-    },
-    "eRingClass_MetalRich": {
-      "char": "○",
-      "enabled": true,
-      "color": "purple"
-    },
-    "eRingClass_Metalic": {
-      "char": "○",
-      "enabled": true,
-      "color": "purple"
-    },
-    "eRingClass_Rocky": {
-      "char": "○",
-      "enabled": true,
-      "color": "purple"
-    },
-    "landable": {
-      "char": "👣",
-      "enabled": false,
-      "color": "purple"
-    },
-    "distance": {
-      "char": "➡",
-      "enabled": true,
-      "color": "purple"
-    },
-    "gravity": {
-      "char": "⬇",
-      "enabled": false,
-      "color": "purple"
-    },
-    "unknown_signal": {
-      "char": "？",
-      "enabled": true,
-      "color": "purple"
+      "color": "#a07850"
     },
     "human_signal": {
-      "char": "✋",
+      "char": "⚔",
       "enabled": true,
-      "color": "purple"
-    },
-    "discovered": {
-      "char": "🚩",
-      "enabled": true,
-      "color": "purple"
+      "color": "red"
     },
     "xeno_signal": {
       "char": "👽",
       "enabled": true,
-      "color": "purple"
+      "color": "green"
     },
-    "belt_cluster": {
-      "char": "🌌",
+    "unknown_signal": {
+      "char": "◆",
       "enabled": true,
-      "color": "purple"
+      "color": "white"
+    },
+    "landable": {
+      "char": "L",
+      "enabled": true,
+      "color": "white"
+    },
+    "discovered": {
+      "char": "🚩",
+      "enabled": true,
+      "color": "white"
+    },
+    "mapped": {
+      "char": "🗺",
+      "enabled": true,
+      "color": "white"
+    },
+    "distance": {
+      "char": "➡",
+      "enabled": true,
+      "color": "white"
+    },
+    "gravity": {
+      "char": "⬇",
+      "enabled": false,
+      "color": "white"
+    },
+    "eRingClass_Icy": {
+      "char": "○",
+      "enabled": true,
+      "color": "cyan"
+    },
+    "eRingClass_MetalRich": {
+      "char": "○",
+      "enabled": true,
+      "color": "red"
+    },
+    "eRingClass_Metalic": {
+      "char": "○",
+      "enabled": true,
+      "color": "lightred"
+    },
+    "eRingClass_Rocky": {
+      "char": "○",
+      "enabled": true,
+      "color": "gray"
     }
   },
   "planets": {
-    "Sudarsky class I gas giant": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
-    },
-    "Rocky ice body": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
-    },
-    "Water giant": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
-    },
-    "Metal rich body": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
-    },
     "Earthlike body": {
-      "char": "🌎",
+      "char": "●",
       "enabled": true,
-      "color": "purple"
+      "color": "green"
     },
     "Water world": {
-      "char": "○",
+      "char": "●",
       "enabled": true,
-      "color": "purple"
+      "color": "blue"
     },
-    "Gas giant with water based life": {
-      "char": "⏺",
+    "Water giant": {
+      "char": "●",
       "enabled": true,
-      "color": "purple"
-    },
-    "Helium gas giant": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
+      "color": "blue"
     },
     "Ammonia world": {
-      "char": "🌎",
+      "char": "●",
       "enabled": true,
-      "color": "purple"
+      "color": "lightmagenta"
     },
-    "Sudarsky class III gas giant": {
-      "char": "⏺",
+    "Metal rich body": {
+      "char": "●",
       "enabled": true,
-      "color": "purple"
-    },
-    "Rocky body": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
-    },
-    "Gas giant with ammonia based life": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
+      "color": "red"
     },
     "High metal content body": {
-      "char": "⏺",
+      "char": "●",
       "enabled": true,
-      "color": "purple"
+      "color": "lightred"
     },
-    "Sudarsky class IV gas giant": {
-      "char": "⏺",
+    "Rocky body": {
+      "char": "●",
       "enabled": true,
-      "color": "purple"
+      "color": "gray"
     },
-    "Sudarsky class II gas giant": {
-      "char": "⏺",
+    "Rocky ice body": {
+      "char": "●",
       "enabled": true,
-      "color": "purple"
-    },
-    "Helium rich gas giant": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
-    },
-    "Sudarsky class V gas giant": {
-      "char": "⏺",
-      "enabled": true,
-      "color": "purple"
+      "color": "cyan"
     },
     "Icy body": {
-      "char": "⏺",
+      "char": "●",
       "enabled": true,
-      "color": "purple"
+      "color": "cyan"
+    },
+    "Sudarsky class I gas giant": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
+    },
+    "Sudarsky class II gas giant": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
+    },
+    "Sudarsky class III gas giant": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
+    },
+    "Sudarsky class IV gas giant": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
+    },
+    "Sudarsky class V gas giant": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
+    },
+    "Helium gas giant": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
+    },
+    "Helium rich gas giant": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
+    },
+    "Gas giant with water based life": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
+    },
+    "Gas giant with ammonia based life": {
+      "char": "○",
+      "enabled": true,
+      "color": "#ffa500"
     }
   },
   "stars": {
-    "H": {
-      "char": "○",
-      "enabled": true,
-      "color": "purple"
-    },
-    "L": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "RoguePlanet": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "T": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "Y": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "F": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "F_WhiteSuperGiant": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "N": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "CS": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "CN": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "WN": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "W": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DAB": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "WC": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "D": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DAZ": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "A": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DC": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "O": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "M_RedSuperGiant": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DQ": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DBV": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "B": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "MS S": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "CH": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "A_BlueWhiteSuperGiant": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "G": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DAV": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "X": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "WO": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "AeBe": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "K": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "TTS": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DB": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "M_RedGiant": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "Nebula": {
-      "char": "☁",
-      "enabled": true,
-      "color": "purple"
-    },
-    "K_OrangeGiant": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DCV": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "CHd": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "S": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "WNC": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DA": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DO": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "MS": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "C": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "CJ": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DAO": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DBZ": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DOV": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "StellarRemnantNebula": {
-      "char": "☁",
-      "enabled": true,
-      "color": "purple"
-    },
-    "M": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "DX": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    },
-    "SupermassiveBlackHole": {
-      "char": "✴",
-      "enabled": true,
-      "color": "purple"
-    }
+    "O": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "B": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "A": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "F": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "G": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "K": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "M": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "L": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "T": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "Y": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "N": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "H": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "SupermassiveBlackHole": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "D":   { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DA":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DAB": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DAV": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DAZ": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DAO": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DB":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DBV": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DBZ": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DC":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DCV": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DQ":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DX":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DO":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "DOV": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "W":   { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "WC":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "WN":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "WNC": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "WO":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "C":   { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "CJ":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "CH":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "CHd": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "CS":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "CN":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "S":   { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "MS":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "MS S": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "AeBe": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "TTS":  { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "A_BlueWhiteSuperGiant": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "F_WhiteSuperGiant":     { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "M_RedGiant":            { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "M_RedSuperGiant":       { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "K_OrangeGiant":         { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "RoguePlanet": { "char": "★", "enabled": true, "color": "#ff8c00" },
+    "Nebula":               { "char": "☁", "enabled": true, "color": "white" },
+    "StellarRemnantNebula": { "char": "☁", "enabled": true, "color": "white" },
+    "X": { "char": "★", "enabled": true, "color": "#ff8c00" }
   }
 }

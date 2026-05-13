@@ -14,6 +14,7 @@ use crate::journal_reader::{
     BodyComposition as JournalBodyComposition, BodyScan, BodySignal, DiscoveredSignal, JournalData,
     SaaBodyData, StationData, TreeNode, build_body_tree,
 };
+use crate::settings::Settings;
 use crate::views::ViewEvent;
 
 pub struct ExplorerView {
@@ -51,6 +52,7 @@ struct FlatNode {
     bio_signal_count: i32,
     geo_signal_count: i32,
     node_type: NodeType,
+    radius: f32,    // meters; 0 if body not yet scanned
 }
 
 impl ExplorerView {
@@ -116,6 +118,7 @@ impl ExplorerView {
                 bio_signal_count: 0,
                 geo_signal_count: 0,
                 node_type: NodeType::SectionHeader,
+                radius: 0.0,
             });
             for station in &self.stations {
                 self.flat_nodes.push(FlatNode {
@@ -132,6 +135,7 @@ impl ExplorerView {
                     bio_signal_count: 0,
                     geo_signal_count: 0,
                     node_type: NodeType::Station(station.clone()),
+                    radius: 0.0,
                 });
             }
         }
@@ -155,6 +159,7 @@ impl ExplorerView {
                 bio_signal_count: 0,
                 geo_signal_count: 0,
                 node_type: NodeType::SectionHeader,
+                radius: 0.0,
             });
             for sig in unassociated {
                 self.flat_nodes.push(FlatNode {
@@ -171,6 +176,7 @@ impl ExplorerView {
                     bio_signal_count: 0,
                     geo_signal_count: 0,
                     node_type: NodeType::Signal(sig.clone()),
+                    radius: 0.0,
                 });
             }
         }
@@ -295,7 +301,7 @@ impl ExplorerView {
         }
     }
 
-    fn build_tree_lines(&self) -> Vec<Line<'static>> {
+    fn build_tree_lines(&self, settings: &Settings) -> Vec<Line<'static>> {
         let mut lines: Vec<Line<'static>> = Vec::new();
 
         let header_text = if self.system_name.is_empty() {
@@ -368,11 +374,17 @@ impl ExplorerView {
                 }
                 NodeType::BodySignal(ref sig) => {
                     let (icon, color) = if sig.is_biological() {
-                        ("🌿", Color::Green)
+                        settings.icons.get("bio_signal").filter(|i| i.enabled)
+                            .map(|i| (i.char.clone(), parse_color(&i.color)))
+                            .unwrap_or_else(|| ("🌿".to_string(), Color::Green))
                     } else if sig.is_geological() {
-                        ("🌋", Color::Yellow)
+                        settings.icons.get("geo_signal").filter(|i| i.enabled)
+                            .map(|i| (i.char.clone(), parse_color(&i.color)))
+                            .unwrap_or_else(|| ("🌋".to_string(), Color::Yellow))
                     } else {
-                        ("◆", Color::White)
+                        settings.icons.get("unknown_signal").filter(|i| i.enabled)
+                            .map(|i| (i.char.clone(), parse_color(&i.color)))
+                            .unwrap_or_else(|| ("◆".to_string(), Color::White))
                     };
                     if is_selected {
                         lines.push(Line::from(Span::styled(
@@ -391,7 +403,7 @@ impl ExplorerView {
                     }
                 }
                 NodeType::Signal(ref sig) => {
-                    let (icon, base_color) = signal_icon(sig);
+                    let (icon, base_color) = signal_icon(sig, settings);
                     let threat_str = sig.threat_level
                         .filter(|&t| t > 0)
                         .map(|t| format!("  ⚠{}", t))
@@ -420,7 +432,7 @@ impl ExplorerView {
                     }
                 }
                 NodeType::Body => {
-                    let (icon, icon_style) = node_icon(node);
+                    let (icon, icon_style) = node_icon(node, settings);
                     let dist_str = if node.distance_ls > 0.0 {
                         format!("  {:>8.1} Ls", node.distance_ls)
                     } else {
@@ -471,7 +483,7 @@ impl ExplorerView {
         lines
     }
 
-    fn build_detail_lines(&self) -> Vec<Line<'static>> {
+    fn build_detail_lines(&self, settings: &Settings) -> Vec<Line<'static>> {
         let mut lines: Vec<Line<'static>> = Vec::new();
 
         if let Some(node) = self.flat_nodes.get(self.selected_idx) {
@@ -479,7 +491,7 @@ impl ExplorerView {
                 return build_station_detail(station);
             }
             if let NodeType::Signal(ref sig) = node.node_type {
-                return build_signal_detail(sig);
+                return build_signal_detail(sig, settings);
             }
             if matches!(node.node_type, NodeType::SectionHeader) {
                 return lines;
@@ -679,7 +691,7 @@ impl ExplorerView {
         lines
     }
 
-    pub fn render(&mut self, frame: &mut Frame, area: Rect) {
+    pub fn render(&mut self, frame: &mut Frame, area: Rect, settings: &Settings) {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(55), Constraint::Percentage(45)])
@@ -690,7 +702,7 @@ impl ExplorerView {
 
         let visible_height = tree_area.height.saturating_sub(2) as usize;
         self.auto_scroll(visible_height);
-        let tree_lines = self.build_tree_lines();
+        let tree_lines = self.build_tree_lines(settings);
 
         let tree_paragraph = Paragraph::new(tree_lines)
             .block(
@@ -702,7 +714,7 @@ impl ExplorerView {
             .scroll((self.scroll_offset as u16, 0));
         frame.render_widget(tree_paragraph, tree_area);
 
-        let detail_lines = self.build_detail_lines();
+        let detail_lines = self.build_detail_lines(settings);
         let detail_paragraph = Paragraph::new(detail_lines)
             .block(
                 Block::default()
@@ -765,6 +777,7 @@ fn flatten_node(
         bio_signal_count,
         geo_signal_count,
         node_type: NodeType::Body,
+        radius: body.map(|b| b.radius).unwrap_or(0.0),
     });
 
     // Collect signals for this body (prefer SAA over FSS)
@@ -810,6 +823,7 @@ fn flatten_node(
             bio_signal_count: 0,
             geo_signal_count: 0,
             node_type: NodeType::BodySignal(sig.clone()),
+            radius: 0.0,
         });
     }
 
@@ -832,6 +846,7 @@ fn flatten_node(
             bio_signal_count: 0,
             geo_signal_count: 0,
             node_type: NodeType::Signal((*sig).clone()),
+            radius: 0.0,
         });
     }
 }
@@ -893,10 +908,10 @@ fn build_station_detail(station: &StationData) -> Vec<Line<'static>> {
 
 // ── Signal detail ────────────────────────────────────────────────────────────
 
-fn build_signal_detail(sig: &DiscoveredSignal) -> Vec<Line<'static>> {
+fn build_signal_detail(sig: &DiscoveredSignal, settings: &Settings) -> Vec<Line<'static>> {
     let mut lines: Vec<Line<'static>> = Vec::new();
 
-    let (icon, color) = signal_icon(sig);
+    let (icon, color) = signal_icon(sig, settings);
     lines.push(Line::from(vec![
         Span::styled(format!("{} ", icon), Style::default().fg(color).add_modifier(Modifier::BOLD)),
         Span::styled(sig.display_name.clone(), Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)),
@@ -942,61 +957,137 @@ fn build_signal_detail(sig: &DiscoveredSignal) -> Vec<Line<'static>> {
 
 // ── Icons & styling ──────────────────────────────────────────────────────────
 
-fn node_icon(node: &FlatNode) -> (&'static str, Style) {
+fn parse_color(s: &str) -> Color {
+    match s.to_lowercase().as_str() {
+        "white"        => Color::White,
+        "black"        => Color::Black,
+        "red"          => Color::Red,
+        "green"        => Color::Green,
+        "blue"         => Color::Blue,
+        "yellow"       => Color::Yellow,
+        "cyan"         => Color::Cyan,
+        "magenta"      => Color::Magenta,
+        "gray" | "grey"             => Color::Gray,
+        "darkgray" | "darkgrey"     => Color::DarkGray,
+        "lightred"     => Color::LightRed,
+        "lightgreen"   => Color::LightGreen,
+        "lightyellow"  => Color::LightYellow,
+        "lightblue"    => Color::LightBlue,
+        "lightmagenta" => Color::LightMagenta,
+        "lightcyan"    => Color::LightCyan,
+        s if s.starts_with('#') && s.len() == 7 => {
+            let r = u8::from_str_radix(&s[1..3], 16).unwrap_or(255);
+            let g = u8::from_str_radix(&s[3..5], 16).unwrap_or(255);
+            let b = u8::from_str_radix(&s[5..7], 16).unwrap_or(255);
+            Color::Rgb(r, g, b)
+        }
+        _ => Color::White,
+    }
+}
+
+fn size_planet_icon(radius: f32, is_gas: bool) -> &'static str {
+    if is_gas {
+        if radius < 20_000_000.0 { "∘" }
+        else if radius < 60_000_000.0 { "○" }
+        else { "◯" }
+    } else {
+        if radius < 1_000_000.0 { "·" }
+        else if radius < 4_000_000.0 { "•" }
+        else if radius < 9_000_000.0 { "●" }
+        else { "⬤" }
+    }
+}
+
+fn size_star_icon(radius: f32) -> &'static str {
+    if radius < 20_000_000.0 { "·" }            // neutron stars, white dwarfs
+    else if radius < 300_000_000.0 { "✦" }       // brown dwarfs, tiny red dwarfs
+    else if radius < 2_000_000_000.0 { "★" }     // M, K, G, F main sequence
+    else if radius < 10_000_000_000.0 { "✸" }    // A, B, O and large stars
+    else { "✵" }                                  // giants and supergiants
+}
+
+fn node_icon(node: &FlatNode, settings: &Settings) -> (String, Style) {
     if node.planet_class.is_empty() {
         if node.is_barycentre {
-            ("⊕", Style::default().fg(Color::DarkGray))
-        } else if node.short_name.to_ascii_lowercase().contains("belt cluster") {
-            ("◆", Style::default().fg(Color::Rgb(160, 120, 80)))
-        } else {
-            ("★", Style::default().fg(Color::Rgb(255, 140, 0)))
+            return ("⊕".to_string(), Style::default().fg(Color::DarkGray));
         }
+        if node.short_name.to_ascii_lowercase().contains("belt cluster") {
+            return settings.icons.get("belt_cluster").filter(|i| i.enabled)
+                .map(|i| (i.char.clone(), Style::default().fg(parse_color(&i.color))))
+                .unwrap_or_else(|| ("◆".to_string(), Style::default().fg(Color::Rgb(160, 120, 80))));
+        }
+        // Star: color from settings, char from size tier (or settings/hardcoded fallback)
+        let color = settings.stars.get(&node.star_type).filter(|i| i.enabled)
+            .map(|i| parse_color(&i.color))
+            .unwrap_or(Color::Rgb(255, 140, 0));
+        let icon = if node.radius > 0.0 {
+            size_star_icon(node.radius).to_string()
+        } else {
+            settings.stars.get(&node.star_type).filter(|i| i.enabled)
+                .map(|i| i.char.clone())
+                .unwrap_or_else(|| "★".to_string())
+        };
+        (icon, Style::default().fg(color))
     } else {
-        body_class_icon(&node.planet_class)
+        body_class_icon(&node.planet_class, node.radius, settings)
     }
 }
 
-fn body_class_icon(planet_class: &str) -> (&'static str, Style) {
+fn body_class_icon(planet_class: &str, radius: f32, settings: &Settings) -> (String, Style) {
     let lower = planet_class.to_lowercase();
-    if lower.contains("earthlike") {
-        ("●", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))
-    } else if lower.contains("water world") || lower.contains("water giant") {
-        ("●", Style::default().fg(Color::Blue))
-    } else if lower.contains("ammonia") {
-        ("●", Style::default().fg(Color::LightMagenta))
-    } else if lower.contains("metal rich") {
-        ("●", Style::default().fg(Color::Red))
-    } else if lower.contains("high metal") {
-        ("●", Style::default().fg(Color::LightRed))
-    } else if lower.contains("icy") {
-        ("●", Style::default().fg(Color::Cyan))
-    } else if lower.contains("rocky") {
-        ("●", Style::default().fg(Color::Gray))
-    } else if lower.contains("gas") || lower.contains("sudarsky") || lower.contains("giant") {
-        ("○", Style::default().fg(Color::Rgb(255, 165, 0)))
+    let is_gas = lower.contains("gas") || lower.contains("sudarsky") || lower.contains("giant");
+
+    // Color: settings → hardcoded class default
+    let (color, bold) = settings.planets.get(planet_class).filter(|i| i.enabled)
+        .map(|i| (parse_color(&i.color), false))
+        .unwrap_or_else(|| {
+            if lower.contains("earthlike")                                          { (Color::Green, true) }
+            else if lower.contains("water world") || lower.contains("water giant") { (Color::Blue, false) }
+            else if lower.contains("ammonia")                                       { (Color::LightMagenta, false) }
+            else if lower.contains("metal rich")                                    { (Color::Red, false) }
+            else if lower.contains("high metal")                                    { (Color::LightRed, false) }
+            else if lower.contains("icy")                                           { (Color::Cyan, false) }
+            else if lower.contains("rocky")                                         { (Color::Gray, false) }
+            else if is_gas                                                           { (Color::Rgb(255, 165, 0), false) }
+            else                                                                    { (Color::White, false) }
+        });
+
+    // Char: size-based (when scanned) → settings → hardcoded
+    let icon = if radius > 0.0 {
+        size_planet_icon(radius, is_gas).to_string()
     } else {
-        ("●", Style::default().fg(Color::White))
-    }
+        settings.planets.get(planet_class).filter(|i| i.enabled)
+            .map(|i| i.char.clone())
+            .unwrap_or_else(|| if is_gas { "○" } else { "●" }.to_string())
+    };
+
+    let style = if bold { Style::default().fg(color).add_modifier(Modifier::BOLD) }
+                else    { Style::default().fg(color) };
+    (icon, style)
 }
 
-fn signal_icon(sig: &DiscoveredSignal) -> (&'static str, Color) {
+fn signal_icon(sig: &DiscoveredSignal, settings: &Settings) -> (String, Color) {
     if sig.uss_type.is_some() {
         let threat = sig.threat_level.unwrap_or(0);
         if threat >= 4 {
-            ("⚠", Color::Red)
+            ("⚠".to_string(), Color::Red)
         } else if threat >= 2 {
-            ("⚠", Color::Rgb(255, 140, 0))
+            ("⚠".to_string(), Color::Rgb(255, 140, 0))
         } else {
-            ("⚠", Color::Yellow)
+            ("⚠".to_string(), Color::Yellow)
         }
     } else if sig.is_station {
-        ("◉", Color::Cyan)
+        ("◉".to_string(), Color::Cyan)
     } else {
         let lower = sig.display_name.to_lowercase();
         if lower.contains("war") || lower.contains("combat") || lower.contains("conflict") {
-            ("⚔", Color::Red)
+            settings.icons.get("human_signal").filter(|i| i.enabled)
+                .map(|i| (i.char.clone(), parse_color(&i.color)))
+                .unwrap_or_else(|| ("⚔".to_string(), Color::Red))
         } else {
-            ("◆", Color::White)
+            settings.icons.get("unknown_signal").filter(|i| i.enabled)
+                .map(|i| (i.char.clone(), parse_color(&i.color)))
+                .unwrap_or_else(|| ("◆".to_string(), Color::White))
         }
     }
 }
