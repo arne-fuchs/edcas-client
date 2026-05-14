@@ -1,139 +1,122 @@
 use deadpool_postgres::Pool;
-use edcas_common::api::TradeRouteResponse;
+use edcas_common::api::{TradeLoopResponse, TradeRouteResponse};
 use rocket::{get, http::Status, serde::json::Json, State};
 use tracing::error;
 
-#[get("/api/v1/trade-routes?<system_address>&<max_distance>&<pad_size>&<min_profit>&<limit>")]
-pub async fn search_trade_routes(
+#[get("/api/v1/trade-routes")]
+pub async fn get_trade_routes(
     pool: &State<Pool>,
-    system_address: Option<i64>,
-    max_distance: Option<f32>,
-    pad_size: Option<String>,
-    min_profit: Option<i32>,
-    limit: Option<i64>,
 ) -> Result<Json<Vec<TradeRouteResponse>>, Status> {
-    let addr = match system_address {
-        Some(a) => a,
-        None => return Ok(Json(vec![])),
-    };
-
-    let max_dist = max_distance.unwrap_or(200.0_f32);
-    let min_profit_val = min_profit.unwrap_or(1000_i32);
-    let limit_val = limit.unwrap_or(50_i64).min(200);
-
     let client = pool.get().await.map_err(|e| {
         error!("DB pool error: {e:#}");
         Status::ServiceUnavailable
     })?;
 
-    let center_row = client
-        .query_opt(
-            "SELECT x, y, z FROM star_systems WHERE system_address = $1",
-            &[&addr],
-        )
-        .await
-        .map_err(|e| {
-            error!("Center lookup failed: {e:#}");
-            Status::InternalServerError
-        })?;
-
-    let (cx, cy, cz): (f32, f32, f32) = match center_row {
-        Some(r) => (r.get(0), r.get(1), r.get(2)),
-        None => return Ok(Json(vec![])),
-    };
-
-    let pad_clause = match pad_size.as_deref() {
-        Some("L") => " AND fm.large > 0 AND tm.large > 0",
-        Some("M") => " AND (fm.large > 0 OR fm.medium > 0) AND (tm.large > 0 OR tm.medium > 0)",
-        _ => "",
-    };
-
-    let sql = format!(
-        r#"
-        WITH nearby AS (
-            SELECT
-                s.market_id,
-                ss.x, ss.y, ss.z,
-                ss.name   AS system_name,
-                s.name    AS station_name,
-                COALESCE(slp.large,  0) AS large,
-                COALESCE(slp.medium, 0) AS medium
-            FROM stations s
-            JOIN star_systems ss ON s.system_address = ss.system_address
-            LEFT JOIN station_landing_pads slp ON slp.market_id = s.market_id
-            WHERE ABS(ss.x - $1::real) <= $4::real
-              AND ABS(ss.y - $2::real) <= $4::real
-              AND ABS(ss.z - $3::real) <= $4::real
-        )
-        SELECT
-            fc.market_id              AS from_market_id,
-            tc.market_id              AS to_market_id,
-            fc.name                   AS commodity,
-            fc.buy_price,
-            tc.sell_price,
-            (tc.sell_price - fc.buy_price) AS profit,
-            fc.stock                  AS supply,
-            tc.demand,
-            SQRT(
-                POWER((fm.x - tm.x)::double precision, 2) +
-                POWER((fm.y - tm.y)::double precision, 2) +
-                POWER((fm.z - tm.z)::double precision, 2)
-            )::real                   AS distance_ly,
-            fm.station_name           AS from_station_name,
-            tm.station_name           AS to_station_name,
-            fm.system_name            AS from_system_name,
-            tm.system_name            AS to_system_name,
-            CASE WHEN fm.large  > 0 THEN 'L'
-                 WHEN fm.medium > 0 THEN 'M'
-                 ELSE 'S' END         AS from_max_pad,
-            CASE WHEN tm.large  > 0 THEN 'L'
-                 WHEN tm.medium > 0 THEN 'M'
-                 ELSE 'S' END         AS to_max_pad
-        FROM nearby fm
-        JOIN commodity_listening fc ON fc.market_id = fm.market_id
-            AND fc.buy_price > 0 AND fc.stock > 0
-        JOIN commodity_listening tc ON tc.name = fc.name
-            AND tc.demand > 0 AND tc.sell_price > fc.buy_price
-        JOIN nearby tm ON tm.market_id = tc.market_id
-            AND tm.market_id != fm.market_id
-        WHERE (tc.sell_price - fc.buy_price) >= $5
-          AND SQRT(
-                  POWER((fm.x - tm.x)::double precision, 2) +
-                  POWER((fm.y - tm.y)::double precision, 2) +
-                  POWER((fm.z - tm.z)::double precision, 2)
-              ) <= $4::double precision
-          {pad_clause}
-        ORDER BY profit DESC
-        LIMIT {limit_val}
-        "#
-    );
-
     let rows = client
-        .query(&sql, &[&cx, &cy, &cz, &max_dist, &min_profit_val])
+        .query(
+            "SELECT from_market_id, to_market_id, commodity,
+                    buy_price, sell_price, profit, supply, demand,
+                    distance_ly,
+                    from_station_name, to_station_name,
+                    from_system_name,  to_system_name,
+                    from_max_pad, to_max_pad,
+                    from_allegiance, to_allegiance,
+                    cached_at
+             FROM cached_trade_routes
+             WHERE pad_filter = 'L'
+             ORDER BY rank",
+            &[],
+        )
         .await
         .map_err(|e| {
-            error!("Trade routes query failed: {e:#}");
+            error!("Trade routes cache query failed: {e:#}");
             Status::InternalServerError
         })?;
 
     let results = rows
         .iter()
         .map(|r| TradeRouteResponse {
-            from_market_id: r.get("from_market_id"),
-            to_market_id: r.get("to_market_id"),
-            commodity: r.get("commodity"),
-            buy_price: r.get("buy_price"),
-            sell_price: r.get("sell_price"),
-            profit: r.get("profit"),
-            supply: r.get("supply"),
-            demand: r.get("demand"),
-            distance_ly: r.get("distance_ly"),
+            from_market_id:    r.get("from_market_id"),
+            to_market_id:      r.get("to_market_id"),
+            commodity:         r.get("commodity"),
+            buy_price:         r.get("buy_price"),
+            sell_price:        r.get("sell_price"),
+            profit:            r.get("profit"),
+            supply:            r.get("supply"),
+            demand:            r.get("demand"),
+            distance_ly:       r.get("distance_ly"),
             from_station_name: r.get("from_station_name"),
-            to_station_name: r.get("to_station_name"),
-            from_system_name: r.get("from_system_name"),
-            to_system_name: r.get("to_system_name"),
-            from_max_pad: r.get("from_max_pad"),
-            to_max_pad: r.get("to_max_pad"),
+            to_station_name:   r.get("to_station_name"),
+            from_system_name:  r.get("from_system_name"),
+            to_system_name:    r.get("to_system_name"),
+            from_max_pad:      r.get("from_max_pad"),
+            to_max_pad:        r.get("to_max_pad"),
+            from_allegiance:   r.get("from_allegiance"),
+            to_allegiance:     r.get("to_allegiance"),
+            cached_at:         r.get("cached_at"),
+        })
+        .collect();
+
+    Ok(Json(results))
+}
+
+#[get("/api/v1/trade-loops")]
+pub async fn get_trade_loops(
+    pool: &State<Pool>,
+) -> Result<Json<Vec<TradeLoopResponse>>, Status> {
+    let client = pool.get().await.map_err(|e| {
+        error!("DB pool error: {e:#}");
+        Status::ServiceUnavailable
+    })?;
+
+    let rows = client
+        .query(
+            "SELECT market_id_a, market_id_b,
+                    commodity_out, buy_price_out, sell_price_out, profit_out,
+                    commodity_back, buy_price_back, sell_price_back, profit_back,
+                    total_profit, distance_ly,
+                    station_name_a, station_name_b,
+                    system_name_a,  system_name_b,
+                    max_pad, allegiance_a, allegiance_b, supply_out, supply_back, demand_out, demand_back,
+                    cached_at
+             FROM cached_trade_loops
+             WHERE pad_filter = 'L'
+             ORDER BY rank",
+            &[],
+        )
+        .await
+        .map_err(|e| {
+            error!("Trade loops cache query failed: {e:#}");
+            Status::InternalServerError
+        })?;
+
+    let results = rows
+        .iter()
+        .map(|r| TradeLoopResponse {
+            market_id_a:     r.get("market_id_a"),
+            market_id_b:     r.get("market_id_b"),
+            commodity_out:   r.get("commodity_out"),
+            buy_price_out:   r.get("buy_price_out"),
+            sell_price_out:  r.get("sell_price_out"),
+            profit_out:      r.get("profit_out"),
+            commodity_back:  r.get("commodity_back"),
+            buy_price_back:  r.get("buy_price_back"),
+            sell_price_back: r.get("sell_price_back"),
+            profit_back:     r.get("profit_back"),
+            total_profit:    r.get("total_profit"),
+            distance_ly:     r.get("distance_ly"),
+            station_name_a:  r.get("station_name_a"),
+            station_name_b:  r.get("station_name_b"),
+            system_name_a:   r.get("system_name_a"),
+            system_name_b:   r.get("system_name_b"),
+            max_pad:         r.get("max_pad"),
+            allegiance_a:    r.get("allegiance_a"),
+            allegiance_b:    r.get("allegiance_b"),
+            supply_out:      r.get("supply_out"),
+            supply_back:     r.get("supply_back"),
+            demand_out:      r.get("demand_out"),
+            demand_back:     r.get("demand_back"),
+            cached_at:       r.get("cached_at"),
         })
         .collect();
 

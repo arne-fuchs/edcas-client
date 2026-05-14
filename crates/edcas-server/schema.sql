@@ -331,6 +331,7 @@ CREATE TABLE stations (
     market_id       BIGINT PRIMARY KEY,
     system_address  BIGINT,
     name            VARCHAR(255) NOT NULL,
+    carrier_name    VARCHAR(255),
     type            INTEGER REFERENCES station_type(id),
     faction_name    VARCHAR(255),
     government      INTEGER REFERENCES government(id),
@@ -444,6 +445,66 @@ CREATE INDEX idx_fss_body_signals_system         ON fss_body_signals (system_add
 CREATE INDEX idx_saa_signals_system              ON saa_signals (system_address);
 CREATE INDEX idx_construction_depots_system      ON construction_depots (system_address);
 CREATE INDEX idx_construction_depots_name        ON construction_depots (LOWER(station_name));
+CREATE INDEX idx_star_systems_coords             ON star_systems (x, y, z);
+CREATE INDEX idx_commodity_listening_name        ON commodity_listening (name);
+
+-- ── Pre-computed trade cache ─────────────────────────────────
+-- Refreshed in the background every 15 minutes.
+-- pad_filter: 'any' = no filter, 'M' = medium+ pads, 'L' = large pads only.
+
+CREATE TABLE cached_trade_routes (
+    pad_filter          VARCHAR(3)   NOT NULL DEFAULT 'any',
+    rank                INTEGER      NOT NULL,
+    from_market_id      BIGINT       NOT NULL,
+    to_market_id        BIGINT       NOT NULL,
+    commodity           VARCHAR(255) NOT NULL,
+    buy_price           INTEGER      NOT NULL,
+    sell_price          INTEGER      NOT NULL,
+    profit              INTEGER      NOT NULL,
+    supply              INTEGER      NOT NULL,
+    demand              INTEGER      NOT NULL,
+    distance_ly         REAL         NOT NULL,
+    from_station_name   VARCHAR(255) NOT NULL,
+    to_station_name     VARCHAR(255) NOT NULL,
+    from_system_name    VARCHAR(255) NOT NULL,
+    to_system_name      VARCHAR(255) NOT NULL,
+    from_max_pad        CHAR(1),
+    to_max_pad          CHAR(1),
+    from_allegiance     VARCHAR(50),
+    to_allegiance       VARCHAR(50),
+    cached_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (pad_filter, rank)
+);
+
+CREATE TABLE cached_trade_loops (
+    pad_filter          VARCHAR(3)   NOT NULL DEFAULT 'any',
+    rank                INTEGER      NOT NULL,
+    market_id_a         BIGINT       NOT NULL,
+    market_id_b         BIGINT       NOT NULL,
+    commodity_out       VARCHAR(255) NOT NULL,
+    buy_price_out       INTEGER      NOT NULL,
+    sell_price_out      INTEGER      NOT NULL,
+    profit_out          INTEGER      NOT NULL,
+    commodity_back      VARCHAR(255) NOT NULL,
+    buy_price_back      INTEGER      NOT NULL,
+    sell_price_back     INTEGER      NOT NULL,
+    profit_back         INTEGER      NOT NULL,
+    total_profit        INTEGER      NOT NULL,
+    distance_ly         REAL         NOT NULL,
+    station_name_a      VARCHAR(255) NOT NULL,
+    station_name_b      VARCHAR(255) NOT NULL,
+    system_name_a       VARCHAR(255) NOT NULL,
+    system_name_b       VARCHAR(255) NOT NULL,
+    max_pad             CHAR(1),
+    allegiance_a        VARCHAR(50),
+    allegiance_b        VARCHAR(50),
+    supply_out          INTEGER      NOT NULL DEFAULT 0,
+    supply_back         INTEGER      NOT NULL DEFAULT 0,
+    demand_out          INTEGER      NOT NULL DEFAULT 0,
+    demand_back         INTEGER      NOT NULL DEFAULT 0,
+    cached_at           TIMESTAMPTZ  NOT NULL DEFAULT NOW(),
+    PRIMARY KEY (pad_filter, rank)
+);
 
 -- ── Migration: add event_timestamp to existing databases ─────
 -- Run these ALTER TABLE statements on an existing database
@@ -457,3 +518,44 @@ CREATE INDEX idx_construction_depots_name        ON construction_depots (LOWER(s
 -- ALTER TABLE commodity_listening ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
 -- ALTER TABLE modul_listening     ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
 -- ALTER TABLE ship_listening      ADD COLUMN IF NOT EXISTS event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z';
+--
+-- ── Migration: add allegiance columns to trade cache ─────────
+-- ALTER TABLE cached_trade_routes ADD COLUMN IF NOT EXISTS from_allegiance VARCHAR(50);
+-- ALTER TABLE cached_trade_routes ADD COLUMN IF NOT EXISTS to_allegiance   VARCHAR(50);
+-- ALTER TABLE cached_trade_loops  ADD COLUMN IF NOT EXISTS allegiance_a    VARCHAR(50);
+-- ALTER TABLE cached_trade_loops  ADD COLUMN IF NOT EXISTS allegiance_b    VARCHAR(50);
+-- ALTER TABLE cached_trade_loops  ADD COLUMN IF NOT EXISTS supply_out      INTEGER NOT NULL DEFAULT 0;
+-- ALTER TABLE cached_trade_loops  ADD COLUMN IF NOT EXISTS supply_back     INTEGER NOT NULL DEFAULT 0;
+-- ALTER TABLE cached_trade_loops  ADD COLUMN IF NOT EXISTS demand_out      INTEGER NOT NULL DEFAULT 0;
+-- ALTER TABLE cached_trade_loops  ADD COLUMN IF NOT EXISTS demand_back     INTEGER NOT NULL DEFAULT 0;
+--
+-- ── Migration: clean up stale faction states and conflicts ───────────────────
+-- faction_states accumulated rows without ever clearing them on re-visit,
+-- so ended wars/elections left ghost states. Keep only the states that match
+-- the faction's current journal_id (i.e. the most-recent visit snapshot).
+--
+-- DELETE FROM faction_states fs
+-- WHERE fs.journal_id != (
+--     SELECT f.journal_id FROM factions f
+--     WHERE f.name = fs.faction_name AND f.system_address = fs.system_address
+-- );
+--
+-- conflicts used ON CONFLICT DO NOTHING on a BIGSERIAL pk so it just stacked
+-- rows forever. fetch_conflict used LIMIT 1 (= oldest row). Keep only the
+-- most-recently inserted row per system, remove the rest.
+--
+-- DELETE FROM conflicts
+-- WHERE id NOT IN (
+--     SELECT MAX(id) FROM conflicts GROUP BY system_address
+-- );
+--
+-- Wars in Elite Dangerous last days, not months. Delete any conflict data
+-- older than 30 days as it is guaranteed to be stale.
+--
+-- DELETE FROM conflicts c
+-- USING journal_events je
+-- WHERE je.id = c.journal_id
+--   AND je.event_timestamp < NOW() - INTERVAL '30 days';
+--
+-- ── Migration: add carrier_name column to stations ───────────────────────────
+-- ALTER TABLE stations ADD COLUMN IF NOT EXISTS carrier_name VARCHAR(255);

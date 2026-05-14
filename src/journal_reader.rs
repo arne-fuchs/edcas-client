@@ -16,8 +16,20 @@ use std::time::{Duration, SystemTime};
 
 use edcas_common::api::{ConstructionDepotSubmission, ConstructionResourceSubmission};
 use edcas_common::journal::{CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan};
+use edcas_common::journal::types::Conflict;
 use tracing::{debug, error, info, warn};
 use serde_json;
+
+#[derive(Clone)]
+pub struct ConflictData {
+    pub war_type: String,
+    pub status: String,
+    pub opponent: String,
+    pub our_won_days: i32,
+    pub opponent_won_days: i32,
+    pub our_stake: String,
+    pub opponent_stake: String,
+}
 
 #[derive(Clone)]
 pub struct FactionInfo {
@@ -29,6 +41,7 @@ pub struct FactionInfo {
     pub active_states: Vec<String>,
     pub pending_states: Vec<String>,
     pub recovering_states: Vec<String>,
+    pub conflict: Option<ConflictData>,
 }
 
 #[derive(Clone)]
@@ -209,15 +222,53 @@ pub struct OnFootInventory {
     pub data: Vec<InventoryItem>,
 }
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone)]
+pub struct EngineeringModifier {
+    pub label: String,
+    pub value: f32,
+    pub original_value: f32,
+    pub less_is_good: bool,
+}
+
+#[derive(Clone)]
+pub struct EngineeringData {
+    pub blueprint: String,
+    pub level: u8,
+    pub quality: f32,
+    pub engineer: String,
+    pub experimental: String,
+    pub modifiers: Vec<EngineeringModifier>,
+}
+
+#[derive(Clone)]
 pub struct ShipModule {
     pub slot: String,
     pub item: String,
     pub power: f32,
     pub priority: u8,
+    pub health: Option<f32>,
+    pub value: Option<i64>,
+    pub engineering: Option<EngineeringData>,
 }
 
-#[derive(Clone, Default, Debug)]
+#[derive(Clone)]
+pub struct SuitWeapon {
+    pub slot: String,
+    pub name: String,
+    pub class: u8,
+    pub mods: Vec<String>,
+}
+
+#[derive(Clone)]
+pub struct SuitData {
+    pub suit_type: String,
+    pub grade: u8,
+    pub loadout_name: String,
+    pub mods: Vec<String>,
+    pub weapons: Vec<SuitWeapon>,
+}
+
+#[derive(Clone, Default)]
 pub struct PilotData {
     pub name: String,
     pub credits: i64,
@@ -226,6 +277,13 @@ pub struct PilotData {
     pub ship_ident: String,
     pub fuel_level: f32,
     pub fuel_capacity: f32,
+    pub reserve_fuel_capacity: f32,
+    pub hull_health: f32,
+    pub max_jump_range: f32,
+    pub unladen_mass: f32,
+    pub cargo_capacity: i32,
+    pub modules_value: i64,
+    pub rebuy: i64,
     pub game_mode: String,
     pub horizons: bool,
     pub odyssey: bool,
@@ -250,6 +308,7 @@ pub struct PilotData {
     pub reputation_alliance: f32,
     pub power: String,
     pub power_merits: i64,
+    pub suit: Option<SuitData>,
 }
 
 /// A construction depot the player has visited, ready to submit to the server.
@@ -282,6 +341,8 @@ pub struct JournalData {
     pub backpack: OnFootInventory,
     pub shiplocker: OnFootInventory,
     pub modules: Vec<ShipModule>,
+    pub loadout_health: HashMap<String, f32>,
+    pub loadout_engineering: HashMap<String, Option<EngineeringData>>,
     pub pilot: PilotData,
     /// Most recently visited construction depots, keyed by market_id.
     pub construction_depots: HashMap<i64, ConstructionDepotData>,
@@ -305,6 +366,8 @@ impl JournalData {
             backpack: OnFootInventory::default(),
             shiplocker: OnFootInventory::default(),
             modules: Vec::new(),
+            loadout_health: HashMap::new(),
+            loadout_engineering: HashMap::new(),
             pilot: PilotData::default(),
             construction_depots: HashMap::new(),
             last_docked: None,
@@ -321,6 +384,42 @@ impl JournalData {
             Ok(v) => v,
             Err(_) => return,
         };
+
+        // Loadout carries per-module health and detailed ship stats not in the typed event system.
+        // Extract it before from_json consumes value.
+        if value.get("event").and_then(|e| e.as_str()) == Some("Loadout") {
+            self.pilot.ship_type = value["Ship_Localised"].as_str()
+                .or_else(|| value["Ship"].as_str())
+                .unwrap_or("").to_string();
+            self.pilot.ship_name  = value["ShipName"].as_str().unwrap_or("").to_string();
+            self.pilot.ship_ident = value["ShipIdent"].as_str().unwrap_or("").to_string();
+            self.pilot.hull_health    = value["HullHealth"].as_f64().unwrap_or(0.0) as f32;
+            self.pilot.max_jump_range = value["MaxJumpRange"].as_f64().unwrap_or(0.0) as f32;
+            self.pilot.unladen_mass   = value["UnladenMass"].as_f64().unwrap_or(0.0) as f32;
+            self.pilot.cargo_capacity = value["CargoCapacity"].as_i64().unwrap_or(0) as i32;
+            self.pilot.modules_value  = value["ModulesValue"].as_i64().unwrap_or(0);
+            self.pilot.rebuy          = value["Rebuy"].as_i64().unwrap_or(0);
+            self.pilot.fuel_capacity  = value["FuelCapacity"]["Main"].as_f64().unwrap_or(0.0) as f32;
+            self.pilot.reserve_fuel_capacity = value["FuelCapacity"]["Reserve"].as_f64().unwrap_or(0.0) as f32;
+
+            if let Some(mods) = value["Modules"].as_array() {
+                self.loadout_health.clear();
+                self.loadout_engineering.clear();
+                for m in mods {
+                    let slot = m["Slot"].as_str().unwrap_or("").to_string();
+                    if let Some(h) = m["Health"].as_f64() {
+                        self.loadout_health.insert(slot.clone(), h as f32);
+                    }
+                    let eng = parse_engineering(&m["Engineering"]);
+                    self.loadout_engineering.insert(slot, eng);
+                }
+                for i in 0..self.modules.len() {
+                    let slot = self.modules[i].slot.clone();
+                    self.modules[i].health = self.loadout_health.get(&slot).copied();
+                    self.modules[i].engineering = self.loadout_engineering.get(&slot).cloned().flatten();
+                }
+            }
+        }
 
         match JournalEvent::from_json(value) {
             Some(JournalEvent::FsdJump(e)) => {
@@ -444,7 +543,6 @@ impl JournalData {
                             self.pilot.ship_name = v["ShipName"].as_str().unwrap_or("").to_string();
                             self.pilot.ship_ident = v["ShipIdent"].as_str().unwrap_or("").to_string();
                             self.pilot.fuel_level = v["FuelLevel"].as_f64().unwrap_or(0.0) as f32;
-                            self.pilot.fuel_capacity = v["FuelCapacity"].as_f64().unwrap_or(0.0) as f32;
                             self.pilot.game_mode = v["GameMode"].as_str().unwrap_or("").to_string();
                             self.pilot.horizons = v["Horizons"].as_bool().unwrap_or(false);
                             self.pilot.odyssey = v["Odyssey"].as_bool().unwrap_or(false);
@@ -477,6 +575,38 @@ impl JournalData {
                         Some("Powerplay") => {
                             self.pilot.power = v["Power"].as_str().unwrap_or("").to_string();
                             self.pilot.power_merits = v["Merits"].as_i64().unwrap_or(0);
+                        }
+                        Some("SuitLoadout") => {
+                            let raw_name = v["SuitName"].as_str().unwrap_or("");
+                            let (suit_type, grade) = parse_suit_name(raw_name);
+                            let mods = v["SuitMods"].as_array()
+                                .map(|arr| arr.iter()
+                                    .filter_map(|m| m.as_str())
+                                    .map(format_suit_mod)
+                                    .collect())
+                                .unwrap_or_default();
+                            let weapons = v["Modules"].as_array()
+                                .map(|arr| arr.iter().map(|m| SuitWeapon {
+                                    slot: m["SlotName"].as_str().unwrap_or("").to_string(),
+                                    name: m["ModuleName_Localised"].as_str()
+                                        .or_else(|| m["ModuleName"].as_str())
+                                        .unwrap_or("").to_string(),
+                                    class: m["Class"].as_u64().unwrap_or(0) as u8,
+                                    mods: m["WeaponMods"].as_array()
+                                        .map(|wm| wm.iter()
+                                            .filter_map(|w| w.as_str())
+                                            .map(format_suit_mod)
+                                            .collect())
+                                        .unwrap_or_default(),
+                                }).collect())
+                                .unwrap_or_default();
+                            self.pilot.suit = Some(SuitData {
+                                suit_type,
+                                grade,
+                                loadout_name: v["LoadoutName"].as_str().unwrap_or("").to_string(),
+                                mods,
+                                weapons,
+                            });
                         }
                         _ => {}
                     }
@@ -542,7 +672,30 @@ impl JournalData {
     }
 }
 
-fn faction_info_from_journal(f: &edcas_common::journal::types::Faction) -> FactionInfo {
+fn faction_info_from_journal(
+    f: &edcas_common::journal::types::Faction,
+    conflicts: Option<&Vec<Conflict>>,
+) -> FactionInfo {
+    let conflict = conflicts.and_then(|cs| {
+        cs.iter()
+            .find(|c| c.faction1.name == f.name || c.faction2.name == f.name)
+            .map(|c| {
+                let (ours, theirs) = if c.faction1.name == f.name {
+                    (&c.faction1, &c.faction2)
+                } else {
+                    (&c.faction2, &c.faction1)
+                };
+                ConflictData {
+                    war_type: c.war_type.clone(),
+                    status: c.status.clone(),
+                    opponent: theirs.name.clone(),
+                    our_won_days: ours.won_days,
+                    opponent_won_days: theirs.won_days,
+                    our_stake: ours.stake.clone(),
+                    opponent_stake: theirs.stake.clone(),
+                }
+            })
+    });
     FactionInfo {
         name: f.name.clone(),
         influence: f.influence,
@@ -564,6 +717,7 @@ fn faction_info_from_journal(f: &edcas_common::journal::types::Faction) -> Facti
             .as_ref()
             .map(|s| s.iter().map(|x| x.state.clone()).collect())
             .unwrap_or_default(),
+        conflict,
     }
 }
 
@@ -585,7 +739,7 @@ fn system_from_fsdjump(e: &FsdJump) -> SystemData {
         factions: e
             .factions
             .as_ref()
-            .map(|f| f.iter().map(faction_info_from_journal).collect())
+            .map(|f| f.iter().map(|faction| faction_info_from_journal(faction, e.conflicts.as_ref())).collect())
             .unwrap_or_default(),
         system_faction: e
             .system_faction
@@ -615,7 +769,7 @@ fn system_from_location(e: &Location) -> SystemData {
         factions: e
             .factions
             .as_ref()
-            .map(|f| f.iter().map(faction_info_from_journal).collect())
+            .map(|f| f.iter().map(|faction| faction_info_from_journal(faction, e.conflicts.as_ref())).collect())
             .unwrap_or_default(),
         system_faction: e
             .system_faction
@@ -645,7 +799,7 @@ fn system_from_carrier_jump(e: &CarrierJump) -> SystemData {
         factions: e
             .factions
             .as_ref()
-            .map(|f| f.iter().map(faction_info_from_journal).collect())
+            .map(|f| f.iter().map(|faction| faction_info_from_journal(faction, e.conflicts.as_ref())).collect())
             .unwrap_or_default(),
         system_faction: e
             .system_faction
@@ -981,12 +1135,107 @@ fn load_modules_file(path: &Path, data: &mut JournalData) {
     let Ok(text) = std::fs::read_to_string(path) else { return };
     let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) else { return };
     let Some(arr) = v["Modules"].as_array() else { return };
-    data.modules = arr.iter().map(|m| ShipModule {
-        slot:     m["Slot"].as_str().unwrap_or("").to_string(),
-        item:     m["Item"].as_str().unwrap_or("").to_string(),
-        power:    m["Power"].as_f64().unwrap_or(0.0) as f32,
-        priority: m["Priority"].as_u64().unwrap_or(0) as u8,
+    let modules: Vec<ShipModule> = arr.iter().map(|m| {
+        let slot = m["Slot"].as_str().unwrap_or("").to_string();
+        let health      = data.loadout_health.get(&slot).copied();
+        let engineering = data.loadout_engineering.get(&slot).cloned().flatten();
+        ShipModule {
+            slot,
+            item:     m["Item"].as_str().unwrap_or("").to_string(),
+            power:    m["Power"].as_f64().unwrap_or(0.0) as f32,
+            priority: m["Priority"].as_u64().unwrap_or(0) as u8,
+            health,
+            value: None,
+            engineering,
+        }
     }).collect();
+    data.modules = modules;
+}
+
+fn parse_suit_name(raw: &str) -> (String, u8) {
+    let grade = raw.find("_class")
+        .and_then(|i| raw[i + 6..].parse::<u8>().ok())
+        .unwrap_or(1);
+    let base = raw.find("_class").map(|i| &raw[..i]).unwrap_or(raw);
+    let suit_type = match base {
+        "explorationsuit" => "Artemis Suit",
+        "utilitysuit"     => "Maverick Suit",
+        "tacticalsuit"    => "Dominator Suit",
+        other             => other,
+    };
+    (suit_type.to_string(), grade)
+}
+
+fn format_suit_mod(raw: &str) -> String {
+    let stripped = raw.strip_prefix("suit_")
+        .or_else(|| raw.strip_prefix("wpn_mod_"))
+        .unwrap_or(raw);
+    stripped.split('_')
+        .map(|w| {
+            let mut c = w.chars();
+            c.next().map(|f| f.to_uppercase().collect::<String>() + c.as_str()).unwrap_or_default()
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
+fn parse_engineering(v: &serde_json::Value) -> Option<EngineeringData> {
+    if !v.is_object() {
+        return None;
+    }
+    let raw_exp = v["ExperimentalEffect_Localised"].as_str()
+        .filter(|s| !s.is_empty() && !s.starts_with('$'))
+        .or_else(|| v["ExperimentalEffect"].as_str().filter(|s| !s.is_empty()))
+        .unwrap_or("")
+        .to_string();
+    let experimental = if raw_exp.starts_with("special_") {
+        // e.g. "special_weapon_efficient" -> "Weapon Efficient"
+        let body = raw_exp.trim_start_matches("special_").trim_end_matches("_name");
+        body.split('_')
+            .map(|w| { let mut c = w.chars(); c.next().map(|f| f.to_uppercase().collect::<String>() + c.as_str()).unwrap_or_default() })
+            .collect::<Vec<_>>()
+            .join(" ")
+    } else {
+        raw_exp
+    };
+
+    let modifiers = v["Modifiers"].as_array()
+        .map(|arr| arr.iter().map(|m| EngineeringModifier {
+            label:          camel_to_words(m["Label"].as_str().unwrap_or("")),
+            value:          m["Value"].as_f64().unwrap_or(0.0) as f32,
+            original_value: m["OriginalValue"].as_f64().unwrap_or(0.0) as f32,
+            less_is_good:   m["LessIsGood"].as_i64().unwrap_or(0) != 0,
+        }).collect())
+        .unwrap_or_default();
+
+    Some(EngineeringData {
+        blueprint:    format_blueprint(v["BlueprintName"].as_str().unwrap_or("")),
+        level:        v["Level"].as_u64().unwrap_or(0) as u8,
+        quality:      v["Quality"].as_f64().unwrap_or(0.0) as f32,
+        engineer:     v["Engineer"].as_str().unwrap_or("").to_string(),
+        experimental,
+        modifiers,
+    })
+}
+
+fn format_blueprint(raw: &str) -> String {
+    let name = raw.find('_').map(|i| &raw[i + 1..]).unwrap_or(raw);
+    camel_to_words(name)
+}
+
+fn camel_to_words(s: &str) -> String {
+    let mut out = String::new();
+    for (i, ch) in s.char_indices() {
+        if i > 0 && ch.is_uppercase() {
+            // insert space before a capital that follows a lowercase letter
+            let prev = s[..i].chars().last().unwrap_or(' ');
+            if prev.is_lowercase() {
+                out.push(' ');
+            }
+        }
+        out.push(ch);
+    }
+    out
 }
 
 #[cfg(not(target_arch = "wasm32"))]

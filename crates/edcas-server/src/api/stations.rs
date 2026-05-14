@@ -36,8 +36,11 @@ pub(crate) async fn query_stations(
         .query(
             &format!(
                 "SELECT s.market_id, s.system_address, ss.name as system_name,
-                        s.name, st.value as station_type,
-                        s.faction_name, g.value as government, e.value as economy
+                        s.name, s.carrier_name, st.value as station_type,
+                        s.faction_name, g.value as government, e.value as economy,
+                        s.event_timestamp,
+                        (SELECT MAX(cl.event_timestamp) FROM commodity_listening cl
+                         WHERE cl.market_id = s.market_id) AS market_updated_at
                  FROM stations s
                  LEFT JOIN star_systems ss ON s.system_address = ss.system_address
                  LEFT JOIN station_type st ON s.type = st.id
@@ -81,6 +84,9 @@ pub(crate) async fn query_stations(
             services,
             landing_pads,
             dist_from_star_ls: None,
+            carrier_name: row.get("carrier_name"),
+            updated_at: row.get("event_timestamp"),
+            market_updated_at: row.get("market_updated_at"),
             commodities,
             modules,
             ships,

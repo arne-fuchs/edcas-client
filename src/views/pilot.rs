@@ -174,37 +174,6 @@ impl PilotView {
             Span::styled(expansions, white),
         ]));
 
-        // ── Ship ─────────────────────────────────────────────────────
-        lines.push(blank());
-        lines.push(section("SHIP"));
-        lines.push(divider());
-        lines.push(Line::from(vec![
-            Span::styled("  Type        ", cyan),
-            Span::styled(p.ship_type.clone(), white),
-        ]));
-        if !p.ship_name.is_empty() {
-            lines.push(Line::from(vec![
-                Span::styled("  Name        ", cyan),
-                Span::styled(p.ship_name.clone(), bold),
-            ]));
-        }
-        if !p.ship_ident.is_empty() {
-            lines.push(Line::from(vec![
-                Span::styled("  Ident       ", cyan),
-                Span::styled(p.ship_ident.clone(), white),
-            ]));
-        }
-        if p.fuel_capacity > 0.0 {
-            let pct = (p.fuel_level / p.fuel_capacity * 100.0) as u8;
-            lines.push(Line::from(vec![
-                Span::styled("  Fuel        ", cyan),
-                Span::styled(
-                    format!("{:.1}/{:.1}T  {}", p.fuel_level, p.fuel_capacity, progress_bar(pct, 20)),
-                    Style::default().fg(if pct > 25 { Color::Green } else { Color::Red }),
-                ),
-            ]));
-        }
-
         // ── Ranks ────────────────────────────────────────────────────
         lines.push(blank());
         lines.push(section("RANKS"));

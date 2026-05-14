@@ -73,6 +73,9 @@ pub async fn dispatch_event(
         JournalEvent::Shipyard(ref e) => {
             station::insert_shipyard(pool, journal_id, event_timestamp, e).await?
         }
+        JournalEvent::CarrierStats(ref e) => {
+            station::update_carrier_name(pool, e).await?
+        }
         JournalEvent::SaaSignalsFound(ref e) => {
             scan::insert_saa_signals(pool, journal_id, e).await?
         }

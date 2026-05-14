@@ -1,12 +1,13 @@
 use edcas_common::api::{
     BodyResponse, CarrierQuery, CarrierResponse, ConstructionDepotResponse,
     ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse,
-    StationQuery, StationResponse, TradeRouteQuery, TradeRouteResponse,
+    StationQuery, StationResponse, TradeLoopResponse, TradeRouteResponse,
 };
 
 // ─── Native (blocking) implementation ────────────────────────────────────────
 
 #[cfg(not(target_arch = "wasm32"))]
+#[derive(Clone)]
 pub struct ApiClient {
     base_url: String,
     client: reqwest::blocking::Client,
@@ -67,9 +68,15 @@ impl ApiClient {
         Ok(())
     }
 
-    pub fn fetch_trade_routes(&self, query: &TradeRouteQuery) -> anyhow::Result<Vec<TradeRouteResponse>> {
+    pub fn fetch_trade_routes(&self) -> anyhow::Result<Vec<TradeRouteResponse>> {
         let url = format!("{}/api/v1/trade-routes", self.base_url);
-        let resp = self.client.get(&url).query(query).send()?;
+        let resp = self.client.get(&url).send()?;
+        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
+    }
+
+    pub fn fetch_trade_loops(&self) -> anyhow::Result<Vec<TradeLoopResponse>> {
+        let url = format!("{}/api/v1/trade-loops", self.base_url);
+        let resp = self.client.get(&url).send()?;
         if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
     }
 }
@@ -127,9 +134,17 @@ impl ApiClient {
         }
     }
 
-    pub async fn fetch_trade_routes(&self, query: TradeRouteQuery) -> Vec<TradeRouteResponse> {
+    pub async fn fetch_trade_routes(&self) -> Vec<TradeRouteResponse> {
         let url = format!("{}/api/v1/trade-routes", self.base_url);
-        match self.client.get(&url).query(&query).send().await {
+        match self.client.get(&url).send().await {
+            Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
+            _ => vec![],
+        }
+    }
+
+    pub async fn fetch_trade_loops(&self) -> Vec<TradeLoopResponse> {
+        let url = format!("{}/api/v1/trade-loops", self.base_url);
+        match self.client.get(&url).send().await {
             Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
             _ => vec![],
         }

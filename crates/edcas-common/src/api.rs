@@ -1,3 +1,4 @@
+use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 
 /// GET /api/v1/systems/:address
@@ -93,6 +94,9 @@ pub struct StationResponse {
     pub services: Vec<String>,
     pub landing_pads: Option<LandingPadsResponse>,
     pub dist_from_star_ls: Option<f32>,
+    pub carrier_name: Option<String>,
+    pub updated_at: Option<DateTime<Utc>>,
+    pub market_updated_at: Option<DateTime<Utc>>,
     pub commodities: Vec<CommodityResponse>,
     pub modules: Vec<ModuleResponse>,
     pub ships: Vec<ShipResponse>,
@@ -180,6 +184,7 @@ pub struct FactionPresence {
     pub pending_states: Vec<String>,
     pub recovering_states: Vec<String>,
     pub conflict: Option<ConflictInfo>,
+    pub updated_at: Option<DateTime<Utc>>,
 }
 
 /// Conflict data for war-like states (War, CivilWar, Election).
@@ -250,15 +255,48 @@ pub struct TradeRouteResponse {
     pub to_system_name: String,
     pub from_max_pad: Option<String>,
     pub to_max_pad: Option<String>,
+    pub from_allegiance: Option<String>,
+    pub to_allegiance: Option<String>,
+    pub cached_at: Option<DateTime<Utc>>,
+}
+
+/// GET /api/v1/trade-loops
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct TradeLoopResponse {
+    pub market_id_a: i64,
+    pub market_id_b: i64,
+    pub commodity_out: String,
+    pub buy_price_out: i32,
+    pub sell_price_out: i32,
+    pub profit_out: i32,
+    pub commodity_back: String,
+    pub buy_price_back: i32,
+    pub sell_price_back: i32,
+    pub profit_back: i32,
+    pub total_profit: i32,
+    pub distance_ly: f32,
+    pub station_name_a: String,
+    pub station_name_b: String,
+    pub system_name_a: String,
+    pub system_name_b: String,
+    pub max_pad: Option<String>,
+    pub allegiance_a: Option<String>,
+    pub allegiance_b: Option<String>,
+    pub supply_out: i32,
+    pub supply_back: i32,
+    pub demand_out: i32,
+    pub demand_back: i32,
+    pub cached_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct TradeRouteQuery {
-    pub system_address: Option<i64>,
-    pub max_distance: Option<f32>,
     pub pad_size: Option<String>,
-    pub min_profit: Option<i32>,
-    pub limit: Option<i64>,
+}
+
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct TradeLoopQuery {
+    pub pad_size: Option<String>,
 }
 
 /// POST /api/v1/construction-depots — client submits depot data from journal

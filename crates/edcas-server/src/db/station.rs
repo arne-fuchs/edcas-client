@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
-use edcas_common::journal::station::{Commodities, Docked, Outfitting, Shipyard};
+use edcas_common::journal::station::{CarrierStats, Commodities, Docked, Outfitting, Shipyard};
 
 use super::tables::lookup_or_insert;
 
@@ -284,5 +284,16 @@ pub async fn insert_shipyard(
     }
 
     tx.commit().await?;
+    Ok(())
+}
+
+pub async fn update_carrier_name(pool: &Pool, event: &CarrierStats) -> anyhow::Result<()> {
+    let client = pool.get().await?;
+    client
+        .execute(
+            "UPDATE stations SET carrier_name = $1 WHERE market_id = $2",
+            &[&event.name, &event.carrier_id],
+        )
+        .await?;
     Ok(())
 }

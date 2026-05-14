@@ -1,4 +1,5 @@
 mod api;
+mod cache;
 mod config;
 mod db;
 mod listener;
@@ -30,6 +31,9 @@ async fn main() -> anyhow::Result<()> {
     stats::spawn_stats_logger();
     info!("Stats logger started (logs every 60 s)");
 
+    cache::spawn_cache_refresher(pool.clone());
+    info!("Trade cache refresher started (15 min interval)");
+
     let rocket_cfg = rocket::Config {
         port: cfg.api_port,
         address: std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED),
@@ -55,7 +59,8 @@ async fn main() -> anyhow::Result<()> {
                 api::construction::submit_construction_depot,
                 api::journal::ingest_event,
                 api::journal::ingest_events,
-                api::trade_routes::search_trade_routes,
+                api::trade_routes::get_trade_routes,
+                api::trade_routes::get_trade_loops,
             ],
         )
         .launch()

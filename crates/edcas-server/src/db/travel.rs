@@ -57,11 +57,30 @@ pub async fn insert_fsd_jump(
     .await?;
 
     if let Some(ref factions) = event.factions {
+        // Wipe all faction presence data for the system first. An FSDJump event
+        // is an authoritative snapshot of every faction currently in the system,
+        // so factions not present in this event have left.
+        tx.execute(
+            "DELETE FROM faction_states WHERE system_address = $1",
+            &[&event.system_address],
+        )
+        .await?;
+        tx.execute(
+            "DELETE FROM factions WHERE system_address = $1",
+            &[&event.system_address],
+        )
+        .await?;
         for faction in factions {
             insert_faction(&tx, journal_id, event.system_address, faction).await?;
         }
     }
 
+    // Always delete then re-insert conflicts so ended wars are cleared.
+    tx.execute(
+        "DELETE FROM conflicts WHERE system_address = $1",
+        &[&event.system_address],
+    )
+    .await?;
     if let Some(ref conflicts) = event.conflicts {
         for conflict in conflicts {
             let war_type = lookup_or_insert(&tx, "war_type", &conflict.war_type, journal_id).await?;
@@ -69,8 +88,7 @@ pub async fn insert_fsd_jump(
                 "INSERT INTO conflicts
                     (system_address, war_type, status, faction1_name, faction1_stake, faction1_won_days,
                      faction2_name, faction2_stake, faction2_won_days, journal_id)
-                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-                 ON CONFLICT DO NOTHING",
+                 VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
                 &[
                     &event.system_address, &war_type, &conflict.status,
                     &conflict.faction1.name, &conflict.faction1.stake, &conflict.faction1.won_days,
@@ -244,15 +262,23 @@ async fn insert_faction(
     )
     .await?;
 
-    if let Some(ref active) = faction.active_states {
-        for state in active {
-            let state_id = lookup_or_insert(tx, "faction_state_name", &state.state, journal_id).await?;
-            tx.execute(
-                "INSERT INTO faction_states (faction_name, system_address, state, status, journal_id)
-                 VALUES ($1,$2,$3,'Active',$4) ON CONFLICT DO NOTHING",
-                &[&faction.name, &system_address, &state_id, &journal_id],
-            )
-            .await?;
+    let state_batches: &[(_, &str)] = &[
+        (&faction.active_states,     "Active"),
+        (&faction.pending_states,    "Pending"),
+        (&faction.recovering_states, "Recovering"),
+    ];
+    for (states_opt, status) in state_batches {
+        if let Some(ref states) = states_opt {
+            for state in states {
+                let state_id = lookup_or_insert(tx, "faction_state_name", &state.state, journal_id).await?;
+                tx.execute(
+                    "INSERT INTO faction_states (faction_name, system_address, state, status, journal_id)
+                     VALUES ($1,$2,$3,$4,$5)
+                     ON CONFLICT (faction_name, system_address, state) DO UPDATE SET status=$4, journal_id=$5",
+                    &[&faction.name, &system_address, &state_id, &status, &journal_id],
+                )
+                .await?;
+            }
         }
     }
 

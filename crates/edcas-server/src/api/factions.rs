@@ -54,10 +54,12 @@ async fn fetch_presences(
     let rows = client
         .query(
             "SELECT f.system_address, COALESCE(ss.name, '') as system_name,
-                    COALESCE(f.influence, 0.0) as influence, h.value as happiness
+                    COALESCE(f.influence, 0.0) as influence, h.value as happiness,
+                    COALESCE(je.event_timestamp, je.timestamp) as updated_at
              FROM factions f
              LEFT JOIN star_systems ss ON f.system_address = ss.system_address
              LEFT JOIN happiness h ON f.happiness = h.id
+             LEFT JOIN journal_events je ON je.id = f.journal_id
              WHERE f.name = $1
              ORDER BY f.influence DESC NULLS LAST",
             &[&faction_name],
@@ -104,6 +106,7 @@ async fn fetch_presences(
             pending_states: pending,
             recovering_states: recovering,
             conflict,
+            updated_at: row.get("updated_at"),
         });
     }
 

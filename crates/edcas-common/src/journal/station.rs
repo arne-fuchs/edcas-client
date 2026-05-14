@@ -44,6 +44,18 @@ pub struct Docked {
     pub odyssey: bool,
 }
 
+/// Emitted when the player views their fleet carrier stats panel.
+/// Contains the custom owner-given name separate from the callsign.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CarrierStats {
+    #[serde(rename = "CarrierID")]
+    pub carrier_id: i64,
+    #[serde(rename = "Callsign")]
+    pub callsign: String,
+    #[serde(rename = "Name")]
+    pub name: String,
+}
+
 /// EDDN commodities schema (not a journal event; sent separately by the game)
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Commodities {

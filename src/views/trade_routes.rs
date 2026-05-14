@@ -2,7 +2,7 @@ use crate::api_client::ApiClient;
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::JournalData;
 use crate::views::ViewEvent;
-use edcas_common::api::{TradeRouteQuery, TradeRouteResponse};
+use edcas_common::api::{TradeLoopResponse, TradeRouteResponse};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -14,7 +14,8 @@ use ratatui::{
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
-const PAD_OPTIONS: &[&str] = &["Any", "L", "M+"];
+const TYPE_OPTIONS: &[&str] = &["Routes", "Loops"];
+const SUPERPOWER_OPTIONS: &[&str] = &["All", "Federation", "Empire", "Alliance", "Independent"];
 
 #[derive(Clone, Copy, PartialEq)]
 enum FocusArea {
@@ -22,20 +23,35 @@ enum FocusArea {
     List,
 }
 
+#[derive(Clone, Copy, PartialEq)]
+enum RouteType {
+    Routes,
+    Loops,
+}
+
 pub struct TradeRoutesView {
     focus: FocusArea,
     filter_field: usize,
-    max_distance_input: String,
-    pad_idx: usize,
-    min_profit_input: String,
-    results: Vec<TradeRouteResponse>,
+    type_idx: usize,
+    superpower_idx: usize,
+    min_supply: i32,
+    min_demand: i32,
+
+    routes: Vec<TradeRouteResponse>,
+    loops: Vec<TradeLoopResponse>,
     selected_idx: usize,
     scroll: usize,
     status_msg: String,
+
     #[cfg(not(target_arch = "wasm32"))]
-    search_rx: Option<std::sync::mpsc::Receiver<Result<Vec<TradeRouteResponse>, String>>>,
+    route_rx: Option<std::sync::mpsc::Receiver<Result<Vec<TradeRouteResponse>, String>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    loop_rx: Option<std::sync::mpsc::Receiver<Result<Vec<TradeLoopResponse>, String>>>,
+
     #[cfg(target_arch = "wasm32")]
-    pending: Rc<RefCell<Option<Vec<TradeRouteResponse>>>>,
+    pending_routes: Rc<RefCell<Option<Vec<TradeRouteResponse>>>>,
+    #[cfg(target_arch = "wasm32")]
+    pending_loops: Rc<RefCell<Option<Vec<TradeLoopResponse>>>>,
 }
 
 impl TradeRoutesView {
@@ -43,125 +59,162 @@ impl TradeRoutesView {
         Self {
             focus: FocusArea::Filter,
             filter_field: 0,
-            max_distance_input: "200".into(),
-            pad_idx: 0,
-            min_profit_input: "1000".into(),
-            results: Vec::new(),
+            type_idx: 0,
+            superpower_idx: 0,
+            min_supply: 10_000,
+            min_demand: 0,
+            routes: Vec::new(),
+            loops: Vec::new(),
             selected_idx: 0,
             scroll: 0,
-            status_msg: "Enter system to search around, then press Enter on [Search]".into(),
+            status_msg: "Loading pre-computed trade data…".into(),
             #[cfg(not(target_arch = "wasm32"))]
-            search_rx: None,
+            route_rx: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            loop_rx: None,
             #[cfg(target_arch = "wasm32")]
-            pending: Rc::new(RefCell::new(None)),
+            pending_routes: Rc::new(RefCell::new(None)),
+            #[cfg(target_arch = "wasm32")]
+            pending_loops: Rc::new(RefCell::new(None)),
         }
     }
 
-    pub fn on_enter(&mut self, api: &ApiClient, journal: &JournalData) {
-        if self.results.is_empty() {
-            #[cfg(not(target_arch = "wasm32"))]
-            if let Some(sys) = &journal.current_system {
-                self.do_search(api, sys.system_address);
-            }
+    fn route_type(&self) -> RouteType {
+        if self.type_idx == 1 { RouteType::Loops } else { RouteType::Routes }
+    }
+
+    pub fn on_enter(&mut self, api: &ApiClient, _journal: &JournalData) {
+        if self.routes.is_empty() && self.loops.is_empty() {
+            self.fetch_all(api);
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
-    pub fn poll_search(&mut self) {
-        if let Some(results) = self.pending.borrow_mut().take() {
-            let n = results.len();
-            self.results = results;
-            self.selected_idx = 0;
-            self.scroll = 0;
-            self.focus = FocusArea::List;
-            self.status_msg = if n == 0 {
-                "No routes found — try wider distance or lower profit threshold".into()
-            } else {
-                format!("{n} routes found  |  w/s: navigate  |  Tab: filter")
-            };
-        }
+    fn fetch_all(&mut self, api: &ApiClient) {
+        self.fetch_routes(api);
+        self.fetch_loops(api);
+    }
+
+    fn passes_route_filter(&self, r: &TradeRouteResponse) -> bool {
+        if r.supply < self.min_supply { return false; }
+        if r.demand < self.min_demand { return false; }
+        if self.superpower_idx == 0 { return true; }
+        let sp = SUPERPOWER_OPTIONS[self.superpower_idx];
+        let from_ok = r.from_allegiance.is_none() || r.from_allegiance.as_deref() == Some(sp);
+        let to_ok   = r.to_allegiance.is_none()   || r.to_allegiance.as_deref()   == Some(sp);
+        from_ok && to_ok
+    }
+
+    fn passes_loop_filter(&self, l: &TradeLoopResponse) -> bool {
+        if l.supply_out < self.min_supply || l.supply_back < self.min_supply { return false; }
+        if l.demand_out < self.min_demand || l.demand_back < self.min_demand { return false; }
+        if self.superpower_idx == 0 { return true; }
+        let sp = SUPERPOWER_OPTIONS[self.superpower_idx];
+        let a_ok = l.allegiance_a.is_none() || l.allegiance_a.as_deref() == Some(sp);
+        let b_ok = l.allegiance_b.is_none() || l.allegiance_b.as_deref() == Some(sp);
+        a_ok && b_ok
+    }
+
+    fn filtered_routes(&self) -> Vec<&TradeRouteResponse> {
+        self.routes.iter().filter(|r| self.passes_route_filter(r)).collect()
+    }
+
+    fn filtered_loops(&self) -> Vec<&TradeLoopResponse> {
+        self.loops.iter().filter(|l| self.passes_loop_filter(l)).collect()
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn do_search(&mut self, api: &ApiClient, system_address: i64) {
-        let max_dist = self.max_distance_input.parse::<f32>().unwrap_or(200.0);
-        let min_profit = self.min_profit_input.parse::<i32>().unwrap_or(1000);
-        let pad = match self.pad_idx {
-            1 => Some("L".to_string()),
-            2 => Some("M".to_string()),
-            _ => None,
-        };
-        let query = TradeRouteQuery {
-            system_address: Some(system_address),
-            max_distance: Some(max_dist),
-            pad_size: pad,
-            min_profit: Some(min_profit),
-            limit: Some(100),
-        };
+    fn fetch_routes(&mut self, api: &ApiClient) {
         let base_url = api.base_url().to_string();
         let (tx, rx) = std::sync::mpsc::channel();
-        self.search_rx = Some(rx);
+        self.route_rx = Some(rx);
         std::thread::spawn(move || {
             let client = ApiClient::new(base_url);
-            let result = client
-                .fetch_trade_routes(&query)
-                .map_err(|e| e.to_string());
-            let _ = tx.send(result);
+            let _ = tx.send(client.fetch_trade_routes().map_err(|e| e.to_string()));
         });
-        self.status_msg = "Searching…".into();
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn fetch_loops(&mut self, api: &ApiClient) {
+        let base_url = api.base_url().to_string();
+        let (tx, rx) = std::sync::mpsc::channel();
+        self.loop_rx = Some(rx);
+        std::thread::spawn(move || {
+            let client = ApiClient::new(base_url);
+            let _ = tx.send(client.fetch_trade_loops().map_err(|e| e.to_string()));
+        });
+        self.status_msg = "Loading…".into();
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     pub fn poll_results(&mut self) {
-        let result = match &self.search_rx {
-            Some(rx) => rx.try_recv().ok(),
-            None => return,
-        };
-        if let Some(outcome) = result {
-            self.search_rx = None;
-            match outcome {
-                Ok(results) => {
-                    let n = results.len();
-                    self.results = results;
-                    self.selected_idx = 0;
-                    self.scroll = 0;
-                    self.focus = FocusArea::List;
-                    self.status_msg = if n == 0 {
-                        "No routes found — try wider distance or lower profit threshold".into()
-                    } else {
-                        format!("{n} routes found  |  w/s: navigate  |  Tab: filter")
-                    };
+        if let Some(rx) = &self.route_rx {
+            if let Ok(outcome) = rx.try_recv() {
+                self.route_rx = None;
+                match outcome {
+                    Ok(r) => {
+                        self.routes = r;
+                        self.refresh_status();
+                    }
+                    Err(e) => self.status_msg = format!("Routes error: {e}"),
                 }
-                Err(e) => {
-                    self.status_msg = format!("Search failed: {e}");
+            }
+        }
+        if let Some(rx) = &self.loop_rx {
+            if let Ok(outcome) = rx.try_recv() {
+                self.loop_rx = None;
+                match outcome {
+                    Ok(l) => {
+                        self.loops = l;
+                        self.refresh_status();
+                    }
+                    Err(e) => self.status_msg = format!("Loops error: {e}"),
                 }
             }
         }
     }
 
     #[cfg(target_arch = "wasm32")]
-    fn do_search(&mut self, api: &ApiClient, system_address: i64) {
-        let max_dist = self.max_distance_input.parse::<f32>().unwrap_or(200.0);
-        let min_profit = self.min_profit_input.parse::<i32>().unwrap_or(1000);
-        let pad = match self.pad_idx {
-            1 => Some("L".to_string()),
-            2 => Some("M".to_string()),
-            _ => None,
-        };
-        let query = TradeRouteQuery {
-            system_address: Some(system_address),
-            max_distance: Some(max_dist),
-            pad_size: pad,
-            min_profit: Some(min_profit),
-            limit: Some(100),
-        };
-        let pending = self.pending.clone();
+    fn fetch_routes(&mut self, api: &ApiClient) {
+        let pending = self.pending_routes.clone();
         let client = api.clone();
         wasm_bindgen_futures::spawn_local(async move {
-            let results = client.fetch_trade_routes(query).await;
-            *pending.borrow_mut() = Some(results);
+            *pending.borrow_mut() = Some(client.fetch_trade_routes().await);
         });
-        self.status_msg = "Searching…".into();
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn fetch_loops(&mut self, api: &ApiClient) {
+        let pending = self.pending_loops.clone();
+        let client = api.clone();
+        wasm_bindgen_futures::spawn_local(async move {
+            *pending.borrow_mut() = Some(client.fetch_trade_loops().await);
+        });
+        self.status_msg = "Loading…".into();
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn poll_search(&mut self) {
+        if let Some(r) = self.pending_routes.borrow_mut().take() {
+            self.routes = r;
+            self.refresh_status();
+        }
+        if let Some(l) = self.pending_loops.borrow_mut().take() {
+            self.loops = l;
+            self.refresh_status();
+        }
+    }
+
+    fn refresh_status(&mut self) {
+        let r = self.routes.len();
+        let l = self.loops.len();
+        if r > 0 || l > 0 {
+            self.status_msg = format!(
+                "{r} routes  {l} loops  |  w/s: navigate  |  Tab: filters  |  r: refresh"
+            );
+            self.focus = FocusArea::List;
+        } else {
+            self.status_msg = "No data yet — cache may still be computing".into();
+        }
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData) -> ViewEvent {
@@ -171,7 +224,7 @@ impl TradeRoutesView {
         }
     }
 
-    fn handle_filter_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData) -> ViewEvent {
+    fn handle_filter_key(&mut self, key: &KeyEvent, api: &ApiClient, _journal: &JournalData) -> ViewEvent {
         match key.code {
             KeyCode::Tab => {
                 if self.filter_field < 3 {
@@ -187,55 +240,40 @@ impl TradeRoutesView {
                 }
                 return ViewEvent::Consumed;
             }
-            KeyCode::Right => {
-                if self.filter_field == 1 {
-                    self.pad_idx = (self.pad_idx + 1) % PAD_OPTIONS.len();
-                } else {
-                    self.filter_field = (self.filter_field + 1).min(3);
-                }
-                return ViewEvent::Consumed;
-            }
-            KeyCode::Left => {
-                if self.filter_field == 1 {
-                    self.pad_idx = (self.pad_idx + PAD_OPTIONS.len() - 1) % PAD_OPTIONS.len();
-                } else if self.filter_field > 0 {
-                    self.filter_field -= 1;
-                }
-                return ViewEvent::Consumed;
-            }
-            KeyCode::Enter => {
-                if self.filter_field == 3 {
-                    if let Some(sys) = &journal.current_system {
-                        self.do_search(api, sys.system_address);
-                    } else {
-                        self.status_msg = "No current system — load a journal first".into();
-                    }
-                } else {
-                    self.filter_field = (self.filter_field + 1).min(3);
-                }
-                return ViewEvent::Consumed;
-            }
-            KeyCode::Backspace => {
+            KeyCode::Right | KeyCode::Left => {
+                let forward = key.code == KeyCode::Right;
                 match self.filter_field {
-                    0 => { self.max_distance_input.pop(); }
-                    2 => { self.min_profit_input.pop(); }
+                    0 => {
+                        self.type_idx = cycle(self.type_idx, TYPE_OPTIONS.len(), forward);
+                        self.selected_idx = 0;
+                        self.scroll = 0;
+                    }
+                    1 => {
+                        self.superpower_idx = cycle(self.superpower_idx, SUPERPOWER_OPTIONS.len(), forward);
+                        self.selected_idx = 0;
+                        self.scroll = 0;
+                    }
+                    2 => {
+                        self.min_supply = if forward {
+                            self.min_supply + 1_000
+                        } else {
+                            (self.min_supply - 1_000).max(0)
+                        };
+                        self.selected_idx = 0;
+                        self.scroll = 0;
+                    }
+                    3 => {
+                        self.min_demand = if forward {
+                            self.min_demand + 1_000
+                        } else {
+                            (self.min_demand - 1_000).max(0)
+                        };
+                        self.selected_idx = 0;
+                        self.scroll = 0;
+                    }
                     _ => {}
                 }
                 return ViewEvent::Consumed;
-            }
-            KeyCode::Char(c) => {
-                if c == 's' {
-                    self.focus = FocusArea::List;
-                    return ViewEvent::Consumed;
-                }
-                if c.is_ascii_digit() {
-                    match self.filter_field {
-                        0 => self.max_distance_input.push(c),
-                        2 => self.min_profit_input.push(c),
-                        _ => {}
-                    }
-                    return ViewEvent::Consumed;
-                }
             }
             KeyCode::Down => {
                 self.focus = FocusArea::List;
@@ -246,7 +284,8 @@ impl TradeRoutesView {
         ViewEvent::None
     }
 
-    fn handle_list_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData) -> ViewEvent {
+    fn handle_list_key(&mut self, key: &KeyEvent, api: &ApiClient, _journal: &JournalData) -> ViewEvent {
+        let count = self.current_count();
         match key.code {
             KeyCode::Up | KeyCode::Char('w') => {
                 if self.selected_idx > 0 {
@@ -257,8 +296,8 @@ impl TradeRoutesView {
                 return ViewEvent::Consumed;
             }
             KeyCode::Down | KeyCode::Char('s') => {
-                if !self.results.is_empty() {
-                    self.selected_idx = (self.selected_idx + 1).min(self.results.len() - 1);
+                if count > 0 {
+                    self.selected_idx = (self.selected_idx + 1).min(count - 1);
                 }
                 return ViewEvent::Consumed;
             }
@@ -267,25 +306,29 @@ impl TradeRoutesView {
                 return ViewEvent::Consumed;
             }
             KeyCode::PageDown => {
-                if !self.results.is_empty() {
-                    self.selected_idx = (self.selected_idx + 10).min(self.results.len() - 1);
+                if count > 0 {
+                    self.selected_idx = (self.selected_idx + 10).min(count - 1);
                 }
                 return ViewEvent::Consumed;
             }
             KeyCode::Tab => {
                 self.focus = FocusArea::Filter;
-                self.filter_field = 3;
                 return ViewEvent::Consumed;
             }
             KeyCode::Char('r') => {
-                if let Some(sys) = &journal.current_system {
-                    self.do_search(api, sys.system_address);
-                }
+                self.fetch_all(api);
                 return ViewEvent::Consumed;
             }
             _ => {}
         }
         ViewEvent::None
+    }
+
+    fn current_count(&self) -> usize {
+        match self.route_type() {
+            RouteType::Routes => self.filtered_routes().len(),
+            RouteType::Loops => self.filtered_loops().len(),
+        }
     }
 
     pub fn render(&mut self, frame: &mut Frame, area: Rect, _journal: &JournalData) {
@@ -298,7 +341,7 @@ impl TradeRoutesView {
 
         let inner = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(58), Constraint::Percentage(42)])
+            .constraints([Constraint::Percentage(55), Constraint::Percentage(45)])
             .split(outer[1]);
 
         self.render_list(frame, inner[0]);
@@ -315,52 +358,34 @@ impl TradeRoutesView {
 
         let field_style = |idx: usize| -> Style {
             if focused && self.filter_field == idx {
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Rgb(255, 140, 0))
-                    .add_modifier(Modifier::BOLD)
+                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             }
         };
 
-        let dist_label = Span::styled("Max Dist: ", Style::default().fg(Color::Cyan));
-        let dist_val = Span::styled(
-            format!("[{} Ly]", self.max_distance_input),
-            field_style(0),
-        );
-        let sep = Span::raw("  ");
-        let pad_label = Span::styled("Pad: ", Style::default().fg(Color::Cyan));
-        let pad_val = Span::styled(
-            format!("[{}]", PAD_OPTIONS[self.pad_idx]),
-            field_style(1),
-        );
-        let profit_label = Span::styled("  Min Profit: ", Style::default().fg(Color::Cyan));
-        let profit_val = Span::styled(
-            format!("[{} cr]", self.min_profit_input),
-            field_style(2),
-        );
-        let search_btn = Span::styled(
-            "  [Search]",
-            if focused && self.filter_field == 3 {
-                Style::default()
-                    .fg(Color::Black)
-                    .bg(Color::Rgb(255, 140, 0))
-                    .add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(Color::Rgb(255, 140, 0))
-            },
-        );
-
         let line = Line::from(vec![
-            dist_label, dist_val, sep, pad_label, pad_val,
-            profit_label, profit_val, search_btn,
+            Span::styled("Type: ", Style::default().fg(Color::Cyan)),
+            Span::styled(format!("[{}]", TYPE_OPTIONS[self.type_idx]), field_style(0)),
+            Span::raw("   "),
+            Span::styled("Superpower: ", Style::default().fg(Color::Cyan)),
+            Span::styled(format!("[{}]", SUPERPOWER_OPTIONS[self.superpower_idx]), field_style(1)),
+            Span::raw("   "),
+            Span::styled("Min Supply: ", Style::default().fg(Color::Cyan)),
+            Span::styled(format!("[{}]", format_num(self.min_supply)), field_style(2)),
+            Span::raw("   "),
+            Span::styled("Min Demand: ", Style::default().fg(Color::Cyan)),
+            Span::styled(format!("[{}]", format_num(self.min_demand)), field_style(3)),
+            Span::styled(
+                "   Pre-computed · 500 Ly · Large pad · 15 min refresh",
+                Style::default().fg(Color::DarkGray),
+            ),
         ]);
 
         frame.render_widget(
             Paragraph::new(line).block(
                 Block::default()
-                    .title(" Filters (Tab: next field  ←/→: change  Enter: search) ")
+                    .title(" Filters (Tab: next  ←/→: change  r: refresh) ")
                     .borders(Borders::ALL)
                     .border_style(border_style),
             ),
@@ -370,7 +395,7 @@ impl TradeRoutesView {
 
     fn render_list(&mut self, frame: &mut Frame, area: Rect) {
         let visible = area.height.saturating_sub(2) as usize;
-        let count = self.results.len();
+        let count = self.current_count();
 
         if self.selected_idx < self.scroll {
             self.scroll = self.selected_idx;
@@ -389,37 +414,58 @@ impl TradeRoutesView {
 
         if count == 0 {
             lines.push(Line::from(Span::styled(
-                " No results yet — configure filters and press [Search]",
+                if self.routes.is_empty() && self.loops.is_empty() {
+                    " No data yet — cache may still be computing"
+                } else {
+                    " No results for selected superpower"
+                },
                 Style::default().fg(Color::DarkGray),
             )));
         } else {
-            for (i, route) in self.results.iter().enumerate().skip(self.scroll).take(visible) {
-                let selected = i == self.selected_idx;
-                let commodity = format!("{:<16}", truncate(&route.commodity, 16));
-                let from = format!("{:<20}", truncate(&route.from_station_name, 20));
-                let to = format!("{:<20}", truncate(&route.to_station_name, 20));
-                let dist = format!("{:>6.1}Ly", route.distance_ly);
-                let profit = format!("{:>7}", format_num(route.profit));
-
-                let style = if selected {
-                    Style::default()
-                        .fg(Color::Black)
-                        .bg(Color::Rgb(255, 140, 0))
-                        .add_modifier(Modifier::BOLD)
-                } else {
-                    Style::default().fg(Color::White)
-                };
-                lines.push(Line::from(Span::styled(
-                    format!(" {commodity} {from} → {to} {dist} {profit}cr"),
-                    style,
-                )));
+            match self.route_type() {
+                RouteType::Routes => {
+                    for (i, r) in self.filtered_routes().into_iter().enumerate().skip(self.scroll).take(visible) {
+                        let selected = i == self.selected_idx;
+                        let commodity = format!("{:<16}", truncate(&r.commodity, 16));
+                        let from = format!("{:<18}", truncate(&r.from_station_name, 18));
+                        let to = format!("{:<18}", truncate(&r.to_station_name, 18));
+                        let dist = format!("{:>6.1}Ly", r.distance_ly);
+                        let profit = format!("{:>8}cr", format_num(r.profit));
+                        let style = row_style(selected);
+                        lines.push(Line::from(Span::styled(
+                            format!(" {commodity} {from} → {to} {dist} {profit}"),
+                            style,
+                        )));
+                    }
+                }
+                RouteType::Loops => {
+                    for (i, l) in self.filtered_loops().into_iter().enumerate().skip(self.scroll).take(visible) {
+                        let selected = i == self.selected_idx;
+                        let out = format!("{:<14}", truncate(&l.commodity_out, 14));
+                        let back = format!("{:<14}", truncate(&l.commodity_back, 14));
+                        let sta_a = format!("{:<14}", truncate(&l.station_name_a, 14));
+                        let sta_b = format!("{:<14}", truncate(&l.station_name_b, 14));
+                        let dist = format!("{:>6.1}Ly", l.distance_ly);
+                        let profit = format!("{:>8}cr", format_num(l.total_profit));
+                        let style = row_style(selected);
+                        lines.push(Line::from(Span::styled(
+                            format!(" {out}⇄{back} {sta_a}⇄{sta_b} {dist} {profit}"),
+                            style,
+                        )));
+                    }
+                }
             }
         }
+
+        let title = match self.route_type() {
+            RouteType::Routes => format!(" Routes ({count})  |  {}", self.status_msg),
+            RouteType::Loops => format!(" Loops ({count})  |  {}", self.status_msg),
+        };
 
         frame.render_widget(
             Paragraph::new(lines).block(
                 Block::default()
-                    .title(format!(" Trade Routes ({count})  |  {}", self.status_msg))
+                    .title(title)
                     .borders(Borders::ALL)
                     .border_style(border_style),
             ),
@@ -428,55 +474,115 @@ impl TradeRoutesView {
     }
 
     fn render_detail(&self, frame: &mut Frame, area: Rect) {
+        let hl = Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
         let mut lines: Vec<Line<'static>> = Vec::new();
 
-        if let Some(r) = self.results.get(self.selected_idx) {
-            let hl = Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+        match self.route_type() {
+            RouteType::Routes => {
+                if let Some(r) = self.filtered_routes().into_iter().nth(self.selected_idx) {
+                    lines.push(Line::from(Span::styled(r.commodity.clone(), hl)));
+                    lines.push(Line::from(""));
 
-            lines.push(Line::from(Span::styled(r.commodity.clone(), hl)));
-            lines.push(Line::from(""));
+                    lines.push(Line::from(Span::styled("Buy from", Style::default().fg(Color::Cyan))));
+                    lines.push(Line::from(Span::styled(r.from_station_name.clone(), Style::default().fg(Color::White))));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} ({})", r.from_system_name, pad_str(&r.from_max_pad)),
+                        Style::default().fg(Color::Gray),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} cr  ·  supply: {}", format_num(r.buy_price), format_num(r.supply)),
+                        Style::default().fg(Color::Green),
+                    )));
+                    lines.push(Line::from(""));
 
-            lines.push(Line::from(Span::styled("Buy from", Style::default().fg(Color::Cyan))));
-            lines.push(Line::from(Span::styled(r.from_station_name.clone(), Style::default().fg(Color::White))));
-            lines.push(Line::from(Span::styled(
-                format!("  {} ({})", r.from_system_name, pad_str(&r.from_max_pad)),
-                Style::default().fg(Color::Gray),
-            )));
-            lines.push(Line::from(Span::styled(
-                format!("  {} cr  ·  supply: {}", format_num(r.buy_price), format_num(r.supply)),
-                Style::default().fg(Color::Green),
-            )));
-            lines.push(Line::from(""));
+                    lines.push(Line::from(Span::styled("Sell at", Style::default().fg(Color::Cyan))));
+                    lines.push(Line::from(Span::styled(r.to_station_name.clone(), Style::default().fg(Color::White))));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} ({})", r.to_system_name, pad_str(&r.to_max_pad)),
+                        Style::default().fg(Color::Gray),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} cr  ·  demand: {}", format_num(r.sell_price), format_num(r.demand)),
+                        Style::default().fg(Color::Yellow),
+                    )));
+                    lines.push(Line::from(""));
 
-            lines.push(Line::from(Span::styled("Sell at", Style::default().fg(Color::Cyan))));
-            lines.push(Line::from(Span::styled(r.to_station_name.clone(), Style::default().fg(Color::White))));
-            lines.push(Line::from(Span::styled(
-                format!("  {} ({})", r.to_system_name, pad_str(&r.to_max_pad)),
-                Style::default().fg(Color::Gray),
-            )));
-            lines.push(Line::from(Span::styled(
-                format!("  {} cr  ·  demand: {}", format_num(r.sell_price), format_num(r.demand)),
-                Style::default().fg(Color::Yellow),
-            )));
-            lines.push(Line::from(""));
+                    lines.push(Line::from(Span::styled("Profit / unit", Style::default().fg(Color::Cyan))));
+                    lines.push(Line::from(Span::styled(format!("  {} cr", format_num(r.profit)), hl)));
+                    lines.push(Line::from(""));
 
-            lines.push(Line::from(Span::styled("Profit / unit", Style::default().fg(Color::Cyan))));
-            lines.push(Line::from(Span::styled(
-                format!("  {} cr", format_num(r.profit)),
-                hl,
-            )));
-            lines.push(Line::from(""));
+                    lines.push(Line::from(Span::styled("Distance", Style::default().fg(Color::Cyan))));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {:.2} Ly", r.distance_ly),
+                        Style::default().fg(Color::White),
+                    )));
+                    lines.push(Line::from(""));
+                    lines.push(Line::from(Span::styled(
+                        format!("Cache: {}", fmt_ts(r.cached_at.as_ref())),
+                        Style::default().fg(Color::DarkGray),
+                    )));
+                } else {
+                    lines.push(no_selection());
+                }
+            }
+            RouteType::Loops => {
+                if let Some(l) = self.filtered_loops().into_iter().nth(self.selected_idx) {
+                    lines.push(Line::from(Span::styled(
+                        format!("Loop  {} cr total", format_num(l.total_profit)),
+                        hl,
+                    )));
+                    lines.push(Line::from(""));
 
-            lines.push(Line::from(Span::styled("Distance", Style::default().fg(Color::Cyan))));
-            lines.push(Line::from(Span::styled(
-                format!("  {:.2} Ly", r.distance_ly),
-                Style::default().fg(Color::White),
-            )));
-        } else {
-            lines.push(Line::from(Span::styled(
-                "No route selected",
-                Style::default().fg(Color::DarkGray),
-            )));
+                    // Outbound leg
+                    lines.push(Line::from(Span::styled("Outbound →", Style::default().fg(Color::Cyan))));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} → {}", l.station_name_a, l.station_name_b),
+                        Style::default().fg(Color::White),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} → {}", l.system_name_a, l.system_name_b),
+                        Style::default().fg(Color::Gray),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} ({} → {} cr)", l.commodity_out, format_num(l.buy_price_out), format_num(l.sell_price_out)),
+                        Style::default().fg(Color::Green),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  profit: {} cr", format_num(l.profit_out)),
+                        Style::default().fg(Color::Rgb(255, 140, 0)),
+                    )));
+                    lines.push(Line::from(""));
+
+                    // Return leg
+                    lines.push(Line::from(Span::styled("Return ←", Style::default().fg(Color::Cyan))));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} → {}", l.station_name_b, l.station_name_a),
+                        Style::default().fg(Color::White),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} ({} → {} cr)", l.commodity_back, format_num(l.buy_price_back), format_num(l.sell_price_back)),
+                        Style::default().fg(Color::Yellow),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  profit: {} cr", format_num(l.profit_back)),
+                        Style::default().fg(Color::Rgb(255, 140, 0)),
+                    )));
+                    lines.push(Line::from(""));
+
+                    lines.push(Line::from(Span::styled("Distance", Style::default().fg(Color::Cyan))));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {:.2} Ly  ({})", l.distance_ly, pad_str(&l.max_pad)),
+                        Style::default().fg(Color::White),
+                    )));
+                    lines.push(Line::from(""));
+                    lines.push(Line::from(Span::styled(
+                        format!("Cache: {}", fmt_ts(l.cached_at.as_ref())),
+                        Style::default().fg(Color::DarkGray),
+                    )));
+                } else {
+                    lines.push(no_selection());
+                }
+            }
         }
 
         frame.render_widget(
@@ -491,24 +597,39 @@ impl TradeRoutesView {
     }
 }
 
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
-        s.to_string()
+fn row_style(selected: bool) -> Style {
+    if selected {
+        Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
     } else {
-        format!("{}…", &s[..max.saturating_sub(1)])
+        Style::default().fg(Color::White)
     }
+}
+
+fn no_selection() -> Line<'static> {
+    Line::from(Span::styled("No item selected", Style::default().fg(Color::DarkGray)))
+}
+
+fn cycle(idx: usize, len: usize, forward: bool) -> usize {
+    if forward { (idx + 1) % len } else { (idx + len - 1) % len }
+}
+
+fn truncate(s: &str, max: usize) -> String {
+    if s.len() <= max { s.to_string() } else { format!("{}…", &s[..max.saturating_sub(1)]) }
 }
 
 fn format_num(n: i32) -> String {
     let s = n.to_string();
     let mut result = String::new();
     for (i, c) in s.chars().rev().enumerate() {
-        if i > 0 && i % 3 == 0 {
-            result.push(',');
-        }
+        if i > 0 && i % 3 == 0 { result.push(','); }
         result.push(c);
     }
     result.chars().rev().collect()
+}
+
+fn fmt_ts(ts: Option<&chrono::DateTime<chrono::Utc>>) -> String {
+    ts.map(|t| t.format("%Y-%m-%d %H:%M UTC").to_string())
+        .unwrap_or_else(|| "—".to_string())
 }
 
 fn pad_str(pad: &Option<String>) -> &str {

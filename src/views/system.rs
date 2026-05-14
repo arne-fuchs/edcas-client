@@ -8,7 +8,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use crate::journal_reader::JournalData;
+use crate::journal_reader::{JournalData, ConflictData};
 use crate::views::ViewEvent;
 
 pub struct SystemView {
@@ -137,6 +137,12 @@ impl SystemView {
                         )));
                     }
 
+                    if let Some(ref c) = faction.conflict {
+                        for l in conflict_lines(c) {
+                            lines.push(l);
+                        }
+                    }
+
                     lines.push(Line::from(""));
                 }
             }
@@ -213,6 +219,46 @@ impl SystemView {
             area,
         );
     }
+}
+
+fn conflict_lines(c: &ConflictData) -> Vec<Line<'static>> {
+    let type_label = match c.war_type.to_lowercase().as_str() {
+        "war" => "War",
+        "civilwar" => "Civil War",
+        "election" => "Election",
+        _ => "Conflict",
+    };
+    let status = if c.status.is_empty() { "active".to_string() } else { c.status.clone() };
+
+    let score_color = Color::Rgb(255, 140, 0);
+    let dim = Color::DarkGray;
+
+    let mut lines = vec![
+        Line::from(vec![
+            Span::styled("    ".to_string(), Style::default()),
+            Span::styled(format!("{} ({})", type_label, status), Style::default().fg(score_color)),
+            Span::styled("  vs  ".to_string(), Style::default().fg(dim)),
+            Span::styled(c.opponent.clone(), Style::default().fg(Color::Yellow)),
+        ]),
+        Line::from(vec![
+            Span::styled(
+                format!("    Score: {} – {}", c.our_won_days, c.opponent_won_days),
+                Style::default().fg(score_color),
+            ),
+        ]),
+    ];
+
+    if !c.our_stake.is_empty() || !c.opponent_stake.is_empty() {
+        let stake_str = match (c.our_stake.is_empty(), c.opponent_stake.is_empty()) {
+            (false, false) => format!("    Stakes: {} / {}", c.our_stake, c.opponent_stake),
+            (false, true)  => format!("    Stake: {}", c.our_stake),
+            (true, false)  => format!("    Opponent stake: {}", c.opponent_stake),
+            (true, true)   => unreachable!(),
+        };
+        lines.push(Line::from(Span::styled(stake_str, Style::default().fg(dim))));
+    }
+
+    lines
 }
 
 fn format_population(pop: i64) -> String {

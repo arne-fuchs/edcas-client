@@ -7,6 +7,7 @@ pub mod types;
 pub use colonisation::ColonisationConstructionDepot;
 pub use scan::{FssBodySignals, FssSignalDiscovered, SaaSignalsFound, Scan, ScanBaryCentre};
 pub use station::{Commodities, Docked, Outfitting, Shipyard};
+pub use station::CarrierStats;
 pub use travel::{CarrierJump, FsdJump, Location};
 
 /// Discriminated union of all journal events that edcas processes.
@@ -28,6 +29,7 @@ pub enum JournalEvent {
     Outfitting(Outfitting),
     Shipyard(Shipyard),
     ColonisationConstructionDepot(ColonisationConstructionDepot),
+    CarrierStats(CarrierStats),
 }
 
 impl JournalEvent {
@@ -101,6 +103,9 @@ impl JournalEvent {
                     .ok()
                     .map(Self::ColonisationConstructionDepot)
             }
+            "CarrierStats" => serde_json::from_value::<CarrierStats>(value)
+                .ok()
+                .map(Self::CarrierStats),
             _ => None,
         }
     }
@@ -120,6 +125,7 @@ impl JournalEvent {
             Self::Outfitting(_) => "outfitting",
             Self::Shipyard(_) => "shipyard",
             Self::ColonisationConstructionDepot(_) => "ColonisationConstructionDepot",
+            Self::CarrierStats(_) => "CarrierStats",
         }
     }
 }
