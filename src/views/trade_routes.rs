@@ -194,11 +194,13 @@ impl TradeRoutesView {
 
     #[cfg(target_arch = "wasm32")]
     pub fn poll_search(&mut self) {
-        if let Some(r) = self.pending_routes.borrow_mut().take() {
+        let routes = self.pending_routes.borrow_mut().take();
+        if let Some(r) = routes {
             self.routes = r;
             self.refresh_status();
         }
-        if let Some(l) = self.pending_loops.borrow_mut().take() {
+        let loops = self.pending_loops.borrow_mut().take();
+        if let Some(l) = loops {
             self.loops = l;
             self.refresh_status();
         }
