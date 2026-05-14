@@ -15,10 +15,12 @@ use tracing_appender::non_blocking::WorkerGuard;
 mod api_client;
 mod app;
 mod cli;
+mod engineering_data;
 mod event_shim;
 mod journal_reader;
 mod pins;
 mod settings;
+mod todo;
 mod views;
 
 use app::App;
@@ -75,6 +77,7 @@ fn run_app(
     info!("Entering main application loop");
     loop {
         app.poll_journal_updates();
+        app.poll_search_results();
         app.settings_view.poll_bulk_upload();
 
         terminal.draw(|frame| app.render(frame))?;

@@ -1,0 +1,1606 @@
+{
+  "ship": [
+    {
+      "id": "fsd_range",
+      "name": "Increased Range",
+      "module_type": "Frame Shift Drive",
+      "engineer_ids": ["felicity_farseer", "elvira_martuuk", "mel_brandon", "chloe_sedesi"],
+      "effect": "Increases jump range",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "disruptedwakeechoes", "count": 1}
+        ],
+        "2": [
+          {"name": "disruptedwakeechoes", "count": 1},
+          {"name": "chemicalprocessors", "count": 1}
+        ],
+        "3": [
+          {"name": "phosphorus", "count": 1},
+          {"name": "hyperspacetrajectories", "count": 1},
+          {"name": "wakesolutions", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "shieldsoakanalysis", "count": 1},
+          {"name": "decodedemissiondata", "count": 1}
+        ],
+        "5": [
+          {"name": "arsenic", "count": 1},
+          {"name": "dataminedwake", "count": 1},
+          {"name": "compactemissionsdata", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "fsd_boot",
+      "name": "Faster Boot Sequence",
+      "module_type": "Frame Shift Drive",
+      "engineer_ids": ["felicity_farseer", "elvira_martuuk", "mel_brandon", "chloe_sedesi"],
+      "effect": "Reduces FSD boot time",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "disruptedwakeechoes", "count": 1}
+        ],
+        "2": [
+          {"name": "disruptedwakeechoes", "count": 1},
+          {"name": "carbon", "count": 1}
+        ],
+        "3": [
+          {"name": "gridresistors", "count": 1},
+          {"name": "disruptedwakeechoes", "count": 1},
+          {"name": "phosphorus", "count": 1}
+        ],
+        "4": [
+          {"name": "mechanicalcomponents", "count": 1},
+          {"name": "encodedscandata", "count": 1},
+          {"name": "vanadium", "count": 1}
+        ],
+        "5": [
+          {"name": "configurablecomponents", "count": 1},
+          {"name": "decodedemissiondata", "count": 1},
+          {"name": "tin", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "dirty_engines",
+      "name": "Dirty Drive Tuning",
+      "module_type": "Thrusters",
+      "engineer_ids": ["felicity_farseer", "professor_palin", "mel_brandon", "chloe_sedesi", "marsha_hicks"],
+      "effect": "Increases speed and agility at the cost of higher heat output",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "legacyfirmware", "count": 1},
+          {"name": "mechanicalscrap", "count": 1}
+        ],
+        "3": [
+          {"name": "chromium", "count": 1},
+          {"name": "mechanicalequipment", "count": 1},
+          {"name": "industrialfirmware", "count": 1}
+        ],
+        "4": [
+          {"name": "selenium", "count": 1},
+          {"name": "mechanicalcomponents", "count": 1},
+          {"name": "securityfirmware", "count": 1}
+        ],
+        "5": [
+          {"name": "cadmium", "count": 1},
+          {"name": "configurablecomponents", "count": 1},
+          {"name": "improvisedcomponents", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "clean_engines",
+      "name": "Clean Drive Tuning",
+      "module_type": "Thrusters",
+      "engineer_ids": ["felicity_farseer", "professor_palin", "chloe_sedesi", "marsha_hicks"],
+      "effect": "Increases speed with reduced heat output",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "legacyfirmware", "count": 1},
+          {"name": "mechanicalscrap", "count": 1}
+        ],
+        "3": [
+          {"name": "chromium", "count": 1},
+          {"name": "mechanicalequipment", "count": 1},
+          {"name": "industrialfirmware", "count": 1}
+        ],
+        "4": [
+          {"name": "selenium", "count": 1},
+          {"name": "mechanicalcomponents", "count": 1},
+          {"name": "securityfirmware", "count": 1}
+        ],
+        "5": [
+          {"name": "cadmium", "count": 1},
+          {"name": "phasealloys", "count": 1},
+          {"name": "configurablecomponents", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "pp_overcharged",
+      "name": "Overcharged",
+      "module_type": "Power Plant",
+      "engineer_ids": ["the_dweller", "hera_tani", "bill_turner", "marco_qwent"],
+      "effect": "Increases power output at the cost of higher heat generation",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "heatconductionwiring", "count": 1},
+          {"name": "sulphur", "count": 1}
+        ],
+        "3": [
+          {"name": "heatdispersionplate", "count": 1},
+          {"name": "sulphur", "count": 1},
+          {"name": "conductiveceramics", "count": 1}
+        ],
+        "4": [
+          {"name": "heatexchangers", "count": 1},
+          {"name": "conductivecomponents", "count": 1},
+          {"name": "polymercapacitors", "count": 1}
+        ],
+        "5": [
+          {"name": "heatvanes", "count": 1},
+          {"name": "conductivepolymers", "count": 1},
+          {"name": "polymercapacitors", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "pp_armoured",
+      "name": "Armoured",
+      "module_type": "Power Plant",
+      "engineer_ids": ["the_dweller", "hera_tani", "bill_turner", "marco_qwent"],
+      "effect": "Increases integrity and reduces mass",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "wornshieldemitters", "count": 1}
+        ],
+        "2": [
+          {"name": "carbon", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "3": [
+          {"name": "carbon", "count": 1},
+          {"name": "highdensitycomposites", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "4": [
+          {"name": "zinc", "count": 1},
+          {"name": "fedproprietarycomposites", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "5": [
+          {"name": "zirconium", "count": 1},
+          {"name": "fedcorecomposites", "count": 1},
+          {"name": "compoundshielding", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "pp_low_emissions",
+      "name": "Low Emissions",
+      "module_type": "Power Plant",
+      "engineer_ids": ["the_dweller", "hera_tani", "bill_turner", "marco_qwent"],
+      "effect": "Reduces heat output",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "iron", "count": 1}
+        ],
+        "2": [
+          {"name": "iron", "count": 1},
+          {"name": "conductivecomponents", "count": 1}
+        ],
+        "3": [
+          {"name": "iron", "count": 1},
+          {"name": "heatexchangers", "count": 1},
+          {"name": "conductiveceramics", "count": 1}
+        ],
+        "4": [
+          {"name": "germanium", "count": 1},
+          {"name": "heatvanes", "count": 1},
+          {"name": "conductivepolymers", "count": 1}
+        ],
+        "5": [
+          {"name": "niobium", "count": 1},
+          {"name": "protoheatradiators", "count": 1},
+          {"name": "biotechconductors", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sg_reinforced",
+      "name": "Reinforced",
+      "module_type": "Shield Generator",
+      "engineer_ids": ["lei_cheung", "marco_qwent", "mel_brandon"],
+      "effect": "Increases shield strength",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "phosphorus", "count": 1}
+        ],
+        "2": [
+          {"name": "carbon", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "3": [
+          {"name": "carbon", "count": 1},
+          {"name": "selenium", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "4": [
+          {"name": "zinc", "count": 1},
+          {"name": "compoundshielding", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "5": [
+          {"name": "zirconium", "count": 1},
+          {"name": "compoundshielding", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sg_thermal",
+      "name": "Thermal Resistant",
+      "module_type": "Shield Generator",
+      "engineer_ids": ["lei_cheung", "marco_qwent", "mel_brandon"],
+      "effect": "Increases thermal resistance",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "phosphorus", "count": 1}
+        ],
+        "2": [
+          {"name": "germanium", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "3": [
+          {"name": "carbon", "count": 1},
+          {"name": "germanium", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "4": [
+          {"name": "germanium", "count": 1},
+          {"name": "phasealloys", "count": 1},
+          {"name": "compoundshielding", "count": 1}
+        ],
+        "5": [
+          {"name": "tin", "count": 1},
+          {"name": "protolightalloys", "count": 1},
+          {"name": "imperialshielding", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sg_kinetic",
+      "name": "Kinetic Resistant",
+      "module_type": "Shield Generator",
+      "engineer_ids": ["lei_cheung", "marco_qwent"],
+      "effect": "Increases kinetic resistance",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "iron", "count": 1}
+        ],
+        "2": [
+          {"name": "germanium", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "3": [
+          {"name": "carbon", "count": 1},
+          {"name": "salvagedalloys", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "galvanisingalloys", "count": 1},
+          {"name": "compoundshielding", "count": 1}
+        ],
+        "5": [
+          {"name": "tin", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1},
+          {"name": "imperialshielding", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sg_low_power",
+      "name": "Enhanced, Low Power",
+      "module_type": "Shield Generator",
+      "engineer_ids": ["lei_cheung", "marco_qwent", "mel_brandon"],
+      "effect": "Reduces power draw while maintaining shield strength",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "phosphorus", "count": 1}
+        ],
+        "2": [
+          {"name": "phosphorus", "count": 1},
+          {"name": "mechanicalscrap", "count": 1}
+        ],
+        "3": [
+          {"name": "phosphorus", "count": 1},
+          {"name": "mechanicalscrap", "count": 1},
+          {"name": "salvagedalloys", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "conductivepolymers", "count": 1},
+          {"name": "compoundshielding", "count": 1}
+        ],
+        "5": [
+          {"name": "tin", "count": 1},
+          {"name": "phasealloys", "count": 1},
+          {"name": "protoradiolicalloys", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "hrp_heavy_duty",
+      "name": "Heavy Duty",
+      "module_type": "Hull Reinforcement Package",
+      "engineer_ids": ["selene_jean", "petra_olmanova"],
+      "effect": "Increases hull integrity",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "carbon", "count": 1}
+        ],
+        "2": [
+          {"name": "carbon", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "3": [
+          {"name": "carbon", "count": 1},
+          {"name": "highdensitycomposites", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "4": [
+          {"name": "zinc", "count": 1},
+          {"name": "fedproprietarycomposites", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "5": [
+          {"name": "zirconium", "count": 1},
+          {"name": "fedcorecomposites", "count": 1},
+          {"name": "compoundshielding", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "hrp_thermal",
+      "name": "Thermal Resistant",
+      "module_type": "Hull Reinforcement Package",
+      "engineer_ids": ["selene_jean", "petra_olmanova"],
+      "effect": "Increases thermal resistance",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "nickel", "count": 1}
+        ],
+        "2": [
+          {"name": "nickel", "count": 1},
+          {"name": "heatdispersionplate", "count": 1}
+        ],
+        "3": [
+          {"name": "sulphur", "count": 1},
+          {"name": "nickel", "count": 1},
+          {"name": "heatexchangers", "count": 1}
+        ],
+        "4": [
+          {"name": "tungsten", "count": 1},
+          {"name": "heatvanes", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ],
+        "5": [
+          {"name": "molybdenum", "count": 1},
+          {"name": "biotechconductors", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "hrp_kinetic",
+      "name": "Kinetic Resistant",
+      "module_type": "Hull Reinforcement Package",
+      "engineer_ids": ["selene_jean", "petra_olmanova"],
+      "effect": "Increases kinetic resistance",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "nickel", "count": 1}
+        ],
+        "2": [
+          {"name": "nickel", "count": 1},
+          {"name": "galvanisingalloys", "count": 1}
+        ],
+        "3": [
+          {"name": "sulphur", "count": 1},
+          {"name": "nickel", "count": 1},
+          {"name": "salvagedalloys", "count": 1}
+        ],
+        "4": [
+          {"name": "tungsten", "count": 1},
+          {"name": "precipitatedalloys", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ],
+        "5": [
+          {"name": "molybdenum", "count": 1},
+          {"name": "fedcorecomposites", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "armour_heavy_duty",
+      "name": "Heavy Duty",
+      "module_type": "Armour",
+      "engineer_ids": ["selene_jean", "petra_olmanova"],
+      "effect": "Increases hull integrity",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "carbon", "count": 1}
+        ],
+        "2": [
+          {"name": "carbon", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "3": [
+          {"name": "carbon", "count": 1},
+          {"name": "highdensitycomposites", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "4": [
+          {"name": "zinc", "count": 1},
+          {"name": "fedproprietarycomposites", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "5": [
+          {"name": "zirconium", "count": 1},
+          {"name": "fedcorecomposites", "count": 1},
+          {"name": "compoundshielding", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "armour_thermal",
+      "name": "Thermal Resistant",
+      "module_type": "Armour",
+      "engineer_ids": ["selene_jean", "petra_olmanova"],
+      "effect": "Increases thermal resistance",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "heatconductionwiring", "count": 1}
+        ],
+        "2": [
+          {"name": "nickel", "count": 1},
+          {"name": "heatdispersionplate", "count": 1}
+        ],
+        "3": [
+          {"name": "sulphur", "count": 1},
+          {"name": "nickel", "count": 1},
+          {"name": "heatexchangers", "count": 1}
+        ],
+        "4": [
+          {"name": "tungsten", "count": 1},
+          {"name": "heatvanes", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ],
+        "5": [
+          {"name": "molybdenum", "count": 1},
+          {"name": "biotechconductors", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "armour_kinetic",
+      "name": "Kinetic Resistant",
+      "module_type": "Armour",
+      "engineer_ids": ["selene_jean", "petra_olmanova"],
+      "effect": "Increases kinetic resistance",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "nickel", "count": 1}
+        ],
+        "2": [
+          {"name": "nickel", "count": 1},
+          {"name": "galvanisingalloys", "count": 1}
+        ],
+        "3": [
+          {"name": "sulphur", "count": 1},
+          {"name": "nickel", "count": 1},
+          {"name": "salvagedalloys", "count": 1}
+        ],
+        "4": [
+          {"name": "tungsten", "count": 1},
+          {"name": "precipitatedalloys", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ],
+        "5": [
+          {"name": "molybdenum", "count": 1},
+          {"name": "fedcorecomposites", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "bl_efficient",
+      "name": "Efficient",
+      "module_type": "Beam Laser",
+      "engineer_ids": ["the_dweller", "broo_tarquin"],
+      "effect": "Reduces power draw and heat generation",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "sulphur", "count": 1},
+          {"name": "heatdispersionplate", "count": 1}
+        ],
+        "3": [
+          {"name": "sulphur", "count": 1},
+          {"name": "chromium", "count": 1},
+          {"name": "chemicalprocessors", "count": 1}
+        ],
+        "4": [
+          {"name": "selenium", "count": 1},
+          {"name": "thermicalloys", "count": 1},
+          {"name": "chemicaldistillery", "count": 1}
+        ],
+        "5": [
+          {"name": "cadmium", "count": 1},
+          {"name": "militarysupercapacitors", "count": 1},
+          {"name": "chemicalmanipulators", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "bl_long_range",
+      "name": "Long Range",
+      "module_type": "Beam Laser",
+      "engineer_ids": ["the_dweller", "broo_tarquin"],
+      "effect": "Increases falloff range",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "sulphur", "count": 1},
+          {"name": "disruptedwakeechoes", "count": 1}
+        ],
+        "3": [
+          {"name": "phosphorus", "count": 1},
+          {"name": "focuscrystals", "count": 1},
+          {"name": "hyperspacetrajectories", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1},
+          {"name": "decodedemissiondata", "count": 1}
+        ],
+        "5": [
+          {"name": "arsenic", "count": 1},
+          {"name": "militarygradealloys", "count": 1},
+          {"name": "compactemissionsdata", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "bl_overcharged",
+      "name": "Overcharged",
+      "module_type": "Beam Laser",
+      "engineer_ids": ["the_dweller", "broo_tarquin"],
+      "effect": "Increases damage output",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "conductivecomponents", "count": 1},
+          {"name": "heatconductionwiring", "count": 1}
+        ],
+        "3": [
+          {"name": "chromium", "count": 1},
+          {"name": "mechanicalcomponents", "count": 1},
+          {"name": "thermicalloys", "count": 1}
+        ],
+        "4": [
+          {"name": "selenium", "count": 1},
+          {"name": "polymercapacitors", "count": 1},
+          {"name": "conductivepolymers", "count": 1}
+        ],
+        "5": [
+          {"name": "cadmium", "count": 1},
+          {"name": "militarysupercapacitors", "count": 1},
+          {"name": "biotechconductors", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "bl_thermal_vent",
+      "name": "Thermal Vent",
+      "module_type": "Beam Laser",
+      "engineer_ids": ["broo_tarquin"],
+      "effect": "Vents heat when beam is active, cooling the ship",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "iron", "count": 1}
+        ],
+        "2": [
+          {"name": "conductivecomponents", "count": 1},
+          {"name": "mechanicalscrap", "count": 1}
+        ],
+        "3": [
+          {"name": "heatdispersionplate", "count": 1},
+          {"name": "conductiveceramics", "count": 1},
+          {"name": "mechanicalequipment", "count": 1}
+        ],
+        "4": [
+          {"name": "heatexchangers", "count": 1},
+          {"name": "conductivepolymers", "count": 1},
+          {"name": "mechanicalcomponents", "count": 1}
+        ],
+        "5": [
+          {"name": "heatvanes", "count": 1},
+          {"name": "biotechconductors", "count": 1},
+          {"name": "improvisedcomponents", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "mc_overcharged",
+      "name": "Overcharged",
+      "module_type": "Multi-cannon",
+      "engineer_ids": ["tod_mcquinn", "etienne_dorn"],
+      "effect": "Increases damage output",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "nickel", "count": 1}
+        ],
+        "2": [
+          {"name": "nickel", "count": 1},
+          {"name": "conductivecomponents", "count": 1}
+        ],
+        "3": [
+          {"name": "nickel", "count": 1},
+          {"name": "electrochemicalarrays", "count": 1},
+          {"name": "chromium", "count": 1}
+        ],
+        "4": [
+          {"name": "zinc", "count": 1},
+          {"name": "polymercapacitors", "count": 1},
+          {"name": "conductiveceramics", "count": 1}
+        ],
+        "5": [
+          {"name": "zirconium", "count": 1},
+          {"name": "militarysupercapacitors", "count": 1},
+          {"name": "conductivepolymers", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "mc_rapid_fire",
+      "name": "Rapid Fire",
+      "module_type": "Multi-cannon",
+      "engineer_ids": ["tod_mcquinn", "etienne_dorn"],
+      "effect": "Increases rate of fire",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "mechanicalscrap", "count": 1}
+        ],
+        "2": [
+          {"name": "mechanicalscrap", "count": 1},
+          {"name": "heatdispersionplate", "count": 1}
+        ],
+        "3": [
+          {"name": "mechanicalequipment", "count": 1},
+          {"name": "chemicaldistillery", "count": 1},
+          {"name": "scrambledemissiondata", "count": 1}
+        ],
+        "4": [
+          {"name": "mechanicalcomponents", "count": 1},
+          {"name": "phasealloys", "count": 1},
+          {"name": "securityfirmware", "count": 1}
+        ],
+        "5": [
+          {"name": "configurablecomponents", "count": 1},
+          {"name": "improvisedcomponents", "count": 1},
+          {"name": "precipitatedalloys", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "mc_long_range",
+      "name": "Long Range",
+      "module_type": "Multi-cannon",
+      "engineer_ids": ["tod_mcquinn", "etienne_dorn"],
+      "effect": "Increases falloff range",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "sulphur", "count": 1},
+          {"name": "disruptedwakeechoes", "count": 1}
+        ],
+        "3": [
+          {"name": "phosphorus", "count": 1},
+          {"name": "focuscrystals", "count": 1},
+          {"name": "hyperspacetrajectories", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1},
+          {"name": "decodedemissiondata", "count": 1}
+        ],
+        "5": [
+          {"name": "arsenic", "count": 1},
+          {"name": "militarygradealloys", "count": 1},
+          {"name": "compactemissionsdata", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "rg_long_range",
+      "name": "Long Range",
+      "module_type": "Rail Gun",
+      "engineer_ids": ["juri_ishmaak"],
+      "effect": "Increases falloff range",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "sulphur", "count": 1},
+          {"name": "disruptedwakeechoes", "count": 1}
+        ],
+        "3": [
+          {"name": "phosphorus", "count": 1},
+          {"name": "focuscrystals", "count": 1},
+          {"name": "hyperspacetrajectories", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1},
+          {"name": "decodedemissiondata", "count": 1}
+        ],
+        "5": [
+          {"name": "arsenic", "count": 1},
+          {"name": "militarygradealloys", "count": 1},
+          {"name": "compactemissionsdata", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "rg_focused",
+      "name": "Focused",
+      "module_type": "Rail Gun",
+      "engineer_ids": ["juri_ishmaak"],
+      "effect": "Reduces damage falloff and increases penetration",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "iron", "count": 1}
+        ],
+        "2": [
+          {"name": "iron", "count": 1},
+          {"name": "conductivecomponents", "count": 1}
+        ],
+        "3": [
+          {"name": "iron", "count": 1},
+          {"name": "electrochemicalarrays", "count": 1},
+          {"name": "chromium", "count": 1}
+        ],
+        "4": [
+          {"name": "germanium", "count": 1},
+          {"name": "focuscrystals", "count": 1},
+          {"name": "conductiveceramics", "count": 1}
+        ],
+        "5": [
+          {"name": "niobium", "count": 1},
+          {"name": "refinedfocuscrystals", "count": 1},
+          {"name": "conductivepolymers", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "rg_overcharged",
+      "name": "Overcharged",
+      "module_type": "Rail Gun",
+      "engineer_ids": ["juri_ishmaak"],
+      "effect": "Increases damage output",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "nickel", "count": 1}
+        ],
+        "2": [
+          {"name": "nickel", "count": 1},
+          {"name": "conductivecomponents", "count": 1}
+        ],
+        "3": [
+          {"name": "nickel", "count": 1},
+          {"name": "electrochemicalarrays", "count": 1},
+          {"name": "chromium", "count": 1}
+        ],
+        "4": [
+          {"name": "zinc", "count": 1},
+          {"name": "polymercapacitors", "count": 1},
+          {"name": "conductiveceramics", "count": 1}
+        ],
+        "5": [
+          {"name": "zirconium", "count": 1},
+          {"name": "militarysupercapacitors", "count": 1},
+          {"name": "conductivepolymers", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sensors_long_range",
+      "name": "Long Range",
+      "module_type": "Sensors",
+      "engineer_ids": ["ram_tah", "lori_jameson"],
+      "effect": "Increases sensor range",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "phosphorus", "count": 1}
+        ],
+        "2": [
+          {"name": "phosphorus", "count": 1},
+          {"name": "disruptedwakeechoes", "count": 1}
+        ],
+        "3": [
+          {"name": "phosphorus", "count": 1},
+          {"name": "hyperspacetrajectories", "count": 1},
+          {"name": "hybridcapacitors", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "decodedemissiondata", "count": 1},
+          {"name": "electrochemicalarrays", "count": 1}
+        ],
+        "5": [
+          {"name": "arsenic", "count": 1},
+          {"name": "compactemissionsdata", "count": 1},
+          {"name": "polymercapacitors", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sensors_wide_angle",
+      "name": "Wide Angle",
+      "module_type": "Sensors",
+      "engineer_ids": ["ram_tah", "lori_jameson"],
+      "effect": "Increases sensor angle coverage",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "mechanicalscrap", "count": 1}
+        ],
+        "2": [
+          {"name": "germanium", "count": 1},
+          {"name": "mechanicalscrap", "count": 1}
+        ],
+        "3": [
+          {"name": "germanium", "count": 1},
+          {"name": "mechanicalequipment", "count": 1},
+          {"name": "fsdtelemetry", "count": 1}
+        ],
+        "4": [
+          {"name": "germanium", "count": 1},
+          {"name": "mechanicalcomponents", "count": 1},
+          {"name": "encodedscandata", "count": 1}
+        ],
+        "5": [
+          {"name": "niobium", "count": 1},
+          {"name": "configurablecomponents", "count": 1},
+          {"name": "dataminedwake", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sb_heavy_duty",
+      "name": "Heavy Duty",
+      "module_type": "Shield Booster",
+      "engineer_ids": ["didi_vatermann", "mel_brandon", "domino_green"],
+      "effect": "Increases shield strength boost",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "phosphorus", "count": 1}
+        ],
+        "2": [
+          {"name": "carbon", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "3": [
+          {"name": "carbon", "count": 1},
+          {"name": "highdensitycomposites", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "4": [
+          {"name": "zinc", "count": 1},
+          {"name": "fedproprietarycomposites", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "5": [
+          {"name": "zirconium", "count": 1},
+          {"name": "fedcorecomposites", "count": 1},
+          {"name": "compoundshielding", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sb_thermal",
+      "name": "Thermal Resistant",
+      "module_type": "Shield Booster",
+      "engineer_ids": ["didi_vatermann", "mel_brandon", "domino_green"],
+      "effect": "Increases thermal resistance",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "iron", "count": 1}
+        ],
+        "2": [
+          {"name": "germanium", "count": 1},
+          {"name": "heatconductionwiring", "count": 1}
+        ],
+        "3": [
+          {"name": "germanium", "count": 1},
+          {"name": "hybridcapacitors", "count": 1},
+          {"name": "heatdispersionplate", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "electrochemicalarrays", "count": 1},
+          {"name": "heatexchangers", "count": 1}
+        ],
+        "5": [
+          {"name": "tin", "count": 1},
+          {"name": "heatvanes", "count": 1},
+          {"name": "pharmaceuticalisolators", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sb_kinetic",
+      "name": "Kinetic Resistant",
+      "module_type": "Shield Booster",
+      "engineer_ids": ["didi_vatermann", "mel_brandon", "domino_green"],
+      "effect": "Increases kinetic resistance",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "iron", "count": 1}
+        ],
+        "2": [
+          {"name": "germanium", "count": 1},
+          {"name": "galvanisingalloys", "count": 1}
+        ],
+        "3": [
+          {"name": "germanium", "count": 1},
+          {"name": "salvagedalloys", "count": 1},
+          {"name": "shieldemitters", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "precipitatedalloys", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "5": [
+          {"name": "tin", "count": 1},
+          {"name": "compoundshielding", "count": 1},
+          {"name": "imperialshielding", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "sb_resistance_aug",
+      "name": "Resistance Augmented",
+      "module_type": "Shield Booster",
+      "engineer_ids": ["didi_vatermann", "mel_brandon", "domino_green"],
+      "effect": "Increases all shield resistances",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "phosphorus", "count": 1}
+        ],
+        "2": [
+          {"name": "carbon", "count": 1},
+          {"name": "conductivecomponents", "count": 1}
+        ],
+        "3": [
+          {"name": "carbon", "count": 1},
+          {"name": "electrochemicalarrays", "count": 1},
+          {"name": "heatdispersionplate", "count": 1}
+        ],
+        "4": [
+          {"name": "manganese", "count": 1},
+          {"name": "polymercapacitors", "count": 1},
+          {"name": "shieldingsensors", "count": 1}
+        ],
+        "5": [
+          {"name": "tin", "count": 1},
+          {"name": "militarysupercapacitors", "count": 1},
+          {"name": "imperialshielding", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "pd_weapon_focused",
+      "name": "Weapon Focused",
+      "module_type": "Power Distributor",
+      "engineer_ids": ["hera_tani", "lori_jameson"],
+      "effect": "Increases weapons capacitor size and recharge rate",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "conductivecomponents", "count": 1},
+          {"name": "sulphur", "count": 1}
+        ],
+        "3": [
+          {"name": "chromium", "count": 1},
+          {"name": "electrochemicalarrays", "count": 1},
+          {"name": "conductiveceramics", "count": 1}
+        ],
+        "4": [
+          {"name": "selenium", "count": 1},
+          {"name": "polymercapacitors", "count": 1},
+          {"name": "conductivepolymers", "count": 1}
+        ],
+        "5": [
+          {"name": "cadmium", "count": 1},
+          {"name": "militarysupercapacitors", "count": 1},
+          {"name": "biotechconductors", "count": 1}
+        ]
+      }
+    },
+    {
+      "id": "pd_charge_enhanced",
+      "name": "Charge Enhanced",
+      "module_type": "Power Distributor",
+      "engineer_ids": ["hera_tani", "lori_jameson"],
+      "effect": "Increases all capacitor recharge rates",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "sulphur", "count": 1}
+        ],
+        "2": [
+          {"name": "conductivecomponents", "count": 1},
+          {"name": "sulphur", "count": 1}
+        ],
+        "3": [
+          {"name": "chromium", "count": 1},
+          {"name": "electrochemicalarrays", "count": 1},
+          {"name": "conductiveceramics", "count": 1}
+        ],
+        "4": [
+          {"name": "selenium", "count": 1},
+          {"name": "polymercapacitors", "count": 1},
+          {"name": "conductivepolymers", "count": 1}
+        ],
+        "5": [
+          {"name": "cadmium", "count": 1},
+          {"name": "chemicalmanipulators", "count": 1},
+          {"name": "biotechconductors", "count": 1}
+        ]
+      }
+    }
+  ],
+  "onfoot": [
+    {
+      "id": "suit_extra_ammo",
+      "name": "Extra Ammo Capacity",
+      "module_type": "Suit",
+      "engineer_ids": ["hero_ferrari", "jude_navarro", "kit_fowler", "oden_geiger", "terra_velasquez", "domino_green", "rosa_dayette", "baltanos"],
+      "effect": "Increases ammo capacity",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Chemical Catalyst", "count": 5},
+          {"name": "Suit Schematic", "count": 1}
+        ],
+        "2": [
+          {"name": "Chemical Catalyst", "count": 10},
+          {"name": "Suit Schematic", "count": 5},
+          {"name": "Carbon Fibre Plating", "count": 5}
+        ],
+        "3": [
+          {"name": "Chemical Catalyst", "count": 15},
+          {"name": "Suit Schematic", "count": 10},
+          {"name": "Carbon Fibre Plating", "count": 10},
+          {"name": "Kinetic Quarry", "count": 5}
+        ],
+        "4": [
+          {"name": "Chemical Catalyst", "count": 20},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Carbon Fibre Plating", "count": 15},
+          {"name": "Kinetic Quarry", "count": 10},
+          {"name": "Micro Supercapacitor", "count": 5}
+        ],
+        "5": [
+          {"name": "Chemical Catalyst", "count": 25},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Carbon Fibre Plating", "count": 20},
+          {"name": "Kinetic Quarry", "count": 15},
+          {"name": "Micro Supercapacitor", "count": 10},
+          {"name": "Graphene", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "suit_combat_speed",
+      "name": "Combat Movement Speed",
+      "module_type": "Suit",
+      "engineer_ids": ["hero_ferrari", "jude_navarro", "kit_fowler", "terra_velasquez", "domino_green"],
+      "effect": "Increases movement speed in combat",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Chemical Catalyst", "count": 5},
+          {"name": "Suit Schematic", "count": 1}
+        ],
+        "2": [
+          {"name": "Chemical Catalyst", "count": 10},
+          {"name": "Suit Schematic", "count": 5},
+          {"name": "Graphene", "count": 5}
+        ],
+        "3": [
+          {"name": "Chemical Catalyst", "count": 15},
+          {"name": "Suit Schematic", "count": 10},
+          {"name": "Graphene", "count": 10},
+          {"name": "Viscoelastic Polymer", "count": 5}
+        ],
+        "4": [
+          {"name": "Chemical Catalyst", "count": 20},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Graphene", "count": 15},
+          {"name": "Viscoelastic Polymer", "count": 10},
+          {"name": "Carbon Fibre Plating", "count": 5}
+        ],
+        "5": [
+          {"name": "Chemical Catalyst", "count": 25},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Graphene", "count": 20},
+          {"name": "Viscoelastic Polymer", "count": 15},
+          {"name": "Carbon Fibre Plating", "count": 10},
+          {"name": "Titanium Plating", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "suit_battery",
+      "name": "Improved Battery Capacity",
+      "module_type": "Suit",
+      "engineer_ids": ["hero_ferrari", "oden_geiger", "rosa_dayette", "baltanos"],
+      "effect": "Increases suit battery capacity",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Power Regulator", "count": 5},
+          {"name": "Suit Schematic", "count": 1}
+        ],
+        "2": [
+          {"name": "Power Regulator", "count": 10},
+          {"name": "Suit Schematic", "count": 5},
+          {"name": "Ion Battery", "count": 5}
+        ],
+        "3": [
+          {"name": "Power Regulator", "count": 15},
+          {"name": "Suit Schematic", "count": 10},
+          {"name": "Ion Battery", "count": 10},
+          {"name": "Micro Transformer", "count": 5}
+        ],
+        "4": [
+          {"name": "Power Regulator", "count": 20},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Ion Battery", "count": 15},
+          {"name": "Micro Transformer", "count": 10},
+          {"name": "Electrical Wiring", "count": 5}
+        ],
+        "5": [
+          {"name": "Power Regulator", "count": 25},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Ion Battery", "count": 20},
+          {"name": "Micro Transformer", "count": 15},
+          {"name": "Electrical Wiring", "count": 10},
+          {"name": "Micro Supercapacitor", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "suit_shield_regen",
+      "name": "Faster Shield Regeneration",
+      "module_type": "Suit",
+      "engineer_ids": ["jude_navarro", "terra_velasquez", "rosa_dayette"],
+      "effect": "Increases shield regeneration speed",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Ion Battery", "count": 5},
+          {"name": "Suit Schematic", "count": 1}
+        ],
+        "2": [
+          {"name": "Ion Battery", "count": 10},
+          {"name": "Suit Schematic", "count": 5},
+          {"name": "Power Regulator", "count": 5}
+        ],
+        "3": [
+          {"name": "Ion Battery", "count": 15},
+          {"name": "Suit Schematic", "count": 10},
+          {"name": "Power Regulator", "count": 10},
+          {"name": "Micro Transformer", "count": 5}
+        ],
+        "4": [
+          {"name": "Ion Battery", "count": 20},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Power Regulator", "count": 15},
+          {"name": "Micro Transformer", "count": 10},
+          {"name": "Micro Supercapacitor", "count": 5}
+        ],
+        "5": [
+          {"name": "Ion Battery", "count": 25},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Power Regulator", "count": 20},
+          {"name": "Micro Transformer", "count": 15},
+          {"name": "Micro Supercapacitor", "count": 10},
+          {"name": "Electrical Wiring", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "suit_armour",
+      "name": "Improved Armour Strength",
+      "module_type": "Suit",
+      "engineer_ids": ["jude_navarro", "kit_fowler", "terra_velasquez", "rosa_dayette"],
+      "effect": "Increases suit armour strength",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Carbon Fibre Plating", "count": 5},
+          {"name": "Suit Schematic", "count": 1}
+        ],
+        "2": [
+          {"name": "Carbon Fibre Plating", "count": 10},
+          {"name": "Suit Schematic", "count": 5},
+          {"name": "Titanium Plating", "count": 5}
+        ],
+        "3": [
+          {"name": "Carbon Fibre Plating", "count": 15},
+          {"name": "Suit Schematic", "count": 10},
+          {"name": "Titanium Plating", "count": 10},
+          {"name": "Graphene", "count": 5}
+        ],
+        "4": [
+          {"name": "Carbon Fibre Plating", "count": 20},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Titanium Plating", "count": 15},
+          {"name": "Graphene", "count": 10},
+          {"name": "Viscoelastic Polymer", "count": 5}
+        ],
+        "5": [
+          {"name": "Carbon Fibre Plating", "count": 25},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Titanium Plating", "count": 20},
+          {"name": "Graphene", "count": 15},
+          {"name": "Viscoelastic Polymer", "count": 10},
+          {"name": "Compound Plastics", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "suit_jump",
+      "name": "Improved Jump Assist",
+      "module_type": "Suit",
+      "engineer_ids": ["hero_ferrari", "oden_geiger"],
+      "effect": "Improves jump assist duration and height",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Ion Battery", "count": 5},
+          {"name": "Suit Schematic", "count": 1}
+        ],
+        "2": [
+          {"name": "Ion Battery", "count": 10},
+          {"name": "Suit Schematic", "count": 5},
+          {"name": "Micro Transformer", "count": 5}
+        ],
+        "3": [
+          {"name": "Ion Battery", "count": 15},
+          {"name": "Suit Schematic", "count": 10},
+          {"name": "Micro Transformer", "count": 10},
+          {"name": "Power Regulator", "count": 5}
+        ],
+        "4": [
+          {"name": "Ion Battery", "count": 20},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Micro Transformer", "count": 15},
+          {"name": "Power Regulator", "count": 10},
+          {"name": "Electrical Wiring", "count": 5}
+        ],
+        "5": [
+          {"name": "Ion Battery", "count": 25},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Micro Transformer", "count": 20},
+          {"name": "Power Regulator", "count": 15},
+          {"name": "Electrical Wiring", "count": 10},
+          {"name": "Micro Supercapacitor", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "suit_noise",
+      "name": "Noise Suppressor",
+      "module_type": "Suit",
+      "engineer_ids": ["hero_ferrari", "kit_fowler", "baltanos"],
+      "effect": "Reduces movement noise for stealth",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Viscoelastic Polymer", "count": 5},
+          {"name": "Suit Schematic", "count": 1}
+        ],
+        "2": [
+          {"name": "Viscoelastic Polymer", "count": 10},
+          {"name": "Suit Schematic", "count": 5},
+          {"name": "Chemical Catalyst", "count": 5}
+        ],
+        "3": [
+          {"name": "Viscoelastic Polymer", "count": 15},
+          {"name": "Suit Schematic", "count": 10},
+          {"name": "Chemical Catalyst", "count": 10},
+          {"name": "Graphene", "count": 5}
+        ],
+        "4": [
+          {"name": "Viscoelastic Polymer", "count": 20},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Chemical Catalyst", "count": 15},
+          {"name": "Graphene", "count": 10},
+          {"name": "Carbon Fibre Plating", "count": 5}
+        ],
+        "5": [
+          {"name": "Viscoelastic Polymer", "count": 25},
+          {"name": "Suit Schematic", "count": 15},
+          {"name": "Chemical Catalyst", "count": 20},
+          {"name": "Graphene", "count": 15},
+          {"name": "Carbon Fibre Plating", "count": 10},
+          {"name": "Titanium Plating", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "wpn_headshot",
+      "name": "Headshot Damage",
+      "module_type": "Weapon",
+      "engineer_ids": ["uma_laszlo", "wellington_beck", "yarden_bond", "eleanor_bresa", "yi_shen"],
+      "effect": "Increases headshot damage multiplier",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Weapon Schematic", "count": 1},
+          {"name": "Chemical Catalyst", "count": 5}
+        ],
+        "2": [
+          {"name": "Weapon Schematic", "count": 5},
+          {"name": "Chemical Catalyst", "count": 10},
+          {"name": "Optical Fibre", "count": 5}
+        ],
+        "3": [
+          {"name": "Weapon Schematic", "count": 10},
+          {"name": "Chemical Catalyst", "count": 15},
+          {"name": "Optical Fibre", "count": 10},
+          {"name": "Manufacturing Instructions", "count": 5}
+        ],
+        "4": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Chemical Catalyst", "count": 20},
+          {"name": "Optical Fibre", "count": 15},
+          {"name": "Manufacturing Instructions", "count": 10},
+          {"name": "Tungsten Carbide", "count": 5}
+        ],
+        "5": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Chemical Catalyst", "count": 25},
+          {"name": "Optical Fibre", "count": 20},
+          {"name": "Manufacturing Instructions", "count": 15},
+          {"name": "Tungsten Carbide", "count": 10},
+          {"name": "Micro Supercapacitor", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "wpn_handling",
+      "name": "Faster Handling",
+      "module_type": "Weapon",
+      "engineer_ids": ["uma_laszlo", "wellington_beck", "yarden_bond", "eleanor_bresa", "yi_shen"],
+      "effect": "Reduces weapon handling time (ADS and switch speed)",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Weapon Schematic", "count": 1},
+          {"name": "Graphene", "count": 5}
+        ],
+        "2": [
+          {"name": "Weapon Schematic", "count": 5},
+          {"name": "Graphene", "count": 10},
+          {"name": "Viscoelastic Polymer", "count": 5}
+        ],
+        "3": [
+          {"name": "Weapon Schematic", "count": 10},
+          {"name": "Graphene", "count": 15},
+          {"name": "Viscoelastic Polymer", "count": 10},
+          {"name": "Carbon Fibre Plating", "count": 5}
+        ],
+        "4": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Graphene", "count": 20},
+          {"name": "Viscoelastic Polymer", "count": 15},
+          {"name": "Carbon Fibre Plating", "count": 10},
+          {"name": "Titanium Plating", "count": 5}
+        ],
+        "5": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Graphene", "count": 25},
+          {"name": "Viscoelastic Polymer", "count": 20},
+          {"name": "Carbon Fibre Plating", "count": 15},
+          {"name": "Titanium Plating", "count": 10},
+          {"name": "Compound Plastics", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "wpn_range",
+      "name": "Greater Range",
+      "module_type": "Weapon",
+      "engineer_ids": ["uma_laszlo", "wellington_beck", "yarden_bond", "eleanor_bresa", "yi_shen"],
+      "effect": "Increases effective weapon range",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Weapon Schematic", "count": 1},
+          {"name": "Optical Fibre", "count": 5}
+        ],
+        "2": [
+          {"name": "Weapon Schematic", "count": 5},
+          {"name": "Optical Fibre", "count": 10},
+          {"name": "Manufacturing Instructions", "count": 5}
+        ],
+        "3": [
+          {"name": "Weapon Schematic", "count": 10},
+          {"name": "Optical Fibre", "count": 15},
+          {"name": "Manufacturing Instructions", "count": 10},
+          {"name": "Weapon Component", "count": 5}
+        ],
+        "4": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Optical Fibre", "count": 20},
+          {"name": "Manufacturing Instructions", "count": 15},
+          {"name": "Weapon Component", "count": 10},
+          {"name": "Tungsten Carbide", "count": 5}
+        ],
+        "5": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Optical Fibre", "count": 25},
+          {"name": "Manufacturing Instructions", "count": 20},
+          {"name": "Weapon Component", "count": 15},
+          {"name": "Tungsten Carbide", "count": 10},
+          {"name": "Micro Supercapacitor", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "wpn_stability",
+      "name": "Stability",
+      "module_type": "Weapon",
+      "engineer_ids": ["uma_laszlo", "wellington_beck", "yarden_bond", "eleanor_bresa", "yi_shen"],
+      "effect": "Reduces recoil and improves stability",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Weapon Schematic", "count": 1},
+          {"name": "Carbon Fibre Plating", "count": 5}
+        ],
+        "2": [
+          {"name": "Weapon Schematic", "count": 5},
+          {"name": "Carbon Fibre Plating", "count": 10},
+          {"name": "Titanium Plating", "count": 5}
+        ],
+        "3": [
+          {"name": "Weapon Schematic", "count": 10},
+          {"name": "Carbon Fibre Plating", "count": 15},
+          {"name": "Titanium Plating", "count": 10},
+          {"name": "Graphene", "count": 5}
+        ],
+        "4": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Carbon Fibre Plating", "count": 20},
+          {"name": "Titanium Plating", "count": 15},
+          {"name": "Graphene", "count": 10},
+          {"name": "Viscoelastic Polymer", "count": 5}
+        ],
+        "5": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Carbon Fibre Plating", "count": 25},
+          {"name": "Titanium Plating", "count": 20},
+          {"name": "Graphene", "count": 15},
+          {"name": "Viscoelastic Polymer", "count": 10},
+          {"name": "Compound Plastics", "count": 5}
+        ]
+      }
+    },
+    {
+      "id": "wpn_reload",
+      "name": "Reload Speed",
+      "module_type": "Weapon",
+      "engineer_ids": ["wellington_beck", "yarden_bond", "eleanor_bresa", "yi_shen"],
+      "effect": "Increases reload speed",
+      "max_grade": 5,
+      "grades": {
+        "1": [
+          {"name": "Weapon Schematic", "count": 1},
+          {"name": "Weapon Component", "count": 5}
+        ],
+        "2": [
+          {"name": "Weapon Schematic", "count": 5},
+          {"name": "Weapon Component", "count": 10},
+          {"name": "Graphene", "count": 5}
+        ],
+        "3": [
+          {"name": "Weapon Schematic", "count": 10},
+          {"name": "Weapon Component", "count": 15},
+          {"name": "Graphene", "count": 10},
+          {"name": "Manufacturing Instructions", "count": 5}
+        ],
+        "4": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Weapon Component", "count": 20},
+          {"name": "Graphene", "count": 15},
+          {"name": "Manufacturing Instructions", "count": 10},
+          {"name": "Optical Fibre", "count": 5}
+        ],
+        "5": [
+          {"name": "Weapon Schematic", "count": 15},
+          {"name": "Weapon Component", "count": 25},
+          {"name": "Graphene", "count": 20},
+          {"name": "Manufacturing Instructions", "count": 15},
+          {"name": "Optical Fibre", "count": 10},
+          {"name": "Tungsten Carbide", "count": 5}
+        ]
+      }
+    }
+  ]
+}

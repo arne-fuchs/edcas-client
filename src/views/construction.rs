@@ -15,6 +15,9 @@ use crate::journal_reader::JournalData;
 use crate::pins::Pins;
 use crate::views::ViewEvent;
 
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::{Arc, Mutex};
+
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
@@ -33,6 +36,12 @@ pub struct ConstructionView {
     scroll_offset: usize,
     detail_scroll: usize,
     focus: FocusArea,
+    #[cfg(not(target_arch = "wasm32"))]
+    loading_pins: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_pins: Arc<Mutex<Option<Result<Vec<ConstructionDepotResponse>, String>>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_search: Arc<Mutex<Option<Result<Vec<ConstructionDepotResponse>, String>>>>,
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<ConstructionDepotResponse>>>>,
 }
@@ -50,8 +59,35 @@ impl ConstructionView {
             scroll_offset: 0,
             detail_scroll: 0,
             focus: FocusArea::List,
+            #[cfg(not(target_arch = "wasm32"))]
+            loading_pins: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_pins: Arc::new(Mutex::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_search: Arc::new(Mutex::new(None)),
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn poll_search(&mut self) {
+        if let Some(result) = self.pending_pins.lock().unwrap().take() {
+            self.loading_pins = false;
+            match result {
+                Ok(results) => { self.pinned_results = results; }
+                Err(_) => {}
+            }
+        }
+        if let Some(result) = self.pending_search.lock().unwrap().take() {
+            match result {
+                Ok(results) => {
+                    self.results = results;
+                    self.selected_idx = 0;
+                    self.scroll_offset = 0;
+                }
+                Err(_) => {}
+            }
         }
     }
 
@@ -66,24 +102,30 @@ impl ConstructionView {
 
     pub fn on_enter(&mut self, api: &ApiClient) {
         #[cfg(not(target_arch = "wasm32"))]
-        self.refresh_pins(api);
+        if !self.pinned_ids.is_empty() && !self.loading_pins {
+            self.refresh_pins(api);
+        }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     fn refresh_pins(&mut self, api: &ApiClient) {
-        self.pinned_results.clear();
-        for &mid in &self.pinned_ids.clone() {
-            let query = ConstructionQuery {
-                market_id: Some(mid),
-                ..Default::default()
-            };
-            if let Ok(mut res) = api.search_construction_depots(&query) {
-                if let Some(depot) = res.pop() {
-                    self.pinned_results.push(depot);
+        self.loading_pins = true;
+        let pending = Arc::clone(&self.pending_pins);
+        let api_owned = api.clone();
+        let ids: Vec<i64> = self.pinned_ids.iter().copied().collect();
+        std::thread::spawn(move || {
+            let mut results = Vec::new();
+            for mid in ids {
+                let query = ConstructionQuery { market_id: Some(mid), ..Default::default() };
+                if let Ok(mut res) = api_owned.search_construction_depots(&query) {
+                    if let Some(depot) = res.pop() {
+                        results.push(depot);
+                    }
                 }
             }
-        }
-        self.pinned_results.sort_by(|a, b| a.station_name.cmp(&b.station_name));
+            results.sort_by(|a, b| a.station_name.cmp(&b.station_name));
+            *pending.lock().unwrap() = Some(Ok(results));
+        });
     }
 
     fn save_pins(&self) {
@@ -93,21 +135,16 @@ impl ConstructionView {
     }
 
     #[cfg(not(target_arch = "wasm32"))]
-    fn toggle_pin(&mut self, api: &ApiClient) {
-        if let Some(depot) = self.selected_item() {
+    fn toggle_pin(&mut self, _api: &ApiClient) {
+        if let Some(depot) = self.selected_item().cloned() {
             let mid = depot.market_id;
             if self.pinned_ids.contains(&mid) {
                 self.pinned_ids.remove(&mid);
                 self.pinned_results.retain(|d| d.market_id != mid);
             } else {
                 self.pinned_ids.insert(mid);
-                let query = ConstructionQuery { market_id: Some(mid), ..Default::default() };
-                if let Ok(mut res) = api.search_construction_depots(&query) {
-                    if let Some(d) = res.pop() {
-                        self.pinned_results.push(d);
-                        self.pinned_results.sort_by(|a, b| a.station_name.cmp(&b.station_name));
-                    }
-                }
+                self.pinned_results.push(depot);
+                self.pinned_results.sort_by(|a, b| a.station_name.cmp(&b.station_name));
             }
             self.save_pins();
         }
@@ -189,7 +226,8 @@ impl ConstructionView {
     }
 
     fn visual_row_of_selected(&self) -> usize {
-        self.selected_idx
+        // 2 header lines above the list: search bar + blank line
+        self.selected_idx + 2
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -198,14 +236,17 @@ impl ConstructionView {
             self.results.clear();
             return;
         }
+        let pending = Arc::clone(&self.pending_search);
+        let api_owned = api.clone();
         let query = ConstructionQuery {
             name: if self.search_input.trim().is_empty() { None } else { Some(self.search_input.trim().to_string()) },
             limit: Some(50),
             ..Default::default()
         };
-        self.results = api.search_construction_depots(&query).unwrap_or_default();
-        self.selected_idx = 0;
-        self.scroll_offset = 0;
+        std::thread::spawn(move || {
+            let result = api_owned.search_construction_depots(&query).map_err(|e| e.to_string());
+            *pending.lock().unwrap() = Some(result);
+        });
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -250,7 +291,18 @@ impl ConstructionView {
         }
 
         match key.code {
-            KeyCode::Tab => return ViewEvent::NextTab,
+            KeyCode::Tab => {
+                match self.focus {
+                    FocusArea::List => {
+                        self.focus = FocusArea::Detail;
+                        self.detail_scroll = 0;
+                    }
+                    FocusArea::Detail => {
+                        self.focus = FocusArea::List;
+                    }
+                }
+                return ViewEvent::Consumed;
+            }
             KeyCode::BackTab => return ViewEvent::PrevTab,
             KeyCode::Char('f') | KeyCode::Char('/') => {
                 self.search_active = true;
@@ -281,11 +333,19 @@ impl ConstructionView {
                 KeyCode::Char('w') | KeyCode::Up => {
                     if self.selected_idx > 0 {
                         self.selected_idx -= 1;
+                        // skip separator
+                        if self.selected_item().is_none() && self.selected_idx > 0 {
+                            self.selected_idx -= 1;
+                        }
                     }
                 }
                 KeyCode::Char('s') | KeyCode::Down => {
                     if self.selected_idx + 1 < self.display_count() {
                         self.selected_idx += 1;
+                        // skip separator
+                        if self.selected_item().is_none() && self.selected_idx + 1 < self.display_count() {
+                            self.selected_idx += 1;
+                        }
                     }
                 }
                 KeyCode::Char('p') => {
@@ -317,8 +377,10 @@ impl ConstructionView {
             return;
         }
         let row = self.visual_row_of_selected();
-        if row < self.scroll_offset {
-            self.scroll_offset = row;
+        // Use row.saturating_sub(2) for the up-scroll threshold so that
+        // navigating back to the first item restores the two header lines.
+        if row.saturating_sub(2) < self.scroll_offset {
+            self.scroll_offset = row.saturating_sub(2);
         } else if row >= self.scroll_offset + visible_height {
             self.scroll_offset = row + 1 - visible_height;
         }
@@ -570,12 +632,10 @@ fn build_detail_from_response(lines: &mut Vec<Line<'static>>, depot: &Constructi
         ]));
     }
     if !depot.last_updated.is_empty() {
+        let ts = depot.last_updated.get(..19).unwrap_or(&depot.last_updated);
         lines.push(Line::from(vec![
             Span::styled("  Updated ", Style::default().fg(Color::Cyan)),
-            Span::styled(
-                depot.last_updated[..19].to_string(),
-                Style::default().fg(Color::DarkGray),
-            ),
+            Span::styled(ts.to_string(), Style::default().fg(Color::DarkGray)),
         ]));
     }
 

@@ -12,6 +12,9 @@ use std::collections::HashSet;
 use crate::api_client::ApiClient;
 use crate::views::ViewEvent;
 
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::{Arc, Mutex};
+
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
@@ -73,6 +76,12 @@ pub struct CarriersView {
     status_msg: String,
     focus: FocusArea,
     detail_tab: DetailTab,
+    #[cfg(not(target_arch = "wasm32"))]
+    loading_pins: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_pins: Arc<Mutex<Option<Result<Vec<CarrierResponse>, String>>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_search: Arc<Mutex<Option<Result<Vec<CarrierResponse>, String>>>>,
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<CarrierResponse>>>>,
 }
@@ -92,6 +101,12 @@ impl CarriersView {
             status_msg: "Press Enter to search  |  p: pin/unpin".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Overview,
+            #[cfg(not(target_arch = "wasm32"))]
+            loading_pins: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_pins: Arc::new(Mutex::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_search: Arc::new(Mutex::new(None)),
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
         }
@@ -115,26 +130,69 @@ impl CarriersView {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn poll_search(&mut self) {
+        if let Some(result) = self.pending_pins.lock().unwrap().take() {
+            self.loading_pins = false;
+            match result {
+                Ok(results) => {
+                    self.pinned_results = results;
+                    if self.status_msg.starts_with("Loading") {
+                        self.status_msg = "Press Enter to search  |  p: pin/unpin".into();
+                    }
+                }
+                Err(e) => { self.status_msg = format!("API error loading pins: {e}"); }
+            }
+        }
+        if let Some(result) = self.pending_search.lock().unwrap().take() {
+            match result {
+                Ok(results) => {
+                    let count = results.len();
+                    self.results = results;
+                    self.selected_idx = 0;
+                    self.list_scroll = 0;
+                    self.detail_scroll = 0;
+                    self.focus = FocusArea::List;
+                    self.detail_tab = DetailTab::Overview;
+                    self.status_msg = if count == 0 {
+                        format!("No carriers found for '{}'", self.search_query)
+                    } else {
+                        format!("{count} carrier(s) found")
+                    };
+                }
+                Err(e) => { self.status_msg = format!("API error: {e}"); }
+            }
+        }
+    }
+
     pub fn on_enter(&mut self, api: &ApiClient) {
         #[cfg(not(target_arch = "wasm32"))]
-        if !self.pinned_ids.is_empty() && self.pinned_results.is_empty() {
+        if !self.pinned_ids.is_empty() && self.pinned_results.is_empty() && !self.loading_pins {
             self.refresh_pins(api);
         }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     fn refresh_pins(&mut self, api: &ApiClient) {
+        self.loading_pins = true;
         self.pinned_results.clear();
+        self.status_msg = "Loading pinned carriers…".into();
+        let pending = Arc::clone(&self.pending_pins);
+        let api_owned = api.clone();
         let ids: Vec<i64> = self.pinned_ids.iter().copied().collect();
-        for mid in ids {
-            let query = CarrierQuery { market_id: Some(mid), limit: Some(1), ..Default::default() };
-            if let Ok(mut r) = api.search_carriers(&query) {
-                if let Some(c) = r.pop() {
-                    self.pinned_results.push(c);
+        std::thread::spawn(move || {
+            let mut results = Vec::new();
+            for mid in ids {
+                let query = CarrierQuery { market_id: Some(mid), limit: Some(1), ..Default::default() };
+                if let Ok(mut r) = api_owned.search_carriers(&query) {
+                    if let Some(c) = r.pop() {
+                        results.push(c);
+                    }
                 }
             }
-        }
-        self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+            results.sort_by(|a, b| a.name.cmp(&b.name));
+            *pending.lock().unwrap() = Some(Ok(results));
+        });
     }
 
     fn save_pins(&self) {
@@ -203,6 +261,8 @@ impl CarriersView {
             return;
         }
         self.status_msg = format!("Searching for '{}'…", self.search_query);
+        let pending = Arc::clone(&self.pending_search);
+        let api_owned = api.clone();
         let query = CarrierQuery {
             name: Some(self.search_query.clone()),
             callsign: None,
@@ -210,23 +270,10 @@ impl CarriersView {
             market_id: None,
             limit: Some(50),
         };
-        match api.search_carriers(&query) {
-            Ok(results) => {
-                let count = results.len();
-                self.results = results;
-                self.selected_idx = 0;
-                self.list_scroll = 0;
-                self.detail_scroll = 0;
-                self.focus = FocusArea::List;
-                self.detail_tab = DetailTab::Overview;
-                self.status_msg = if count == 0 {
-                    format!("No carriers found for '{}'", self.search_query)
-                } else {
-                    format!("{count} carrier(s) found")
-                };
-            }
-            Err(e) => { self.status_msg = format!("API error: {e}"); }
-        }
+        std::thread::spawn(move || {
+            let result = api_owned.search_carriers(&query).map_err(|e| e.to_string());
+            *pending.lock().unwrap() = Some(result);
+        });
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -275,7 +322,7 @@ impl CarriersView {
                 Style::default().fg(Color::Yellow)
             };
             lines.push(Line::from(Span::styled(
-                format!(" ★ {}", truncate(&carrier.name, 34)),
+                format!(" ★ {}", carrier_display(carrier, 34)),
                 style,
             )));
         }
@@ -304,7 +351,7 @@ impl CarriersView {
                 Style::default().fg(Color::White)
             };
             lines.push(Line::from(Span::styled(
-                format!("   {}", truncate(&carrier.name, 34)),
+                format!("   {}", carrier_display(carrier, 34)),
                 style,
             )));
         }
@@ -340,7 +387,7 @@ impl CarriersView {
         match self.detail_tab {
             DetailTab::Overview => {
                 lines.push(Line::from(Span::styled(
-                    format!("── {} ──", carrier.name),
+                    format!("── {} ──", carrier_display(carrier, 60)),
                     Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
                 )));
             }
@@ -385,6 +432,10 @@ impl CarriersView {
 
     fn overview_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
+        lines.push(Line::from(format!("Callsign:  {}", carrier.name)));
+        if let Some(ref cn) = carrier.carrier_name {
+            lines.push(Line::from(format!("Name:      {cn}")));
+        }
         lines.push(Line::from(format!("System:    {}", carrier.system_name)));
         lines.push(Line::from(format!("Market ID: {}", carrier.market_id)));
         if let Some(ref faction) = carrier.faction_name { lines.push(Line::from(format!("Faction:   {faction}"))); }
@@ -504,6 +555,17 @@ impl CarriersView {
                     None => { self.focus = FocusArea::List; }
                 },
             },
+            KeyCode::Tab => match self.focus {
+                FocusArea::List => {
+                    if self.display_count() > 0 {
+                        self.focus = FocusArea::Detail;
+                        self.detail_scroll = 0;
+                    }
+                }
+                FocusArea::Detail => {
+                    self.focus = FocusArea::List;
+                }
+            },
             _ => {}
         }
 
@@ -563,6 +625,15 @@ impl CarriersView {
             detail_split[1],
         );
     }
+}
+
+/// Shows "Custom Name (CALLSIGN)" when a custom name is known, otherwise just the callsign.
+fn carrier_display(carrier: &CarrierResponse, max: usize) -> String {
+    let s = match carrier.carrier_name.as_deref() {
+        Some(cn) => format!("{cn} ({})", carrier.name),
+        None => carrier.name.clone(),
+    };
+    truncate(&s, max)
 }
 
 fn truncate(s: &str, max: usize) -> String {

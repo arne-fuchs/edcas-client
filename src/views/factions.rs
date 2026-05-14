@@ -7,6 +7,7 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
+use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use crate::api_client::ApiClient;
@@ -14,6 +15,9 @@ use crate::views::ViewEvent;
 
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
+
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::{Arc, Mutex};
 
 enum SearchState {
     Idle,
@@ -31,6 +35,27 @@ enum DetailTab {
     Info,
     Systems,
 }
+
+#[derive(Clone, Copy, PartialEq)]
+enum SystemSort {
+    Name,
+    Influence,
+    ActiveState,
+    Pending,
+    Updated,
+}
+
+impl SystemSort {
+    fn default_dir(self) -> SortDir {
+        match self {
+            Self::Influence | Self::Updated => SortDir::Desc,
+            _ => SortDir::Asc,
+        }
+    }
+}
+
+#[derive(Clone, Copy, PartialEq)]
+enum SortDir { Asc, Desc }
 
 impl DetailTab {
     fn next(self) -> Option<Self> {
@@ -66,8 +91,18 @@ pub struct FactionsView {
     status_msg: String,
     focus: FocusArea,
     detail_tab: DetailTab,
+    loading: bool,
+    spinner_frame: u8,
+    system_sort: SystemSort,
+    system_sort_dir: SortDir,
     #[cfg(not(target_arch = "wasm32"))]
     clipboard: Option<arboard::Clipboard>,
+    #[cfg(not(target_arch = "wasm32"))]
+    loading_pins: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_pins: Arc<Mutex<Option<Result<Vec<FactionResponse>, String>>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_search: Arc<Mutex<Option<Result<Vec<FactionResponse>, String>>>>,
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<FactionResponse>>>>,
 }
@@ -88,18 +123,68 @@ impl FactionsView {
             status_msg: "Press Enter to search  |  p: pin/unpin".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Info,
+            loading: false,
+            spinner_frame: 0,
+            system_sort: SystemSort::Influence,
+            system_sort_dir: SortDir::Desc,
             // Kept alive for the duration of the view so the X11/Wayland
             // background clipboard-serving thread keeps running after set_text.
             #[cfg(not(target_arch = "wasm32"))]
             clipboard: arboard::Clipboard::new().ok(),
+            #[cfg(not(target_arch = "wasm32"))]
+            loading_pins: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_pins: Arc::new(Mutex::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_search: Arc::new(Mutex::new(None)),
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
+        }
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn poll_search(&mut self) {
+        if let Some(result) = self.pending_pins.lock().unwrap().take() {
+            self.loading_pins = false;
+            match result {
+                Ok(results) => {
+                    self.pinned_results = results;
+                    if self.status_msg.starts_with("Loading") {
+                        self.status_msg = "Press Enter to search  |  p: pin/unpin".into();
+                    }
+                }
+                Err(e) => { self.status_msg = format!("API error loading pins: {e}"); }
+            }
+        }
+        if let Some(result) = self.pending_search.lock().unwrap().take() {
+            self.loading = false;
+            match result {
+                Ok(results) => {
+                    let count = results.len();
+                    self.results = results;
+                    self.selected_idx = 0;
+                    self.selected_system = 0;
+                    self.list_scroll = 0;
+                    self.detail_scroll = 0;
+                    self.focus = FocusArea::List;
+                    self.detail_tab = DetailTab::Info;
+                    self.status_msg = if count == 0 {
+                        format!("No factions found for '{}'", self.search_query)
+                    } else {
+                        format!("{count} faction(s) found")
+                    };
+                }
+                Err(e) => { self.status_msg = format!("API error: {e}"); }
+            }
+        } else if self.loading {
+            self.spinner_frame = self.spinner_frame.wrapping_add(1);
         }
     }
 
     #[cfg(target_arch = "wasm32")]
     pub fn poll_search(&mut self) {
         if let Some(results) = self.pending_search.borrow_mut().take() {
+            self.loading = false;
             let count = results.len();
             self.results = results;
             self.selected_idx = 0;
@@ -113,29 +198,39 @@ impl FactionsView {
             } else {
                 format!("{count} faction(s) found")
             };
+        } else if self.loading {
+            self.spinner_frame = self.spinner_frame.wrapping_add(1);
         }
     }
 
     pub fn on_enter(&mut self, api: &ApiClient) {
         #[cfg(not(target_arch = "wasm32"))]
-        if !self.pinned_names.is_empty() && self.pinned_results.is_empty() {
+        if !self.pinned_names.is_empty() && self.pinned_results.is_empty() && !self.loading_pins {
             self.refresh_pins(api);
         }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     fn refresh_pins(&mut self, api: &ApiClient) {
+        self.loading_pins = true;
         self.pinned_results.clear();
+        self.status_msg = "Loading pinned factions…".into();
+        let pending = Arc::clone(&self.pending_pins);
+        let api_owned = api.clone();
         let names: Vec<String> = self.pinned_names.iter().cloned().collect();
-        for name in names {
-            let query = FactionQuery { name: Some(name.clone()), limit: Some(10) };
-            if let Ok(results) = api.search_factions(&query) {
-                if let Some(f) = results.into_iter().find(|f| f.name == name) {
-                    self.pinned_results.push(f);
+        std::thread::spawn(move || {
+            let mut results = Vec::new();
+            for name in names {
+                let query = FactionQuery { name: Some(name.clone()), limit: Some(10) };
+                if let Ok(factions) = api_owned.search_factions(&query) {
+                    if let Some(f) = factions.into_iter().find(|f| f.name == name) {
+                        results.push(f);
+                    }
                 }
             }
-        }
-        self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+            results.sort_by(|a, b| a.name.cmp(&b.name));
+            *pending.lock().unwrap() = Some(Ok(results));
+        });
     }
 
     fn save_pins(&self) {
@@ -205,26 +300,16 @@ impl FactionsView {
             self.status_msg = "Enter a search term first".into();
             return;
         }
+        self.loading = true;
+        self.spinner_frame = 0;
         self.status_msg = format!("Searching for '{}'…", self.search_query);
+        let pending = Arc::clone(&self.pending_search);
+        let api_owned = api.clone();
         let query = FactionQuery { name: Some(self.search_query.clone()), limit: Some(100) };
-        match api.search_factions(&query) {
-            Ok(results) => {
-                let count = results.len();
-                self.results = results;
-                self.selected_idx = 0;
-                self.selected_system = 0;
-                self.list_scroll = 0;
-                self.detail_scroll = 0;
-                self.focus = FocusArea::List;
-                self.detail_tab = DetailTab::Info;
-                self.status_msg = if count == 0 {
-                    format!("No factions found for '{}'", self.search_query)
-                } else {
-                    format!("{count} faction(s) found")
-                };
-            }
-            Err(e) => { self.status_msg = format!("API error: {e}"); }
-        }
+        std::thread::spawn(move || {
+            let result = api_owned.search_factions(&query).map_err(|e| e.to_string());
+            *pending.lock().unwrap() = Some(result);
+        });
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -241,6 +326,27 @@ impl FactionsView {
             let results = api.search_factions(query).await;
             *pending.borrow_mut() = Some(results);
         });
+    }
+
+    fn sorted_system_indices(&self, faction: &FactionResponse) -> Vec<usize> {
+        let mut indices: Vec<usize> = (0..faction.presences.len()).collect();
+        indices.sort_by(|&a, &b| {
+            let pa = &faction.presences[a];
+            let pb = &faction.presences[b];
+            let ord = match self.system_sort {
+                SystemSort::Name => pa.system_name.cmp(&pb.system_name),
+                SystemSort::Influence => pa.influence
+                    .partial_cmp(&pb.influence)
+                    .unwrap_or(Ordering::Equal),
+                SystemSort::ActiveState => pa.active_states.first().map(String::as_str).unwrap_or("")
+                    .cmp(pb.active_states.first().map(String::as_str).unwrap_or("")),
+                SystemSort::Pending => pa.pending_states.first().map(String::as_str).unwrap_or("")
+                    .cmp(pb.pending_states.first().map(String::as_str).unwrap_or("")),
+                SystemSort::Updated => pa.updated_at.cmp(&pb.updated_at),
+            };
+            if self.system_sort_dir == SortDir::Desc { ord.reverse() } else { ord }
+        });
+        indices
     }
 
     fn visual_row_of_selected(&self) -> usize {
@@ -267,7 +373,16 @@ impl FactionsView {
                 Style::default().fg(Color::Yellow),
             ),
         ]));
-        lines.push(Line::from(Span::styled(self.status_msg.clone(), Style::default().fg(Color::DarkGray))));
+        if self.loading {
+            const FRAMES: &[char] = &['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+            let ch = FRAMES[(self.spinner_frame as usize) % FRAMES.len()];
+            lines.push(Line::from(vec![
+                Span::styled(format!("{ch} "), Style::default().fg(Color::Rgb(255, 140, 0))),
+                Span::styled(self.status_msg.clone(), Style::default().fg(Color::DarkGray)),
+            ]));
+        } else {
+            lines.push(Line::from(Span::styled(self.status_msg.clone(), Style::default().fg(Color::DarkGray))));
+        }
         lines.push(Line::from(""));
 
         let n = self.pinned_results.len();
@@ -358,7 +473,10 @@ impl FactionsView {
 
         match self.detail_tab {
             DetailTab::Info => info_body(faction),
-            DetailTab::Systems => systems_body(faction, self.selected_system, self.focus == FocusArea::Detail),
+            DetailTab::Systems => {
+                let indices = self.sorted_system_indices(faction);
+                systems_body(faction, self.selected_system, self.focus == FocusArea::Detail, &indices, self.system_sort, self.system_sort_dir)
+            }
         }
     }
 
@@ -480,6 +598,40 @@ impl FactionsView {
                         self.focus = FocusArea::List;
                     }
                 },
+            },
+            KeyCode::Char(c @ '1'..='5')
+                if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Systems =>
+            {
+                let col = match c {
+                    '1' => SystemSort::Name,
+                    '2' => SystemSort::Influence,
+                    '3' => SystemSort::ActiveState,
+                    '4' => SystemSort::Pending,
+                    '5' => SystemSort::Updated,
+                    _ => unreachable!(),
+                };
+                if col == self.system_sort {
+                    self.system_sort_dir = match self.system_sort_dir {
+                        SortDir::Asc => SortDir::Desc,
+                        SortDir::Desc => SortDir::Asc,
+                    };
+                } else {
+                    self.system_sort = col;
+                    self.system_sort_dir = col.default_dir();
+                }
+                self.selected_system = 0;
+                self.detail_scroll = 0;
+            }
+            KeyCode::Tab => match self.focus {
+                FocusArea::List => {
+                    if self.display_count() > 0 {
+                        self.focus = FocusArea::Detail;
+                        self.detail_scroll = 0;
+                    }
+                }
+                FocusArea::Detail => {
+                    self.focus = FocusArea::List;
+                }
             },
             _ => {}
         }
@@ -774,7 +926,7 @@ fn allegiance_lines(alleg: &str) -> Vec<Line<'static>> {
 
 // ── Systems tab ───────────────────────────────────────────────────────────────
 
-fn systems_body(faction: &FactionResponse, selected: usize, focused: bool) -> Vec<Line<'static>> {
+fn systems_body(faction: &FactionResponse, selected: usize, focused: bool, sorted_indices: &[usize], sort_col: SystemSort, sort_dir: SortDir) -> Vec<Line<'static>> {
     if faction.presences.is_empty() {
         return vec![Line::from(Span::styled(
             "No system presence data available.",
@@ -784,13 +936,24 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool) -> Ve
 
     let mut lines = Vec::new();
 
+    let dir_char = if sort_dir == SortDir::Asc { "▲" } else { "▼" };
+    let col_label = |col: SystemSort, name: &'static str| -> String {
+        if col == sort_col { format!("{name}{dir_char}") } else { name.to_string() }
+    };
+
     let hint = if focused {
-        " — w/s: select  c: copy name"
+        " — w/s: select  c: copy  1-5: sort"
     } else {
         ""
     };
     lines.push(Line::from(Span::styled(
-        format!("{:<30} {:>6}  {:<20}  {:<20}{hint}", "System", "Inf%", "Active State", "Pending"),
+        format!("{:<30} {:>7}  {:<20}  {:<20}  {:<11}{hint}",
+            col_label(SystemSort::Name, "System"),
+            col_label(SystemSort::Influence, "Inf%"),
+            col_label(SystemSort::ActiveState, "Active State"),
+            col_label(SystemSort::Pending, "Pending"),
+            col_label(SystemSort::Updated, "Updated"),
+        ),
         Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(Span::styled(
@@ -798,7 +961,9 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool) -> Ve
         Style::default().fg(Color::DarkGray),
     )));
 
-    for (i, p) in faction.presences.iter().enumerate() {
+    for (visual_i, &presence_i) in sorted_indices.iter().enumerate() {
+        let p = &faction.presences[presence_i];
+        let i = visual_i;
         let pct = p.influence * 100.0;
         let inf_color = if pct < 15.0 {
             Color::Red
@@ -821,13 +986,15 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool) -> Ve
 
         let is_selected = focused && i == selected;
 
+        let ts = fmt_ts(p.updated_at.as_ref());
         if is_selected {
             let row = format!(
-                " {:<29} {:>5.1}%  {:<20}  {:<20}",
+                " {:<29} {:>5.1}%  {:<20}  {:<20}  {:<11}",
                 truncate(&p.system_name, 29),
                 pct,
                 truncate(&active, 20),
                 truncate(&pending, 20),
+                ts,
             );
             lines.push(Line::from(Span::styled(
                 row,
@@ -840,7 +1007,7 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool) -> Ve
             lines.push(Line::from(vec![
                 Span::raw(format!(" {:<29} ", truncate(&p.system_name, 29))),
                 Span::styled(format!("{:>5.1}%", pct), Style::default().fg(inf_color)),
-                Span::raw(format!("  {:<20}  {}", truncate(&active, 20), pending)),
+                Span::raw(format!("  {:<20}  {:<20}  {}", truncate(&active, 20), pending, ts)),
             ]));
         }
 
@@ -886,6 +1053,11 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool) -> Ve
     }
 
     lines
+}
+
+fn fmt_ts(ts: Option<&chrono::DateTime<chrono::Utc>>) -> String {
+    ts.map(|t| t.format("%m-%d %H:%M").to_string())
+        .unwrap_or_else(|| "—".to_string())
 }
 
 fn truncate(s: &str, max: usize) -> String {

@@ -12,6 +12,9 @@ use std::collections::HashSet;
 use crate::api_client::ApiClient;
 use crate::views::ViewEvent;
 
+#[cfg(not(target_arch = "wasm32"))]
+use std::sync::{Arc, Mutex};
+
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
@@ -77,6 +80,12 @@ pub struct StationsView {
     clipboard: Option<arboard::Clipboard>,
     #[cfg(target_arch = "wasm32")]
     clipboard: (),
+    #[cfg(not(target_arch = "wasm32"))]
+    loading_pins: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_pins: Arc<Mutex<Option<Result<Vec<StationResponse>, String>>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_search: Arc<Mutex<Option<Result<Vec<StationResponse>, String>>>>,
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<StationResponse>>>>,
 }
@@ -100,6 +109,12 @@ impl StationsView {
             clipboard: arboard::Clipboard::new().ok(),
             #[cfg(target_arch = "wasm32")]
             clipboard: (),
+            #[cfg(not(target_arch = "wasm32"))]
+            loading_pins: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_pins: Arc::new(Mutex::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_search: Arc::new(Mutex::new(None)),
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
         }
@@ -123,26 +138,69 @@ impl StationsView {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn poll_search(&mut self) {
+        if let Some(result) = self.pending_pins.lock().unwrap().take() {
+            self.loading_pins = false;
+            match result {
+                Ok(results) => {
+                    self.pinned_results = results;
+                    if self.status_msg.starts_with("Loading") {
+                        self.status_msg = "Press Enter to search  |  p: pin/unpin  |  c: copy system".into();
+                    }
+                }
+                Err(e) => { self.status_msg = format!("API error loading pins: {e}"); }
+            }
+        }
+        if let Some(result) = self.pending_search.lock().unwrap().take() {
+            match result {
+                Ok(results) => {
+                    let count = results.len();
+                    self.results = results;
+                    self.selected_idx = 0;
+                    self.list_scroll = 0;
+                    self.detail_scroll = 0;
+                    self.focus = FocusArea::List;
+                    self.detail_tab = DetailTab::Overview;
+                    self.status_msg = if count == 0 {
+                        format!("No stations found for '{}'", self.search_query)
+                    } else {
+                        format!("{count} station(s) found")
+                    };
+                }
+                Err(e) => { self.status_msg = format!("API error: {e}"); }
+            }
+        }
+    }
+
     pub fn on_enter(&mut self, api: &ApiClient) {
         #[cfg(not(target_arch = "wasm32"))]
-        if !self.pinned_ids.is_empty() && self.pinned_results.is_empty() {
+        if !self.pinned_ids.is_empty() && self.pinned_results.is_empty() && !self.loading_pins {
             self.refresh_pins(api);
         }
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     fn refresh_pins(&mut self, api: &ApiClient) {
+        self.loading_pins = true;
         self.pinned_results.clear();
+        self.status_msg = "Loading pinned stations…".into();
+        let pending = Arc::clone(&self.pending_pins);
+        let api_owned = api.clone();
         let ids: Vec<i64> = self.pinned_ids.iter().copied().collect();
-        for mid in ids {
-            let query = StationQuery { market_id: Some(mid), limit: Some(1), name: None, system_name: None };
-            if let Ok(mut r) = api.search_stations(&query) {
-                if let Some(s) = r.pop() {
-                    self.pinned_results.push(s);
+        std::thread::spawn(move || {
+            let mut results = Vec::new();
+            for mid in ids {
+                let query = StationQuery { market_id: Some(mid), limit: Some(1), name: None, system_name: None };
+                if let Ok(mut r) = api_owned.search_stations(&query) {
+                    if let Some(s) = r.pop() {
+                        results.push(s);
+                    }
                 }
             }
-        }
-        self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+            results.sort_by(|a, b| a.name.cmp(&b.name));
+            *pending.lock().unwrap() = Some(Ok(results));
+        });
     }
 
     fn save_pins(&self) {
@@ -215,31 +273,18 @@ impl StationsView {
             return;
         }
         self.status_msg = format!("Searching for '{}'…", self.search_query);
+        let pending = Arc::clone(&self.pending_search);
+        let api_owned = api.clone();
         let query = StationQuery {
             name: Some(self.search_query.clone()),
             system_name: None,
             market_id: None,
             limit: Some(50),
         };
-        match api.search_stations(&query) {
-            Ok(results) => {
-                let count = results.len();
-                self.results = results;
-                self.selected_idx = 0;
-                self.list_scroll = 0;
-                self.detail_scroll = 0;
-                self.focus = FocusArea::List;
-                self.detail_tab = DetailTab::Overview;
-                self.status_msg = if count == 0 {
-                    format!("No stations found for '{}'", self.search_query)
-                } else {
-                    format!("{count} station(s) found")
-                };
-            }
-            Err(e) => {
-                self.status_msg = format!("API error: {e}");
-            }
-        }
+        std::thread::spawn(move || {
+            let result = api_owned.search_stations(&query).map_err(|e| e.to_string());
+            *pending.lock().unwrap() = Some(result);
+        });
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -424,6 +469,11 @@ impl StationsView {
                 lines.push(Line::from(format!("  {}", chunk.join(", "))));
             }
         }
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled(
+            format!("Updated:   {}", fmt_ts(station.updated_at.as_ref())),
+            Style::default().fg(Color::DarkGray),
+        )));
         lines
     }
 
@@ -431,11 +481,22 @@ impl StationsView {
         if station.commodities.is_empty() {
             return vec![Line::from(Span::styled("No market data available.", Style::default().fg(Color::DarkGray)))];
         }
-        station.commodities.iter().map(|c| {
+        let mut lines: Vec<Line<'static>> = vec![
+            Line::from(Span::styled(
+                format!("Market data as of: {}", fmt_ts(station.market_updated_at.as_ref())),
+                Style::default().fg(Color::DarkGray),
+            )),
+            Line::from(Span::styled(
+                format!("{:<28} {:>8} {:>8} {:>8} {:>8} {:>8}", "Commodity", "Buy", "Sell", "Mean", "Stock", "Demand"),
+                Style::default().fg(Color::Cyan),
+            )),
+        ];
+        lines.extend(station.commodities.iter().map(|c| {
             let buy = if c.buy_price > 0 { format!("{:>8}", c.buy_price) } else { format!("{:>8}", "-") };
             let sell = if c.sell_price > 0 { format!("{:>8}", c.sell_price) } else { format!("{:>8}", "-") };
             Line::from(format!("{:<28} {} {} {:>8} {:>8} {:>8}", truncate(&c.name, 28), buy, sell, c.mean_price, c.stock, c.demand))
-        }).collect()
+        }));
+        lines
     }
 
     fn outfitting_body(&self, station: &StationResponse) -> Vec<Line<'static>> {
@@ -545,6 +606,17 @@ impl StationsView {
                 }
                 return ViewEvent::Consumed;
             }
+            KeyCode::Tab => match self.focus {
+                FocusArea::List => {
+                    if self.display_count() > 0 {
+                        self.focus = FocusArea::Detail;
+                        self.detail_scroll = 0;
+                    }
+                }
+                FocusArea::Detail => {
+                    self.focus = FocusArea::List;
+                }
+            },
             _ => {}
         }
 
@@ -606,6 +678,11 @@ impl StationsView {
             detail_split[1],
         );
     }
+}
+
+fn fmt_ts(ts: Option<&chrono::DateTime<chrono::Utc>>) -> String {
+    ts.map(|t| t.format("%Y-%m-%d %H:%M UTC").to_string())
+        .unwrap_or_else(|| "—".to_string())
 }
 
 fn truncate(s: &str, max: usize) -> String {

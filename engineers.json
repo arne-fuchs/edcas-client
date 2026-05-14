@@ -1,0 +1,302 @@
+{
+  "ship": [
+    {
+      "id": "felicity_farseer",
+      "name": "Felicity Farseer",
+      "system": "Deciat",
+      "station": "Farseer Inc",
+      "specialties": ["FSD", "Thrusters", "Sensors", "Shield Boosters"],
+      "unlock": "Provide 1 unit of Meta-Alloys"
+    },
+    {
+      "id": "elvira_martuuk",
+      "name": "Elvira Martuuk",
+      "system": "Khun",
+      "station": "Long Sight Base",
+      "specialties": ["FSD"],
+      "unlock": "Provide 3 units of Soontill Relics"
+    },
+    {
+      "id": "the_dweller",
+      "name": "The Dweller",
+      "system": "Wyrd",
+      "station": "Black Hide",
+      "specialties": ["Weapons", "Power Plant"],
+      "unlock": "Pay 500,000 credits"
+    },
+    {
+      "id": "selene_jean",
+      "name": "Selene Jean",
+      "system": "Kuk",
+      "station": "Prospector's Rest",
+      "specialties": ["Hull", "Armour"],
+      "unlock": "Mine and provide 10 units of Painite"
+    },
+    {
+      "id": "tod_mcquinn",
+      "name": "Tod McQuinn",
+      "system": "Wolf 397",
+      "station": "Trophy Camp",
+      "specialties": ["Multi-cannon", "Rail Gun", "Fragmentation"],
+      "unlock": "Provide bounty vouchers worth 100,000 Cr"
+    },
+    {
+      "id": "hera_tani",
+      "name": "Hera Tani",
+      "system": "Kuwemaki",
+      "station": "The Jet's Hole",
+      "specialties": ["Power Plant", "Power Distributor"],
+      "unlock": "Reach Combat rank Competent and provide 1 Kamitra Cigar. Invite from The Dweller (G3)"
+    },
+    {
+      "id": "broo_tarquin",
+      "name": "Broo Tarquin",
+      "system": "Muang",
+      "station": "Broo's Legacy",
+      "specialties": ["Beam Laser", "Pulse Laser", "Burst Laser"],
+      "unlock": "Provide 50 units of Agronomic Treatment. Invite from Felicity Farseer (G3)"
+    },
+    {
+      "id": "lei_cheung",
+      "name": "Lei Cheung",
+      "system": "Laksak",
+      "station": "Trader's Rest",
+      "specialties": ["Shield Generator"],
+      "unlock": "Purchase 200 units of any commodity. Invite from The Dweller (G3)"
+    },
+    {
+      "id": "ram_tah",
+      "name": "Ram Tah",
+      "system": "Meene",
+      "station": "Phoenix Base",
+      "specialties": ["Sensors", "Scanners", "ECM"],
+      "unlock": "Provide 50 units of Electronic Data. Invite from Felicity Farseer (G3)"
+    },
+    {
+      "id": "colonel_dekker",
+      "name": "Colonel Dekker",
+      "system": "Sol",
+      "station": "Dekker's Yard",
+      "specialties": ["FSD Interdictor"],
+      "unlock": "Provide 1,000,000 Cr worth of combat bonds. Invite from Felicity Farseer (G3)"
+    },
+    {
+      "id": "liz_ryder",
+      "name": "Liz Ryder",
+      "system": "Eurybia",
+      "station": "Demolition Unlimited",
+      "specialties": ["Mines", "Torpedoes"],
+      "unlock": "Provide 200 units of Landmines"
+    },
+    {
+      "id": "juri_ishmaak",
+      "name": "Juri Ishmaak",
+      "system": "Giryak",
+      "station": "Pappa Site",
+      "specialties": ["Cannon", "Plasma", "Rail Gun"],
+      "unlock": "Provide 50 combat bonds, reach Combat rank Competent. Invite from Tod McQuinn (G3)"
+    },
+    {
+      "id": "marsha_hicks",
+      "name": "Marsha Hicks",
+      "system": "Tof",
+      "station": "Weber Vision",
+      "specialties": ["Thrusters (max G3)"],
+      "unlock": "Provide 3 units of Orrerian Vicious Brew. Invite from Felicity Farseer (G3)"
+    },
+    {
+      "id": "professor_palin",
+      "name": "Professor Palin",
+      "system": "Arque",
+      "station": "Abel Laboratory",
+      "specialties": ["Thrusters"],
+      "unlock": "Travel 5,000 LY from starting system. Invite from Elvira Martuuk (G3)"
+    },
+    {
+      "id": "petra_olmanova",
+      "name": "Petra Olmanova",
+      "system": "Asura",
+      "station": "Sanctuary",
+      "specialties": ["Armour", "Hull Reinforcement"],
+      "unlock": "Reach Tycoon trade rank. Invite from Selene Jean (G3)"
+    },
+    {
+      "id": "bill_turner",
+      "name": "Bill Turner",
+      "system": "Alioth",
+      "station": "Turner Metallics Inc",
+      "specialties": ["Plasma Accelerator", "Power Plant"],
+      "unlock": "Provide 50 units of Bromellite. Invite from Selene Jean (G3)"
+    },
+    {
+      "id": "didi_vatermann",
+      "name": "Didi Vatermann",
+      "system": "Leesti",
+      "station": "Vatermann LLC",
+      "specialties": ["Shield Boosters"],
+      "unlock": "Provide 50 units of Lavian Brandy. Invite from Selene Jean (G3)"
+    },
+    {
+      "id": "lori_jameson",
+      "name": "Lori Jameson",
+      "system": "Shinrarta Dezhra",
+      "station": "Jameson Base",
+      "specialties": ["Internal Modules"],
+      "unlock": "Reach Elite rank in any category. Invite from Hera Tani (G3)"
+    },
+    {
+      "id": "tiana_fortune",
+      "name": "Tiana Fortune",
+      "system": "Olgrea",
+      "station": "Richer Orbital",
+      "specialties": ["ECM", "Utilities", "Scanners"],
+      "unlock": "Provide 50 units of Unmarked Weapons. Invite from Hera Tani (G3)"
+    },
+    {
+      "id": "etienne_dorn",
+      "name": "Etienne Dorn",
+      "system": "Los",
+      "station": "Kraken's Retreat",
+      "specialties": ["Multi-cannon", "Cannon", "Utilities"],
+      "unlock": "Provide 25 units of Unknown Fragments. Invite from Juri Ishmaak (G3)"
+    },
+    {
+      "id": "zacariah_nemo",
+      "name": "Zacariah Nemo",
+      "system": "Yoru",
+      "station": "Nemo Cyber Party Base",
+      "specialties": ["Point Defence", "ECM"],
+      "unlock": "Provide 25 units of Xihe Companions. Invite from Lei Cheung (G3)"
+    },
+    {
+      "id": "marco_qwent",
+      "name": "Marco Qwent",
+      "system": "Sirius",
+      "station": "Qwent Research Base",
+      "specialties": ["Power Plant", "Shield Generator"],
+      "unlock": "Gain Sirius system permit via Sirius Corp mission chain. Invite from Hera Tani (G3)"
+    },
+    {
+      "id": "mel_brandon",
+      "name": "Mel Brandon",
+      "system": "Hyades Sector DR-V c2-23",
+      "station": "The Brig",
+      "specialties": ["FSD", "Thrusters", "Shields"],
+      "unlock": "Provide 1 unit of Thargoid Sensor. Invite from The Dweller (G3)"
+    },
+    {
+      "id": "chloe_sedesi",
+      "name": "Chloe Sedesi",
+      "system": "Shenve",
+      "station": "Cinder Dock",
+      "specialties": ["Thrusters", "FSD"],
+      "unlock": "Provide 3 units of Trinkets of Fortune. Invite from Professor Palin (G3)"
+    },
+    {
+      "id": "domino_green",
+      "name": "Domino Green",
+      "system": "Almagest",
+      "station": "Bolden's Enterprise",
+      "specialties": ["Shield Boosters", "Suit Mods"],
+      "unlock": "Provide 10 units of Insight. Invite from Selene Jean (G3)"
+    }
+  ],
+  "onfoot": [
+    {
+      "id": "hero_ferrari",
+      "name": "Hero Ferrari",
+      "system": "Sirius",
+      "station": "Ashby City",
+      "specialties": ["Maverick Suit"],
+      "unlock": "Complete 1 Covert Heist mission"
+    },
+    {
+      "id": "jude_navarro",
+      "name": "Jude Navarro",
+      "system": "Aurai",
+      "station": "Marshall's Drift",
+      "specialties": ["Dominator Suit"],
+      "unlock": "Complete 1 Salvage mission at an Irregular Markers site"
+    },
+    {
+      "id": "kit_fowler",
+      "name": "Kit Fowler",
+      "system": "Capoya",
+      "station": "Onnes Gateway",
+      "specialties": ["All Suits"],
+      "unlock": "Sell 5 units of Multimedia Entertainment to a bartender, complete 3 missions"
+    },
+    {
+      "id": "oden_geiger",
+      "name": "Oden Geiger",
+      "system": "Candiaei",
+      "station": "Ankh's Promise",
+      "specialties": ["Maverick Suit"],
+      "unlock": "Sell 40 units of Opinion Polls to bartenders"
+    },
+    {
+      "id": "terra_velasquez",
+      "name": "Terra Velasquez",
+      "system": "Shou Xing",
+      "station": "Rong-Arroyo Landing",
+      "specialties": ["Dominator Suit"],
+      "unlock": "Sell 5 Stolen items to a bartender, sell 5 Surveillance Equipment"
+    },
+    {
+      "id": "uma_laszlo",
+      "name": "Uma Laszlo",
+      "system": "Bayan",
+      "station": "Salamander Bank",
+      "specialties": ["Weapons"],
+      "unlock": "Sell 8 Smear Campaign Plans to bartenders"
+    },
+    {
+      "id": "wellington_beck",
+      "name": "Wellington Beck",
+      "system": "Jolapa",
+      "station": "Jolapa Station",
+      "specialties": ["Weapons"],
+      "unlock": "Complete 4 Restore or Reactivation missions"
+    },
+    {
+      "id": "yarden_bond",
+      "name": "Yarden Bond",
+      "system": "Bhumian",
+      "station": "Nerva Dock",
+      "specialties": ["Weapons"],
+      "unlock": "Sell 10 Stolen items or complete combat missions"
+    },
+    {
+      "id": "rosa_dayette",
+      "name": "Rosa Dayette",
+      "system": "HIP 54530",
+      "station": "Joliot-Curie Vision",
+      "specialties": ["Suits"],
+      "unlock": "Reach Grade 3 with Domino Green"
+    },
+    {
+      "id": "baltanos",
+      "name": "Baltanos",
+      "system": "Deriso",
+      "station": "Syreadiae JX-31 b Settlement",
+      "specialties": ["Suits"],
+      "unlock": "Referred by Domino Green"
+    },
+    {
+      "id": "eleanor_bresa",
+      "name": "Eleanor Bresa",
+      "system": "Kojeara",
+      "station": "Obruchev Legacy",
+      "specialties": ["Weapons"],
+      "unlock": "Complete 3 Assassination missions. Invite from Yarden Bond"
+    },
+    {
+      "id": "yi_shen",
+      "name": "Yi Shen",
+      "system": "Puncti",
+      "station": "Niijima Gateway",
+      "specialties": ["Weapons"],
+      "unlock": "Invite from Wellington Beck"
+    }
+  ]
+}

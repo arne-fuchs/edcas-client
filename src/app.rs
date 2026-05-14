@@ -14,9 +14,9 @@ use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::{BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData, ParentType};
 use crate::settings::Settings;
 use crate::views::{
-    AboutView, CarriersView, ConstructionView, ExplorerView, FactionsView, InventoryView,
-    ModulesView, NewsView, PilotView, SettingsView, StationsView, SystemView,
-    TradeRoutesView, ViewEvent,
+    AboutView, CarriersView, ConstructionView, EngineersView, ExplorerView, FactionsView,
+    InventoryView, ModulesView, NewsView, PilotView, SettingsView, StationsView, SuitView,
+    SystemView, TodoView, TradeRoutesView, ViewEvent,
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -26,16 +26,19 @@ pub const APP_TITLE: &str = "EDCAS - Elite Dangerous Commander Assistant System"
 
 pub const TABS: &[&str] = &[
     "News",
-    "Pilot",
     "System",
     "Explorer",
     "Inventory",
-    "Modules",
     "Stations",
     "Carriers",
     "Factions",
     "Construction",
     "Trade Routes",
+    "Pilot",
+    "Ship",
+    "Suit",
+    "Engineers",
+    "Todo",
     "Settings",
     "About",
 ];
@@ -44,34 +47,40 @@ pub const TABS: &[&str] = &[
 pub enum AppView {
     #[default]
     News = 0,
-    Pilot = 1,
-    System = 2,
-    Explorer = 3,
-    Materials = 4,
-    Modules = 5,
-    Stations = 6,
-    Carriers = 7,
-    Factions = 8,
-    Construction = 9,
-    TradeRoutes = 10,
-    Settings = 11,
-    About = 12,
+    System = 1,
+    Explorer = 2,
+    Materials = 3,
+    Stations = 4,
+    Carriers = 5,
+    Factions = 6,
+    Construction = 7,
+    TradeRoutes = 8,
+    Pilot = 9,
+    Modules = 10,
+    Suit = 11,
+    Engineers = 12,
+    Todo = 13,
+    Settings = 14,
+    About = 15,
 }
 
 impl AppView {
     pub fn next(&self) -> Self {
         match self {
-            AppView::News => AppView::Pilot,
-            AppView::Pilot => AppView::System,
+            AppView::News => AppView::System,
             AppView::System => AppView::Explorer,
             AppView::Explorer => AppView::Materials,
-            AppView::Materials => AppView::Modules,
-            AppView::Modules => AppView::Stations,
+            AppView::Materials => AppView::Stations,
             AppView::Stations => AppView::Carriers,
             AppView::Carriers => AppView::Factions,
             AppView::Factions => AppView::Construction,
             AppView::Construction => AppView::TradeRoutes,
-            AppView::TradeRoutes => AppView::Settings,
+            AppView::TradeRoutes => AppView::Pilot,
+            AppView::Pilot => AppView::Modules,
+            AppView::Modules => AppView::Suit,
+            AppView::Suit => AppView::Engineers,
+            AppView::Engineers => AppView::Todo,
+            AppView::Todo => AppView::Settings,
             AppView::Settings => AppView::About,
             AppView::About => AppView::News,
         }
@@ -80,17 +89,20 @@ impl AppView {
     pub fn prev(&self) -> Self {
         match self {
             AppView::News => AppView::About,
-            AppView::Pilot => AppView::News,
-            AppView::System => AppView::Pilot,
+            AppView::System => AppView::News,
             AppView::Explorer => AppView::System,
             AppView::Materials => AppView::Explorer,
-            AppView::Modules => AppView::Materials,
-            AppView::Stations => AppView::Modules,
+            AppView::Stations => AppView::Materials,
             AppView::Carriers => AppView::Stations,
             AppView::Factions => AppView::Carriers,
             AppView::Construction => AppView::Factions,
             AppView::TradeRoutes => AppView::Construction,
-            AppView::Settings => AppView::TradeRoutes,
+            AppView::Pilot => AppView::TradeRoutes,
+            AppView::Modules => AppView::Pilot,
+            AppView::Suit => AppView::Modules,
+            AppView::Engineers => AppView::Suit,
+            AppView::Todo => AppView::Engineers,
+            AppView::Settings => AppView::Todo,
             AppView::About => AppView::Settings,
         }
     }
@@ -117,11 +129,14 @@ pub struct App {
     pub explorer: ExplorerView,
     pub inventory: InventoryView,
     pub modules_view: ModulesView,
+    pub suit_view: SuitView,
     pub stations: StationsView,
     pub carriers: CarriersView,
     pub factions: FactionsView,
     pub construction: ConstructionView,
     pub trade_routes: TradeRoutesView,
+    pub engineers_view: EngineersView,
+    pub todo_view: TodoView,
     pub settings_view: SettingsView,
     pub about: AboutView,
     pub should_quit: bool,
@@ -167,11 +182,14 @@ impl App {
             explorer: ExplorerView::new(),
             inventory: InventoryView::new(),
             modules_view: ModulesView::new(),
+            suit_view: SuitView::new(),
             stations: StationsView::new(),
             carriers: CarriersView::new(),
             factions: FactionsView::new(),
             construction: ConstructionView::new(),
             trade_routes: TradeRoutesView::new(),
+            engineers_view: EngineersView::new(),
+            todo_view: TodoView::new(),
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
@@ -193,11 +211,14 @@ impl App {
             explorer: ExplorerView::new(),
             inventory: InventoryView::new(),
             modules_view: ModulesView::new(),
+            suit_view: SuitView::new(),
             stations: StationsView::new(),
             carriers: CarriersView::new(),
             factions: FactionsView::new(),
             construction: ConstructionView::new(),
             trade_routes: TradeRoutesView::new(),
+            engineers_view: EngineersView::new(),
+            todo_view: TodoView::new(),
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
@@ -316,11 +337,14 @@ impl App {
             AppView::Explorer => self.explorer.render(frame, area, &self.settings),
             AppView::Materials => self.inventory.render(frame, area, &self.journal),
             AppView::Modules => self.modules_view.render(frame, area, &self.journal),
+            AppView::Suit    => self.suit_view.render(frame, area, &self.journal),
             AppView::Stations => self.stations.render(frame, area),
             AppView::Carriers => self.carriers.render(frame, area),
             AppView::Factions => self.factions.render(frame, area),
             AppView::Construction => self.construction.render(frame, area, &self.journal),
             AppView::TradeRoutes => self.trade_routes.render(frame, area, &self.journal),
+            AppView::Engineers => self.engineers_view.render(frame, area),
+            AppView::Todo => self.todo_view.render(frame, area, &self.journal),
             AppView::Settings => self.settings_view.render(frame, area, &self.settings),
             AppView::About => self.about.render(frame, area),
         }
@@ -329,16 +353,19 @@ impl App {
     fn view_hints(&self) -> &'static [(&'static str, &'static str)] {
         match self.view {
             AppView::News         => &[],
-            AppView::Pilot        => &[],
+            AppView::Pilot        => &[("w/s", "scroll")],
             AppView::System       => &[("w/s", "scroll")],
             AppView::Explorer     => &[("w/s", "navigate"), ("p", "pin")],
             AppView::Materials    => &[("w/s", "navigate"), ("a/d", "panels")],
             AppView::Modules      => &[("w/s", "navigate")],
-            AppView::Stations     => &[("enter", "search"), ("w/s", "navigate"), ("a/d", "panels"), ("c", "copy system"), ("p", "pin")],
-            AppView::Carriers     => &[("enter", "search"), ("w/s", "navigate"), ("a/d", "panels"), ("p", "pin")],
-            AppView::Factions     => &[("enter", "search"), ("w/s", "navigate"), ("a/d", "panels"), ("c", "copy system"), ("p", "pin")],
-            AppView::Construction => &[("f", "filter"), ("enter", "search"), ("w/s", "navigate"), ("p", "pin")],
+            AppView::Suit         => &[("w/s", "navigate")],
+            AppView::Stations     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
+            AppView::Carriers     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("p", "pin")],
+            AppView::Factions     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
+            AppView::Construction => &[("f", "filter"), ("enter/tab", "panel"), ("w/s", "navigate"), ("p", "pin")],
             AppView::TradeRoutes  => &[("tab", "filter"), ("enter", "search"), ("w/s", "navigate"), ("r", "refresh")],
+            AppView::Engineers    => &[("t", "ship/foot"), ("tab", "panel"), ("w/s", "navigate"), ("a/d", "grade"), ("enter", "add todo")],
+            AppView::Todo         => &[("w/s", "navigate"), ("x", "remove")],
             AppView::Settings     => &[("w/s", "rows"), ("a", "sidebar"), ("d", "fields"), ("space", "toggle"), ("enter", "save")],
             AppView::About        => &[],
         }
@@ -386,11 +413,14 @@ impl App {
             AppView::Explorer => self.explorer.handle_key(key),
             AppView::Materials => self.inventory.handle_key(key),
             AppView::Modules => self.modules_view.handle_key(key, &self.journal),
+            AppView::Suit    => self.suit_view.handle_key(key, &self.journal),
             AppView::Stations => self.stations.handle_key(key, &self.api),
             AppView::Carriers => self.carriers.handle_key(key, &self.api),
             AppView::Factions => self.factions.handle_key(key, &self.api),
             AppView::Construction => self.construction.handle_key(key, &self.api, &self.journal),
             AppView::TradeRoutes => self.trade_routes.handle_key(key, &self.api, &self.journal),
+            AppView::Engineers => self.engineers_view.handle_key(key),
+            AppView::Todo => self.todo_view.handle_key(key),
             AppView::Settings => self.settings_view.handle_key(key, &mut self.settings),
             AppView::About => self.about.handle_key(key),
         };
@@ -453,17 +483,21 @@ impl App {
                 let journal = &self.journal;
                 self.trade_routes.on_enter(&self.api, journal);
             }
+            AppView::Todo => {
+                self.todo_view.todo = self.engineers_view.todo.clone();
+            }
             _ => {}
         }
     }
 
-    #[cfg(target_arch = "wasm32")]
     pub fn poll_search_results(&mut self) {
+        self.factions.poll_search();
         self.stations.poll_search();
         self.carriers.poll_search();
-        self.factions.poll_search();
         self.construction.poll_search();
-        self.trade_routes.poll_search();
+        #[cfg(target_arch = "wasm32")] {
+            self.trade_routes.poll_search();
+        }
     }
 }
 
