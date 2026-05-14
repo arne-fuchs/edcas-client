@@ -104,7 +104,12 @@ pub async fn dispatch_event(
             };
             construction::upsert_depot(pool, event_timestamp, &submission).await?
         }
-        JournalEvent::ScanBaryCentre(_) | JournalEvent::FssSignalDiscovered(_) => {}
+        JournalEvent::ScanBaryCentre(_)
+        | JournalEvent::FssSignalDiscovered(_)
+        | JournalEvent::FssDiscoveryScan(_)
+        | JournalEvent::FssAllBodiesFound(_)
+        | JournalEvent::NavBeaconScan(_)
+        | JournalEvent::ScanOrganic(_) => {}
     }
     Ok(())
 }

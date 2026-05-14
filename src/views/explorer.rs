@@ -12,7 +12,7 @@ use tracing::debug;
 
 use crate::journal_reader::{
     BodyComposition as JournalBodyComposition, BodyScan, BodySignal, DiscoveredSignal, JournalData,
-    SaaBodyData, StationData, TreeNode, build_body_tree,
+    OrganicScan, SaaBodyData, StationData, TreeNode, build_body_tree,
 };
 use crate::settings::Settings;
 use crate::views::ViewEvent;
@@ -27,6 +27,11 @@ pub struct ExplorerView {
     saa_data: HashMap<i32, SaaBodyData>,
     stations: Vec<StationData>,
     discovered_signals: Vec<DiscoveredSignal>,
+    fss_body_count: Option<u32>,
+    fss_non_body_count: Option<u32>,
+    fss_all_bodies_found: bool,
+    nav_beacon_bodies: Option<u32>,
+    organic_scans: Vec<OrganicScan>,
 }
 
 enum NodeType {
@@ -67,6 +72,11 @@ impl ExplorerView {
             saa_data: HashMap::new(),
             stations: Vec::new(),
             discovered_signals: Vec::new(),
+            fss_body_count: None,
+            fss_non_body_count: None,
+            fss_all_bodies_found: false,
+            nav_beacon_bodies: None,
+            organic_scans: Vec::new(),
         }
     }
 
@@ -82,6 +92,11 @@ impl ExplorerView {
         self.saa_data = journal.saa_data.clone();
         self.stations = journal.stations.clone();
         self.discovered_signals = journal.discovered_signals.clone();
+        self.fss_body_count = journal.fss_body_count;
+        self.fss_non_body_count = journal.fss_non_body_count;
+        self.fss_all_bodies_found = journal.fss_all_bodies_found;
+        self.nav_beacon_bodies = journal.nav_beacon_bodies;
+        self.organic_scans = journal.organic_scans.clone();
         self.rebuild_flat_nodes();
         if self.selected_idx >= self.flat_nodes.len() {
             self.selected_idx = self.flat_nodes.len().saturating_sub(1);
@@ -315,6 +330,30 @@ impl ExplorerView {
                 .fg(Color::Rgb(255, 140, 0))
                 .add_modifier(Modifier::BOLD),
         )));
+
+        if let Some(total) = self.fss_body_count {
+            let non_body = self.fss_non_body_count.unwrap_or(0);
+            let (text, style) = if self.fss_all_bodies_found {
+                (
+                    format!("FSS: All {} found \u{2713}", total),
+                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                )
+            } else {
+                let scanned = self.tree.len() as u32;
+                (
+                    format!("FSS: {}/{} bodies  (signals: {})", scanned, total, non_body),
+                    Style::default().fg(Color::DarkGray),
+                )
+            };
+            lines.push(Line::from(Span::styled(text, style)));
+        }
+
+        if let Some(nb) = self.nav_beacon_bodies {
+            lines.push(Line::from(Span::styled(
+                format!("Nav Beacon: {} bodies", nb),
+                Style::default().fg(Color::DarkGray),
+            )));
+        }
 
         if self.flat_nodes.is_empty() {
             lines.push(Line::from(""));
@@ -686,6 +725,35 @@ impl ExplorerView {
                 format!("  {}", hint),
                 Style::default().fg(Color::DarkGray),
             )));
+        }
+
+        let body_organics: Vec<&OrganicScan> = self.organic_scans.iter()
+            .filter(|s| s.body_id == Some(body_id))
+            .collect();
+        if !body_organics.is_empty() {
+            lines.push(Line::from(""));
+            lines.push(section_header("Biology Scans"));
+            for scan in &body_organics {
+                let phase_num = match scan.scan_phase.as_str() {
+                    "Log" => 1u8,
+                    "Sample" => 2,
+                    "Analyse" => 3,
+                    _ => 0,
+                };
+                let dots: String = (1u8..=3)
+                    .map(|i| if i <= phase_num { '\u{25CF}' } else { '\u{25CB}' })
+                    .collect();
+                let complete = phase_num >= 3;
+                let dot_style = if complete {
+                    Style::default().fg(Color::Green)
+                } else {
+                    Style::default().fg(Color::Yellow)
+                };
+                lines.push(Line::from(vec![
+                    Span::styled(format!("  {:<28}", format!("{} ({})", scan.genus, scan.species)), Style::default().fg(Color::Green)),
+                    Span::styled(dots, dot_style),
+                ]));
+            }
         }
 
         lines

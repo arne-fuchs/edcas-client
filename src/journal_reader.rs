@@ -15,7 +15,9 @@ use std::thread;
 use std::time::{Duration, SystemTime};
 
 use edcas_common::api::{ConstructionDepotSubmission, ConstructionResourceSubmission};
-use edcas_common::journal::{CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan};
+use edcas_common::journal::{
+    CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan,
+};
 use edcas_common::journal::types::Conflict;
 use tracing::{debug, error, info, warn};
 use serde_json;
@@ -311,6 +313,14 @@ pub struct PilotData {
     pub suit: Option<SuitData>,
 }
 
+#[derive(Clone)]
+pub struct OrganicScan {
+    pub body_id: Option<i32>,
+    pub genus: String,
+    pub species: String,
+    pub scan_phase: String,
+}
+
 /// A construction depot the player has visited, ready to submit to the server.
 #[derive(Clone)]
 pub struct ConstructionDepotData {
@@ -348,6 +358,11 @@ pub struct JournalData {
     pub construction_depots: HashMap<i64, ConstructionDepotData>,
     /// (market_id, station_name, system_name) of the last Docked event.
     pub last_docked: Option<(i64, String, String)>,
+    pub fss_body_count: Option<u32>,
+    pub fss_non_body_count: Option<u32>,
+    pub fss_all_bodies_found: bool,
+    pub nav_beacon_bodies: Option<u32>,
+    pub organic_scans: Vec<OrganicScan>,
 }
 
 impl JournalData {
@@ -371,6 +386,11 @@ impl JournalData {
             pilot: PilotData::default(),
             construction_depots: HashMap::new(),
             last_docked: None,
+            fss_body_count: None,
+            fss_non_body_count: None,
+            fss_all_bodies_found: false,
+            nav_beacon_bodies: None,
+            organic_scans: Vec::new(),
         }
     }
 
@@ -430,6 +450,11 @@ impl JournalData {
                 self.saa_data.clear();
                 self.stations.clear();
                 self.discovered_signals.clear();
+                self.fss_body_count = None;
+                self.fss_non_body_count = None;
+                self.fss_all_bodies_found = false;
+                self.nav_beacon_bodies = None;
+                self.organic_scans.clear();
             }
             Some(JournalEvent::Location(e)) => {
                 debug!("Location: {}", e.star_system);
@@ -439,6 +464,11 @@ impl JournalData {
                 self.saa_data.clear();
                 self.stations.clear();
                 self.discovered_signals.clear();
+                self.fss_body_count = None;
+                self.fss_non_body_count = None;
+                self.fss_all_bodies_found = false;
+                self.nav_beacon_bodies = None;
+                self.organic_scans.clear();
             }
             Some(JournalEvent::CarrierJump(e)) => {
                 debug!("CarrierJump to {}", e.star_system);
@@ -448,6 +478,11 @@ impl JournalData {
                 self.saa_data.clear();
                 self.stations.clear();
                 self.discovered_signals.clear();
+                self.fss_body_count = None;
+                self.fss_non_body_count = None;
+                self.fss_all_bodies_found = false;
+                self.nav_beacon_bodies = None;
+                self.organic_scans.clear();
             }
             Some(JournalEvent::Scan(e)) => {
                 debug!("Scan: {}", e.body_name);
@@ -518,6 +553,36 @@ impl JournalData {
             Some(JournalEvent::FssSignalDiscovered(e)) => {
                 debug!("FSSSignalDiscovered: {}", e.signal_name);
                 self.discovered_signals.push(DiscoveredSignal::from_event(&e));
+            }
+            Some(JournalEvent::FssDiscoveryScan(e)) => {
+                debug!("FSSDiscoveryScan: {} bodies", e.body_count);
+                self.fss_body_count = Some(e.body_count);
+                self.fss_non_body_count = Some(e.non_body_count);
+                self.fss_all_bodies_found = false;
+            }
+            Some(JournalEvent::FssAllBodiesFound(_)) => {
+                debug!("FSSAllBodiesFound");
+                self.fss_all_bodies_found = true;
+            }
+            Some(JournalEvent::NavBeaconScan(e)) => {
+                debug!("NavBeaconScan: {} bodies", e.num_bodies);
+                self.nav_beacon_bodies = Some(e.num_bodies);
+            }
+            Some(JournalEvent::ScanOrganic(e)) => {
+                debug!("ScanOrganic: {} {}", e.genus, e.scan_type);
+                let genus = e.genus_localised.clone().unwrap_or_else(|| {
+                    e.genus.trim_matches('$').trim_end_matches(';').replace('_', " ")
+                });
+                let species = e.species_localised.clone().unwrap_or_else(|| {
+                    e.species.trim_matches('$').trim_end_matches(';').replace('_', " ")
+                });
+                if let Some(existing) = self.organic_scans.iter_mut()
+                    .find(|s| s.body_id == e.body_id && s.genus == genus)
+                {
+                    existing.scan_phase = e.scan_type.clone();
+                } else {
+                    self.organic_scans.push(OrganicScan { body_id: e.body_id, genus, species, scan_phase: e.scan_type });
+                }
             }
             None => {
                 // Handle events not in the typed enum

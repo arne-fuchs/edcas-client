@@ -229,3 +229,63 @@ pub struct FssBodySignals {
     #[serde(rename = "odyssey", default)]
     pub odyssey: bool,
 }
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FssDiscoveryScan {
+    #[serde(rename = "timestamp")]
+    pub timestamp: String,
+    #[serde(rename = "SystemName")]
+    pub system_name: String,
+    #[serde(rename = "SystemAddress")]
+    pub system_address: i64,
+    #[serde(rename = "Progress")]
+    pub progress: f32,
+    #[serde(rename = "BodyCount")]
+    pub body_count: u32,
+    #[serde(rename = "NonBodyCount")]
+    pub non_body_count: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct FssAllBodiesFound {
+    #[serde(rename = "timestamp")]
+    pub timestamp: String,
+    #[serde(rename = "SystemName")]
+    pub system_name: String,
+    #[serde(rename = "SystemAddress")]
+    pub system_address: i64,
+    #[serde(rename = "Count")]
+    pub count: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct NavBeaconScan {
+    #[serde(rename = "timestamp")]
+    pub timestamp: String,
+    #[serde(rename = "SystemAddress")]
+    pub system_address: i64,
+    #[serde(rename = "NumBodies")]
+    pub num_bodies: u32,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ScanOrganic {
+    #[serde(rename = "timestamp")]
+    pub timestamp: String,
+    #[serde(rename = "ScanType")]
+    pub scan_type: String,
+    #[serde(rename = "Genus")]
+    pub genus: String,
+    #[serde(rename = "Genus_Localised")]
+    pub genus_localised: Option<String>,
+    #[serde(rename = "Species")]
+    pub species: String,
+    #[serde(rename = "Species_Localised")]
+    pub species_localised: Option<String>,
+    #[serde(rename = "SystemAddress")]
+    pub system_address: i64,
+    #[serde(rename = "Body")]
+    pub body: Option<String>,
+    #[serde(rename = "BodyID")]
+    pub body_id: Option<i32>,
+}

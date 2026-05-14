@@ -5,7 +5,10 @@ pub mod travel;
 pub mod types;
 
 pub use colonisation::ColonisationConstructionDepot;
-pub use scan::{FssBodySignals, FssSignalDiscovered, SaaSignalsFound, Scan, ScanBaryCentre};
+pub use scan::{
+    FssAllBodiesFound, FssBodySignals, FssDiscoveryScan, FssSignalDiscovered, NavBeaconScan,
+    SaaSignalsFound, Scan, ScanBaryCentre, ScanOrganic,
+};
 pub use station::{Commodities, Docked, Outfitting, Shipyard};
 pub use station::CarrierStats;
 pub use travel::{CarrierJump, FsdJump, Location};
@@ -30,6 +33,10 @@ pub enum JournalEvent {
     Shipyard(Shipyard),
     ColonisationConstructionDepot(ColonisationConstructionDepot),
     CarrierStats(CarrierStats),
+    FssDiscoveryScan(FssDiscoveryScan),
+    FssAllBodiesFound(FssAllBodiesFound),
+    NavBeaconScan(NavBeaconScan),
+    ScanOrganic(ScanOrganic),
 }
 
 impl JournalEvent {
@@ -106,6 +113,18 @@ impl JournalEvent {
             "CarrierStats" => serde_json::from_value::<CarrierStats>(value)
                 .ok()
                 .map(Self::CarrierStats),
+            "FSSDiscoveryScan" => serde_json::from_value::<FssDiscoveryScan>(value)
+                .ok()
+                .map(Self::FssDiscoveryScan),
+            "FSSAllBodiesFound" => serde_json::from_value::<FssAllBodiesFound>(value)
+                .ok()
+                .map(Self::FssAllBodiesFound),
+            "NavBeaconScan" => serde_json::from_value::<NavBeaconScan>(value)
+                .ok()
+                .map(Self::NavBeaconScan),
+            "ScanOrganic" => serde_json::from_value::<ScanOrganic>(value)
+                .ok()
+                .map(Self::ScanOrganic),
             _ => None,
         }
     }
@@ -126,6 +145,10 @@ impl JournalEvent {
             Self::Shipyard(_) => "shipyard",
             Self::ColonisationConstructionDepot(_) => "ColonisationConstructionDepot",
             Self::CarrierStats(_) => "CarrierStats",
+            Self::FssDiscoveryScan(_) => "FSSDiscoveryScan",
+            Self::FssAllBodiesFound(_) => "FSSAllBodiesFound",
+            Self::NavBeaconScan(_) => "NavBeaconScan",
+            Self::ScanOrganic(_) => "ScanOrganic",
         }
     }
 }
