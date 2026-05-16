@@ -197,12 +197,24 @@ impl InventoryView {
         lines
     }
 
-    fn onfoot_column_header(label: &str, color: Color, name_w: usize) -> Vec<Line<'static>> {
+    fn onfoot_column_header(label: &str, color: Color, name_w: usize, used: i32, col_w: usize) -> Vec<Line<'static>> {
+        const CAP: i32 = 1000;
+        let frac = (used as f32 / CAP as f32).min(1.0);
+        // Bar fills the column minus a small indent; numbers sit on the title line.
+        let bar_w = col_w.saturating_sub(4).max(4).min(60);
+        let filled = (frac * bar_w as f32).round() as usize;
+        let bar_color = if frac > 0.9 { Color::Red } else if frac > 0.7 { Color::Yellow } else { color };
         vec![
-            Line::from(Span::styled(
-                format!("── {label} ──"),
-                Style::default().fg(color).add_modifier(Modifier::BOLD),
-            )),
+            Line::from(vec![
+                Span::styled(format!("── {label} ──"), Style::default().fg(color).add_modifier(Modifier::BOLD)),
+                Span::styled(format!("  {}/{CAP}", used), Style::default().fg(Color::White)),
+            ]),
+            Line::from(vec![
+                Span::styled("  [", Style::default().fg(Color::DarkGray)),
+                Span::styled("█".repeat(filled), Style::default().fg(bar_color)),
+                Span::styled("░".repeat(bar_w - filled), Style::default().fg(Color::DarkGray)),
+                Span::styled("]", Style::default().fg(Color::DarkGray)),
+            ]),
             Line::from(Span::styled(
                 format!("  {:<name_w$} {:>5}", "Name", "Count"),
                 Style::default().fg(Color::DarkGray),
@@ -310,6 +322,8 @@ impl InventoryView {
                 );
             }
         } else if self.tab == Tab::ShipLocker {
+            let inv = &journal.shiplocker;
+
             let cols = Layout::default()
                 .direction(Direction::Horizontal)
                 .constraints([
@@ -320,7 +334,6 @@ impl InventoryView {
                 ])
                 .split(split[1]);
 
-            let inv = &journal.shiplocker;
             let sections: [(&str, &Vec<InventoryItem>, Color); 4] = [
                 ("Items", &inv.items, Color::Green),
                 ("Components", &inv.components, Color::Yellow),
@@ -333,8 +346,9 @@ impl InventoryView {
                 let col = cols[i];
                 let col_w = col.width as usize;
                 let name_w = col_w.saturating_sub(8).max(4);
+                let used: i32 = items.iter().map(|it| it.count).sum();
 
-                let col_hdr = Self::onfoot_column_header(label, *color, name_w);
+                let col_hdr = Self::onfoot_column_header(label, *color, name_w, used, col_w);
                 let col_hdr_h = col_hdr.len() as u16;
 
                 let col_split = Layout::default()

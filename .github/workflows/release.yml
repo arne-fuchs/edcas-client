@@ -1,0 +1,94 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build (${{ matrix.target }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            archive: edcas-client.tar.gz
+
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            archive: edcas-client-windows-x86_64.zip
+
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            archive: edcas-client-macos-aarch64.tar.gz
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: ${{ matrix.target }}
+
+      - name: Install system deps (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Build
+        run: cargo build --release --bin edcas-client --target ${{ matrix.target }}
+
+      - name: Package (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          mkdir edcas-client
+          cp target/${{ matrix.target }}/release/edcas-client edcas-client/
+          cp settings-example.json materials.json edcas-client/
+          tar czf ${{ matrix.archive }} edcas-client/
+          rm -rf edcas-client
+
+      - name: Package (macOS)
+        if: matrix.os == 'macos-latest'
+        run: |
+          mkdir edcas-client
+          cp target/${{ matrix.target }}/release/edcas-client edcas-client/
+          cp settings-example.json materials.json edcas-client/
+          tar czf ${{ matrix.archive }} edcas-client/
+          rm -rf edcas-client
+
+      - name: Package (Windows)
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path edcas-client
+          Copy-Item target\${{ matrix.target }}\release\edcas-client.exe edcas-client\
+          Copy-Item settings-example.json, materials.json, start.bat edcas-client\
+          Compress-Archive -Path edcas-client -DestinationPath ${{ matrix.archive }}
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.archive }}
+          path: ${{ matrix.archive }}
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          files: |
+            edcas-client.tar.gz
+            edcas-client-windows-x86_64.zip
+            edcas-client-macos-aarch64.tar.gz

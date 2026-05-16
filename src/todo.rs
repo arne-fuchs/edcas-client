@@ -15,9 +15,28 @@ pub struct TodoItem {
     pub kind: ModKind,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConstructionTodoResource {
+    pub commodity_name: String,
+    pub display_name: String,
+    pub required_amount: i32,
+    pub provided_amount: i32,
+    pub payment: i64,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ConstructionTodoItem {
+    pub market_id: i64,
+    pub station_name: String,
+    pub system_name: String,
+    pub resources: Vec<ConstructionTodoResource>,
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct TodoList {
     pub items: Vec<TodoItem>,
+    #[serde(default)]
+    pub construction_items: Vec<ConstructionTodoItem>,
 }
 
 impl TodoList {
@@ -78,12 +97,31 @@ impl TodoList {
         }
     }
 
+    pub fn add_construction_item(&mut self, item: ConstructionTodoItem) {
+        if !self.construction_items.iter().any(|i| i.market_id == item.market_id) {
+            self.construction_items.push(item);
+            self.save();
+        }
+    }
+
+    pub fn remove_construction_item(&mut self, market_id: i64) {
+        let before = self.construction_items.len();
+        self.construction_items.retain(|i| i.market_id != market_id);
+        if self.construction_items.len() != before {
+            self.save();
+        }
+    }
+
+    /// Update a pinned construction item's resource snapshot (e.g. after re-docking).
+    pub fn update_construction_item(&mut self, item: ConstructionTodoItem) {
+        if let Some(existing) = self.construction_items.iter_mut().find(|i| i.market_id == item.market_id) {
+            *existing = item;
+            self.save();
+        }
+    }
+
     #[cfg(not(target_arch = "wasm32"))]
     fn native_path() -> std::path::PathBuf {
-        if let Ok(home) = std::env::var("HOME") {
-            std::path::PathBuf::from(home).join(".config/edcas-client/todo.json")
-        } else {
-            std::path::PathBuf::from("todo.json")
-        }
+        crate::settings::config_dir().join("todo.json")
     }
 }

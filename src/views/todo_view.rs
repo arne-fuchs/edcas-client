@@ -12,6 +12,11 @@ use crate::journal_reader::JournalData;
 use crate::todo::{ModKind, TodoList};
 use crate::views::ViewEvent;
 
+enum SelectedKind {
+    Engineering(usize),
+    Construction(usize),
+}
+
 pub struct TodoView {
     pub todo: TodoList,
     selected_idx: usize,
@@ -29,6 +34,28 @@ impl TodoView {
 
     pub fn reload(&mut self) {
         self.todo = TodoList::load();
+    }
+
+    fn total_count(&self) -> usize {
+        self.todo.items.len() + self.todo.construction_items.len()
+    }
+
+    fn selected_kind(&self) -> Option<SelectedKind> {
+        let eng = self.todo.items.len();
+        let con = self.todo.construction_items.len();
+        if eng + con == 0 {
+            return None;
+        }
+        if self.selected_idx < eng {
+            Some(SelectedKind::Engineering(self.selected_idx))
+        } else {
+            let ci = self.selected_idx - eng;
+            if ci < con {
+                Some(SelectedKind::Construction(ci))
+            } else {
+                None
+            }
+        }
     }
 
     fn grade_costs(mod_id: &str, grade: u8, kind: &ModKind) -> Vec<MaterialCost> {
@@ -79,119 +106,235 @@ impl TodoView {
 
     fn build_left_lines(&self) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
-        lines.push(Line::from(Span::styled(
-            " Todo List ",
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-        )));
-        lines.push(Line::from(""));
 
-        if self.todo.items.is_empty() {
+        let eng_empty = self.todo.items.is_empty();
+        let con_empty = self.todo.construction_items.is_empty();
+
+        if eng_empty && con_empty {
             lines.push(Line::from(Span::styled(
-                " No items yet. Add mods in the Engineers tab.",
+                " No items yet.",
+                Style::default().fg(Color::DarkGray),
+            )));
+            lines.push(Line::from(Span::styled(
+                " Add mods in Engineers tab or dock",
+                Style::default().fg(Color::DarkGray),
+            )));
+            lines.push(Line::from(Span::styled(
+                " at a construction site.",
                 Style::default().fg(Color::DarkGray),
             )));
             return lines;
         }
 
-        for (i, item) in self.todo.items.iter().enumerate() {
-            let selected = i == self.selected_idx;
-            let kind_tag = match item.kind {
-                ModKind::Ship => "ship",
-                ModKind::OnFoot => "foot",
-            };
-            let style = if selected {
-                Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(Color::White)
-            };
+        // Engineering section
+        if !eng_empty {
             lines.push(Line::from(Span::styled(
-                format!(" [{}] {} G{}  ({})", i + 1, item.mod_name, item.grade, kind_tag),
-                style,
+                "─ Engineering ",
+                Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
             )));
+            for (i, item) in self.todo.items.iter().enumerate() {
+                let selected = i == self.selected_idx;
+                let kind_tag = match item.kind {
+                    ModKind::Ship => "ship",
+                    ModKind::OnFoot => "foot",
+                };
+                let style = if selected {
+                    Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::White)
+                };
+                lines.push(Line::from(Span::styled(
+                    format!(" {} G{}  ({})", item.mod_name, item.grade, kind_tag),
+                    style,
+                )));
+            }
         }
+
+        // Construction section — grouped by system name
+        if !con_empty {
+            if !eng_empty {
+                lines.push(Line::from(""));
+            }
+            lines.push(Line::from(Span::styled(
+                "─ Construction ",
+                Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+            )));
+
+            let offset = self.todo.items.len();
+
+            // Collect groups: (system_name, [(original_idx, site)])
+            let mut groups: Vec<(String, Vec<(usize, &crate::todo::ConstructionTodoItem)>)> = Vec::new();
+            for (i, site) in self.todo.construction_items.iter().enumerate() {
+                let sys = if site.system_name.is_empty() { "Unknown System".to_string() } else { site.system_name.clone() };
+                if let Some(g) = groups.iter_mut().find(|(s, _)| s == &sys) {
+                    g.1.push((i, site));
+                } else {
+                    groups.push((sys, vec![(i, site)]));
+                }
+            }
+
+            for (sys_name, items) in &groups {
+                lines.push(Line::from(Span::styled(
+                    format!("  {}", sys_name),
+                    Style::default().fg(Color::Cyan),
+                )));
+                let last = items.len().saturating_sub(1);
+                for (j, (con_idx, site)) in items.iter().enumerate() {
+                    let selected = (offset + con_idx) == self.selected_idx;
+                    let branch = if j == last { "└ " } else { "├ " };
+                    let remaining = site.resources.iter()
+                        .filter(|r| r.provided_amount < r.required_amount)
+                        .count();
+                    let label = format!("  {}★ {}  ({} needed)", branch, site.station_name, remaining);
+                    let style = if selected {
+                        Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(Color::White)
+                    };
+                    lines.push(Line::from(Span::styled(label, style)));
+                }
+            }
+        }
+
         lines
     }
 
     fn build_right_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
-        let Some(item) = self.todo.items.get(self.selected_idx) else {
-            lines.push(Line::from("Select an item to see material requirements."));
-            return lines;
-        };
-
-        let kind_label = match item.kind {
-            ModKind::Ship => "Ship",
-            ModKind::OnFoot => "On-Foot",
-        };
-        lines.push(Line::from(Span::styled(
-            format!(" {} G{}  [{}]", item.mod_name, item.grade, kind_label),
-            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
-        )));
-        lines.push(Line::from(Span::styled(
-            format!("  Module: {}", item.module_type),
-            Style::default().fg(Color::DarkGray),
-        )));
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled(
-            " Materials Required:",
-            Style::default().fg(Color::Cyan),
-        )));
-        lines.push(Line::from(""));
-
-        let costs = Self::grade_costs(&item.mod_id, item.grade, &item.kind);
-        if costs.is_empty() {
-            lines.push(Line::from("  No material data found."));
-            return lines;
-        }
-
-        let mut all_ok = true;
-        for cost in &costs {
-            let have = Self::have_count(&cost.name, &item.kind, journal);
-            let needed = cost.count as i32;
-            let ok = have >= needed;
-            if !ok {
-                all_ok = false;
+        match self.selected_kind() {
+            None => {
+                lines.push(Line::from("Select an item to see details."));
             }
-            let (bar_color, checkmark) = if ok {
-                (Color::Green, "✓")
-            } else {
-                (Color::Red, "✗")
-            };
-            let bar = progress_bar(have, needed);
-            lines.push(Line::from(vec![
-                Span::styled(
-                    format!("  {} {:<32}", checkmark, cost.name),
-                    Style::default().fg(bar_color),
-                ),
-                Span::styled(
-                    format!(" {:>3}/{:<3}", have.min(needed), needed),
-                    Style::default().fg(Color::White),
-                ),
-                Span::styled(format!(" {}", bar), Style::default().fg(bar_color)),
-            ]));
-        }
+            Some(SelectedKind::Engineering(idx)) => {
+                let item = &self.todo.items[idx];
+                let kind_label = match item.kind {
+                    ModKind::Ship => "Ship",
+                    ModKind::OnFoot => "On-Foot",
+                };
+                lines.push(Line::from(Span::styled(
+                    format!(" {} G{}  [{}]", item.mod_name, item.grade, kind_label),
+                    Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+                )));
+                lines.push(Line::from(Span::styled(
+                    format!("  Module: {}", item.module_type),
+                    Style::default().fg(Color::DarkGray),
+                )));
+                lines.push(Line::from(""));
+                lines.push(Line::from(Span::styled(
+                    " Materials Required:",
+                    Style::default().fg(Color::Cyan),
+                )));
+                lines.push(Line::from(""));
 
-        lines.push(Line::from(""));
-        if all_ok {
-            lines.push(Line::from(Span::styled(
-                "  ✓ Ready to engineer!",
-                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
-            )));
-        } else {
-            let missing = costs
-                .iter()
-                .filter(|c| Self::have_count(&c.name, &item.kind, journal) < c.count as i32)
-                .count();
-            lines.push(Line::from(Span::styled(
-                format!("  {} material(s) still needed.", missing),
-                Style::default().fg(Color::Yellow),
-            )));
-        }
+                let costs = Self::grade_costs(&item.mod_id, item.grade, &item.kind);
+                if costs.is_empty() {
+                    lines.push(Line::from("  No material data found."));
+                    return lines;
+                }
 
+                let mut all_ok = true;
+                for cost in &costs {
+                    let have = Self::have_count(&cost.name, &item.kind, journal);
+                    let needed = cost.count as i32;
+                    let ok = have >= needed;
+                    if !ok { all_ok = false; }
+                    let (bar_color, checkmark) = if ok { (Color::Green, "✓") } else { (Color::Red, "✗") };
+                    let bar = progress_bar(have, needed);
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("  {} {:<32}", checkmark, cost.name), Style::default().fg(bar_color)),
+                        Span::styled(format!(" {:>3}/{:<3}", have.min(needed), needed), Style::default().fg(Color::White)),
+                        Span::styled(format!(" {}", bar), Style::default().fg(bar_color)),
+                    ]));
+                }
+                lines.push(Line::from(""));
+                if all_ok {
+                    lines.push(Line::from(Span::styled("  ✓ Ready to engineer!", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))));
+                } else {
+                    let missing = costs.iter()
+                        .filter(|c| Self::have_count(&c.name, &item.kind, journal) < c.count as i32)
+                        .count();
+                    lines.push(Line::from(Span::styled(
+                        format!("  {} material(s) still needed.", missing),
+                        Style::default().fg(Color::Yellow),
+                    )));
+                }
+            }
+            Some(SelectedKind::Construction(idx)) => {
+                let site = &self.todo.construction_items[idx];
+
+                // Use live journal data if available (currently docked)
+                let live = journal.construction_depots.get(&site.market_id);
+
+                lines.push(Line::from(Span::styled(
+                    format!(" ★ {}", site.station_name),
+                    Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                )));
+                if !site.system_name.is_empty() {
+                    lines.push(Line::from(Span::styled(
+                        format!("  {}", site.system_name),
+                        Style::default().fg(Color::DarkGray),
+                    )));
+                }
+                if live.is_some() {
+                    lines.push(Line::from(Span::styled(
+                        "  (live data)",
+                        Style::default().fg(Color::Green),
+                    )));
+                }
+                lines.push(Line::from(""));
+                lines.push(Line::from(Span::styled(
+                    " Commodities needed:",
+                    Style::default().fg(Color::Cyan),
+                )));
+                lines.push(Line::from(""));
+
+                // Prefer live resources, fall back to snapshot
+                let resources_iter: Box<dyn Iterator<Item = (String, i32, i32, i64)>> = if let Some(depot) = live {
+                    Box::new(depot.submission.resources.iter().map(|r| {
+                        (r.display_name.clone(), r.provided_amount, r.required_amount, r.payment)
+                    }))
+                } else {
+                    Box::new(site.resources.iter().map(|r| {
+                        (r.display_name.clone(), r.provided_amount, r.required_amount, r.payment)
+                    }))
+                };
+
+                let mut all_done = true;
+                for (display_name, provided, required, payment) in resources_iter {
+                    let done = provided >= required;
+                    if !done { all_done = false; }
+                    let remaining = (required - provided).max(0);
+                    let frac = if required == 0 { 1.0f32 } else { provided as f32 / required as f32 };
+                    let color = if done { Color::Green } else if frac > 0.0 { Color::Yellow } else { Color::DarkGray };
+                    let checkmark = if done { "✓" } else { "·" };
+                    let bar_w = 8usize;
+                    let filled = ((frac * bar_w as f32) as usize).min(bar_w);
+                    let bar = format!("[{}{}]", "█".repeat(filled), "░".repeat(bar_w - filled));
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("  {} {:<24}", checkmark, display_name), Style::default().fg(color)),
+                        Span::styled(format!("{:>7} left", remaining), Style::default().fg(if done { Color::Green } else { Color::DarkGray })),
+                        Span::styled(format!("  {}", bar), Style::default().fg(color)),
+                        Span::styled(
+                            if payment > 0 { format!("  {:>7} cr/t", format_cr(payment)) } else { String::new() },
+                            Style::default().fg(Color::DarkGray),
+                        ),
+                    ]));
+                }
+
+                lines.push(Line::from(""));
+                if all_done {
+                    lines.push(Line::from(Span::styled(
+                        "  ✓ All commodities delivered!",
+                        Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+                    )));
+                }
+            }
+        }
         lines
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
+        let total = self.total_count();
         match key.code {
             KeyCode::Char('w') | KeyCode::Up => {
                 if self.selected_idx > 0 {
@@ -200,17 +343,27 @@ impl TodoView {
                 }
             }
             KeyCode::Char('s') | KeyCode::Down => {
-                if self.selected_idx + 1 < self.todo.items.len() {
+                if self.selected_idx + 1 < total {
                     self.selected_idx += 1;
                     self.scroll_offset = 0;
                 }
             }
             KeyCode::Delete | KeyCode::Char('x') => {
-                if self.selected_idx < self.todo.items.len() {
-                    self.todo.remove(self.selected_idx);
-                    if self.selected_idx > 0 && self.selected_idx >= self.todo.items.len() {
-                        self.selected_idx -= 1;
+                match self.selected_kind() {
+                    Some(SelectedKind::Engineering(idx)) => {
+                        self.todo.remove(idx);
+                        if self.selected_idx > 0 && self.selected_idx >= self.total_count() {
+                            self.selected_idx -= 1;
+                        }
                     }
+                    Some(SelectedKind::Construction(idx)) => {
+                        let mid = self.todo.construction_items[idx].market_id;
+                        self.todo.remove_construction_item(mid);
+                        if self.selected_idx > 0 && self.selected_idx >= self.total_count() {
+                            self.selected_idx -= 1;
+                        }
+                    }
+                    None => {}
                 }
             }
             _ => {}
@@ -221,7 +374,7 @@ impl TodoView {
     pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData) {
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
-            .constraints([Constraint::Length(36), Constraint::Min(10)])
+            .constraints([Constraint::Length(46), Constraint::Min(10)])
             .split(area);
 
         let left_lines = self.build_left_lines();
@@ -251,6 +404,19 @@ impl TodoView {
             chunks[1],
         );
     }
+}
+
+fn format_cr(n: i64) -> String {
+    let s = n.to_string();
+    let mut result = String::new();
+    let len = s.len();
+    for (i, c) in s.chars().enumerate() {
+        if i > 0 && (len - i) % 3 == 0 {
+            result.push(',');
+        }
+        result.push(c);
+    }
+    result
 }
 
 fn progress_bar(have: i32, need: i32) -> String {

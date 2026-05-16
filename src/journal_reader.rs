@@ -325,6 +325,7 @@ pub struct OrganicScan {
 #[derive(Clone)]
 pub struct ConstructionDepotData {
     pub submission: ConstructionDepotSubmission,
+    pub system_name: String,
 }
 
 impl ConstructionDepotData {
@@ -356,8 +357,10 @@ pub struct JournalData {
     pub pilot: PilotData,
     /// Most recently visited construction depots, keyed by market_id.
     pub construction_depots: HashMap<i64, ConstructionDepotData>,
-    /// (market_id, station_name, system_name) of the last Docked event.
-    pub last_docked: Option<(i64, String, String)>,
+    /// Systems claimed by the player via ColonisationSystemClaim, keyed by system_address.
+    pub claimed_systems: HashMap<i64, String>,
+    /// (market_id, station_name, system_name, system_address) of the last Docked event.
+    pub last_docked: Option<(i64, String, String, i64)>,
     pub fss_body_count: Option<u32>,
     pub fss_non_body_count: Option<u32>,
     pub fss_all_bodies_found: bool,
@@ -385,6 +388,7 @@ impl JournalData {
             loadout_engineering: HashMap::new(),
             pilot: PilotData::default(),
             construction_depots: HashMap::new(),
+            claimed_systems: HashMap::new(),
             last_docked: None,
             fss_body_count: None,
             fss_non_body_count: None,
@@ -641,6 +645,14 @@ impl JournalData {
                             self.pilot.power = v["Power"].as_str().unwrap_or("").to_string();
                             self.pilot.power_merits = v["Merits"].as_i64().unwrap_or(0);
                         }
+                        Some("ColonisationSystemClaim") => {
+                            if let (Some(addr), Some(name)) = (
+                                v["SystemAddress"].as_i64(),
+                                v["StarSystem"].as_str(),
+                            ) {
+                                self.claimed_systems.insert(addr, name.to_string());
+                            }
+                        }
                         Some("SuitLoadout") => {
                             let raw_name = v["SuitName"].as_str().unwrap_or("");
                             let (suit_type, grade) = parse_suit_name(raw_name);
@@ -683,6 +695,7 @@ impl JournalData {
                     e.market_id,
                     e.station_name.clone(),
                     e.star_system.clone(),
+                    e.system_address,
                 ));
                 let station = StationData {
                     name: e.station_name.clone(),
@@ -700,15 +713,15 @@ impl JournalData {
             }
             Some(JournalEvent::ColonisationConstructionDepot(e)) => {
                 debug!("ColonisationConstructionDepot for market_id={}", e.market_id);
-                let station_name = self
+                let (station_name, system_address, system_name) = self
                     .last_docked
                     .as_ref()
-                    .filter(|(mid, _, _)| *mid == e.market_id)
-                    .map(|(_, name, _)| name.clone())
-                    .unwrap_or_else(|| format!("Depot {}", e.market_id));
+                    .filter(|(mid, _, _, _)| *mid == e.market_id)
+                    .map(|(_, name, sys, addr)| (name.clone(), *addr, sys.clone()))
+                    .unwrap_or_else(|| (format!("Depot {}", e.market_id), e.system_address, String::new()));
                 let submission = ConstructionDepotSubmission {
                     market_id: e.market_id,
-                    system_address: e.system_address,
+                    system_address,
                     station_name,
                     progress: e.construction_progress,
                     construction_complete: e.construction_complete,
@@ -721,7 +734,7 @@ impl JournalData {
                         payment: r.payment,
                     }).collect(),
                 };
-                self.construction_depots.insert(e.market_id, ConstructionDepotData { submission });
+                self.construction_depots.insert(e.market_id, ConstructionDepotData { submission, system_name });
             }
             _ => {}
         }

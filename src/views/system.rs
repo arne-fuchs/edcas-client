@@ -71,6 +71,57 @@ impl SystemView {
                 lines.push(Line::from(""));
             }
 
+            // Colonisation section
+            let depots_in_system: Vec<_> = journal.construction_depots.values()
+                .filter(|d| d.system_name == system.name)
+                .collect();
+            let is_architect = journal.claimed_systems.contains_key(&system.system_address);
+
+            if is_architect || !depots_in_system.is_empty() {
+                lines.push(Line::from(Span::styled(
+                    "Colonisation",
+                    Style::default().fg(Color::Cyan).add_modifier(Modifier::UNDERLINED),
+                )));
+                if is_architect {
+                    let cmdr = if journal.pilot.name.is_empty() {
+                        "You".to_string()
+                    } else {
+                        format!("CMDR {}", journal.pilot.name)
+                    };
+                    lines.push(Line::from(Span::styled(
+                        format!("  System Architect: {}", cmdr),
+                        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                    )));
+                }
+                for depot in &depots_in_system {
+                    let pct = depot.submission.progress * 100.0;
+                    let filled = (depot.submission.progress * 20.0).round() as usize;
+                    let bar_color = if pct >= 100.0 {
+                        Color::Green
+                    } else if pct > 50.0 {
+                        Color::Yellow
+                    } else {
+                        Color::Cyan
+                    };
+                    let remaining = depot.submission.resources.iter()
+                        .filter(|r| r.provided_amount < r.required_amount)
+                        .count();
+                    lines.push(Line::from(vec![
+                        Span::styled(
+                            format!("  ★ {}", depot.submission.station_name),
+                            Style::default().fg(Color::White),
+                        ),
+                    ]));
+                    lines.push(Line::from(vec![
+                        Span::raw(format!("    Progress: {:>5.1}%  [", pct)),
+                        Span::styled("█".repeat(filled), Style::default().fg(bar_color)),
+                        Span::styled("░".repeat(20 - filled), Style::default().fg(Color::DarkGray)),
+                        Span::raw(format!("]  {} commodities needed", remaining)),
+                    ]));
+                }
+                lines.push(Line::from(""));
+            }
+
             if !system.factions.is_empty() {
                 let mut sorted = system.factions.clone();
                 sorted.sort_by(|a, b| b.influence.partial_cmp(&a.influence).unwrap_or(Ordering::Equal));

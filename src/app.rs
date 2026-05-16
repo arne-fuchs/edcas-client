@@ -13,6 +13,7 @@ use crate::api_client::ApiClient;
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::{BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData, ParentType};
 use crate::settings::Settings;
+use crate::todo::TodoList;
 use crate::views::{
     AboutView, CarriersView, ConstructionView, EngineersView, ExplorerView, FactionsView,
     InventoryView, ModulesView, NewsView, PilotView, SettingsView, StationsView, SuitView,
@@ -168,7 +169,7 @@ impl App {
 
         let api = ApiClient::new(&settings.api_url);
 
-        Self {
+        let mut app = Self {
             view: AppView::default(),
             settings,
             journal,
@@ -193,7 +194,9 @@ impl App {
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
-        }
+        };
+        app.news.start_fetch(app.api.http_client());
+        app
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -249,6 +252,8 @@ impl App {
 
                 self.journal = data;
                 self.explorer.update(&self.journal);
+
+                self.construction.update_from_journal(&self.api, &self.journal);
             }
         }
 
@@ -341,7 +346,7 @@ impl App {
             AppView::Stations => self.stations.render(frame, area),
             AppView::Carriers => self.carriers.render(frame, area),
             AppView::Factions => self.factions.render(frame, area),
-            AppView::Construction => self.construction.render(frame, area, &self.journal),
+            AppView::Construction => self.construction.render(frame, area, &self.journal, &self.todo_view.todo),
             AppView::TradeRoutes => self.trade_routes.render(frame, area, &self.journal),
             AppView::Engineers => self.engineers_view.render(frame, area),
             AppView::Todo => self.todo_view.render(frame, area, &self.journal),
@@ -362,7 +367,7 @@ impl App {
             AppView::Stations     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
             AppView::Carriers     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("p", "pin")],
             AppView::Factions     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
-            AppView::Construction => &[("f", "filter"), ("enter/tab", "panel"), ("w/s", "navigate"), ("p", "pin")],
+            AppView::Construction => &[("f", "filter"), ("enter/tab", "panel"), ("w/s", "navigate"), ("t", "todo"), ("r", "remove")],
             AppView::TradeRoutes  => &[("tab", "filter"), ("enter", "search"), ("w/s", "navigate"), ("r", "refresh")],
             AppView::Engineers    => &[("t", "ship/foot"), ("tab", "panel"), ("w/s", "navigate"), ("a/d", "grade"), ("enter", "add todo")],
             AppView::Todo         => &[("w/s", "navigate"), ("x", "remove")],
@@ -417,7 +422,10 @@ impl App {
             AppView::Stations => self.stations.handle_key(key, &self.api),
             AppView::Carriers => self.carriers.handle_key(key, &self.api),
             AppView::Factions => self.factions.handle_key(key, &self.api),
-            AppView::Construction => self.construction.handle_key(key, &self.api, &self.journal),
+            AppView::Construction => {
+                let todo = &mut self.todo_view.todo;
+                self.construction.handle_key(key, &self.api, &self.journal, todo)
+            }
             AppView::TradeRoutes => self.trade_routes.handle_key(key, &self.api, &self.journal),
             AppView::Engineers => self.engineers_view.handle_key(key),
             AppView::Todo => self.todo_view.handle_key(key),
@@ -475,6 +483,7 @@ impl App {
 
     pub fn on_tab_enter(&mut self) {
         match self.view {
+            AppView::News => self.news.start_fetch(self.api.http_client()),
             AppView::Stations => self.stations.on_enter(&self.api),
             AppView::Carriers => self.carriers.on_enter(&self.api),
             AppView::Factions => self.factions.on_enter(&self.api),
@@ -484,13 +493,14 @@ impl App {
                 self.trade_routes.on_enter(&self.api, journal);
             }
             AppView::Todo => {
-                self.todo_view.todo = self.engineers_view.todo.clone();
+                self.todo_view.todo = TodoList::load();
             }
             _ => {}
         }
     }
 
     pub fn poll_search_results(&mut self) {
+        self.news.poll();
         self.factions.poll_search();
         self.stations.poll_search();
         self.carriers.poll_search();

@@ -27,21 +27,16 @@ fn default_journal_directory() -> String {
         userprofile.push_str("\\Saved Games\\Frontier Developments\\Elite Dangerous");
         userprofile
     } else if cfg!(target_os = "linux") {
-        let mut home = std::env::var("HOME").unwrap_or("~".to_string());
-        home.push_str("/.steam/steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
-        if std::path::Path::new(&home).exists() {
-            debug!("Found journal path: {}", &home);
-            home
-        } else {
-            home = std::env::var("HOME").unwrap_or("~".to_string());
-            home.push_str("/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous");
-            if std::path::Path::new(&home).exists() {
-                debug!("Found journal path: {}", &home);
-                home
-            } else {
-                debug!("Did not found journal path");
-                String::default()
-            }
+        let home = std::env::var("HOME").unwrap_or_default();
+        let suffix = "steamapps/compatdata/359320/pfx/drive_c/users/steamuser/Saved Games/Frontier Developments/Elite Dangerous";
+        let candidates = [
+            format!("{}/.steam/steam/{}", home, suffix),
+            format!("{}/.local/share/Steam/{}", home, suffix),
+            format!("{}/.var/app/com.valvesoftware.Steam/.local/share/Steam/{}", home, suffix),
+        ];
+        match candidates.iter().find(|p| std::path::Path::new(p.as_str()).exists()) {
+            Some(path) => { debug!("Found journal path: {}", path); path.clone() }
+            None => { debug!("Could not find journal path automatically"); String::default() }
         }
     } else {
         error!("Unknown OS!");

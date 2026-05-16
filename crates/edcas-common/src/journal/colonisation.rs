@@ -6,7 +6,7 @@ pub struct ColonisationConstructionDepot {
     pub timestamp: String,
     #[serde(rename = "MarketID")]
     pub market_id: i64,
-    #[serde(rename = "SystemAddress")]
+    #[serde(rename = "SystemAddress", default)]
     pub system_address: i64,
     #[serde(rename = "ConstructionProgress")]
     pub construction_progress: f32,
@@ -14,7 +14,7 @@ pub struct ColonisationConstructionDepot {
     pub construction_complete: bool,
     #[serde(rename = "ConstructionFailed", default)]
     pub construction_failed: bool,
-    #[serde(rename = "Resources")]
+    #[serde(rename = "ResourcesRequired")]
     pub resources: Vec<ConstructionResource>,
 }
 

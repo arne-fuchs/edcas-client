@@ -734,16 +734,14 @@ impl SettingsView {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let json = serde_json::to_string_pretty(settings).expect("Failed to serialize settings");
-            let settings_path = std::env::var("HOME")
-                .map(|home| format!("{}/.config/edcas-client/settings.json", home))
-                .unwrap_or_else(|_| "settings.json".to_string());
+            let settings_path = crate::settings::config_dir().join("settings.json");
 
-            if let Some(parent) = std::path::Path::new(&settings_path).parent() {
+            if let Some(parent) = settings_path.parent() {
                 let _ = std::fs::create_dir_all(parent);
             }
             match std::fs::write(&settings_path, json) {
-                Ok(_) => tracing::info!("Settings saved to {}", settings_path),
-                Err(e) => tracing::error!("Failed to save settings to {}: {}", settings_path, e),
+                Ok(_) => tracing::info!("Settings saved to {}", settings_path.display()),
+                Err(e) => tracing::error!("Failed to save settings to {}: {}", settings_path.display(), e),
             }
         }
     }

@@ -29,6 +29,11 @@ impl ApiClient {
         }
     }
 
+    /// Returns a clone of the inner HTTP client (shares the connection pool, no new runtime).
+    pub fn http_client(&self) -> reqwest::blocking::Client {
+        self.client.clone()
+    }
+
     pub fn get_bodies(&self, system_address: i64) -> anyhow::Result<Vec<BodyResponse>> {
         let url = format!("{}/api/v1/systems/{}/bodies", self.base_url, system_address);
         let resp = self.client.get(&url).send()?;

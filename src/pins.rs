@@ -60,10 +60,6 @@ impl Pins {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn native_path() -> std::path::PathBuf {
-        if let Ok(home) = std::env::var("HOME") {
-            std::path::PathBuf::from(home).join(".config/edcas-client/pins.json")
-        } else {
-            std::path::PathBuf::from("pins.json")
-        }
+        crate::settings::config_dir().join("pins.json")
     }
 }

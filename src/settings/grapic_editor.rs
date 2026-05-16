@@ -26,21 +26,18 @@ fn default_graphics_directory() -> String {
         );
         userprofile
     } else if cfg!(target_os = "linux") {
-        let mut home = std::env::var("HOME").unwrap_or("~".to_string());
-        home.push_str("/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics");
-        if std::path::Path::new(&home).exists() {
-            debug!("Found graphics path: {}", &home);
-            home
-        } else {
-            home = std::env::var("HOME").unwrap_or("~".to_string());
-            home.push_str("/.var/app/com.valvesoftware.Steam/.local/share/Steam/steamapps/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics");
-            if std::path::Path::new(&home).exists() {
-                debug!("Found graphics path: {}", &home);
-                home
-            } else {
-                debug!("Did not found graphics path");
-                String::default()
-            }
+        let home = std::env::var("HOME").unwrap_or_default();
+        let suffix = "steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics";
+        let candidates = [
+            // ~/.steam/root is a symlink used by older Steam installs
+            format!("{}/.steam/root/{}", home, suffix),
+            format!("{}/.steam/steam/{}", home, suffix),
+            format!("{}/.local/share/Steam/{}", home, suffix),
+            format!("{}/.var/app/com.valvesoftware.Steam/.local/share/Steam/{}", home, suffix),
+        ];
+        match candidates.iter().find(|p| std::path::Path::new(p.as_str()).exists()) {
+            Some(path) => { debug!("Found graphics path: {}", path); path.clone() }
+            None => { debug!("Could not find graphics path automatically"); String::default() }
         }
     } else {
         error!("Unknown OS!");

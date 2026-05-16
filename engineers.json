@@ -275,6 +275,14 @@
       "unlock": "Reach Grade 3 with Domino Green"
     },
     {
+      "id": "domino_green",
+      "name": "Domino Green",
+      "system": "Bolg",
+      "station": "Prospector's Rest",
+      "specialties": ["Suits"],
+      "unlock": "Earn 100,000 credits from On Foot combat zones"
+    },
+    {
       "id": "baltanos",
       "name": "Baltanos",
       "system": "Deriso",

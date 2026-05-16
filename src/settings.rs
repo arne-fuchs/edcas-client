@@ -75,6 +75,28 @@ impl Settings {
     }
 }
 
+// ─── Config directory ─────────────────────────────────────────────────────────
+
+/// Returns the OS-appropriate config directory for edcas-client.
+///
+/// - Windows: `%APPDATA%\edcas-client`
+/// - Linux/macOS: `$XDG_CONFIG_HOME/edcas-client` or `~/.config/edcas-client`
+#[cfg(not(target_arch = "wasm32"))]
+pub fn config_dir() -> std::path::PathBuf {
+    #[cfg(target_os = "windows")]
+    if let Ok(appdata) = std::env::var("APPDATA") {
+        return std::path::PathBuf::from(appdata).join("edcas-client");
+    }
+
+    if let Ok(xdg) = std::env::var("XDG_CONFIG_HOME") {
+        return std::path::PathBuf::from(xdg).join("edcas-client");
+    }
+    if let Ok(home) = std::env::var("HOME") {
+        return std::path::PathBuf::from(home).join(".config").join("edcas-client");
+    }
+    std::path::PathBuf::from("edcas-client-config")
+}
+
 // ─── Native settings ──────────────────────────────────────────────────────────
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -84,39 +106,15 @@ impl Settings {
         use std::io::Read;
         use std::path::Path;
 
-        let mut settings_path = "settings.json".to_string();
-        let mut settings_file = match std::env::var("HOME") {
-            Ok(home) => {
-                settings_path = format!("{}/.config/edcas-client/settings.json", home);
-                if Path::new(&settings_path).exists() {
-                    File::open(&settings_path).expect("Unable to open file")
-                } else {
-                    info!("Couldn't find config file in {} -> trying to create file structure and copy to desired config folder", settings_path);
-                    create_setting_json(home)
-                }
-            }
-            Err(err) => {
-                warn!("{}", err);
-                match std::fs::File::open("settings.json") {
-                    Ok(file) => {
-                        info!("Accessing settings file at settings.json");
-                        file
-                    }
-                    Err(err) => {
-                        warn!("{}", err);
-                        if Path::new("/etc/edcas-client/settings-example.json").exists() {
-                            info!("Copying from /etc/edcas-client/settings-example.json to settings.json");
-                            std::fs::copy("/etc/edcas-client/settings-example.json", "settings.json")
-                                .expect("Couldn't copy settings file from /etc/edcas-client/settings-example.json to local settings.json");
-                        } else {
-                            std::fs::copy("settings-example.json", "settings.json")
-                                .expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
-                        }
-                        info!("Accessing settings file at settings.json");
-                        std::fs::File::open("settings.json").unwrap()
-                    }
-                }
-            }
+        let cfg_dir = config_dir();
+        let settings_path = cfg_dir.join("settings.json");
+
+        let mut settings_file = if settings_path.exists() {
+            info!("Accessing settings file at {}", settings_path.display());
+            File::open(&settings_path).expect("Unable to open settings file")
+        } else {
+            info!("Settings file not found, creating at {}", settings_path.display());
+            create_settings_in(&cfg_dir)
         };
 
         let mut json_string = String::new();
@@ -125,13 +123,13 @@ impl Settings {
             serde_json::from_str(&json_string).expect("Invalid json settings file");
 
         if !Path::new(&settings.journal_reader.journal_directory).exists() {
-            warn!("journal path {} does not exists", settings.journal_reader.journal_directory);
+            warn!("journal path {} does not exist", settings.journal_reader.journal_directory);
             settings.journal_reader = JournalReaderSettings::default();
         }
         debug!("Journal logs: {}", &settings.journal_reader.journal_directory);
 
         if !Path::new(&settings.graphics_editor.graphics_directory).exists() {
-            warn!("graphics path {} does not exists", &settings.graphics_editor.graphics_directory);
+            warn!("graphics path {} does not exist", &settings.graphics_editor.graphics_directory);
             settings.graphics_editor = GraphicEditorSettings::default();
         } else if cfg!(target_os = "windows") {
             settings.graphics_editor.graphic_override_content = format!(
@@ -150,76 +148,47 @@ impl Settings {
     }
 }
 
+/// Creates the config directory and copies a settings template into it.
+/// Falls back to `settings.json` in the current directory if the dir can't be created.
 #[cfg(not(target_arch = "wasm32"))]
-fn create_setting_json(home: String) -> std::fs::File {
+fn create_settings_in(cfg_dir: &std::path::Path) -> std::fs::File {
     use std::fs::File;
 
-    match std::fs::create_dir_all(format!("{}/.config/edcas-client", home)) {
-        Ok(_) => {
-            info!("Created $HOME/.config/edcas-client/");
-            info!("Copying from /etc/edcas-client/settings-example.json to $HOME/.config/edcas-client/settings.json");
-            match std::fs::copy(
-                "/etc/edcas-client/settings-example.json",
-                format!("{}/.config/edcas-client/settings.json", home),
-            ) {
-                Ok(_) => {
-                    info!("Copied /etc/edcas-client/settings-example.json to {}",
-                        format!("{}/.config/edcas-client/settings.json", home));
-                }
-                Err(err) => {
-                    info!("Failed copying from /etc/edcas-client/settings-example.json\n Trying to copy from settings-example.json: {}", err);
-                    std::fs::copy(
-                        "settings-example.json",
-                        format!("{}/.config/edcas-client/settings.json", home),
-                    ).expect("Couldn't copy settings file to $HOME/.config/edcas-client/");
-                }
-            }
+    let dest = cfg_dir.join("settings.json");
+
+    if std::fs::create_dir_all(cfg_dir).is_ok() {
+        // Prefer system-installed template, fall back to bundled one.
+        let src = if std::path::Path::new("/etc/edcas-client/settings-example.json").exists() {
+            "/etc/edcas-client/settings-example.json"
+        } else {
+            "settings-example.json"
+        };
+        if let Err(e) = std::fs::copy(src, &dest) {
+            warn!("Could not copy settings template: {}", e);
+        } else {
             #[cfg(unix)]
             {
                 use std::os::unix::fs::PermissionsExt;
-                info!("Setting permissions: {:?}",
-                    std::fs::set_permissions(
-                        format!("{}/.config/edcas-client/settings.json", home),
-                        std::fs::Permissions::from_mode(0o644)
-                    )
-                );
+                let _ = std::fs::set_permissions(&dest, std::fs::Permissions::from_mode(0o644));
             }
-            info!("Accessing settings file at $HOME/.config/edcas-client/settings.json");
-            std::fs::File::open(format!("{}/.config/edcas-client/settings.json", home))
-                .expect("Couldn't open settings file in $HOME/.config/edcas-client/")
+            info!("Created settings file at {}", dest.display());
         }
-        Err(err) => {
-            warn!("{}", err);
-            info!("Couldn't create directories in $HOME/.config/edcas-client/");
-            match File::open("settings.json") {
-                Ok(file) => {
-                    info!("Accessing settings file at settings.json");
-                    file
-                }
-                Err(err) => {
-                    warn!("{}", err);
-                    info!("Copying from settings-example.json to settings.json");
-                    match std::fs::copy("settings-example.json", "settings.json") {
-                        Ok(_) => {}
-                        Err(err) => {
-                            error!("Error copying settings file: {}", err);
-                            panic!("Error copying settings file: {}", err);
-                        }
-                    }
-                    #[cfg(unix)]
-                    {
-                        use std::os::unix::fs::PermissionsExt;
-                        info!("Setting permissions: {:?}",
-                            std::fs::set_permissions(
-                                "settings.json",
-                                std::fs::Permissions::from_mode(0o644)
-                            )
-                        );
-                    }
-                    info!("Accessing settings file at settings.json");
-                    File::open("settings.json").unwrap()
-                }
-            }
+        if dest.exists() {
+            return File::open(&dest).expect("Could not open new settings file");
         }
+    } else {
+        warn!("Could not create config dir {}", cfg_dir.display());
     }
+
+    // Last resort: use settings.json in the current directory.
+    if !std::path::Path::new("settings.json").exists() {
+        let src = if std::path::Path::new("/etc/edcas-client/settings-example.json").exists() {
+            "/etc/edcas-client/settings-example.json"
+        } else {
+            "settings-example.json"
+        };
+        std::fs::copy(src, "settings.json").expect("Could not create settings.json");
+    }
+    info!("Falling back to settings.json in current directory");
+    File::open("settings.json").expect("Could not open settings.json")
 }
