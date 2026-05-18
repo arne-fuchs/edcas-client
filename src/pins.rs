@@ -17,7 +17,6 @@ impl Pins {
     pub fn load() -> Self {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            use std::path::PathBuf;
             let path = Self::native_path();
             std::fs::read_to_string(&path)
                 .ok()
@@ -37,7 +36,6 @@ impl Pins {
     pub fn save(&self) {
         #[cfg(not(target_arch = "wasm32"))]
         {
-            use std::path::PathBuf;
             let path = Self::native_path();
             if let Some(parent) = path.parent() {
                 let _ = std::fs::create_dir_all(parent);

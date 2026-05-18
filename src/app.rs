@@ -404,8 +404,8 @@ impl App {
         // Right-side system info
         let system_name = self.journal.current_system.as_ref().map(|s| s.name.as_str()).unwrap_or("—");
         spans.push(Span::styled(" │ ", sep_style));
-        spans.push(Span::styled(format!("system "), info_style));
-        spans.push(Span::styled(format!("{system_name}"), desc_style));
+        spans.push(Span::styled("system ", info_style));
+        spans.push(Span::styled(system_name.to_owned(), desc_style));
 
         frame.render_widget(Paragraph::new(Line::from(spans)), area);
     }
