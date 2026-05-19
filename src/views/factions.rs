@@ -11,6 +11,7 @@ use std::cmp::Ordering;
 use std::collections::HashSet;
 
 use crate::api_client::ApiClient;
+use crate::views::util::{fmt_ts_short as fmt_ts, truncate, FocusArea, SearchState};
 use crate::views::ViewEvent;
 
 #[cfg(target_arch = "wasm32")]
@@ -18,17 +19,6 @@ use std::{cell::RefCell, rc::Rc};
 
 #[cfg(not(target_arch = "wasm32"))]
 use std::sync::{Arc, Mutex};
-
-enum SearchState {
-    Idle,
-    Typing,
-}
-
-#[derive(Clone, Copy, PartialEq)]
-enum FocusArea {
-    List,
-    Detail,
-}
 
 #[derive(Clone, Copy, PartialEq)]
 enum DetailTab {
@@ -120,7 +110,7 @@ impl FactionsView {
             selected_system: 0,
             list_scroll: 0,
             detail_scroll: 0,
-            status_msg: "Press Enter to search  |  p: pin/unpin".into(),
+            status_msg: "/ or f: search  |  p: pin/unpin".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Info,
             loading: false,
@@ -150,7 +140,7 @@ impl FactionsView {
                 Ok(results) => {
                     self.pinned_results = results;
                     if self.status_msg.starts_with("Loading") {
-                        self.status_msg = "Press Enter to search  |  p: pin/unpin".into();
+                        self.status_msg = "/ or f: search  |  p: pin/unpin".into();
                     }
                 }
                 Err(e) => { self.status_msg = format!("API error loading pins: {e}"); }
@@ -218,11 +208,11 @@ impl FactionsView {
         let pending = Arc::clone(&self.pending_pins);
         let api_owned = api.clone();
         let names: Vec<String> = self.pinned_names.iter().cloned().collect();
-        std::thread::spawn(move || {
+        api.spawn(async move {
             let mut results = Vec::new();
             for name in names {
                 let query = FactionQuery { name: Some(name.clone()), limit: Some(10) };
-                if let Ok(factions) = api_owned.search_factions(&query) {
+                if let Ok(factions) = api_owned.search_factions(&query).await {
                     if let Some(f) = factions.into_iter().find(|f| f.name == name) {
                         results.push(f);
                     }
@@ -306,8 +296,8 @@ impl FactionsView {
         let pending = Arc::clone(&self.pending_search);
         let api_owned = api.clone();
         let query = FactionQuery { name: Some(self.search_query.clone()), limit: Some(100) };
-        std::thread::spawn(move || {
-            let result = api_owned.search_factions(&query).map_err(|e| e.to_string());
+        api.spawn(async move {
+            let result = api_owned.search_factions(&query).await.map_err(|e| e.to_string());
             *pending.lock().unwrap() = Some(result);
         });
     }
@@ -511,7 +501,7 @@ impl FactionsView {
         }
 
         match key.code {
-            KeyCode::Enter => {
+            KeyCode::Char('/') | KeyCode::Char('f') => {
                 self.search_query.clear();
                 self.search_state = SearchState::Typing;
                 self.status_msg = "Typing… (Enter to search, Esc to cancel)".into();
@@ -559,6 +549,17 @@ impl FactionsView {
                     self.detail_scroll += 1;
                 }
             },
+            KeyCode::PageUp => match self.focus {
+                FocusArea::List => { self.selected_idx = self.selected_idx.saturating_sub(10); }
+                FocusArea::Detail => { self.detail_scroll = self.detail_scroll.saturating_sub(10); }
+            },
+            KeyCode::PageDown => match self.focus {
+                FocusArea::List => {
+                    let max = self.display_count().saturating_sub(1);
+                    self.selected_idx = (self.selected_idx + 10).min(max);
+                }
+                FocusArea::Detail => { self.detail_scroll += 10; }
+            },
             KeyCode::Char('c') => {
                 if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Systems {
                     if let Some(faction) = self.selected_faction() {
@@ -573,32 +574,33 @@ impl FactionsView {
                     return ViewEvent::Consumed;
                 }
             }
-            KeyCode::Char('d') | KeyCode::Right => match self.focus {
-                FocusArea::List => {
-                    if self.display_count() > 0 {
-                        self.focus = FocusArea::Detail;
-                        self.detail_scroll = 0;
+            KeyCode::Tab => {
+                match self.focus {
+                    FocusArea::List => {
+                        if self.display_count() > 0 {
+                            self.focus = FocusArea::Detail;
+                            self.detail_scroll = 0;
+                        }
                     }
+                    FocusArea::Detail => { self.focus = FocusArea::List; }
                 }
-                FocusArea::Detail => {
+            }
+            KeyCode::Char('d') | KeyCode::Right => {
+                if self.focus == FocusArea::Detail {
                     if let Some(next) = self.detail_tab.next() {
                         self.detail_tab = next;
                         self.detail_scroll = 0;
                     }
                 }
-            },
-            KeyCode::Char('a') | KeyCode::Left => match self.focus {
-                FocusArea::List => {}
-                FocusArea::Detail => match self.detail_tab.prev() {
-                    Some(prev) => {
+            }
+            KeyCode::Char('a') | KeyCode::Left => {
+                if self.focus == FocusArea::Detail {
+                    if let Some(prev) = self.detail_tab.prev() {
                         self.detail_tab = prev;
                         self.detail_scroll = 0;
                     }
-                    None => {
-                        self.focus = FocusArea::List;
-                    }
-                },
-            },
+                }
+            }
             KeyCode::Char(c @ '1'..='5')
                 if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Systems =>
             {
@@ -622,17 +624,6 @@ impl FactionsView {
                 self.selected_system = 0;
                 self.detail_scroll = 0;
             }
-            KeyCode::Tab => match self.focus {
-                FocusArea::List => {
-                    if self.display_count() > 0 {
-                        self.focus = FocusArea::Detail;
-                        self.detail_scroll = 0;
-                    }
-                }
-                FocusArea::Detail => {
-                    self.focus = FocusArea::List;
-                }
-            },
             _ => {}
         }
 
@@ -976,12 +967,18 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool, sorte
         let active = if p.active_states.is_empty() {
             "—".to_string()
         } else {
-            p.active_states.join(", ")
+            p.active_states.iter()
+                .map(|s| super::annotate_faction_state(s, false))
+                .collect::<Vec<_>>()
+                .join(", ")
         };
         let pending = if p.pending_states.is_empty() {
             "—".to_string()
         } else {
-            p.pending_states.join(", ")
+            p.pending_states.iter()
+                .map(|s| super::annotate_faction_state(s, true))
+                .collect::<Vec<_>>()
+                .join(", ")
         };
 
         let is_selected = focused && i == selected;
@@ -1055,15 +1052,3 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool, sorte
     lines
 }
 
-fn fmt_ts(ts: Option<&chrono::DateTime<chrono::Utc>>) -> String {
-    ts.map(|t| t.format("%m-%d %H:%M").to_string())
-        .unwrap_or_else(|| "—".to_string())
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
-        format!("{s:<width$}", width = max)
-    } else {
-        format!("{:.width$}…", s, width = max - 1)
-    }
-}

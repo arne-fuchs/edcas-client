@@ -191,6 +191,12 @@ impl MaterialsView {
             KeyCode::Char('s') | KeyCode::Down => {
                 self.selected_idx += 1;
             }
+            KeyCode::PageUp => {
+                self.selected_idx = self.selected_idx.saturating_sub(10);
+            }
+            KeyCode::PageDown => {
+                self.selected_idx += 10;
+            }
             KeyCode::Char('a') | KeyCode::Left => {
                 self.active_tab = self.active_tab.prev();
                 self.selected_idx = 0;

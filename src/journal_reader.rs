@@ -16,7 +16,7 @@ use std::time::{Duration, SystemTime};
 
 use edcas_common::api::{ConstructionDepotSubmission, ConstructionResourceSubmission};
 use edcas_common::journal::{
-    CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan,
+    CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan, SupercruiseExit,
 };
 use edcas_common::journal::types::Conflict;
 use tracing::{debug, error, info, warn};
@@ -171,6 +171,17 @@ fn clean_signal_name(raw: &str) -> &str {
     raw.trim_start_matches('$').trim_end_matches(';')
 }
 
+/// Return `localised` if non-empty, otherwise strip `$..._name;` / `$...;` wrappers from `raw`.
+fn localised_or_clean(localised: &str, raw: &str) -> String {
+    if !localised.is_empty() {
+        return localised.to_owned();
+    }
+    raw.trim_start_matches('$')
+        .trim_end_matches("_name;")
+        .trim_end_matches(';')
+        .to_owned()
+}
+
 impl BodySignal {
     pub fn is_biological(&self) -> bool {
         self.signal_type.contains("Biological")
@@ -193,12 +204,18 @@ pub struct SaaBodyData {
 pub struct StationData {
     pub name: String,
     pub station_type: String,
+    pub system_name: String,
     pub dist_from_star_ls: f32,
     pub services: Vec<String>,
     pub economy: String,
+    pub secondary_economies: Vec<(String, f32)>,
     pub faction: String,
     pub government: String,
+    pub allegiance: String,
+    pub landing_pads: Option<(i32, i32, i32)>,
     pub market_id: i64,
+    /// Body the station orbits, taken from the SupercruiseExit or Location BodyID.
+    pub host_body_id: Option<i32>,
 }
 
 #[derive(Clone, Default)]
@@ -361,6 +378,15 @@ pub struct JournalData {
     pub claimed_systems: HashMap<i64, String>,
     /// (market_id, station_name, system_name, system_address) of the last Docked event.
     pub last_docked: Option<(i64, String, String, i64)>,
+    /// BodyID from the most recent SupercruiseExit where BodyType != "Station".
+    /// Cleared after consumption by the next Docked event or system jump.
+    pending_host_body_id: Option<i32>,
+    /// All visited systems this session, most recent first.
+    pub visited_systems: Vec<SystemData>,
+    /// All docked non-carrier stations this session, most recent first.
+    pub visited_stations: Vec<StationData>,
+    /// All docked fleet carriers this session, most recent first.
+    pub visited_carriers: Vec<StationData>,
     pub fss_body_count: Option<u32>,
     pub fss_non_body_count: Option<u32>,
     pub fss_all_bodies_found: bool,
@@ -390,6 +416,10 @@ impl JournalData {
             construction_depots: HashMap::new(),
             claimed_systems: HashMap::new(),
             last_docked: None,
+            pending_host_body_id: None,
+            visited_systems: Vec::new(),
+            visited_stations: Vec::new(),
+            visited_carriers: Vec::new(),
             fss_body_count: None,
             fss_non_body_count: None,
             fss_all_bodies_found: false,
@@ -448,12 +478,13 @@ impl JournalData {
         match JournalEvent::from_json(value) {
             Some(JournalEvent::FsdJump(e)) => {
                 debug!("FSDJump to {}", e.star_system);
-                self.current_system = Some(system_from_fsdjump(&e));
-                self.bodies.clear();
-                self.fss_signals.clear();
-                self.saa_data.clear();
-                self.stations.clear();
-                self.discovered_signals.clear();
+                self.pending_host_body_id = None;
+                let sys = system_from_fsdjump(&e);
+                let addr = sys.system_address;
+                self.visited_systems.retain(|s| s.system_address != addr);
+                self.visited_systems.insert(0, sys.clone());
+                self.current_system = Some(sys);
+                self.clear_scan_data();
                 self.fss_body_count = None;
                 self.fss_non_body_count = None;
                 self.fss_all_bodies_found = false;
@@ -462,26 +493,71 @@ impl JournalData {
             }
             Some(JournalEvent::Location(e)) => {
                 debug!("Location: {}", e.star_system);
-                self.current_system = Some(system_from_location(&e));
-                self.bodies.clear();
-                self.fss_signals.clear();
-                self.saa_data.clear();
-                self.stations.clear();
-                self.discovered_signals.clear();
+                let sys = system_from_location(&e);
+                let addr = sys.system_address;
+                self.visited_systems.retain(|s| s.system_address != addr);
+                self.visited_systems.insert(0, sys.clone());
+                self.current_system = Some(sys);
+                self.clear_scan_data();
                 self.fss_body_count = None;
                 self.fss_non_body_count = None;
                 self.fss_all_bodies_found = false;
                 self.nav_beacon_bodies = None;
                 self.organic_scans.clear();
+                // When the game starts while docked, Location carries the station data.
+                if e.docked {
+                    if let (Some(name), Some(market_id)) = (e.station_name, e.market_id) {
+                        let station_type = e.station_type.unwrap_or_default();
+                        self.last_docked = Some((market_id, name.clone(), e.star_system.clone(), e.system_address));
+                        let raw_economy = e.station_economy.unwrap_or_default();
+                        let raw_government = e.station_government.unwrap_or_default();
+                        let secondary_economies = e.station_economies.as_ref()
+                            .map(|v| v.iter().skip(1)
+                                .map(|se| (localised_or_clean("", &se.name), se.proportion))
+                                .collect())
+                            .unwrap_or_default();
+                        // Location body_id is the body the station sits on (when BodyType != "Star").
+                        let host_body_id = if e.body_type != "Star" && e.body_id != 0 {
+                            Some(e.body_id as i32)
+                        } else {
+                            None
+                        };
+                        let station = StationData {
+                            name: name.clone(),
+                            station_type: station_type.clone(),
+                            system_name: e.star_system.clone(),
+                            dist_from_star_ls: e.dist_from_star_ls.unwrap_or(0.0),
+                            services: e.station_services.unwrap_or_default(),
+                            economy: localised_or_clean(&e.station_economy_localised, &raw_economy),
+                            secondary_economies,
+                            faction: e.station_faction.as_ref().map(|f| f.name.clone()).unwrap_or_default(),
+                            government: localised_or_clean(&e.station_government_localised, &raw_government),
+                            allegiance: e.station_allegiance.unwrap_or_default(),
+                            landing_pads: e.landing_pads.as_ref().map(|lp| (lp.small, lp.medium, lp.large)),
+                            market_id,
+                            host_body_id,
+                        };
+                        if !self.stations.iter().any(|s| s.market_id == market_id) {
+                            self.stations.push(station.clone());
+                        }
+                        if station_type == "FleetCarrier" {
+                            self.visited_carriers.retain(|s| s.market_id != market_id);
+                            self.visited_carriers.insert(0, station);
+                        } else {
+                            self.visited_stations.retain(|s| s.market_id != market_id);
+                            self.visited_stations.insert(0, station);
+                        }
+                    }
+                }
             }
             Some(JournalEvent::CarrierJump(e)) => {
                 debug!("CarrierJump to {}", e.star_system);
-                self.current_system = Some(system_from_carrier_jump(&e));
-                self.bodies.clear();
-                self.fss_signals.clear();
-                self.saa_data.clear();
-                self.stations.clear();
-                self.discovered_signals.clear();
+                let sys = system_from_carrier_jump(&e);
+                let addr = sys.system_address;
+                self.visited_systems.retain(|s| s.system_address != addr);
+                self.visited_systems.insert(0, sys.clone());
+                self.current_system = Some(sys);
+                self.clear_scan_data();
                 self.fss_body_count = None;
                 self.fss_non_body_count = None;
                 self.fss_all_bodies_found = false;
@@ -497,12 +573,7 @@ impl JournalData {
                     .map(|pv| pv.iter()
                         .filter_map(|p| p.parent_id().map(|pid| BodyParent {
                             body_id: pid,
-                            parent_type: match p.parent_type() {
-                                "Star" => ParentType::Star,
-                                "Planet" => ParentType::Planet,
-                                "Ring" => ParentType::Ring,
-                                _ => ParentType::Null,
-                            },
+                            parent_type: parent_type_from_str(p.parent_type()),
                         }))
                         .collect())
                     .unwrap_or_default();
@@ -689,6 +760,14 @@ impl JournalData {
                     }
                 }
             }
+            Some(JournalEvent::SupercruiseExit(e)) => {
+                // Track the body approached; used as host_body_id for the next Docked event.
+                if e.body_type != "Station" && e.body_id != 0 {
+                    self.pending_host_body_id = Some(e.body_id);
+                } else {
+                    self.pending_host_body_id = None;
+                }
+            }
             Some(JournalEvent::Docked(e)) => {
                 debug!("Docked at {} (market_id={})", e.station_name, e.market_id);
                 self.last_docked = Some((
@@ -697,18 +776,36 @@ impl JournalData {
                     e.star_system.clone(),
                     e.system_address,
                 ));
+                let secondary_economies = e.station_economies.as_ref()
+                    .map(|v| v.iter().skip(1)
+                        .map(|se| (localised_or_clean("", &se.name), se.proportion))
+                        .collect())
+                    .unwrap_or_default();
+                let host_body_id = self.pending_host_body_id.take();
                 let station = StationData {
                     name: e.station_name.clone(),
                     station_type: e.station_type.clone(),
+                    system_name: e.star_system.clone(),
                     dist_from_star_ls: e.dist_from_star_ls.unwrap_or(0.0),
                     services: e.station_services.clone().unwrap_or_default(),
-                    economy: e.station_economy.clone(),
+                    economy: localised_or_clean(&e.station_economy_localised, &e.station_economy),
+                    secondary_economies,
                     faction: e.station_faction.as_ref().map(|f| f.name.clone()).unwrap_or_default(),
-                    government: e.station_government.clone(),
+                    government: localised_or_clean(&e.station_government_localised, &e.station_government),
+                    allegiance: e.station_allegiance.clone(),
+                    landing_pads: e.landing_pads.as_ref().map(|lp| (lp.small, lp.medium, lp.large)),
                     market_id: e.market_id,
+                    host_body_id,
                 };
                 if !self.stations.iter().any(|s| s.market_id == station.market_id) {
-                    self.stations.push(station);
+                    self.stations.push(station.clone());
+                }
+                if e.station_type == "FleetCarrier" {
+                    self.visited_carriers.retain(|s| s.market_id != station.market_id);
+                    self.visited_carriers.insert(0, station);
+                } else {
+                    self.visited_stations.retain(|s| s.market_id != station.market_id);
+                    self.visited_stations.insert(0, station);
                 }
             }
             Some(JournalEvent::ColonisationConstructionDepot(e)) => {
@@ -740,13 +837,17 @@ impl JournalData {
         }
     }
 
-    pub fn clear(&mut self) {
-        self.current_system = None;
+    fn clear_scan_data(&mut self) {
         self.bodies.clear();
         self.fss_signals.clear();
         self.saa_data.clear();
         self.stations.clear();
         self.discovered_signals.clear();
+    }
+
+    pub fn clear(&mut self) {
+        self.current_system = None;
+        self.clear_scan_data();
     }
 }
 
@@ -796,6 +897,15 @@ fn faction_info_from_journal(
             .map(|s| s.iter().map(|x| x.state.clone()).collect())
             .unwrap_or_default(),
         conflict,
+    }
+}
+
+fn parent_type_from_str(s: &str) -> ParentType {
+    match s {
+        "Star" => ParentType::Star,
+        "Planet" => ParentType::Planet,
+        "Ring" => ParentType::Ring,
+        _ => ParentType::Null,
     }
 }
 
@@ -906,12 +1016,7 @@ fn body_from_scan(e: &Scan) -> BodyScan {
                 .filter_map(|p| {
                     p.parent_id().map(|pid| BodyParent {
                         body_id: pid,
-                        parent_type: match p.parent_type() {
-                            "Star" => ParentType::Star,
-                            "Planet" => ParentType::Planet,
-                            "Ring" => ParentType::Ring,
-                            _ => ParentType::Null,
-                        },
+                        parent_type: parent_type_from_str(p.parent_type()),
                     })
                 })
                 .collect()
@@ -1367,6 +1472,9 @@ fn watch_latest_file(
     let mut last_backpack_mtime: Option<SystemTime> = None;
     let mut last_shiplocker_mtime: Option<SystemTime> = None;
     let mut last_modules_mtime: Option<SystemTime> = None;
+    let mut last_market_mtime: Option<SystemTime> = None;
+    let mut last_outfitting_mtime: Option<SystemTime> = None;
+    let mut last_shipyard_mtime: Option<SystemTime> = None;
 
     loop {
         if stop_flag.load(Ordering::SeqCst) {
@@ -1445,11 +1553,56 @@ fn watch_latest_file(
             }
         }
 
+        // ── Station companion files (uploaded to server when an API URL is set) ──
+        let market_path = dir.join("Market.json");
+        if let Ok(mtime) = market_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_market_mtime {
+                last_market_mtime = Some(mtime);
+                if let Some(ref up_tx) = upload_tx {
+                    upload_companion_file(&market_path, up_tx);
+                }
+            }
+        }
+
+        let outfitting_path = dir.join("Outfitting.json");
+        if let Ok(mtime) = outfitting_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_outfitting_mtime {
+                last_outfitting_mtime = Some(mtime);
+                if let Some(ref up_tx) = upload_tx {
+                    upload_companion_file(&outfitting_path, up_tx);
+                }
+            }
+        }
+
+        let shipyard_path = dir.join("Shipyard.json");
+        if let Ok(mtime) = shipyard_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_shipyard_mtime {
+                last_shipyard_mtime = Some(mtime);
+                if let Some(ref up_tx) = upload_tx {
+                    upload_companion_file(&shipyard_path, up_tx);
+                }
+            }
+        }
+
         if changed {
             let _ = tx.send(data.clone());
         }
 
         thread::sleep(Duration::from_millis(500));
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn upload_companion_file(path: &Path, tx: &std::sync::mpsc::Sender<String>) {
+    match std::fs::read_to_string(path) {
+        Ok(content) => {
+            if let Ok(value) = serde_json::from_str::<serde_json::Value>(&content) {
+                if let Ok(compact) = serde_json::to_string(&value) {
+                    let _ = tx.send(compact);
+                }
+            }
+        }
+        Err(e) => error!("Failed to read companion file {}: {}", path.display(), e),
     }
 }
 
@@ -1535,12 +1688,7 @@ fn load_previous_scans_for_system(path: &Path, system_address: i64, data: &mut J
                         .map(|pv| pv.iter()
                             .filter_map(|p| p.parent_id().map(|pid| BodyParent {
                                 body_id: pid,
-                                parent_type: match p.parent_type() {
-                                    "Star" => ParentType::Star,
-                                    "Planet" => ParentType::Planet,
-                                    "Ring" => ParentType::Ring,
-                                    _ => ParentType::Null,
-                                },
+                                parent_type: parent_type_from_str(p.parent_type()),
                             }))
                             .collect())
                         .unwrap_or_default();

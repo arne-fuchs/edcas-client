@@ -4,6 +4,7 @@ mod config;
 mod db;
 mod listener;
 mod stats;
+mod tick;
 
 use tracing::info;
 use tracing_subscriber::EnvFilter;
@@ -34,6 +35,9 @@ async fn main() -> anyhow::Result<()> {
     cache::spawn_cache_refresher(pool.clone());
     info!("Trade cache refresher started (15 min interval)");
 
+    tick::spawn_tick_detector(pool.clone());
+    info!("Server tick detector started (30 min interval)");
+
     let rocket_cfg = rocket::Config {
         port: cfg.api_port,
         address: std::net::IpAddr::V4(std::net::Ipv4Addr::UNSPECIFIED),
@@ -61,6 +65,7 @@ async fn main() -> anyhow::Result<()> {
                 api::journal::ingest_events,
                 api::trade_routes::get_trade_routes,
                 api::trade_routes::get_trade_loops,
+                api::tick::get_server_tick,
             ],
         )
         .launch()

@@ -119,11 +119,17 @@ pub struct App {
     pub journal: JournalData,
     #[cfg(not(target_arch = "wasm32"))]
     pub journal_reader: Option<JournalReader>,
+    /// Owns the tokio runtime — must outlive `api` which holds a `Handle`.
+    #[cfg(not(target_arch = "wasm32"))]
+    _rt: tokio::runtime::Runtime,
     pub api: ApiClient,
     #[cfg(not(target_arch = "wasm32"))]
     pub api_rx: Option<std::sync::mpsc::Receiver<Vec<edcas_common::api::BodyResponse>>>,
     #[cfg(not(target_arch = "wasm32"))]
     pub last_api_system: i64,
+    /// Receives the next predicted BGS tick from the background refresh task.
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_tick: std::sync::Arc<std::sync::Mutex<Option<chrono::DateTime<chrono::Utc>>>>,
     pub news: NewsView,
     pub pilot: PilotView,
     pub system: SystemView,
@@ -141,6 +147,7 @@ pub struct App {
     pub settings_view: SettingsView,
     pub about: AboutView,
     pub should_quit: bool,
+    pub next_tick: Option<chrono::DateTime<chrono::Utc>>,
 }
 
 impl App {
@@ -167,16 +174,19 @@ impl App {
             JournalReader::start(dir, url)
         });
 
-        let api = ApiClient::new(&settings.api_url);
+        let rt = tokio::runtime::Runtime::new().expect("failed to build async runtime");
+        let api = ApiClient::new(&settings.api_url, rt.handle().clone());
 
         let mut app = Self {
             view: AppView::default(),
             settings,
             journal,
             journal_reader,
+            _rt: rt,
             api,
             api_rx: None,
             last_api_system: 0,
+            pending_tick: std::sync::Arc::new(std::sync::Mutex::new(None)),
             news: NewsView::new(),
             pilot: PilotView::new(),
             system: SystemView::new(),
@@ -194,8 +204,10 @@ impl App {
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
+            next_tick: None,
         };
-        app.news.start_fetch(app.api.http_client());
+        app.news.start_fetch(&app.api);
+        app.refresh_server_tick();
         app
     }
 
@@ -225,6 +237,7 @@ impl App {
             settings_view: SettingsView::new(),
             about: AboutView::new(),
             should_quit: false,
+            next_tick: None,
         }
     }
 
@@ -241,10 +254,9 @@ impl App {
                     self.last_api_system = new_addr;
                     let (tx, rx) = std::sync::mpsc::channel();
                     self.api_rx = Some(rx);
-                    let base_url = self.settings.api_url.clone();
-                    std::thread::spawn(move || {
-                        let client = ApiClient::new(base_url);
-                        if let Ok(bodies) = client.get_bodies(new_addr) {
+                    let api = self.api.clone();
+                    self.api.spawn(async move {
+                        if let Ok(bodies) = api.get_bodies(new_addr).await {
                             let _ = tx.send(bodies);
                         }
                     });
@@ -296,6 +308,19 @@ impl App {
         }
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn refresh_server_tick(&mut self) {
+        let pending = std::sync::Arc::clone(&self.pending_tick);
+        let api = self.api.clone();
+        self.api.spawn(async move {
+            if let Ok(Some(resp)) = api.get_server_tick().await {
+                if let Some(tick) = resp.next_predicted_tick {
+                    *pending.lock().unwrap() = Some(tick);
+                }
+            }
+        });
+    }
+
     pub fn render(&mut self, frame: &mut Frame) {
         let chunks = Layout::default()
             .direction(Direction::Vertical)
@@ -343,8 +368,8 @@ impl App {
             AppView::Materials => self.inventory.render(frame, area, &self.journal),
             AppView::Modules => self.modules_view.render(frame, area, &self.journal),
             AppView::Suit    => self.suit_view.render(frame, area, &self.journal),
-            AppView::Stations => self.stations.render(frame, area),
-            AppView::Carriers => self.carriers.render(frame, area),
+            AppView::Stations => self.stations.render(frame, area, &self.journal),
+            AppView::Carriers => self.carriers.render(frame, area, &self.journal),
             AppView::Factions => self.factions.render(frame, area),
             AppView::Construction => self.construction.render(frame, area, &self.journal, &self.todo_view.todo),
             AppView::TradeRoutes => self.trade_routes.render(frame, area, &self.journal),
@@ -359,7 +384,7 @@ impl App {
         match self.view {
             AppView::News         => &[],
             AppView::Pilot        => &[("w/s", "scroll")],
-            AppView::System       => &[("w/s", "scroll")],
+            AppView::System       => &[("w/s", "navigate"), ("tab/a/d", "focus"), ("space", "open faction")],
             AppView::Explorer     => &[("w/s", "navigate"), ("p", "pin")],
             AppView::Materials    => &[("w/s", "navigate"), ("a/d", "panels")],
             AppView::Modules      => &[("w/s", "navigate")],
@@ -377,37 +402,70 @@ impl App {
     }
 
     fn render_status_bar(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let bg = Color::Rgb(255, 140, 0);
+        let bg         = Color::Rgb(255, 140, 0);
         let key_style  = Style::default().fg(Color::Black).bg(bg).add_modifier(Modifier::BOLD);
         let desc_style = Style::default().fg(Color::Black).bg(bg);
         let sep_style  = Style::default().fg(Color::Rgb(120, 55, 0)).bg(bg);
         let info_style = Style::default().fg(Color::Rgb(60, 25, 0)).bg(bg);
 
-        let mut spans: Vec<Span<'static>> = Vec::new();
+        let mut left: Vec<Span<'static>> = Vec::new();
 
         let push_hint = |spans: &mut Vec<Span<'static>>, key: &'static str, desc: &'static str| {
             spans.push(Span::styled(format!(" {key}"), key_style));
             spans.push(Span::styled(format!(" {desc} "), desc_style));
         };
 
-        push_hint(&mut spans, "x", "quit");
-        push_hint(&mut spans, "q/e", "tabs");
+        push_hint(&mut left, "x", "quit");
+        push_hint(&mut left, "q/e", "tabs");
 
         let hints = self.view_hints();
         if !hints.is_empty() {
-            spans.push(Span::styled(" │ ", sep_style));
+            left.push(Span::styled(" │ ", sep_style));
             for (key, desc) in hints {
-                push_hint(&mut spans, key, desc);
+                push_hint(&mut left, key, desc);
             }
         }
 
-        // Right-side system info
-        let system_name = self.journal.current_system.as_ref().map(|s| s.name.as_str()).unwrap_or("—");
-        spans.push(Span::styled(" │ ", sep_style));
-        spans.push(Span::styled("system ", info_style));
-        spans.push(Span::styled(system_name.to_owned(), desc_style));
+        // Right-aligned section: system name + BGS tick countdown
+        let system_name = self.journal.current_system.as_ref()
+            .map(|s| s.name.clone())
+            .unwrap_or_else(|| "—".to_string());
 
-        frame.render_widget(Paragraph::new(Line::from(spans)), area);
+        let mut right: Vec<Span<'static>> = Vec::new();
+        right.push(Span::styled("system ", info_style));
+        right.push(Span::styled(system_name, desc_style));
+
+        if let Some(next_tick) = self.next_tick {
+            let now = chrono::Utc::now();
+            let diff = next_tick.signed_duration_since(now);
+            let tick_str = if diff.num_seconds() <= 0 {
+                "tick: now!".to_owned()
+            } else {
+                let h = diff.num_hours();
+                let m = diff.num_minutes() % 60;
+                let s = diff.num_seconds() % 60;
+                format!("tick in {:02}:{:02}:{:02}", h, m, s)
+            };
+            right.push(Span::styled(" │ ", sep_style));
+            right.push(Span::styled(tick_str, desc_style));
+        }
+        right.push(Span::styled(" ", desc_style));
+
+        // Fill the gap between left hints and right section so the bar spans the full width.
+        let left_w:  usize = left.iter().map(|s| s.content.chars().count()).sum();
+        let right_w: usize = right.iter().map(|s| s.content.chars().count()).sum();
+        let sep_w = 3usize; // " │ "
+        let pad = (area.width as usize).saturating_sub(left_w + sep_w + right_w);
+
+        let mut spans = left;
+        spans.push(Span::styled(" │ ", sep_style));
+        spans.push(Span::styled(" ".repeat(pad), desc_style));
+        spans.extend(right);
+
+        frame.render_widget(
+            Paragraph::new(Line::from(spans)).style(Style::default().bg(bg)),
+            area,
+        );
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent) {
@@ -419,8 +477,8 @@ impl App {
             AppView::Materials => self.inventory.handle_key(key),
             AppView::Modules => self.modules_view.handle_key(key, &self.journal),
             AppView::Suit    => self.suit_view.handle_key(key, &self.journal),
-            AppView::Stations => self.stations.handle_key(key, &self.api),
-            AppView::Carriers => self.carriers.handle_key(key, &self.api),
+            AppView::Stations => self.stations.handle_key(key, &self.api, &self.journal),
+            AppView::Carriers => self.carriers.handle_key(key, &self.api, &self.journal),
             AppView::Factions => self.factions.handle_key(key, &self.api),
             AppView::Construction => {
                 let todo = &mut self.todo_view.todo;
@@ -435,18 +493,8 @@ impl App {
 
         match event {
             ViewEvent::Consumed => return,
-            ViewEvent::NextTab => {
-                self.view = self.view.next();
-                info!("Tab changed to: {}", TABS[self.view.index()]);
-                self.on_tab_enter();
-                return;
-            }
-            ViewEvent::PrevTab => {
-                self.view = self.view.prev();
-                info!("Tab changed to: {}", TABS[self.view.index()]);
-                self.on_tab_enter();
-                return;
-            }
+            ViewEvent::NextTab => { self.go_next_tab(); return; }
+            ViewEvent::PrevTab => { self.go_prev_tab(); return; }
             ViewEvent::SettingsChanged => {
                 info!("Settings changed, saving");
                 self.settings_view.save_settings(&self.settings);
@@ -467,23 +515,27 @@ impl App {
             KeyCode::Char('x') => {
                 self.should_quit = true;
             }
-            KeyCode::Char('e') => {
-                self.view = self.view.next();
-                info!("Tab changed to: {}", TABS[self.view.index()]);
-                self.on_tab_enter();
-            }
-            KeyCode::Char('q') => {
-                self.view = self.view.prev();
-                info!("Tab changed to: {}", TABS[self.view.index()]);
-                self.on_tab_enter();
-            }
+            KeyCode::Char('e') => { self.go_next_tab(); }
+            KeyCode::Char('q') => { self.go_prev_tab(); }
             _ => {}
         }
     }
 
+    fn go_next_tab(&mut self) {
+        self.view = self.view.next();
+        info!("Tab changed to: {}", TABS[self.view.index()]);
+        self.on_tab_enter();
+    }
+
+    fn go_prev_tab(&mut self) {
+        self.view = self.view.prev();
+        info!("Tab changed to: {}", TABS[self.view.index()]);
+        self.on_tab_enter();
+    }
+
     pub fn on_tab_enter(&mut self) {
         match self.view {
-            AppView::News => self.news.start_fetch(self.api.http_client()),
+            AppView::News => self.news.start_fetch(&self.api),
             AppView::Stations => self.stations.on_enter(&self.api),
             AppView::Carriers => self.carriers.on_enter(&self.api),
             AppView::Factions => self.factions.on_enter(&self.api),
@@ -507,6 +559,10 @@ impl App {
         self.construction.poll_search();
         #[cfg(target_arch = "wasm32")] {
             self.trade_routes.poll_search();
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        if let Some(t) = self.pending_tick.lock().unwrap().take() {
+            self.next_tick = Some(t);
         }
     }
 }

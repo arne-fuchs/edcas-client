@@ -35,16 +35,19 @@ impl NewsView {
         }
     }
 
-    /// Starts the background fetch using the provided HTTP client (shared connection pool).
-    /// No-ops if a fetch is already in progress or articles are already loaded.
+    #[cfg(target_arch = "wasm32")]
+    pub fn start_fetch(&mut self, _api: &crate::api_client::ApiClient) {}
+
+    /// Starts the background fetch. No-ops if a fetch is already in progress or articles are loaded.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn start_fetch(&mut self, client: reqwest::blocking::Client) {
+    pub fn start_fetch(&mut self, api: &crate::api_client::ApiClient) {
         if self.rx.is_some() || !self.loading {
             return;
         }
         let (tx, rx) = std::sync::mpsc::channel();
-        std::thread::spawn(move || {
-            let _ = tx.send(fetch_articles_with_client(client));
+        let client = api.http_client();
+        api.spawn(async move {
+            let _ = tx.send(fetch_articles_async(client).await);
         });
         self.rx = Some(rx);
     }
@@ -70,20 +73,21 @@ impl NewsView {
 
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
         match key.code {
-            KeyCode::Tab => ViewEvent::NextTab,
-            KeyCode::BackTab => ViewEvent::PrevTab,
-            KeyCode::Char('w') => {
-                if self.scroll > 0 {
-                    self.scroll -= 1;
-                }
-                ViewEvent::None
+            KeyCode::Char('w') | KeyCode::Up => {
+                self.scroll = self.scroll.saturating_sub(1);
             }
-            KeyCode::Char('s') => {
+            KeyCode::Char('s') | KeyCode::Down => {
                 self.scroll += 1;
-                ViewEvent::None
             }
-            _ => ViewEvent::None,
+            KeyCode::PageUp => {
+                self.scroll = self.scroll.saturating_sub(10);
+            }
+            KeyCode::PageDown => {
+                self.scroll += 10;
+            }
+            _ => {}
         }
+        ViewEvent::None
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect) {
@@ -156,7 +160,7 @@ impl NewsView {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn fetch_articles_with_client(client: reqwest::blocking::Client) -> Result<Vec<Article>, String> {
+async fn fetch_articles_async(client: reqwest::Client) -> Result<Vec<Article>, String> {
     let response = client
         .get("https://community.elitedangerous.com/en/galnet")
         .header("User-Agent", "Mozilla/5.0 (X11; Linux x86_64; rv:109.0) Gecko/20100101 Firefox/115.0")
@@ -164,9 +168,11 @@ fn fetch_articles_with_client(client: reqwest::blocking::Client) -> Result<Vec<A
         .header("Accept-Language", "en-US,en;q=0.5")
         .header("Referer", "https://www.duckduckgo.com")
         .send()
+        .await
         .map_err(|e| { tracing::error!("Couldn't fetch galnet page: {}", e); format!("Couldn't fetch Galnet page: {}", e) })?;
 
     let html = response.text()
+        .await
         .map_err(|e| { tracing::error!("Couldn't parse html site from galnet: {}", e); format!("Couldn't parse Galnet page: {}", e) })?;
 
     use select::document::Document;

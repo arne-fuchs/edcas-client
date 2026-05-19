@@ -21,6 +21,7 @@ pub struct TodoView {
     pub todo: TodoList,
     selected_idx: usize,
     scroll_offset: usize,
+    show_aggregate: bool,
 }
 
 impl TodoView {
@@ -29,6 +30,7 @@ impl TodoView {
             todo: TodoList::load(),
             selected_idx: 0,
             scroll_offset: 0,
+            show_aggregate: false,
         }
     }
 
@@ -143,8 +145,9 @@ impl TodoView {
                 } else {
                     Style::default().fg(Color::White)
                 };
+                let count_str = if item.count > 1 { format!(" x{}", item.count) } else { String::new() };
                 lines.push(Line::from(Span::styled(
-                    format!(" {} G{}  ({})", item.mod_name, item.grade, kind_tag),
+                    format!(" {} G{}{}  ({})", item.mod_name, item.grade, count_str, kind_tag),
                     style,
                 )));
             }
@@ -211,8 +214,9 @@ impl TodoView {
                     ModKind::Ship => "Ship",
                     ModKind::OnFoot => "On-Foot",
                 };
+                let count_label = if item.count > 1 { format!(" x{}", item.count) } else { String::new() };
                 lines.push(Line::from(Span::styled(
-                    format!(" {} G{}  [{}]", item.mod_name, item.grade, kind_label),
+                    format!(" {} G{}{}  [{}]", item.mod_name, item.grade, count_label, kind_label),
                     Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
                 )));
                 lines.push(Line::from(Span::styled(
@@ -235,7 +239,7 @@ impl TodoView {
                 let mut all_ok = true;
                 for cost in &costs {
                     let have = Self::have_count(&cost.name, &item.kind, journal);
-                    let needed = cost.count as i32;
+                    let needed = cost.count as i32 * item.count as i32;
                     let ok = have >= needed;
                     if !ok { all_ok = false; }
                     let (bar_color, checkmark) = if ok { (Color::Green, "✓") } else { (Color::Red, "✗") };
@@ -251,7 +255,7 @@ impl TodoView {
                     lines.push(Line::from(Span::styled("  ✓ Ready to engineer!", Style::default().fg(Color::Green).add_modifier(Modifier::BOLD))));
                 } else {
                     let missing = costs.iter()
-                        .filter(|c| Self::have_count(&c.name, &item.kind, journal) < c.count as i32)
+                        .filter(|c| Self::have_count(&c.name, &item.kind, journal) < c.count as i32 * item.count as i32)
                         .count();
                     lines.push(Line::from(Span::styled(
                         format!("  {} material(s) still needed.", missing),
@@ -311,7 +315,7 @@ impl TodoView {
                     let filled = ((frac * bar_w as f32) as usize).min(bar_w);
                     let bar = format!("[{}{}]", "█".repeat(filled), "░".repeat(bar_w - filled));
                     lines.push(Line::from(vec![
-                        Span::styled(format!("  {} {:<24}", checkmark, display_name), Style::default().fg(color)),
+                        Span::styled(format!("  {} {}", checkmark, pad_name(&display_name, 34)), Style::default().fg(color)),
                         Span::styled(format!("{:>7} left", remaining), Style::default().fg(if done { Color::Green } else { Color::DarkGray })),
                         Span::styled(format!("  {}", bar), Style::default().fg(color)),
                         Span::styled(
@@ -333,6 +337,89 @@ impl TodoView {
         lines
     }
 
+    fn build_aggregate_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
+        let mut lines = Vec::new();
+
+        if self.todo.items.is_empty() {
+            lines.push(Line::from(Span::styled(
+                " No engineering todos.",
+                Style::default().fg(Color::DarkGray),
+            )));
+            return lines;
+        }
+
+        // Sum all material costs across all engineering todos.
+        // Key: (name, ModKind), value: (needed_total, is_onfoot)
+        let mut totals: std::collections::HashMap<String, (i32, crate::todo::ModKind)> =
+            std::collections::HashMap::new();
+        for item in &self.todo.items {
+            for cost in Self::grade_costs(&item.mod_id, item.grade, &item.kind) {
+                let entry = totals.entry(cost.name.clone()).or_insert((0, item.kind.clone()));
+                entry.0 += cost.count as i32 * item.count as i32;
+            }
+        }
+
+        lines.push(Line::from(Span::styled(
+            format!(" All materials for {} mod(s):", self.todo.items.len()),
+            Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
+        )));
+        lines.push(Line::from(""));
+
+        // Sort: missing first, then by name.
+        let mut sorted: Vec<(String, i32, crate::todo::ModKind)> = totals
+            .into_iter()
+            .map(|(name, (needed, kind))| (name, needed, kind))
+            .collect();
+        sorted.sort_by(|a, b| {
+            let have_a = Self::have_count(&a.0, &a.2, journal);
+            let have_b = Self::have_count(&b.0, &b.2, journal);
+            let ok_a = have_a >= a.1;
+            let ok_b = have_b >= b.1;
+            ok_a.cmp(&ok_b).then(a.0.cmp(&b.0))
+        });
+
+        let mut all_ok = true;
+        for (name, needed, kind) in &sorted {
+            let have = Self::have_count(name, kind, journal);
+            let ok = have >= *needed;
+            if !ok {
+                all_ok = false;
+            }
+            let (color, check) = if ok { (Color::Green, "✓") } else { (Color::Red, "✗") };
+            let bar = progress_bar(have, *needed);
+            lines.push(Line::from(vec![
+                Span::styled(
+                    format!("  {} {:<32}", check, name),
+                    Style::default().fg(color),
+                ),
+                Span::styled(
+                    format!(" {:>3}/{:<3}", have.min(*needed), needed),
+                    Style::default().fg(Color::White),
+                ),
+                Span::styled(format!(" {}", bar), Style::default().fg(color)),
+            ]));
+        }
+
+        lines.push(Line::from(""));
+        if all_ok {
+            lines.push(Line::from(Span::styled(
+                "  ✓ All materials ready!",
+                Style::default().fg(Color::Green).add_modifier(Modifier::BOLD),
+            )));
+        } else {
+            let missing = sorted
+                .iter()
+                .filter(|(name, needed, kind)| Self::have_count(name, kind, journal) < *needed)
+                .count();
+            lines.push(Line::from(Span::styled(
+                format!("  {} material(s) still needed.", missing),
+                Style::default().fg(Color::Yellow),
+            )));
+        }
+
+        lines
+    }
+
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
         let total = self.total_count();
         match key.code {
@@ -348,11 +435,27 @@ impl TodoView {
                     self.scroll_offset = 0;
                 }
             }
+            KeyCode::PageUp => {
+                self.selected_idx = self.selected_idx.saturating_sub(10);
+                self.scroll_offset = 0;
+            }
+            KeyCode::PageDown => {
+                if self.selected_idx + 10 < total {
+                    self.selected_idx += 10;
+                } else if total > 0 {
+                    self.selected_idx = total - 1;
+                }
+                self.scroll_offset = 0;
+            }
+            KeyCode::Char('g') => {
+                self.show_aggregate = !self.show_aggregate;
+                self.scroll_offset = 0;
+            }
             KeyCode::Delete | KeyCode::Char('x') => {
                 match self.selected_kind() {
                     Some(SelectedKind::Engineering(idx)) => {
-                        self.todo.remove(idx);
-                        if self.selected_idx > 0 && self.selected_idx >= self.total_count() {
+                        let removed = self.todo.decrement_or_remove(idx);
+                        if removed && self.selected_idx > 0 && self.selected_idx >= self.total_count() {
                             self.selected_idx -= 1;
                         }
                     }
@@ -388,7 +491,17 @@ impl TodoView {
             chunks[0],
         );
 
-        let right_lines = self.build_right_lines(journal);
+        let (right_lines, right_title) = if self.show_aggregate {
+            (
+                self.build_aggregate_lines(journal),
+                " All Materials (g: item view) ".to_string(),
+            )
+        } else {
+            (
+                self.build_right_lines(journal),
+                " Materials (w/s: navigate, g: all) ".to_string(),
+            )
+        };
         let visible = area.height.saturating_sub(2) as usize;
         let max_scroll = right_lines.len().saturating_sub(visible);
         let offset = self.scroll_offset.min(max_scroll) as u16;
@@ -396,7 +509,7 @@ impl TodoView {
             Paragraph::new(right_lines)
                 .block(
                     Block::default()
-                        .title(" Materials (w/s: navigate) ")
+                        .title(right_title)
                         .borders(Borders::ALL)
                         .style(Style::default().fg(Color::White)),
                 )
@@ -424,4 +537,14 @@ fn progress_bar(have: i32, need: i32) -> String {
     let filled = (ratio * 12.0).round() as usize;
     let empty = 12usize.saturating_sub(filled);
     format!("[{}{}]", "█".repeat(filled), "░".repeat(empty))
+}
+
+/// Returns `s` padded to exactly `width` chars. Truncates with `…` if longer.
+fn pad_name(s: &str, width: usize) -> String {
+    let count = s.chars().count();
+    if count > width {
+        s.chars().take(width - 1).collect::<String>() + "…"
+    } else {
+        format!("{:<width$}", s, width = width)
+    }
 }

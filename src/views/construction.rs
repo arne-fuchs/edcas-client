@@ -14,6 +14,7 @@ use crate::api_client::ApiClient;
 use crate::journal_reader::JournalData;
 use crate::pins::Pins;
 use crate::todo::{ConstructionTodoItem, ConstructionTodoResource, TodoList};
+use crate::views::util::FocusArea;
 use crate::views::ViewEvent;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -21,11 +22,6 @@ use std::sync::{Arc, Mutex};
 
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
-
-enum FocusArea {
-    List,
-    Detail,
-}
 
 pub struct ConstructionView {
     search_input: String,
@@ -124,10 +120,10 @@ impl ConstructionView {
 
                 #[cfg(not(target_arch = "wasm32"))]
                 {
-                    let api = api.clone();
+                    let api_owned = api.clone();
                     let submission = depot.submission.clone();
-                    std::thread::spawn(move || {
-                        let _ = api.submit_construction_depot(&submission);
+                    api.spawn(async move {
+                        let _ = api_owned.submit_construction_depot(&submission).await;
                     });
                 }
 
@@ -252,8 +248,8 @@ impl ConstructionView {
             limit: Some(50),
             ..Default::default()
         };
-        std::thread::spawn(move || {
-            let result = api_owned.search_construction_depots(&query).map_err(|e| e.to_string());
+        api.spawn(async move {
+            let result = api_owned.search_construction_depots(&query).await.map_err(|e| e.to_string());
             *pending.lock().unwrap() = Some(result);
         });
     }
@@ -299,30 +295,17 @@ impl ConstructionView {
         }
 
         match key.code {
-            KeyCode::Tab => {
-                match self.focus {
-                    FocusArea::List => {
-                        self.focus = FocusArea::Detail;
-                        self.detail_scroll = 0;
-                    }
-                    FocusArea::Detail => {
-                        self.focus = FocusArea::List;
-                    }
-                }
-                return ViewEvent::Consumed;
-            }
-            KeyCode::BackTab => return ViewEvent::PrevTab,
             KeyCode::Char('f') | KeyCode::Char('/') => {
                 self.search_active = true;
                 self.search_input.clear();
                 self.focus = FocusArea::List;
                 return ViewEvent::Consumed;
             }
-            KeyCode::Enter => {
+            KeyCode::Tab | KeyCode::Enter => {
                 if matches!(key.modifiers, KeyModifiers::NONE) {
-                    if matches!(self.focus, FocusArea::List) {
-                        self.focus = FocusArea::Detail;
-                        self.detail_scroll = 0;
+                    match self.focus {
+                        FocusArea::List => { self.focus = FocusArea::Detail; self.detail_scroll = 0; }
+                        FocusArea::Detail => { self.focus = FocusArea::List; }
                     }
                     return ViewEvent::Consumed;
                 }
@@ -354,6 +337,13 @@ impl ConstructionView {
                         }
                     }
                 }
+                KeyCode::PageUp => {
+                    self.selected_idx = self.selected_idx.saturating_sub(10);
+                }
+                KeyCode::PageDown => {
+                    let max = self.display_count().saturating_sub(1);
+                    self.selected_idx = (self.selected_idx + 10).min(max);
+                }
                 KeyCode::Char('t') => {
                     self.toggle_todo(journal, todo);
                 }
@@ -371,6 +361,12 @@ impl ConstructionView {
                 }
                 KeyCode::Char('s') | KeyCode::Down => {
                     self.detail_scroll += 1;
+                }
+                KeyCode::PageUp => {
+                    self.detail_scroll = self.detail_scroll.saturating_sub(10);
+                }
+                KeyCode::PageDown => {
+                    self.detail_scroll += 10;
                 }
                 _ => {}
             },

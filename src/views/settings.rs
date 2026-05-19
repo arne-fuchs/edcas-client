@@ -242,8 +242,6 @@ impl SettingsView {
                     }
                 }
             }
-            KeyCode::Tab => return ViewEvent::NextTab,
-            KeyCode::BackTab => return ViewEvent::PrevTab,
             _ => {}
         }
 

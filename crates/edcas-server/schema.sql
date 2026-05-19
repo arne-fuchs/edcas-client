@@ -559,3 +559,22 @@ CREATE TABLE cached_trade_loops (
 --
 -- ── Migration: add carrier_name column to stations ───────────────────────────
 -- ALTER TABLE stations ADD COLUMN IF NOT EXISTS carrier_name VARCHAR(255);
+
+-- ── Server tick tracking ─────────────────────────────────────
+-- Each row is one detected BGS server tick.
+CREATE TABLE IF NOT EXISTS server_ticks (
+    id           BIGSERIAL PRIMARY KEY,
+    tick_time    TIMESTAMPTZ NOT NULL,
+    system_count INTEGER     NOT NULL,
+    detected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_server_ticks_time ON server_ticks (date_trunc('hour', tick_time));
+
+-- Migration (run on existing databases):
+-- CREATE TABLE IF NOT EXISTS server_ticks (
+--     id           BIGSERIAL PRIMARY KEY,
+--     tick_time    TIMESTAMPTZ NOT NULL,
+--     system_count INTEGER     NOT NULL,
+--     detected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_server_ticks_time ON server_ticks (date_trunc('hour', tick_time));

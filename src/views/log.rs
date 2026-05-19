@@ -41,8 +41,6 @@ impl LogView {
 
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
         match key.code {
-            KeyCode::Tab => ViewEvent::NextTab,
-            KeyCode::BackTab => ViewEvent::PrevTab,
             KeyCode::Char('w') | KeyCode::Up => {
                 self.auto_scroll = false;
                 self.scroll_y = self.scroll_y.saturating_sub(1);

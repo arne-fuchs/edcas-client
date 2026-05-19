@@ -245,6 +245,12 @@ impl InventoryView {
             KeyCode::Char('s') | KeyCode::Down => {
                 self.scroll += 1;
             }
+            KeyCode::PageUp => {
+                self.scroll = self.scroll.saturating_sub(10);
+            }
+            KeyCode::PageDown => {
+                self.scroll += 10;
+            }
             KeyCode::Char('d') | KeyCode::Right => {
                 if let Some(next) = self.tab.next() {
                     self.tab = next;

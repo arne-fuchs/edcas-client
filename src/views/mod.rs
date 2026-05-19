@@ -15,6 +15,19 @@ mod suit;
 mod system;
 mod todo_view;
 mod trade_routes;
+mod util;
+
+/// Appends BGS timing hints to known faction state names.
+///
+/// - Pending Expansion: faction queued to expand, ~5 days until active
+/// - Active Expansion: faction moving to new system, ~3-7 days to complete
+pub(super) fn annotate_faction_state(state: &str, is_pending: bool) -> String {
+    match (state, is_pending) {
+        ("Expansion", true) => "Expansion (~5d until active)".to_string(),
+        ("Expansion", false) => "Expansion (~3-7d to complete)".to_string(),
+        _ => state.to_string(),
+    }
+}
 
 pub use about::AboutView;
 pub use carriers::CarriersView;

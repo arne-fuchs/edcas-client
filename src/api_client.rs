@@ -1,16 +1,17 @@
 use edcas_common::api::{
     BodyResponse, CarrierQuery, CarrierResponse, ConstructionDepotResponse,
     ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse,
-    StationQuery, StationResponse, TradeLoopResponse, TradeRouteResponse,
+    ServerTickResponse, StationQuery, StationResponse, TradeLoopResponse, TradeRouteResponse,
 };
 
-// ─── Native (blocking) implementation ────────────────────────────────────────
+// ─── Native (async) implementation ────────────────────────────────────────────
 
 #[cfg(not(target_arch = "wasm32"))]
 #[derive(Clone)]
 pub struct ApiClient {
     base_url: String,
-    client: reqwest::blocking::Client,
+    client: reqwest::Client,
+    rt: tokio::runtime::Handle,
 }
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -19,70 +20,93 @@ impl ApiClient {
         &self.base_url
     }
 
-    pub fn new(base_url: impl Into<String>) -> Self {
+    pub fn new(base_url: impl Into<String>, rt: tokio::runtime::Handle) -> Self {
         Self {
             base_url: base_url.into(),
-            client: reqwest::blocking::Client::builder()
+            client: reqwest::Client::builder()
                 .timeout(std::time::Duration::from_secs(10))
                 .build()
                 .expect("failed to build HTTP client"),
+            rt,
         }
     }
 
-    /// Returns a clone of the inner HTTP client (shares the connection pool, no new runtime).
-    pub fn http_client(&self) -> reqwest::blocking::Client {
+    /// Spawn an async task on the background runtime. Results should be
+    /// communicated back via channels or shared state — do not block the UI.
+    pub fn spawn<F>(&self, f: F)
+    where
+        F: std::future::Future<Output = ()> + Send + 'static,
+    {
+        self.rt.spawn(f);
+    }
+
+    /// Returns a clone of the underlying async HTTP client.
+    pub fn http_client(&self) -> reqwest::Client {
         self.client.clone()
     }
 
-    pub fn get_bodies(&self, system_address: i64) -> anyhow::Result<Vec<BodyResponse>> {
+    pub async fn get_bodies(&self, system_address: i64) -> anyhow::Result<Vec<BodyResponse>> {
         let url = format!("{}/api/v1/systems/{}/bodies", self.base_url, system_address);
-        let resp = self.client.get(&url).send()?;
-        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
+        let resp = self.client.get(&url).send().await?;
+        if resp.status().is_success() { Ok(resp.json().await?) } else { Ok(vec![]) }
     }
 
-    pub fn search_stations(&self, query: &StationQuery) -> anyhow::Result<Vec<StationResponse>> {
+    pub async fn search_stations(&self, query: &StationQuery) -> anyhow::Result<Vec<StationResponse>> {
         let url = format!("{}/api/v1/stations", self.base_url);
-        let resp = self.client.get(&url).query(query).send()?;
-        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
+        let resp = self.client.get(&url).query(query).send().await?;
+        if resp.status().is_success() { Ok(resp.json().await?) } else { Ok(vec![]) }
     }
 
-    pub fn search_carriers(&self, query: &CarrierQuery) -> anyhow::Result<Vec<CarrierResponse>> {
+    pub async fn search_carriers(&self, query: &CarrierQuery) -> anyhow::Result<Vec<CarrierResponse>> {
         let url = format!("{}/api/v1/carriers", self.base_url);
-        let resp = self.client.get(&url).query(query).send()?;
-        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
+        let resp = self.client.get(&url).query(query).send().await?;
+        if resp.status().is_success() { Ok(resp.json().await?) } else { Ok(vec![]) }
     }
 
-    pub fn search_factions(&self, query: &FactionQuery) -> anyhow::Result<Vec<FactionResponse>> {
+    pub async fn search_factions(&self, query: &FactionQuery) -> anyhow::Result<Vec<FactionResponse>> {
         let url = format!("{}/api/v1/factions", self.base_url);
-        let resp = self.client.get(&url).query(query).send()?;
-        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
+        let resp = self.client.get(&url).query(query).send().await?;
+        if resp.status().is_success() { Ok(resp.json().await?) } else { Ok(vec![]) }
     }
 
-    pub fn search_construction_depots(
+    pub async fn search_construction_depots(
         &self,
         query: &ConstructionQuery,
     ) -> anyhow::Result<Vec<ConstructionDepotResponse>> {
         let url = format!("{}/api/v1/construction-depots", self.base_url);
-        let resp = self.client.get(&url).query(query).send()?;
-        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
+        let resp = self.client.get(&url).query(query).send().await?;
+        if resp.status().is_success() { Ok(resp.json().await?) } else { Ok(vec![]) }
     }
 
-    pub fn submit_construction_depot(&self, submission: &ConstructionDepotSubmission) -> anyhow::Result<()> {
+    pub async fn submit_construction_depot(
+        &self,
+        submission: &ConstructionDepotSubmission,
+    ) -> anyhow::Result<()> {
         let url = format!("{}/api/v1/construction-depots", self.base_url);
-        self.client.post(&url).json(submission).send()?;
+        self.client.post(&url).json(submission).send().await?;
         Ok(())
     }
 
-    pub fn fetch_trade_routes(&self) -> anyhow::Result<Vec<TradeRouteResponse>> {
+    pub async fn fetch_trade_routes(&self) -> anyhow::Result<Vec<TradeRouteResponse>> {
         let url = format!("{}/api/v1/trade-routes", self.base_url);
-        let resp = self.client.get(&url).send()?;
-        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
+        let resp = self.client.get(&url).send().await?;
+        if resp.status().is_success() { Ok(resp.json().await?) } else { Ok(vec![]) }
     }
 
-    pub fn fetch_trade_loops(&self) -> anyhow::Result<Vec<TradeLoopResponse>> {
+    pub async fn fetch_trade_loops(&self) -> anyhow::Result<Vec<TradeLoopResponse>> {
         let url = format!("{}/api/v1/trade-loops", self.base_url);
-        let resp = self.client.get(&url).send()?;
-        if resp.status().is_success() { Ok(resp.json()?) } else { Ok(vec![]) }
+        let resp = self.client.get(&url).send().await?;
+        if resp.status().is_success() { Ok(resp.json().await?) } else { Ok(vec![]) }
+    }
+
+    pub async fn get_server_tick(&self) -> anyhow::Result<Option<ServerTickResponse>> {
+        let url = format!("{}/api/v1/server-tick", self.base_url);
+        let resp = self.client.get(&url).send().await?;
+        if resp.status().is_success() {
+            Ok(Some(resp.json().await?))
+        } else {
+            Ok(None)
+        }
     }
 }
 
@@ -152,6 +176,14 @@ impl ApiClient {
         match self.client.get(&url).send().await {
             Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
             _ => vec![],
+        }
+    }
+
+    pub async fn get_server_tick(&self) -> Option<ServerTickResponse> {
+        let url = format!("{}/api/v1/server-tick", self.base_url);
+        match self.client.get(&url).send().await {
+            Ok(resp) if resp.status().is_success() => resp.json().await.ok(),
+            _ => None,
         }
     }
 }

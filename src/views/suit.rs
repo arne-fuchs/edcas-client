@@ -30,6 +30,14 @@ impl SuitView {
                     self.selected = (self.selected + 1).min(count - 1);
                 }
             }
+            KeyCode::PageUp => {
+                self.selected = self.selected.saturating_sub(10);
+            }
+            KeyCode::PageDown => {
+                if count > 0 {
+                    self.selected = (self.selected + 10).min(count - 1);
+                }
+            }
             _ => return ViewEvent::None,
         }
         ViewEvent::Consumed

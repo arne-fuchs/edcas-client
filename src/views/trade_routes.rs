@@ -1,6 +1,7 @@
 use crate::api_client::ApiClient;
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::JournalData;
+use crate::views::util::{fmt_ts, truncate};
 use crate::views::ViewEvent;
 use edcas_common::api::{TradeLoopResponse, TradeRouteResponse};
 use ratatui::{
@@ -124,23 +125,21 @@ impl TradeRoutesView {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn fetch_routes(&mut self, api: &ApiClient) {
-        let base_url = api.base_url().to_string();
         let (tx, rx) = std::sync::mpsc::channel();
         self.route_rx = Some(rx);
-        std::thread::spawn(move || {
-            let client = ApiClient::new(base_url);
-            let _ = tx.send(client.fetch_trade_routes().map_err(|e| e.to_string()));
+        let api_owned = api.clone();
+        api.spawn(async move {
+            let _ = tx.send(api_owned.fetch_trade_routes().await.map_err(|e| e.to_string()));
         });
     }
 
     #[cfg(not(target_arch = "wasm32"))]
     fn fetch_loops(&mut self, api: &ApiClient) {
-        let base_url = api.base_url().to_string();
         let (tx, rx) = std::sync::mpsc::channel();
         self.loop_rx = Some(rx);
-        std::thread::spawn(move || {
-            let client = ApiClient::new(base_url);
-            let _ = tx.send(client.fetch_trade_loops().map_err(|e| e.to_string()));
+        let api_owned = api.clone();
+        api.spawn(async move {
+            let _ = tx.send(api_owned.fetch_trade_loops().await.map_err(|e| e.to_string()));
         });
         self.status_msg = "Loading…".into();
     }
@@ -229,6 +228,10 @@ impl TradeRoutesView {
     fn handle_filter_key(&mut self, key: &KeyEvent, api: &ApiClient, _journal: &JournalData) -> ViewEvent {
         match key.code {
             KeyCode::Tab => {
+                self.focus = FocusArea::List;
+                return ViewEvent::Consumed;
+            }
+            KeyCode::Char('s') | KeyCode::Down => {
                 if self.filter_field < 3 {
                     self.filter_field += 1;
                 } else {
@@ -236,7 +239,7 @@ impl TradeRoutesView {
                 }
                 return ViewEvent::Consumed;
             }
-            KeyCode::BackTab => {
+            KeyCode::Char('w') | KeyCode::Up => {
                 if self.filter_field > 0 {
                     self.filter_field -= 1;
                 }
@@ -277,10 +280,6 @@ impl TradeRoutesView {
                 }
                 return ViewEvent::Consumed;
             }
-            KeyCode::Down => {
-                self.focus = FocusArea::List;
-                return ViewEvent::Consumed;
-            }
             _ => {}
         }
         ViewEvent::None
@@ -289,6 +288,10 @@ impl TradeRoutesView {
     fn handle_list_key(&mut self, key: &KeyEvent, api: &ApiClient, _journal: &JournalData) -> ViewEvent {
         let count = self.current_count();
         match key.code {
+            KeyCode::Tab => {
+                self.focus = FocusArea::Filter;
+                return ViewEvent::Consumed;
+            }
             KeyCode::Up | KeyCode::Char('w') => {
                 if self.selected_idx > 0 {
                     self.selected_idx -= 1;
@@ -311,10 +314,6 @@ impl TradeRoutesView {
                 if count > 0 {
                     self.selected_idx = (self.selected_idx + 10).min(count - 1);
                 }
-                return ViewEvent::Consumed;
-            }
-            KeyCode::Tab => {
-                self.focus = FocusArea::Filter;
                 return ViewEvent::Consumed;
             }
             KeyCode::Char('r') => {
@@ -615,10 +614,6 @@ fn cycle(idx: usize, len: usize, forward: bool) -> usize {
     if forward { (idx + 1) % len } else { (idx + len - 1) % len }
 }
 
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max { s.to_string() } else { format!("{}…", &s[..max.saturating_sub(1)]) }
-}
-
 fn format_num(n: i32) -> String {
     let s = n.to_string();
     let mut result = String::new();
@@ -627,11 +622,6 @@ fn format_num(n: i32) -> String {
         result.push(c);
     }
     result.chars().rev().collect()
-}
-
-fn fmt_ts(ts: Option<&chrono::DateTime<chrono::Utc>>) -> String {
-    ts.map(|t| t.format("%Y-%m-%d %H:%M UTC").to_string())
-        .unwrap_or_else(|| "—".to_string())
 }
 
 fn pad_str(pad: &Option<String>) -> &str {

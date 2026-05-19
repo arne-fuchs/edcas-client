@@ -6,6 +6,8 @@ pub enum ModKind {
     OnFoot,
 }
 
+fn default_count() -> u32 { 1 }
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct TodoItem {
     pub mod_id: String,
@@ -13,6 +15,8 @@ pub struct TodoItem {
     pub mod_name: String,
     pub module_type: String,
     pub kind: ModKind,
+    #[serde(default = "default_count")]
+    pub count: u32,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -83,10 +87,24 @@ impl TodoList {
     }
 
     pub fn add(&mut self, item: TodoItem) {
-        let already = self.items.iter().any(|i| i.mod_id == item.mod_id && i.grade == item.grade);
-        if !already {
+        if let Some(existing) = self.items.iter_mut().find(|i| i.mod_id == item.mod_id && i.grade == item.grade) {
+            existing.count += 1;
+        } else {
             self.items.push(item);
+        }
+        self.save();
+    }
+
+    pub fn decrement_or_remove(&mut self, idx: usize) -> bool {
+        if idx >= self.items.len() { return false; }
+        if self.items[idx].count > 1 {
+            self.items[idx].count -= 1;
             self.save();
+            false
+        } else {
+            self.items.remove(idx);
+            self.save();
+            true
         }
     }
 

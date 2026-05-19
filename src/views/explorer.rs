@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 
 use crate::event_shim::{KeyCode, KeyEvent};
 use ratatui::{
@@ -105,6 +105,7 @@ impl ExplorerView {
 
     fn rebuild_flat_nodes(&mut self) {
         self.flat_nodes.clear();
+        let mut placed_stations: HashSet<i64> = HashSet::new();
         let n = self.tree.len();
         for (i, node) in self.tree.iter().enumerate() {
             flatten_node(
@@ -116,9 +117,14 @@ impl ExplorerView {
                 &self.fss_signals,
                 &self.saa_data,
                 &self.discovered_signals,
+                &self.stations,
+                &mut placed_stations,
             );
         }
-        if !self.stations.is_empty() {
+        let unplaced: Vec<&StationData> = self.stations.iter()
+            .filter(|s| !placed_stations.contains(&s.market_id))
+            .collect();
+        if !unplaced.is_empty() {
             self.flat_nodes.push(FlatNode {
                 tree_prefix: String::new(),
                 short_name: "Stations".into(),
@@ -135,7 +141,7 @@ impl ExplorerView {
                 node_type: NodeType::SectionHeader,
                 radius: 0.0,
             });
-            for station in &self.stations {
+            for station in unplaced {
                 self.flat_nodes.push(FlatNode {
                     tree_prefix: String::new(),
                     short_name: station.name.clone(),
@@ -394,9 +400,14 @@ impl ExplorerView {
                     } else {
                         String::new()
                     };
+                    let prefix = if node.tree_prefix.is_empty() {
+                        "  ".to_string()
+                    } else {
+                        node.tree_prefix.clone()
+                    };
                     if is_selected {
                         lines.push(Line::from(Span::styled(
-                            format!("  ◉ {}{}", node.short_name, dist_str),
+                            format!("{}◉ {}{}", prefix, node.short_name, dist_str),
                             Style::default()
                                 .fg(Color::Black)
                                 .bg(Color::Rgb(255, 140, 0))
@@ -404,7 +415,7 @@ impl ExplorerView {
                         )));
                     } else {
                         lines.push(Line::from(vec![
-                            Span::styled("  ", Style::default().fg(Color::DarkGray)),
+                            Span::styled(prefix, Style::default().fg(Color::DarkGray)),
                             Span::styled("◉ ", Style::default().fg(Color::Cyan)),
                             Span::styled(node.short_name.clone(), Style::default().fg(Color::White)),
                             Span::styled(dist_str, Style::default().fg(Color::DarkGray)),
@@ -805,6 +816,8 @@ fn flatten_node(
     fss_signals: &HashMap<i32, Vec<BodySignal>>,
     saa_data: &HashMap<i32, SaaBodyData>,
     discovered_signals: &[DiscoveredSignal],
+    stations: &[StationData],
+    placed_stations: &mut HashSet<i64>,
 ) {
     let connector = if is_last { "└─ " } else { "├─ " };
     let continuation = if is_last { "   " } else { "│  " };
@@ -813,7 +826,9 @@ fn flatten_node(
 
     let body = node.data.as_ref();
     let is_barycentre = node.name.to_ascii_lowercase().contains("barycentre");
+    let is_star = body.map(|b| !b.star_type.is_empty()).unwrap_or(false);
     let short_name = strip_system_prefix(&node.name, system_name);
+    let body_dist = body.map(|b| b.distance_from_arrival_ls).unwrap_or(0.0);
 
     let (bio_signal_count, geo_signal_count) = if let Some(saa) = saa_data.get(&node.body_id) {
         let bio = saa.signals.iter().filter(|s| s.is_biological()).map(|s| s.count).sum();
@@ -831,7 +846,7 @@ fn flatten_node(
         tree_prefix,
         short_name,
         body_id: node.body_id,
-        distance_ls: body.map(|b| b.distance_from_arrival_ls).unwrap_or(0.0),
+        distance_ls: body_dist,
         has_rings: body.map(|b| !b.rings.is_empty()).unwrap_or(false),
         landable: body.map(|b| b.landable).unwrap_or(false),
         planet_class: body.map(|b| b.planet_class.clone()).unwrap_or_default(),
@@ -847,6 +862,34 @@ fn flatten_node(
         node_type: NodeType::Body,
         radius: body.map(|b| b.radius).unwrap_or(0.0),
     });
+
+    // Find stations orbiting this body.
+    // Primary: exact host_body_id match (from SupercruiseExit journal event).
+    // Fallback: distance proximity, but only for stations without a known host_body_id and
+    // only on non-star, non-barycentre bodies with a known distance.
+    let orbiting: Vec<&StationData> = if !is_star && !is_barycentre {
+        stations.iter()
+            .filter(|s| {
+                if placed_stations.contains(&s.market_id) { return false; }
+                if let Some(hb) = s.host_body_id {
+                    hb == node.body_id
+                } else {
+                    // Distance fallback only when body distance is known and tight (≤2 ls or 0.5%)
+                    body_dist > 0.0 && s.dist_from_star_ls > 0.0 && {
+                        let diff = (s.dist_from_star_ls - body_dist).abs();
+                        diff < (body_dist * 0.005).max(2.0)
+                    }
+                }
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
+    // Mark placed BEFORE recursing so children don't pick up these stations.
+    for s in &orbiting {
+        placed_stations.insert(s.market_id);
+    }
+    let n_orbiting = orbiting.len();
 
     // Collect signals for this body (prefer SAA over FSS)
     let body_signals: Vec<BodySignal> = if let Some(saa) = saa_data.get(&node.body_id) {
@@ -865,15 +908,15 @@ fn flatten_node(
         .collect();
     let n_disc = disc_sigs.len();
 
-    // Orbital children — only "last" if there are no signal children after them
+    // Orbital children
     for (i, child) in node.children.iter().enumerate() {
-        let is_last = i == n_children - 1 && n_sigs == 0 && n_disc == 0;
-        flatten_node(child, &child_prefix, is_last, result, system_name, fss_signals, saa_data, discovered_signals);
+        let is_last = i == n_children - 1 && n_sigs == 0 && n_disc == 0 && n_orbiting == 0;
+        flatten_node(child, &child_prefix, is_last, result, system_name, fss_signals, saa_data, discovered_signals, stations, placed_stations);
     }
 
-    // Bio/geo signal children, appended after orbital children
+    // Bio/geo signal children
     for (j, sig) in body_signals.iter().enumerate() {
-        let is_last = j == n_sigs - 1 && n_disc == 0;
+        let is_last = j == n_sigs - 1 && n_disc == 0 && n_orbiting == 0;
         let sig_connector = if is_last { "└─ " } else { "├─ " };
         let sig_prefix = format!("{}{}", child_prefix, sig_connector);
         let label = format!("{} ×{}", sig.display_type(), sig.count);
@@ -897,7 +940,7 @@ fn flatten_node(
 
     // Body-associated system signals (FssSignalDiscovered with BodyID)
     for (k, sig) in disc_sigs.iter().enumerate() {
-        let is_last = k == n_disc - 1;
+        let is_last = k == n_disc - 1 && n_orbiting == 0;
         let sig_connector = if is_last { "└─ " } else { "├─ " };
         let sig_prefix = format!("{}{}", child_prefix, sig_connector);
         result.push(FlatNode {
@@ -914,6 +957,28 @@ fn flatten_node(
             bio_signal_count: 0,
             geo_signal_count: 0,
             node_type: NodeType::Signal((*sig).clone()),
+            radius: 0.0,
+        });
+    }
+
+    // Orbiting stations as children of this body
+    for (i, station) in orbiting.iter().enumerate() {
+        let conn = if i == n_orbiting - 1 { "└─ " } else { "├─ " };
+        let prefix = format!("{}{}", child_prefix, conn);
+        result.push(FlatNode {
+            tree_prefix: prefix,
+            short_name: station.name.clone(),
+            body_id: -1,
+            distance_ls: station.dist_from_star_ls,
+            has_rings: false,
+            landable: false,
+            planet_class: String::new(),
+            star_type: String::new(),
+            is_barycentre: false,
+            composition: None,
+            bio_signal_count: 0,
+            geo_signal_count: 0,
+            node_type: NodeType::Station((*station).clone()),
             radius: 0.0,
         });
     }
@@ -950,6 +1015,9 @@ fn build_station_detail(station: &StationData) -> Vec<Line<'static>> {
     if station.dist_from_star_ls > 0.0 {
         detail_row(&mut lines, "Distance", format!("{:.2} Ls", station.dist_from_star_ls));
     }
+    if !station.allegiance.is_empty() {
+        detail_row(&mut lines, "Allegiance", station.allegiance.clone());
+    }
     if !station.faction.is_empty() {
         detail_row(&mut lines, "Faction", station.faction.clone());
     }
@@ -957,7 +1025,18 @@ fn build_station_detail(station: &StationData) -> Vec<Line<'static>> {
         detail_row(&mut lines, "Government", station.government.clone());
     }
     if !station.economy.is_empty() {
-        detail_row(&mut lines, "Economy", station.economy.clone());
+        let econ = if station.secondary_economies.is_empty() {
+            station.economy.clone()
+        } else {
+            let secs: Vec<String> = station.secondary_economies.iter()
+                .map(|(name, prop)| format!("{} ({:.0}%)", name, prop * 100.0))
+                .collect();
+            format!("{} / {}", station.economy, secs.join(", "))
+        };
+        detail_row(&mut lines, "Economy", econ);
+    }
+    if let Some((s, m, l)) = station.landing_pads {
+        detail_row(&mut lines, "Landing Pads", format!("S:{s}  M:{m}  L:{l}"));
     }
 
     if !station.services.is_empty() {

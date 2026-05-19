@@ -19,10 +19,10 @@ impl AboutView {
 
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
         match key.code {
-            KeyCode::Tab              => return ViewEvent::NextTab,
-            KeyCode::BackTab          => return ViewEvent::PrevTab,
             KeyCode::Char('w') | KeyCode::Up   => { self.scroll = self.scroll.saturating_sub(1); }
             KeyCode::Char('s') | KeyCode::Down => { self.scroll += 1; }
+            KeyCode::PageUp   => { self.scroll = self.scroll.saturating_sub(10); }
+            KeyCode::PageDown => { self.scroll += 10; }
             _ => {}
         }
         ViewEvent::None
@@ -120,7 +120,7 @@ fn build_lines() -> Vec<Line<'static>> {
 
         // ── Stations & Carriers ───────────────────────────────────
         heading("Stations & Carriers"),
-        ctrl("Enter",              "Start a new search"),
+        ctrl("/ or f",             "Start a new search"),
         ctrl("Enter (typing)",     "Execute search"),
         ctrl("Esc (typing)",       "Cancel search"),
         ctrl("p",                  "Pin / unpin selected item"),
@@ -135,7 +135,7 @@ fn build_lines() -> Vec<Line<'static>> {
 
         // ── Factions ─────────────────────────────────────────────
         heading("Factions"),
-        ctrl("Enter",              "Start a new search"),
+        ctrl("/ or f",             "Start a new search"),
         ctrl("Enter (typing)",     "Execute search"),
         ctrl("Esc (typing)",       "Cancel search"),
         ctrl("p",                  "Pin / unpin selected faction"),

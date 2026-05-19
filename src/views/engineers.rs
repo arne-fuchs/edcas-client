@@ -26,12 +26,11 @@ enum Kind {
 pub struct EngineersView {
     kind: Kind,
     engineer_idx: usize,
-    mod_idx: usize,
-    grade: u8,
+    /// Flat index into all (mod, grade) pairs for the selected engineer.
+    mod_grade_idx: usize,
     panel: Panel,
     pub todo: TodoList,
     status: String,
-    scroll_offset: usize,
 }
 
 impl EngineersView {
@@ -39,12 +38,10 @@ impl EngineersView {
         Self {
             kind: Kind::Ship,
             engineer_idx: 0,
-            mod_idx: 0,
-            grade: 5,
+            mod_grade_idx: 0,
             panel: Panel::Engineers,
             todo: TodoList::load(),
             status: String::new(),
-            scroll_offset: 0,
         }
     }
 
@@ -74,9 +71,18 @@ impl EngineersView {
             .collect()
     }
 
-    fn selected_mod(&self) -> Option<&'static Modification> {
-        let mods = self.mods_for_selected();
-        mods.get(self.mod_idx).copied()
+    fn flat_mod_grades(&self) -> Vec<(&'static Modification, u8)> {
+        self.mods_for_selected()
+            .into_iter()
+            .flat_map(|m| {
+                // On-foot mods are always applied at max grade — no intermediate grades.
+                let grades: Box<dyn Iterator<Item = u8>> = match self.kind {
+                    Kind::OnFoot => Box::new(std::iter::once(m.max_grade)),
+                    Kind::Ship => Box::new(1..=m.max_grade),
+                };
+                grades.map(move |g| (m, g))
+            })
+            .collect()
     }
 
     fn build_engineer_lines(&self) -> Vec<Line<'static>> {
@@ -87,7 +93,7 @@ impl EngineersView {
             Kind::OnFoot => "On-Foot Engineers",
         };
         lines.push(Line::from(Span::styled(
-            format!(" {} (t: toggle) ", kind_label),
+            format!(" {} (t: toggle, d: mods) ", kind_label),
             Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
         )));
         lines.push(Line::from(""));
@@ -106,15 +112,19 @@ impl EngineersView {
         lines
     }
 
-    fn build_mod_lines(&self) -> Vec<Line<'static>> {
+    /// Returns (lines, selected_line_index) so render can auto-scroll to the selection.
+    fn build_mod_lines(&self) -> (Vec<Line<'static>>, usize) {
         let mut lines = Vec::new();
+        let mut selected_line = 0usize;
+
         let eng = match self.selected_engineer() {
             Some(e) => e,
             None => {
                 lines.push(Line::from("No engineer selected."));
-                return lines;
+                return (lines, 0);
             }
         };
+
         lines.push(Line::from(Span::styled(
             format!(" {} — {} / {} ", eng.name, eng.system, eng.station),
             Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD),
@@ -125,56 +135,72 @@ impl EngineersView {
         )));
         lines.push(Line::from(""));
 
-        let mods = self.mods_for_selected();
-        if mods.is_empty() {
+        let flat = self.flat_mod_grades();
+        if flat.is_empty() {
             lines.push(Line::from("No modifications listed for this engineer."));
-            return lines;
+            return (lines, 0);
         }
 
         lines.push(Line::from(Span::styled(
-            " Modifications (a/d: grade, 'a': add to todo) ",
+            " Modifications (enter: add to todo) ",
             Style::default().fg(Color::DarkGray),
         )));
         lines.push(Line::from(""));
 
-        let mut current_type: Option<&str> = None;
-        for (i, m) in mods.iter().enumerate() {
-            if Some(m.module_type.as_str()) != current_type {
-                current_type = Some(&m.module_type);
+        let mut current_type: Option<String> = None;
+        let mut current_mod_id: Option<String> = None;
+
+        for (i, (m, grade)) in flat.iter().enumerate() {
+            // Module-type section header
+            if Some(&m.module_type) != current_type.as_ref() {
+                if current_type.is_some() {
+                    lines.push(Line::from(""));
+                }
+                current_type = Some(m.module_type.clone());
                 lines.push(Line::from(Span::styled(
                     format!(" — {} —", m.module_type),
                     Style::default().fg(Color::Blue).add_modifier(Modifier::BOLD),
                 )));
             }
-            let selected = i == self.mod_idx && self.panel == Panel::Mods;
-            let grade = self.grade.min(m.max_grade);
-            let style = if selected {
+
+            // Mod name / effect sub-header (once per modification)
+            if Some(&m.id) != current_mod_id.as_ref() {
+                current_mod_id = Some(m.id.clone());
+                lines.push(Line::from(Span::styled(
+                    format!("  {}  — {}", m.name, m.effect),
+                    Style::default().fg(Color::Yellow),
+                )));
+            }
+
+            // Grade row — this is the selectable line
+            let selected = i == self.mod_grade_idx && self.panel == Panel::Mods;
+            if selected {
+                selected_line = lines.len();
+            }
+            let grade_style = if selected {
                 Style::default().fg(Color::Black).bg(Color::Green).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };
-            lines.push(Line::from(Span::styled(
-                format!(" {}  G{}  — {}", m.name, grade, m.effect),
-                style,
-            )));
+            let grade_label = match self.kind {
+                Kind::OnFoot => "    Materials:".to_string(),
+                Kind::Ship => format!("    G{}", grade),
+            };
+            lines.push(Line::from(Span::styled(grade_label, grade_style)));
 
-            if selected {
-                let grade_key = grade.to_string();
-                if let Some(costs) = m.grades.get(&grade_key) {
+            // Materials for this grade
+            let grade_key = grade.to_string();
+            if let Some(costs) = m.grades.get(&grade_key) {
+                for cost in costs {
                     lines.push(Line::from(Span::styled(
-                        format!("   Materials (G{}):", grade),
-                        Style::default().fg(Color::DarkGray),
+                        format!("       • {} x{}", cost.name, cost.count),
+                        Style::default().fg(Color::Gray),
                     )));
-                    for cost in costs {
-                        lines.push(Line::from(Span::styled(
-                            format!("     • {} x{}", cost.name, cost.count),
-                            Style::default().fg(Color::Gray),
-                        )));
-                    }
                 }
             }
         }
-        lines
+
+        (lines, selected_line)
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
@@ -186,29 +212,34 @@ impl EngineersView {
                     Kind::OnFoot => Kind::Ship,
                 };
                 self.engineer_idx = 0;
-                self.mod_idx = 0;
-                self.scroll_offset = 0;
+                self.mod_grade_idx = 0;
             }
             KeyCode::Tab => {
                 self.panel = match self.panel {
                     Panel::Engineers => Panel::Mods,
                     Panel::Mods => Panel::Engineers,
                 };
-                self.scroll_offset = 0;
+            }
+            KeyCode::Char('d') | KeyCode::Right => {
+                if self.panel == Panel::Engineers {
+                    self.panel = Panel::Mods;
+                }
+            }
+            KeyCode::Char('a') | KeyCode::Left => {
+                if self.panel == Panel::Mods {
+                    self.panel = Panel::Engineers;
+                }
             }
             KeyCode::Char('w') | KeyCode::Up => match self.panel {
                 Panel::Engineers => {
                     if self.engineer_idx > 0 {
                         self.engineer_idx -= 1;
-                        self.mod_idx = 0;
-                        self.scroll_offset = 0;
+                        self.mod_grade_idx = 0;
                     }
                 }
                 Panel::Mods => {
-                    if self.mod_idx > 0 {
-                        self.mod_idx -= 1;
-                    } else if self.scroll_offset > 0 {
-                        self.scroll_offset -= 1;
+                    if self.mod_grade_idx > 0 {
+                        self.mod_grade_idx -= 1;
                     }
                 }
             },
@@ -216,47 +247,51 @@ impl EngineersView {
                 Panel::Engineers => {
                     if self.engineer_idx + 1 < self.engineers().len() {
                         self.engineer_idx += 1;
-                        self.mod_idx = 0;
-                        self.scroll_offset = 0;
+                        self.mod_grade_idx = 0;
                     }
                 }
                 Panel::Mods => {
-                    let count = self.mods_for_selected().len();
-                    if self.mod_idx + 1 < count {
-                        self.mod_idx += 1;
+                    let total = self.flat_mod_grades().len();
+                    if self.mod_grade_idx + 1 < total {
+                        self.mod_grade_idx += 1;
                     }
                 }
             },
-            KeyCode::Char('a') | KeyCode::Left => {
-                if self.panel == Panel::Mods {
-                    if self.grade > 1 {
-                        self.grade -= 1;
-                    }
+            KeyCode::PageUp => match self.panel {
+                Panel::Engineers => {
+                    self.engineer_idx = self.engineer_idx.saturating_sub(10);
+                    self.mod_grade_idx = 0;
                 }
-            }
-            KeyCode::Char('d') | KeyCode::Right => {
-                if self.panel == Panel::Mods {
-                    if let Some(m) = self.selected_mod() {
-                        if self.grade < m.max_grade {
-                            self.grade += 1;
-                        }
-                    }
+                Panel::Mods => {
+                    self.mod_grade_idx = self.mod_grade_idx.saturating_sub(10);
                 }
-            }
+            },
+            KeyCode::PageDown => match self.panel {
+                Panel::Engineers => {
+                    let max = self.engineers().len().saturating_sub(1);
+                    self.engineer_idx = (self.engineer_idx + 10).min(max);
+                    self.mod_grade_idx = 0;
+                }
+                Panel::Mods => {
+                    let total = self.flat_mod_grades().len();
+                    self.mod_grade_idx = (self.mod_grade_idx + 10).min(total.saturating_sub(1));
+                }
+            },
             KeyCode::Enter => {
                 if self.panel == Panel::Mods {
-                    if let Some(m) = self.selected_mod() {
-                        let grade = self.grade.min(m.max_grade);
+                    let flat = self.flat_mod_grades();
+                    if let Some((m, grade)) = flat.get(self.mod_grade_idx) {
                         let kind = match self.kind {
                             Kind::Ship => ModKind::Ship,
                             Kind::OnFoot => ModKind::OnFoot,
                         };
                         self.todo.add(TodoItem {
                             mod_id: m.id.clone(),
-                            grade,
+                            grade: *grade,
                             mod_name: m.name.clone(),
                             module_type: m.module_type.clone(),
                             kind,
+                            count: 1,
                         });
                         self.status = format!("Added {} G{} to todo list", m.name, grade);
                     }
@@ -287,12 +322,14 @@ impl EngineersView {
             chunks[0],
         );
 
-        let mod_lines = self.build_mod_lines();
+        let (mod_lines, selected_line) = self.build_mod_lines();
         let visible = area.height.saturating_sub(4) as usize;
-        let max_scroll = mod_lines.len().saturating_sub(visible);
-        let offset = self.scroll_offset.min(max_scroll) as u16;
+        let offset = selected_line.saturating_sub(visible / 3).min(
+            mod_lines.len().saturating_sub(visible)
+        ) as u16;
+
         let status = if self.status.is_empty() {
-            " Mods (tab: panel, enter: add to todo) ".to_string()
+            " Mods (a: engineers, w/s: navigate, enter: add to todo) ".to_string()
         } else {
             format!(" {} ", self.status)
         };

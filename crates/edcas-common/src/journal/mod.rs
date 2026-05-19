@@ -10,8 +10,9 @@ pub use scan::{
     SaaSignalsFound, Scan, ScanBaryCentre, ScanOrganic,
 };
 pub use station::{Commodities, Docked, Outfitting, Shipyard};
+pub use station::{MarketJournal, OutfittingJournal, ShipyardJournal};
 pub use station::CarrierStats;
-pub use travel::{CarrierJump, FsdJump, Location};
+pub use travel::{CarrierJump, FsdJump, Location, SupercruiseExit};
 
 /// Discriminated union of all journal events that edcas processes.
 ///
@@ -37,6 +38,7 @@ pub enum JournalEvent {
     FssAllBodiesFound(FssAllBodiesFound),
     NavBeaconScan(NavBeaconScan),
     ScanOrganic(ScanOrganic),
+    SupercruiseExit(SupercruiseExit),
 }
 
 impl JournalEvent {
@@ -105,6 +107,23 @@ impl JournalEvent {
             "Docked" => serde_json::from_value::<Docked>(value)
                 .ok()
                 .map(Self::Docked),
+            // Companion-file journal events: the journal log also writes a brief trigger line
+            // (e.g. {"event":"Market","MarketID":...}) with NO Items/PriceList.  Only the
+            // full companion-file payload (uploaded separately via the watch loop) contains
+            // actual data.  The non-empty guard prevents the empty trigger lines from being
+            // dispatched to the DB and wiping existing data.
+            "Market" => serde_json::from_value::<MarketJournal>(value)
+                .ok()
+                .filter(|m| !m.items.is_empty())
+                .map(|m| Self::Commodities(Commodities::from(m))),
+            "Outfitting" => serde_json::from_value::<OutfittingJournal>(value)
+                .ok()
+                .filter(|m| !m.items.is_empty())
+                .map(|m| Self::Outfitting(Outfitting::from(m))),
+            "Shipyard" => serde_json::from_value::<ShipyardJournal>(value)
+                .ok()
+                .filter(|s| !s.price_list.is_empty())
+                .map(|s| Self::Shipyard(Shipyard::from(s))),
             "ColonisationConstructionDepot" => {
                 serde_json::from_value::<ColonisationConstructionDepot>(value)
                     .ok()
@@ -125,6 +144,9 @@ impl JournalEvent {
             "ScanOrganic" => serde_json::from_value::<ScanOrganic>(value)
                 .ok()
                 .map(Self::ScanOrganic),
+            "SupercruiseExit" => serde_json::from_value::<SupercruiseExit>(value)
+                .ok()
+                .map(Self::SupercruiseExit),
             _ => None,
         }
     }
@@ -149,6 +171,7 @@ impl JournalEvent {
             Self::FssAllBodiesFound(_) => "FSSAllBodiesFound",
             Self::NavBeaconScan(_) => "NavBeaconScan",
             Self::ScanOrganic(_) => "ScanOrganic",
+            Self::SupercruiseExit(_) => "SupercruiseExit",
         }
     }
 }

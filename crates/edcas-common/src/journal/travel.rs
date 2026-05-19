@@ -103,16 +103,22 @@ pub struct Location {
     pub station_type: Option<String>,
     #[serde(rename = "StationGovernment")]
     pub station_government: Option<String>,
+    #[serde(rename = "StationGovernment_Localised", default)]
+    pub station_government_localised: String,
     #[serde(rename = "StationAllegiance")]
     pub station_allegiance: Option<String>,
     #[serde(rename = "StationEconomy")]
     pub station_economy: Option<String>,
+    #[serde(rename = "StationEconomy_Localised", default)]
+    pub station_economy_localised: String,
     #[serde(rename = "StationEconomies")]
     pub station_economies: Option<Vec<crate::journal::types::StationEconomy>>,
     #[serde(rename = "StationFaction")]
     pub station_faction: Option<crate::journal::types::StationFaction>,
     #[serde(rename = "StationServices")]
     pub station_services: Option<Vec<String>>,
+    #[serde(rename = "LandingPads")]
+    pub landing_pads: Option<crate::journal::types::LandingPads>,
     #[serde(rename = "DistFromStarLS")]
     pub dist_from_star_ls: Option<f32>,
     #[serde(rename = "Taxi", default)]
@@ -184,4 +190,14 @@ pub struct CarrierJump {
     pub horizons: bool,
     #[serde(rename = "odyssey", default)]
     pub odyssey: bool,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct SupercruiseExit {
+    #[serde(rename = "Body", default)]
+    pub body: String,
+    #[serde(rename = "BodyID", default)]
+    pub body_id: i32,
+    #[serde(rename = "BodyType", default)]
+    pub body_type: String,
 }

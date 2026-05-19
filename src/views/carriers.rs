@@ -1,4 +1,5 @@
 use crate::event_shim::{KeyCode, KeyEvent};
+use crate::journal_reader::{JournalData, StationData};
 use edcas_common::api::{CarrierQuery, CarrierResponse};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -10,6 +11,7 @@ use ratatui::{
 use std::collections::HashSet;
 
 use crate::api_client::ApiClient;
+use crate::views::util::{truncate, FocusArea, SearchState, StationDetailTab as DetailTab};
 use crate::views::ViewEvent;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -18,50 +20,9 @@ use std::sync::{Arc, Mutex};
 #[cfg(target_arch = "wasm32")]
 use std::{cell::RefCell, rc::Rc};
 
-enum SearchState {
-    Idle,
-    Typing,
-}
-
-#[derive(Clone, Copy, PartialEq)]
-enum FocusArea {
-    List,
-    Detail,
-}
-
-#[derive(Clone, Copy, PartialEq)]
-enum DetailTab {
-    Overview,
-    Market,
-    Outfitting,
-    Shipyard,
-}
-
-impl DetailTab {
-    fn next(self) -> Option<Self> {
-        match self {
-            Self::Overview => Some(Self::Market),
-            Self::Market => Some(Self::Outfitting),
-            Self::Outfitting => Some(Self::Shipyard),
-            Self::Shipyard => None,
-        }
-    }
-    fn prev(self) -> Option<Self> {
-        match self {
-            Self::Overview => None,
-            Self::Market => Some(Self::Overview),
-            Self::Outfitting => Some(Self::Market),
-            Self::Shipyard => Some(Self::Outfitting),
-        }
-    }
-    fn label(self) -> &'static str {
-        match self {
-            Self::Overview => "Overview",
-            Self::Market => "Market",
-            Self::Outfitting => "Outfitting",
-            Self::Shipyard => "Shipyard",
-        }
-    }
+enum ListItem<'a> {
+    Api(&'a CarrierResponse),
+    Journal(&'a StationData),
 }
 
 pub struct CarriersView {
@@ -98,7 +59,7 @@ impl CarriersView {
             selected_idx: 0,
             list_scroll: 0,
             detail_scroll: 0,
-            status_msg: "Press Enter to search  |  p: pin/unpin".into(),
+            status_msg: "/ or f: search  |  p: pin/unpin".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Overview,
             #[cfg(not(target_arch = "wasm32"))]
@@ -138,7 +99,7 @@ impl CarriersView {
                 Ok(results) => {
                     self.pinned_results = results;
                     if self.status_msg.starts_with("Loading") {
-                        self.status_msg = "Press Enter to search  |  p: pin/unpin".into();
+                        self.status_msg = "/ or f: search  |  p: pin/unpin".into();
                     }
                 }
                 Err(e) => { self.status_msg = format!("API error loading pins: {e}"); }
@@ -176,15 +137,15 @@ impl CarriersView {
     fn refresh_pins(&mut self, api: &ApiClient) {
         self.loading_pins = true;
         self.pinned_results.clear();
-        self.status_msg = "Loading pinned carriers…".into();
+        self.status_msg = "Loading pinned carriers\u{2026}".into();
         let pending = Arc::clone(&self.pending_pins);
         let api_owned = api.clone();
         let ids: Vec<i64> = self.pinned_ids.iter().copied().collect();
-        std::thread::spawn(move || {
+        api.spawn(async move {
             let mut results = Vec::new();
             for mid in ids {
                 let query = CarrierQuery { market_id: Some(mid), limit: Some(1), ..Default::default() };
-                if let Ok(mut r) = api_owned.search_carriers(&query) {
+                if let Ok(mut r) = api_owned.search_carriers(&query).await {
                     if let Some(c) = r.pop() {
                         results.push(c);
                     }
@@ -201,32 +162,39 @@ impl CarriersView {
         pins.save();
     }
 
-    fn display_count(&self) -> usize {
-        let n_search = self.results.iter()
+    fn build_display_list<'a>(&'a self, history: &'a [StationData]) -> Vec<ListItem<'a>> {
+        let search_ids: HashSet<i64> = self.results.iter()
             .filter(|c| !self.pinned_ids.contains(&c.market_id))
-            .count();
-        self.pinned_results.len() + n_search
-    }
-
-    fn selected_item(&self) -> Option<&CarrierResponse> {
-        let n = self.pinned_results.len();
-        if self.selected_idx < n {
-            self.pinned_results.get(self.selected_idx)
-        } else {
-            let j = self.selected_idx - n;
-            self.results.iter()
-                .filter(|c| !self.pinned_ids.contains(&c.market_id))
-                .nth(j)
+            .map(|c| c.market_id)
+            .collect();
+        let mut list: Vec<ListItem<'a>> = Vec::new();
+        for c in &self.pinned_results {
+            list.push(ListItem::Api(c));
         }
+        for c in self.results.iter().filter(|c| !self.pinned_ids.contains(&c.market_id)) {
+            list.push(ListItem::Api(c));
+        }
+        for c in history.iter().filter(|c| !self.pinned_ids.contains(&c.market_id) && !search_ids.contains(&c.market_id)) {
+            list.push(ListItem::Journal(c));
+        }
+        list
     }
 
-    fn toggle_pin(&mut self, api: &ApiClient) {
+    fn display_count(&self, history: &[StationData]) -> usize {
+        self.build_display_list(history).len()
+    }
+
+    fn selected_item_with_history<'a>(&'a self, history: &'a [StationData]) -> Option<ListItem<'a>> {
+        self.build_display_list(history).into_iter().nth(self.selected_idx)
+    }
+
+    fn toggle_pin(&mut self, api: &ApiClient, history: &[StationData]) {
         let n = self.pinned_results.len();
         if self.selected_idx < n {
             let mid = self.pinned_results[self.selected_idx].market_id;
             self.pinned_ids.remove(&mid);
             self.pinned_results.remove(self.selected_idx);
-            let total = self.display_count();
+            let total = self.display_count(history);
             if total > 0 {
                 self.selected_idx = self.selected_idx.min(total - 1);
             } else {
@@ -234,11 +202,11 @@ impl CarriersView {
             }
         } else {
             let j = self.selected_idx - n;
-            if let Some(carrier) = self.results.iter()
+            let deduped_search: Vec<&CarrierResponse> = self.results.iter()
                 .filter(|c| !self.pinned_ids.contains(&c.market_id))
-                .nth(j)
-                .cloned()
-            {
+                .collect();
+            if j < deduped_search.len() {
+                let carrier = deduped_search[j].clone();
                 let mid = carrier.market_id;
                 self.pinned_ids.insert(mid);
                 self.pinned_results.push(carrier);
@@ -246,9 +214,22 @@ impl CarriersView {
                 if let Some(pos) = self.pinned_results.iter().position(|c| c.market_id == mid) {
                     self.selected_idx = pos;
                 }
-            } else if !self.pinned_ids.is_empty() {
-                #[cfg(not(target_arch = "wasm32"))]
-                self.refresh_pins(api);
+            } else {
+                let search_ids: HashSet<i64> = self.results.iter().map(|c| c.market_id).collect();
+                let hist_deduped: Vec<&StationData> = history.iter()
+                    .filter(|c| !self.pinned_ids.contains(&c.market_id) && !search_ids.contains(&c.market_id))
+                    .collect();
+                let hi = j - deduped_search.len();
+                if let Some(h) = hist_deduped.get(hi) {
+                    let mid = h.market_id;
+                    self.pinned_ids.insert(mid);
+                    #[cfg(not(target_arch = "wasm32"))]
+                    self.refresh_pins(api);
+                    self.selected_idx = 0;
+                } else if !self.pinned_ids.is_empty() {
+                    #[cfg(not(target_arch = "wasm32"))]
+                    self.refresh_pins(api);
+                }
             }
         }
         self.save_pins();
@@ -270,8 +251,8 @@ impl CarriersView {
             market_id: None,
             limit: Some(50),
         };
-        std::thread::spawn(move || {
-            let result = api_owned.search_carriers(&query).map_err(|e| e.to_string());
+        api.spawn(async move {
+            let result = api_owned.search_carriers(&query).await.map_err(|e| e.to_string());
             *pending.lock().unwrap() = Some(result);
         });
     }
@@ -298,7 +279,7 @@ impl CarriersView {
         });
     }
 
-    fn build_list_lines(&self) -> Vec<Line<'static>> {
+    fn build_list_lines(&self, history: &[StationData]) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
 
         lines.push(Line::from(vec![
@@ -312,7 +293,14 @@ impl CarriersView {
         lines.push(Line::from(Span::styled(self.status_msg.clone(), Style::default().fg(Color::DarkGray))));
         lines.push(Line::from(""));
 
-        let n = self.pinned_results.len();
+        let n_pinned = self.pinned_results.len();
+        let deduped_search: Vec<&CarrierResponse> = self.results.iter()
+            .filter(|c| !self.pinned_ids.contains(&c.market_id))
+            .collect();
+        let search_ids: HashSet<i64> = self.results.iter().map(|c| c.market_id).collect();
+        let hist_deduped: Vec<&StationData> = history.iter()
+            .filter(|c| !self.pinned_ids.contains(&c.market_id) && !search_ids.contains(&c.market_id))
+            .collect();
 
         for (i, carrier) in self.pinned_results.iter().enumerate() {
             let selected = self.focus == FocusArea::List && i == self.selected_idx;
@@ -322,28 +310,20 @@ impl CarriersView {
                 Style::default().fg(Color::Yellow)
             };
             lines.push(Line::from(Span::styled(
-                format!(" ★ {}", carrier_display(carrier, 34)),
+                format!(" \u{2605} {}", carrier_display(carrier, 34)),
                 style,
             )));
         }
 
-        let deduped: Vec<&CarrierResponse> = self.results.iter()
-            .filter(|c| !self.pinned_ids.contains(&c.market_id))
-            .collect();
-
-        if !deduped.is_empty() && n > 0 {
+        let n_search = deduped_search.len();
+        if n_search > 0 && n_pinned > 0 {
             lines.push(Line::from(Span::styled(
-                "─── Search ──────────────────────────────",
+                "\u{2500}\u{2500}\u{2500} Search \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
                 Style::default().fg(Color::DarkGray),
             )));
-        } else if deduped.is_empty() && n == 0 {
-            lines.push(Line::from("No results."));
-            lines.push(Line::from("Press Enter to search."));
-            return lines;
         }
-
-        for (j, carrier) in deduped.iter().enumerate() {
-            let i = n + j;
+        for (j, carrier) in deduped_search.iter().enumerate() {
+            let i = n_pinned + j;
             let selected = self.focus == FocusArea::List && i == self.selected_idx;
             let style = if selected {
                 Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
@@ -356,21 +336,65 @@ impl CarriersView {
             )));
         }
 
+        if !hist_deduped.is_empty() {
+            let has_above = n_pinned > 0 || n_search > 0;
+            if has_above {
+                lines.push(Line::from(Span::styled(
+                    "\u{2500}\u{2500}\u{2500} History \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
+                    Style::default().fg(Color::DarkGray),
+                )));
+            }
+            for (k, carrier) in hist_deduped.iter().enumerate() {
+                let i = n_pinned + n_search + k;
+                let selected = self.focus == FocusArea::List && i == self.selected_idx;
+                let style = if selected {
+                    Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::Rgb(100, 180, 200))
+                };
+                lines.push(Line::from(Span::styled(
+                    format!(" \u{231a} {}", truncate(&carrier.name, 34)),
+                    style,
+                )));
+            }
+        }
+
+        if n_pinned == 0 && n_search == 0 && hist_deduped.is_empty() {
+            lines.push(Line::from("No results."));
+            lines.push(Line::from("Press Enter to search."));
+        }
+
         lines
     }
 
-    fn visual_row_of_selected(&self) -> usize {
+    fn visual_row_of_selected(&self, history: &[StationData]) -> usize {
         let header = 3usize;
-        let n = self.pinned_results.len();
-        let has_separator = n > 0 && !self.results.is_empty();
-        if self.selected_idx < n {
-            header + self.selected_idx
+        let n_pinned = self.pinned_results.len();
+        let deduped_search: Vec<&CarrierResponse> = self.results.iter()
+            .filter(|c| !self.pinned_ids.contains(&c.market_id))
+            .collect();
+        let n_search = deduped_search.len();
+        let search_ids: HashSet<i64> = self.results.iter().map(|c| c.market_id).collect();
+        let n_hist = history.iter()
+            .filter(|c| !self.pinned_ids.contains(&c.market_id) && !search_ids.contains(&c.market_id))
+            .count();
+
+        let has_search_sep = n_pinned > 0 && n_search > 0;
+        let has_hist_sep = n_hist > 0 && (n_pinned > 0 || n_search > 0);
+
+        let idx = self.selected_idx;
+        if idx < n_pinned {
+            header + idx
+        } else if idx < n_pinned + n_search {
+            header + idx + if has_search_sep { 1 } else { 0 }
         } else {
-            header + self.selected_idx + if has_separator { 1 } else { 0 }
+            header + idx
+                + if has_search_sep { 1 } else { 0 }
+                + if has_hist_sep { 1 } else { 0 }
         }
     }
 
-    fn build_detail_header_lines(&self) -> Vec<Line<'static>> {
+    fn build_detail_header_lines(&self, history: &[StationData]) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
 
         let tab_active = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
@@ -382,51 +406,61 @@ impl CarriersView {
         }).collect();
         lines.push(Line::from(tab_spans));
 
-        let Some(carrier) = self.selected_item() else { return lines; };
-
-        match self.detail_tab {
-            DetailTab::Overview => {
+        match self.selected_item_with_history(history) {
+            Some(ListItem::Api(carrier)) => {
+                if self.detail_tab == DetailTab::Overview {
+                    lines.push(Line::from(Span::styled(
+                        format!("\u{2500}\u{2500} {} \u{2500}\u{2500}", carrier_display(carrier, 60)),
+                        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                    )));
+                } else if self.detail_tab == DetailTab::Market {
+                    lines.push(Line::from(Span::styled(
+                        format!("{:<28} {:>8} {:>8} {:>8} {:>8} {:>8}", "Commodity", "Buy", "Sell", "Mean", "Stock", "Demand"),
+                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                    )));
+                    lines.push(Line::from(Span::styled("\u{2500}".repeat(70), Style::default().fg(Color::DarkGray))));
+                } else if self.detail_tab == DetailTab::Outfitting {
+                    lines.push(Line::from(Span::styled(
+                        format!("{:<38} {:>12}", "Module", "Cost"),
+                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                    )));
+                    lines.push(Line::from(Span::styled("\u{2500}".repeat(52), Style::default().fg(Color::DarkGray))));
+                } else if self.detail_tab == DetailTab::Shipyard {
+                    lines.push(Line::from(Span::styled(
+                        format!("{:<38} {:>14}", "Ship", "Base Value"),
+                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+                    )));
+                    lines.push(Line::from(Span::styled("\u{2500}".repeat(54), Style::default().fg(Color::DarkGray))));
+                }
+            }
+            Some(ListItem::Journal(carrier)) => {
                 lines.push(Line::from(Span::styled(
-                    format!("── {} ──", carrier_display(carrier, 60)),
-                    Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                    format!("\u{2500}\u{2500} {} \u{2500}\u{2500} (visit snapshot)", carrier.name),
+                    Style::default().fg(Color::Rgb(100, 180, 200)).add_modifier(Modifier::BOLD),
                 )));
             }
-            DetailTab::Market => {
-                lines.push(Line::from(Span::styled(
-                    format!("{:<28} {:>8} {:>8} {:>8} {:>8} {:>8}", "Commodity", "Buy", "Sell", "Mean", "Stock", "Demand"),
-                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-                )));
-                lines.push(Line::from(Span::styled("─".repeat(70), Style::default().fg(Color::DarkGray))));
-            }
-            DetailTab::Outfitting => {
-                lines.push(Line::from(Span::styled(
-                    format!("{:<38} {:>12}", "Module", "Cost"),
-                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-                )));
-                lines.push(Line::from(Span::styled("─".repeat(52), Style::default().fg(Color::DarkGray))));
-            }
-            DetailTab::Shipyard => {
-                lines.push(Line::from(Span::styled(
-                    format!("{:<38} {:>14}", "Ship", "Base Value"),
-                    Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-                )));
-                lines.push(Line::from(Span::styled("─".repeat(54), Style::default().fg(Color::DarkGray))));
-            }
+            None => {}
         }
 
         lines
     }
 
-    fn build_detail_body_lines(&self) -> Vec<Line<'static>> {
-        let Some(carrier) = self.selected_item() else {
-            return vec![Line::from(Span::styled("Select a carrier from the list.", Style::default().fg(Color::DarkGray)))];
-        };
-
-        match self.detail_tab {
-            DetailTab::Overview => self.overview_body(carrier),
-            DetailTab::Market => self.market_body(carrier),
-            DetailTab::Outfitting => self.outfitting_body(carrier),
-            DetailTab::Shipyard => self.shipyard_body(carrier),
+    fn build_detail_body_lines(&self, history: &[StationData]) -> Vec<Line<'static>> {
+        match self.selected_item_with_history(history) {
+            None => vec![Line::from(Span::styled("Select a carrier from the list.", Style::default().fg(Color::DarkGray)))],
+            Some(ListItem::Api(carrier)) => match self.detail_tab {
+                DetailTab::Overview => self.overview_body(carrier),
+                DetailTab::Market => self.market_body(carrier),
+                DetailTab::Outfitting => self.outfitting_body(carrier),
+                DetailTab::Shipyard => self.shipyard_body(carrier),
+            },
+            Some(ListItem::Journal(carrier)) => match self.detail_tab {
+                DetailTab::Overview => self.journal_overview_body(carrier),
+                _ => vec![Line::from(Span::styled(
+                    "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
+                    Style::default().fg(Color::DarkGray),
+                ))],
+            },
         }
     }
 
@@ -445,6 +479,26 @@ impl CarriersView {
                 lines.push(Line::from(format!("  {}", chunk.join(", "))));
             }
         }
+        lines
+    }
+
+    fn journal_overview_body(&self, carrier: &StationData) -> Vec<Line<'static>> {
+        let mut lines = Vec::new();
+        lines.push(Line::from(format!("Callsign:  {}", carrier.name)));
+        lines.push(Line::from(format!("System:    {}", carrier.system_name)));
+        lines.push(Line::from(format!("Market ID: {}", carrier.market_id)));
+        if !carrier.faction.is_empty() { lines.push(Line::from(format!("Faction:   {}", carrier.faction))); }
+        if !carrier.services.is_empty() {
+            lines.push(Line::from("Services:"));
+            for chunk in carrier.services.chunks(3) {
+                lines.push(Line::from(format!("  {}", chunk.join(", "))));
+            }
+        }
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled(
+            "Visit snapshot \u{2014} pin (p) to load live market data.",
+            Style::default().fg(Color::DarkGray),
+        )));
         lines
     }
 
@@ -490,7 +544,8 @@ impl CarriersView {
         }).collect()
     }
 
-    pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient) -> ViewEvent {
+    pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData) -> ViewEvent {
+        let history = &journal.visited_carriers;
         if matches!(self.search_state, SearchState::Typing) {
             match key.code {
                 KeyCode::Esc => { self.search_state = SearchState::Idle; self.status_msg = "Search cancelled".into(); }
@@ -503,14 +558,14 @@ impl CarriersView {
         }
 
         match key.code {
-            KeyCode::Enter => {
+            KeyCode::Char('/') | KeyCode::Char('f') => {
                 self.search_query.clear();
                 self.search_state = SearchState::Typing;
-                self.status_msg = "Typing… (Enter to search, Esc to cancel)".into();
+                self.status_msg = "Typing\u{2026} (Enter to search, Esc to cancel)".into();
             }
             KeyCode::Char('p') => {
-                if self.display_count() > 0 {
-                    self.toggle_pin(api);
+                if self.display_count(history) > 0 {
+                    self.toggle_pin(api, history);
                 }
                 return ViewEvent::Consumed;
             }
@@ -526,7 +581,7 @@ impl CarriersView {
             },
             KeyCode::Char('s') | KeyCode::Down => match self.focus {
                 FocusArea::List => {
-                    if self.selected_idx + 1 < self.display_count() {
+                    if self.selected_idx + 1 < self.display_count(history) {
                         self.selected_idx += 1;
                         self.detail_scroll = 0;
                         self.detail_tab = DetailTab::Overview;
@@ -534,45 +589,52 @@ impl CarriersView {
                 }
                 FocusArea::Detail => { self.detail_scroll += 1; }
             },
-            KeyCode::Char('d') | KeyCode::Right => match self.focus {
+            KeyCode::PageUp => match self.focus {
+                FocusArea::List => { self.selected_idx = self.selected_idx.saturating_sub(10); }
+                FocusArea::Detail => { self.detail_scroll = self.detail_scroll.saturating_sub(10); }
+            },
+            KeyCode::PageDown => match self.focus {
                 FocusArea::List => {
-                    if self.display_count() > 0 {
-                        self.focus = FocusArea::Detail;
-                        self.detail_scroll = 0;
-                    }
+                    let max = self.display_count(history).saturating_sub(1);
+                    self.selected_idx = (self.selected_idx + 10).min(max);
                 }
-                FocusArea::Detail => {
+                FocusArea::Detail => { self.detail_scroll += 10; }
+            },
+            KeyCode::Tab => {
+                match self.focus {
+                    FocusArea::List => {
+                        if self.display_count(history) > 0 {
+                            self.focus = FocusArea::Detail;
+                            self.detail_scroll = 0;
+                        }
+                    }
+                    FocusArea::Detail => { self.focus = FocusArea::List; }
+                }
+            }
+            KeyCode::Char('d') | KeyCode::Right => {
+                if self.focus == FocusArea::Detail {
                     if let Some(next) = self.detail_tab.next() {
                         self.detail_tab = next;
                         self.detail_scroll = 0;
                     }
                 }
-            },
-            KeyCode::Char('a') | KeyCode::Left => match self.focus {
-                FocusArea::List => {}
-                FocusArea::Detail => match self.detail_tab.prev() {
-                    Some(prev) => { self.detail_tab = prev; self.detail_scroll = 0; }
-                    None => { self.focus = FocusArea::List; }
-                },
-            },
-            KeyCode::Tab => match self.focus {
-                FocusArea::List => {
-                    if self.display_count() > 0 {
-                        self.focus = FocusArea::Detail;
+            }
+            KeyCode::Char('a') | KeyCode::Left => {
+                if self.focus == FocusArea::Detail {
+                    if let Some(prev) = self.detail_tab.prev() {
+                        self.detail_tab = prev;
                         self.detail_scroll = 0;
                     }
                 }
-                FocusArea::Detail => {
-                    self.focus = FocusArea::List;
-                }
-            },
+            }
             _ => {}
         }
 
         ViewEvent::None
     }
 
-    pub fn render(&self, frame: &mut Frame, area: Rect) {
+    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData) {
+        let history = &journal.visited_carriers;
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(35), Constraint::Percentage(65)])
@@ -581,9 +643,9 @@ impl CarriersView {
         let active_border = Style::default().fg(Color::Rgb(255, 140, 0));
         let inactive_border = Style::default().fg(Color::White);
 
-        let list_lines = self.build_list_lines();
+        let list_lines = self.build_list_lines(history);
         let list_height = chunks[0].height.saturating_sub(2) as usize;
-        let row = self.visual_row_of_selected();
+        let row = self.visual_row_of_selected(history);
         let list_scroll = if row + 1 >= self.list_scroll + list_height {
             (row + 2).saturating_sub(list_height)
         } else if row < self.list_scroll {
@@ -602,13 +664,13 @@ impl CarriersView {
         );
 
         let detail_block = Block::default()
-            .title(" Carrier Details — Enter to search ")
+            .title(" Carrier Details \u{2014} Enter to search ")
             .borders(Borders::ALL)
             .border_style(if self.focus == FocusArea::Detail { active_border } else { inactive_border });
         let detail_inner = detail_block.inner(chunks[1]);
         frame.render_widget(detail_block, chunks[1]);
 
-        let header_lines = self.build_detail_header_lines();
+        let header_lines = self.build_detail_header_lines(history);
         let header_height = header_lines.len() as u16;
         let detail_split = Layout::default()
             .direction(Direction::Vertical)
@@ -617,7 +679,7 @@ impl CarriersView {
 
         frame.render_widget(Paragraph::new(header_lines), detail_split[0]);
 
-        let body_lines = self.build_detail_body_lines();
+        let body_lines = self.build_detail_body_lines(history);
         let body_height = detail_split[1].height as usize;
         let body_max_scroll = body_lines.len().saturating_sub(body_height);
         frame.render_widget(
@@ -627,19 +689,10 @@ impl CarriersView {
     }
 }
 
-/// Shows "Custom Name (CALLSIGN)" when a custom name is known, otherwise just the callsign.
 fn carrier_display(carrier: &CarrierResponse, max: usize) -> String {
     let s = match carrier.carrier_name.as_deref() {
         Some(cn) => format!("{cn} ({})", carrier.name),
         None => carrier.name.clone(),
     };
     truncate(&s, max)
-}
-
-fn truncate(s: &str, max: usize) -> String {
-    if s.len() <= max {
-        format!("{s:<width$}", width = max)
-    } else {
-        format!("{:.width$}…", s, width = max - 1)
-    }
 }

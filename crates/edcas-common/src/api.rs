@@ -319,3 +319,14 @@ pub struct ConstructionResourceSubmission {
     pub provided_amount: i32,
     pub payment: i64,
 }
+
+/// GET /api/v1/server-tick
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ServerTickResponse {
+    /// UTC timestamp of the last detected server tick, if any.
+    pub last_tick: Option<DateTime<Utc>>,
+    /// Predicted UTC timestamp of the next server tick (average interval of last 7 ticks).
+    pub next_predicted_tick: Option<DateTime<Utc>>,
+    /// Number of unique star systems that reported faction data at the last tick.
+    pub system_count: Option<i32>,
+}
