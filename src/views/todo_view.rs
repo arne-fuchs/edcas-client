@@ -6,10 +6,13 @@ use ratatui::{
     Frame,
 };
 
+use std::collections::HashMap;
+
 use crate::engineering_data::{self, MaterialCost};
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::JournalData;
 use crate::todo::{ModKind, TodoList};
+use crate::views::util::normalize_commodity_name;
 use crate::views::ViewEvent;
 
 enum SelectedKind {
@@ -198,7 +201,7 @@ impl TodoView {
         lines
     }
 
-    fn build_right_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
+    fn build_right_lines(&self, journal: &JournalData, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
         match self.selected_kind() {
             None => {
@@ -289,18 +292,19 @@ impl TodoView {
                 lines.push(Line::from(""));
 
                 // Prefer live resources, fall back to snapshot
-                let resources_iter: Box<dyn Iterator<Item = (String, i32, i32, i64)>> = if let Some(depot) = live {
+                let resources_iter: Box<dyn Iterator<Item = (String, String, i32, i32, i64)>> = if let Some(depot) = live {
                     Box::new(depot.submission.resources.iter().map(|r| {
-                        (r.display_name.clone(), r.provided_amount, r.required_amount, r.payment)
+                        (r.name.clone(), r.display_name.clone(), r.provided_amount, r.required_amount, r.payment)
                     }))
                 } else {
                     Box::new(site.resources.iter().map(|r| {
-                        (r.display_name.clone(), r.provided_amount, r.required_amount, r.payment)
+                        (r.commodity_name.clone(), r.display_name.clone(), r.provided_amount, r.required_amount, r.payment)
                     }))
                 };
 
+                let dim_orange = Style::default().fg(Color::Rgb(160, 130, 0));
                 let mut all_done = true;
-                for (display_name, provided, required, payment) in resources_iter {
+                for (raw_name, display_name, provided, required, payment) in resources_iter {
                     let done = provided >= required;
                     if !done { all_done = false; }
                     let remaining = (required - provided).max(0);
@@ -310,7 +314,12 @@ impl TodoView {
                     let bar_w = 8usize;
                     let filled = ((frac * bar_w as f32) as usize).min(bar_w);
                     let bar = format!("[{}{}]", "█".repeat(filled), "░".repeat(bar_w - filled));
-                    lines.push(Line::from(vec![
+
+                    let norm = normalize_commodity_name(&raw_name);
+                    let in_ship = ship_cargo.get(&norm).copied().unwrap_or(0);
+                    let in_carrier = carrier_stock.get(&norm).copied().unwrap_or(0);
+
+                    let mut spans = vec![
                         Span::styled(format!("  {} {}", checkmark, pad_name(&display_name, 34)), Style::default().fg(color)),
                         Span::styled(format!("{:>7} left", remaining), Style::default().fg(if done { Color::Green } else { Color::DarkGray })),
                         Span::styled(format!("  {}", bar), Style::default().fg(color)),
@@ -318,7 +327,14 @@ impl TodoView {
                             if payment > 0 { format!("  {:>7} cr/t", format_cr(payment)) } else { String::new() },
                             Style::default().fg(Color::DarkGray),
                         ),
-                    ]));
+                    ];
+                    if in_ship > 0 {
+                        spans.push(Span::styled(format!("  ship:{}", in_ship), dim_orange));
+                    }
+                    if in_carrier > 0 {
+                        spans.push(Span::styled(format!("  carrier:{}", in_carrier), dim_orange));
+                    }
+                    lines.push(Line::from(spans));
                 }
 
                 lines.push(Line::from(""));
@@ -470,7 +486,11 @@ impl TodoView {
         ViewEvent::None
     }
 
-    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData) {
+    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData, carrier_stock: &HashMap<String, i32>) {
+        let ship_cargo: HashMap<String, i32> = journal.cargo.iter()
+            .map(|item| (normalize_commodity_name(&item.name), item.count))
+            .collect();
+
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Length(46), Constraint::Min(10)])
@@ -494,7 +514,7 @@ impl TodoView {
             )
         } else {
             (
-                self.build_right_lines(journal),
+                self.build_right_lines(journal, &ship_cargo, carrier_stock),
                 " Materials (w/s: navigate, g: all) ".to_string(),
             )
         };

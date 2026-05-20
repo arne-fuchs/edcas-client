@@ -372,7 +372,10 @@ impl App {
             AppView::Construction => self.construction.render(frame, area, &self.journal, &self.todo_view.todo),
             AppView::TradeRoutes => self.trade_routes.render(frame, area, &self.journal),
             AppView::Engineers => self.engineers_view.render(frame, area),
-            AppView::Todo => self.todo_view.render(frame, area, &self.journal),
+            AppView::Todo => {
+                let cs = self.carriers.my_carrier_stock(&self.journal);
+                self.todo_view.render(frame, area, &self.journal, &cs);
+            }
             AppView::Settings => self.settings_view.render(frame, area, &self.settings),
             AppView::About => self.about.render(frame, area),
         }

@@ -13,7 +13,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::api_client::ApiClient;
 use crate::todo::TodoList;
-use crate::views::util::{commodity_header_line, commodity_row, fmt_ts, normalize_commodity_name, raw_pct, truncate, FocusArea, MarketSortCol, SearchState, StationDetailTab as DetailTab};
+use crate::views::util::{commodity_header_line, commodity_row, fmt_ts, normalize_commodity_name, raw_diff, truncate, FocusArea, MarketSortCol, SearchState, StationDetailTab as DetailTab};
 use crate::views::ViewEvent;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -575,9 +575,9 @@ impl StationsView {
             let col_ord = match self.market_sort_col {
                 MarketSortCol::Name    => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
                 MarketSortCol::Buy     => a.buy_price.cmp(&b.buy_price),
-                MarketSortCol::BuyPct  => raw_pct(a.buy_price, a.mean_price).partial_cmp(&raw_pct(b.buy_price, b.mean_price)).unwrap_or(Ordering::Equal),
+                MarketSortCol::BuyDiff  => raw_diff(a.buy_price, a.mean_price).cmp(&raw_diff(b.buy_price, b.mean_price)),
                 MarketSortCol::Sell    => a.sell_price.cmp(&b.sell_price),
-                MarketSortCol::SellPct => raw_pct(a.sell_price, a.mean_price).partial_cmp(&raw_pct(b.sell_price, b.mean_price)).unwrap_or(Ordering::Equal),
+                MarketSortCol::SellDiff => raw_diff(a.sell_price, a.mean_price).cmp(&raw_diff(b.sell_price, b.mean_price)),
                 MarketSortCol::Mean    => a.mean_price.cmp(&b.mean_price),
                 MarketSortCol::Stock   => a.stock.cmp(&b.stock),
                 MarketSortCol::Demand  => a.demand.cmp(&b.demand),

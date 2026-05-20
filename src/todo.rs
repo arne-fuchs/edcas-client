@@ -71,7 +71,14 @@ impl TodoList {
                 let _ = std::fs::create_dir_all(parent);
             }
             if let Ok(data) = serde_json::to_string_pretty(self) {
-                let _ = std::fs::write(path, data);
+                // Write to a temp file in the same directory, then rename atomically.
+                // This ensures a crash during write never leaves a corrupt todo.json.
+                if let Some(parent) = path.parent() {
+                    let tmp = parent.join("todo.json.tmp");
+                    if std::fs::write(&tmp, &data).is_ok() {
+                        let _ = std::fs::rename(&tmp, &path);
+                    }
+                }
             }
         }
         #[cfg(target_arch = "wasm32")]

@@ -19,9 +19,9 @@ pub(super) enum MarketSortCol {
     #[default]
     Name,
     Buy,
-    BuyPct,
+    BuyDiff,
     Sell,
-    SellPct,
+    SellDiff,
     Mean,
     Stock,
     Demand,
@@ -32,9 +32,9 @@ impl MarketSortCol {
         match c {
             '1' => Some(Self::Name),
             '2' => Some(Self::Buy),
-            '3' => Some(Self::BuyPct),
+            '3' => Some(Self::BuyDiff),
             '4' => Some(Self::Sell),
-            '5' => Some(Self::SellPct),
+            '5' => Some(Self::SellDiff),
             '6' => Some(Self::Mean),
             '7' => Some(Self::Stock),
             '8' => Some(Self::Demand),
@@ -63,9 +63,9 @@ pub(super) fn commodity_header_line(sort_col: MarketSortCol, sort_asc: bool) -> 
     Line::from(vec![
         span(MarketSortCol::Name,    "Commodity", 28, false),
         span(MarketSortCol::Buy,     "Buy",        9, true),
-        span(MarketSortCol::BuyPct,  "%",          6, false),
+        span(MarketSortCol::BuyDiff,  "\u{394}",    6, false),
         span(MarketSortCol::Sell,    "Sell",       9, true),
-        span(MarketSortCol::SellPct, "%",          6, false),
+        span(MarketSortCol::SellDiff, "\u{394}",   6, false),
         span(MarketSortCol::Mean,    "Mean",       9, true),
         span(MarketSortCol::Stock,   "Stock",      9, true),
         span(MarketSortCol::Demand,  "Demand",     9, true),
@@ -73,10 +73,10 @@ pub(super) fn commodity_header_line(sort_col: MarketSortCol, sort_asc: bool) -> 
     ])
 }
 
-/// Raw percentage deviation of `price` from `mean` (returns NEG_INFINITY when N/A so
-/// unavailable entries sort last in ascending order).
-pub(super) fn raw_pct(price: i32, mean: i32) -> f32 {
-    if price <= 0 || mean <= 0 { f32::NEG_INFINITY } else { (price as f32 - mean as f32) / mean as f32 * 100.0 }
+/// Absolute credit deviation of `price` from `mean` for sorting (returns i32::MIN when N/A
+/// so unavailable entries sort last in ascending order).
+pub(super) fn raw_diff(price: i32, mean: i32) -> i32 {
+    if price <= 0 || mean <= 0 { i32::MIN } else { price - mean }
 }
 
 /// Render one commodity row with buy/sell coloured relative to mean_price.
@@ -105,9 +105,9 @@ pub(super) fn commodity_row(
     let mut spans = vec![
         Span::styled(truncate(&c.name, 28), name_style),
         Span::styled(format!(" {}", buy_str), Style::default().fg(buy_color)),
-        Span::styled(pct_vs_mean(c.buy_price, c.mean_price), Style::default().fg(buy_color)),
+        Span::styled(diff_vs_mean(c.buy_price, c.mean_price), Style::default().fg(buy_color)),
         Span::styled(format!(" {}", sell_str), Style::default().fg(sell_color)),
-        Span::styled(pct_vs_mean(c.sell_price, c.mean_price), Style::default().fg(sell_color)),
+        Span::styled(diff_vs_mean(c.sell_price, c.mean_price), Style::default().fg(sell_color)),
         Span::styled(format!(" {:>8}", c.mean_price), Style::default().fg(Color::DarkGray)),
         Span::styled(format!(" {:>8}", c.stock), Style::default().fg(Color::White)),
         Span::styled(format!(" {:>8}", c.demand), Style::default().fg(Color::White)),
@@ -130,13 +130,13 @@ pub(super) fn commodity_row(
     Line::from(spans)
 }
 
-/// Returns a 6-char percentage string vs mean, e.g. `"  -8%"` or `"      "` when N/A.
-fn pct_vs_mean(price: i32, mean: i32) -> String {
+/// Returns a 6-char credit-difference string vs mean, e.g. `" -800"` or `"      "` when N/A.
+fn diff_vs_mean(price: i32, mean: i32) -> String {
     if price <= 0 || mean <= 0 {
         return "      ".to_string();
     }
-    let pct = ((price as f32 - mean as f32) / mean as f32 * 100.0).round() as i32;
-    format!("{:>+5}%", pct.clamp(-999, 999))
+    let diff = price - mean;
+    format!("{:>+6}", diff.clamp(-99999, 99999))
 }
 
 /// Green when `price` is a good deal vs `mean`, red when it's a bad deal.
