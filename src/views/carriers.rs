@@ -8,10 +8,12 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 
 use crate::api_client::ApiClient;
-use crate::views::util::{truncate, FocusArea, SearchState, StationDetailTab as DetailTab};
+use crate::todo::TodoList;
+use std::cmp::Ordering;
+use crate::views::util::{commodity_header_line, commodity_row, normalize_commodity_name, raw_pct, truncate, CarrierDetailTab as DetailTab, FocusArea, MarketSortCol, SearchState};
 use crate::views::ViewEvent;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -37,6 +39,9 @@ pub struct CarriersView {
     status_msg: String,
     focus: FocusArea,
     detail_tab: DetailTab,
+    market_sort_col: MarketSortCol,
+    market_sort_asc: bool,
+    my_carrier_ids: std::collections::HashSet<i64>,
     #[cfg(not(target_arch = "wasm32"))]
     loading_pins: bool,
     #[cfg(not(target_arch = "wasm32"))]
@@ -62,6 +67,9 @@ impl CarriersView {
             status_msg: "/ or f: search  |  p: pin/unpin".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Overview,
+            market_sort_col: MarketSortCol::default(),
+            market_sort_asc: true,
+            my_carrier_ids: pins.my_carriers,
             #[cfg(not(target_arch = "wasm32"))]
             loading_pins: false,
             #[cfg(not(target_arch = "wasm32"))]
@@ -160,6 +168,51 @@ impl CarriersView {
         let mut pins = crate::pins::Pins::load();
         pins.carriers = self.pinned_ids.clone();
         pins.save();
+    }
+
+    fn save_my_carriers(&self) {
+        let mut pins = crate::pins::Pins::load();
+        pins.my_carriers = self.my_carrier_ids.clone();
+        pins.save();
+    }
+
+    fn get_selected_market_id(&self, history: &[StationData]) -> Option<i64> {
+        match self.selected_item_with_history(history) {
+            Some(ListItem::Api(c)) => Some(c.market_id),
+            Some(ListItem::Journal(c)) => Some(c.market_id),
+            None => None,
+        }
+    }
+
+    /// Total available stock across all carriers marked as "mine":
+    /// market stock (API/Market.json) + personal cargo hold (live CargoTransfer tracking).
+    pub fn my_carrier_stock(&self, journal: &JournalData) -> HashMap<String, i32> {
+        let mut stock: HashMap<String, i32> = HashMap::new();
+        let mut seen: HashSet<i64> = HashSet::new();
+        for carrier in &self.pinned_results {
+            if !self.my_carrier_ids.contains(&carrier.market_id) {
+                continue;
+            }
+            seen.insert(carrier.market_id);
+            for c in &carrier.commodities {
+                *stock.entry(normalize_commodity_name(&c.name)).or_insert(0) += c.stock;
+            }
+            if let Some(cargo) = journal.carrier_cargo.get(&carrier.market_id) {
+                for (name, count) in cargo {
+                    *stock.entry(normalize_commodity_name(name)).or_insert(0) += count;
+                }
+            }
+        }
+        // Also include carrier_cargo for "mine" carriers not yet pinned/fetched from API.
+        for (market_id, cargo) in &journal.carrier_cargo {
+            if !self.my_carrier_ids.contains(market_id) || seen.contains(market_id) {
+                continue;
+            }
+            for (name, count) in cargo {
+                *stock.entry(normalize_commodity_name(name)).or_insert(0) += count;
+            }
+        }
+        stock
     }
 
     fn build_display_list<'a>(&'a self, history: &'a [StationData]) -> Vec<ListItem<'a>> {
@@ -309,8 +362,9 @@ impl CarriersView {
             } else {
                 Style::default().fg(Color::Yellow)
             };
+            let mine_tag = if self.my_carrier_ids.contains(&carrier.market_id) { " \u{25c6}mine" } else { "" };
             lines.push(Line::from(Span::styled(
-                format!(" \u{2605} {}", carrier_display(carrier, 34)),
+                format!(" \u{2605} {}{}", carrier_display(carrier, 34), mine_tag),
                 style,
             )));
         }
@@ -399,7 +453,7 @@ impl CarriersView {
 
         let tab_active = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
         let tab_inactive = Style::default().fg(Color::Rgb(255, 140, 0));
-        let tabs = [DetailTab::Overview, DetailTab::Market, DetailTab::Outfitting, DetailTab::Shipyard];
+        let tabs = [DetailTab::Overview, DetailTab::Market, DetailTab::Outfitting, DetailTab::Shipyard, DetailTab::Inventory];
         let tab_spans: Vec<Span> = tabs.iter().flat_map(|&t| {
             let style = if t == self.detail_tab { tab_active } else { tab_inactive };
             [Span::styled(format!(" {} ", t.label()), style), Span::raw("  ")]
@@ -414,11 +468,8 @@ impl CarriersView {
                         Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
                     )));
                 } else if self.detail_tab == DetailTab::Market {
-                    lines.push(Line::from(Span::styled(
-                        format!("{:<28} {:>8} {:>8} {:>8} {:>8} {:>8}", "Commodity", "Buy", "Sell", "Mean", "Stock", "Demand"),
-                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-                    )));
-                    lines.push(Line::from(Span::styled("\u{2500}".repeat(70), Style::default().fg(Color::DarkGray))));
+                    lines.push(commodity_header_line(self.market_sort_col, self.market_sort_asc));
+                    lines.push(Line::from(Span::styled("\u{2500}".repeat(85), Style::default().fg(Color::DarkGray))));
                 } else if self.detail_tab == DetailTab::Outfitting {
                     lines.push(Line::from(Span::styled(
                         format!("{:<38} {:>12}", "Module", "Cost"),
@@ -431,6 +482,21 @@ impl CarriersView {
                         Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
                     )));
                     lines.push(Line::from(Span::styled("\u{2500}".repeat(54), Style::default().fg(Color::DarkGray))));
+                } else if self.detail_tab == DetailTab::Inventory {
+                    let cyan_bold = Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD);
+                    let cyan = Style::default().fg(Color::Cyan);
+                    let sep_style = Style::default().fg(Color::DarkGray);
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("{:<40}", "  Cargo Hold"), cyan_bold),
+                        Span::styled(" \u{2502} ", sep_style),
+                        Span::styled("On-Foot Materials", cyan_bold),
+                    ]));
+                    lines.push(Line::from(vec![
+                        Span::styled(format!("  {:<31} {:>6}", "Name", "Count"), cyan),
+                        Span::styled(" \u{2502} ", sep_style),
+                        Span::styled(format!("{:<31} {:>6}", "Name", "Count"), cyan),
+                    ]));
+                    lines.push(Line::from(Span::styled("\u{2500}".repeat(81), sep_style)));
                 }
             }
             Some(ListItem::Journal(carrier)) => {
@@ -445,17 +511,19 @@ impl CarriersView {
         lines
     }
 
-    fn build_detail_body_lines(&self, history: &[StationData]) -> Vec<Line<'static>> {
+    fn build_detail_body_lines(&self, history: &[StationData], todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>, journal: &JournalData) -> Vec<Line<'static>> {
         match self.selected_item_with_history(history) {
             None => vec![Line::from(Span::styled("Select a carrier from the list.", Style::default().fg(Color::DarkGray)))],
             Some(ListItem::Api(carrier)) => match self.detail_tab {
                 DetailTab::Overview => self.overview_body(carrier),
-                DetailTab::Market => self.market_body(carrier),
+                DetailTab::Market => self.market_body(carrier, todo_needed, ship_cargo, carrier_stock),
                 DetailTab::Outfitting => self.outfitting_body(carrier),
                 DetailTab::Shipyard => self.shipyard_body(carrier),
+                DetailTab::Inventory => self.inventory_body(carrier.market_id, journal, todo_needed),
             },
             Some(ListItem::Journal(carrier)) => match self.detail_tab {
                 DetailTab::Overview => self.journal_overview_body(carrier),
+                DetailTab::Inventory => self.inventory_body(carrier.market_id, journal, todo_needed),
                 _ => vec![Line::from(Span::styled(
                     "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
                     Style::default().fg(Color::DarkGray),
@@ -502,15 +570,37 @@ impl CarriersView {
         lines
     }
 
-    fn market_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
+    fn market_body(&self, carrier: &CarrierResponse, todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
         if carrier.commodities.is_empty() {
             return vec![Line::from(Span::styled("No market data available.", Style::default().fg(Color::DarkGray)))];
         }
-        carrier.commodities.iter().map(|c| {
-            let buy = if c.buy_price > 0 { format!("{:>8}", c.buy_price) } else { format!("{:>8}", "-") };
-            let sell = if c.sell_price > 0 { format!("{:>8}", c.sell_price) } else { format!("{:>8}", "-") };
-            Line::from(format!("{:<28} {} {} {:>8} {:>8} {:>8}", truncate(&c.name, 28), buy, sell, c.mean_price, c.stock, c.demand))
-        }).collect()
+        let effective_todo: HashMap<String, i32> = carrier.commodities.iter()
+            .filter(|c| c.buy_price > 0 && c.stock > 0)
+            .filter_map(|c| {
+                let norm = normalize_commodity_name(&c.name);
+                todo_needed.get(&norm).map(|&n| (norm, n))
+            })
+            .collect();
+        let mut sorted: Vec<&edcas_common::api::CommodityResponse> = carrier.commodities.iter().collect();
+        let asc = self.market_sort_asc;
+        sorted.sort_by(|a, b| {
+            let a_norm = normalize_commodity_name(&a.name);
+            let b_norm = normalize_commodity_name(&b.name);
+            let group = effective_todo.contains_key(&b_norm).cmp(&effective_todo.contains_key(&a_norm));
+            if group != Ordering::Equal { return group; }
+            let col_ord = match self.market_sort_col {
+                MarketSortCol::Name    => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                MarketSortCol::Buy     => a.buy_price.cmp(&b.buy_price),
+                MarketSortCol::BuyPct  => raw_pct(a.buy_price, a.mean_price).partial_cmp(&raw_pct(b.buy_price, b.mean_price)).unwrap_or(Ordering::Equal),
+                MarketSortCol::Sell    => a.sell_price.cmp(&b.sell_price),
+                MarketSortCol::SellPct => raw_pct(a.sell_price, a.mean_price).partial_cmp(&raw_pct(b.sell_price, b.mean_price)).unwrap_or(Ordering::Equal),
+                MarketSortCol::Mean    => a.mean_price.cmp(&b.mean_price),
+                MarketSortCol::Stock   => a.stock.cmp(&b.stock),
+                MarketSortCol::Demand  => a.demand.cmp(&b.demand),
+            };
+            if asc { col_ord } else { col_ord.reverse() }
+        });
+        sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo, carrier_stock)).collect()
     }
 
     fn outfitting_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
@@ -541,6 +631,87 @@ impl CarriersView {
             let name = s.name.as_deref().unwrap_or(&s.id);
             let val = if s.basevalue > 0 { format!("{:>14}", s.basevalue) } else { format!("{:>14}", "-") };
             Line::from(format!("{:<38} {}", truncate(name, 38), val))
+        }).collect()
+    }
+
+    fn inventory_body(&self, market_id: i64, journal: &JournalData, todo_needed: &HashMap<String, i32>) -> Vec<Line<'static>> {
+        let dim     = Style::default().fg(Color::DarkGray);
+        let white   = Style::default().fg(Color::White);
+        let todo_st = Style::default().fg(Color::Yellow).add_modifier(Modifier::BOLD);
+        let sep_st  = Style::default().fg(Color::DarkGray);
+
+        // ── Cargo hold ────────────────────────────────────────────
+        let mut cargo_entries: Vec<(String, i32, bool)> = journal.carrier_cargo
+            .get(&market_id)
+            .map(|m| {
+                m.iter()
+                    .filter(|(_, &v)| v > 0)
+                    .map(|(norm, &count)| {
+                        let label = journal.commodity_names.get(norm).cloned().unwrap_or_else(|| {
+                            let mut s = norm.clone();
+                            if !s.is_empty() { s[..1].make_ascii_uppercase(); }
+                            s
+                        });
+                        let in_todo = todo_needed.contains_key(norm.as_str());
+                        (label, count, in_todo)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        cargo_entries.sort_by(|a, b| b.2.cmp(&a.2).then(a.0.cmp(&b.0)));
+
+        // ── On-foot materials ─────────────────────────────────────
+        let mut mat_entries: Vec<(String, i32, bool)> = journal.carrier_fc_materials
+            .get(&market_id)
+            .map(|v| {
+                v.iter()
+                    .map(|(name, stock)| {
+                        let norm = normalize_commodity_name(name);
+                        let in_todo = todo_needed.contains_key(norm.as_str());
+                        (name.clone(), *stock, in_todo)
+                    })
+                    .collect()
+            })
+            .unwrap_or_default();
+        mat_entries.sort_by(|a, b| b.2.cmp(&a.2).then(a.0.cmp(&b.0)));
+
+        let sep = Span::styled(" \u{2502} ", sep_st);
+
+        // ── Placeholder rows when a side is empty ────────────────
+        let empty_left  = || Span::styled(format!("{:<40}", "  (none)"), dim);
+        let empty_right = || Span::styled("(none)", dim);
+
+        let max_rows = cargo_entries.len().max(mat_entries.len());
+        if max_rows == 0 {
+            return vec![Line::from(Span::styled("  No inventory data available.", dim))];
+        }
+
+        (0..max_rows).map(|i| {
+            let left_spans: Vec<Span<'static>> = match cargo_entries.get(i) {
+                Some((name, count, in_todo)) => {
+                    let st = if *in_todo { todo_st } else { white };
+                    vec![
+                        Span::styled(format!("  {}", truncate(name, 31)), st),
+                        Span::styled(format!(" {:>6}", count), st),
+                        // pad to exactly 40 chars: 2 indent + 31 name + 1 space + 6 count = 40
+                    ]
+                }
+                None => vec![empty_left()],
+            };
+            let right_spans: Vec<Span<'static>> = match mat_entries.get(i) {
+                Some((name, count, in_todo)) => {
+                    let st = if *in_todo { todo_st } else { white };
+                    vec![
+                        Span::styled(truncate(name, 31), st),
+                        Span::styled(format!(" {:>6}", count), st),
+                    ]
+                }
+                None => vec![empty_right()],
+            };
+            let mut spans = left_spans;
+            spans.push(sep.clone());
+            spans.extend(right_spans);
+            Line::from(spans)
         }).collect()
     }
 
@@ -627,14 +798,69 @@ impl CarriersView {
                     }
                 }
             }
+            KeyCode::Char('m') => {
+                if self.focus == FocusArea::List {
+                    if let Some(mid) = self.get_selected_market_id(history) {
+                        if self.my_carrier_ids.contains(&mid) {
+                            self.my_carrier_ids.remove(&mid);
+                        } else {
+                            self.my_carrier_ids.insert(mid);
+                        }
+                        self.save_my_carriers();
+                    }
+                    return ViewEvent::Consumed;
+                }
+            }
+            KeyCode::Char(c @ '1'..='8') => {
+                if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Market {
+                    if let Some(new_col) = MarketSortCol::from_digit(c) {
+                        if new_col == self.market_sort_col {
+                            self.market_sort_asc = !self.market_sort_asc;
+                        } else {
+                            self.market_sort_col = new_col;
+                            self.market_sort_asc = true;
+                        }
+                        return ViewEvent::Consumed;
+                    }
+                }
+            }
             _ => {}
         }
 
         ViewEvent::None
     }
+}
 
-    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData) {
+impl CarriersView {
+    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData, todo: &TodoList, carrier_stock: &HashMap<String, i32>) {
         let history = &journal.visited_carriers;
+
+        let mut todo_needed: HashMap<String, i32> = HashMap::new();
+        for construction in &todo.construction_items {
+            for res in &construction.resources {
+                let remaining = (res.required_amount - res.provided_amount).max(0);
+                if remaining > 0 {
+                    *todo_needed.entry(normalize_commodity_name(&res.commodity_name)).or_insert(0) += remaining;
+                }
+            }
+        }
+        for item in &journal.cargo {
+            let norm = normalize_commodity_name(&item.name);
+            if let Some(needed) = todo_needed.get_mut(&norm) {
+                *needed = (*needed - item.count).max(0);
+            }
+        }
+        for (norm, qty) in carrier_stock {
+            if let Some(needed) = todo_needed.get_mut(norm) {
+                *needed = (*needed - qty).max(0);
+            }
+        }
+        todo_needed.retain(|_, v| *v > 0);
+
+        let ship_cargo: HashMap<String, i32> = journal.cargo.iter()
+            .map(|item| (normalize_commodity_name(&item.name), item.count))
+            .collect();
+
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(35), Constraint::Percentage(65)])
@@ -679,7 +905,7 @@ impl CarriersView {
 
         frame.render_widget(Paragraph::new(header_lines), detail_split[0]);
 
-        let body_lines = self.build_detail_body_lines(history);
+        let body_lines = self.build_detail_body_lines(history, &todo_needed, &ship_cargo, carrier_stock, journal);
         let body_height = detail_split[1].height as usize;
         let body_max_scroll = body_lines.len().saturating_sub(body_height);
         frame.render_widget(

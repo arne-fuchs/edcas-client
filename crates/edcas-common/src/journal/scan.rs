@@ -200,6 +200,8 @@ pub struct FssSignalDiscovered {
     pub threat_level: Option<i32>,
     #[serde(rename = "TimeRemaining")]
     pub time_remaining: Option<f32>,
+    #[serde(rename = "SignalType")]
+    pub signal_type: Option<String>,
     #[serde(rename = "IsStation", default)]
     pub is_station: bool,
     #[serde(rename = "BodyID")]
@@ -284,8 +286,10 @@ pub struct ScanOrganic {
     pub species_localised: Option<String>,
     #[serde(rename = "SystemAddress")]
     pub system_address: i64,
-    #[serde(rename = "Body")]
+    // "Body" can be an integer (body ID) in older journals or a string name in
+    // newer ones; we don't use it, so we skip to avoid a type mismatch error.
+    #[serde(skip)]
     pub body: Option<String>,
-    #[serde(rename = "BodyID")]
+    #[serde(rename = "BodyID", default)]
     pub body_id: Option<i32>,
 }

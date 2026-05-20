@@ -34,10 +34,22 @@ fn main() -> Result<()> {
     info!("CLI arguments: {:?}", args);
 
     for arg in &args {
-        if arg == "--help" {
-            println!("EDCAS client — Elite Dangerous Commander Assistant System");
-            println!("Run `edcas-server` (separate binary) to start the EDDN listener and API.");
-            exit(0);
+        match arg.as_str() {
+            "--help" => {
+                println!("EDCAS client — Elite Dangerous Commander Assistant System");
+                println!();
+                println!("Options:");
+                println!("  --upload-logs   Upload all journal log files to the configured API server and exit.");
+                println!("  --help          Show this help message.");
+                println!();
+                println!("Run `edcas-server` (separate binary) to start the EDDN listener and API.");
+                exit(0);
+            }
+            "--upload-logs" => {
+                cli::upload_logs();
+                exit(0);
+            }
+            _ => {}
         }
     }
 

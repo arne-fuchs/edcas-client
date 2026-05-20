@@ -1,3 +1,4 @@
+use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 
 use crate::event_shim::{KeyCode, KeyEvent};
@@ -11,13 +12,21 @@ use ratatui::{
 use tracing::debug;
 
 use crate::journal_reader::{
-    BodyComposition as JournalBodyComposition, BodyScan, BodySignal, DiscoveredSignal, JournalData,
-    OrganicScan, SaaBodyData, StationData, TreeNode, build_body_tree,
+    BodyComposition as JournalBodyComposition, BodyScan, BodySignal, ConflictData, DiscoveredSignal,
+    JournalData, OrganicScan, SaaBodyData, StationData, SystemData, TreeNode, build_body_tree,
 };
 use crate::settings::Settings;
 use crate::views::ViewEvent;
 
+#[derive(PartialEq)]
+enum ExplorerFocus {
+    SystemInfo,
+    Tree,
+    Detail,
+}
+
 pub struct ExplorerView {
+    // Body tree state
     tree: Vec<TreeNode>,
     selected_idx: usize,
     flat_nodes: Vec<FlatNode>,
@@ -32,6 +41,14 @@ pub struct ExplorerView {
     fss_all_bodies_found: bool,
     nav_beacon_bodies: Option<u32>,
     organic_scans: Vec<OrganicScan>,
+    // System history / info state
+    visited_systems: Vec<SystemData>,
+    selected_system_idx: usize,
+    sys_detail_scroll: usize,
+    selected_faction: usize,
+    focus: ExplorerFocus,
+    // Bodies cached per system address for history navigation
+    bodies_cache: HashMap<i64, Vec<BodyScan>>,
 }
 
 enum NodeType {
@@ -77,16 +94,65 @@ impl ExplorerView {
             fss_all_bodies_found: false,
             nav_beacon_bodies: None,
             organic_scans: Vec::new(),
+            visited_systems: Vec::new(),
+            selected_system_idx: 0,
+            sys_detail_scroll: 0,
+            selected_faction: 0,
+            focus: ExplorerFocus::Tree,
+            bodies_cache: HashMap::new(),
         }
     }
 
     pub fn update(&mut self, journal: &JournalData) {
-        let tree = build_body_tree(&journal.bodies);
-        debug!("Explorer updated with {} bodies, {} tree nodes", journal.bodies.len(), tree.len());
-        self.system_name = journal.current_system
+        // Cache current system bodies so history navigation can show them later.
+        if let Some(sys) = &journal.current_system {
+            if !journal.bodies.is_empty() {
+                self.bodies_cache.insert(sys.system_address, journal.bodies.clone());
+            }
+        }
+
+        // Update visited systems; reset to current when the active system changes.
+        let prev_addr = self.visited_systems.first().map(|s| s.system_address);
+        self.visited_systems = journal.visited_systems.clone();
+        let new_addr = self.visited_systems.first().map(|s| s.system_address);
+        if prev_addr != new_addr {
+            self.selected_system_idx = 0;
+            self.sys_detail_scroll = 0;
+            self.selected_faction = 0;
+        }
+        if self.selected_system_idx >= self.visited_systems.len() {
+            self.selected_system_idx = 0;
+        }
+
+        // Build tree for whichever system is currently selected.
+        // For the current system, prefer live journal.bodies; if empty (e.g. just jumped back),
+        // fall back to cached bodies from a previous visit to this system.
+        let current_cached: &[BodyScan] = journal.current_system
             .as_ref()
+            .and_then(|s| self.bodies_cache.get(&s.system_address))
+            .map(|v| v.as_slice())
+            .unwrap_or(&[]);
+        let display_bodies: &[BodyScan] = if self.selected_system_idx == 0 {
+            if !journal.bodies.is_empty() { &journal.bodies } else { current_cached }
+        } else if let Some(sys) = self.visited_systems.get(self.selected_system_idx) {
+            self.bodies_cache.get(&sys.system_address).map(|v| v.as_slice()).unwrap_or(&[])
+        } else {
+            &journal.bodies
+        };
+        let tree = build_body_tree(display_bodies);
+        debug!("Explorer updated with {} bodies, {} tree nodes", display_bodies.len(), tree.len());
+
+        let selected_system_name = self.visited_systems
+            .get(self.selected_system_idx)
             .map(|s| s.name.clone())
+            .or_else(|| journal.current_system.as_ref().map(|s| s.name.clone()))
             .unwrap_or_default();
+        self.system_name = if self.selected_system_idx == 0 {
+            journal.current_system.as_ref().map(|s| s.name.clone()).unwrap_or_default()
+        } else {
+            selected_system_name
+        };
+
         self.tree = tree;
         self.fss_signals = journal.fss_signals.clone();
         self.saa_data = journal.saa_data.clone();
@@ -144,7 +210,7 @@ impl ExplorerView {
             for station in unplaced {
                 self.flat_nodes.push(FlatNode {
                     tree_prefix: String::new(),
-                    short_name: station.name.clone(),
+                    short_name: carrier_display_name(station, &self.discovered_signals),
                     body_id: -1,
                     distance_ls: station.dist_from_star_ls,
                     has_rings: false,
@@ -162,8 +228,10 @@ impl ExplorerView {
         }
         // Only show signals that have no body association in the flat section.
         // Signals with a body_id are already rendered under their body in the tree.
+        // Also hide fleet carrier signals for carriers already shown as docked stations.
         let unassociated: Vec<&DiscoveredSignal> = self.discovered_signals.iter()
             .filter(|s| s.body_id.is_none())
+            .filter(|s| !is_known_carrier_signal(s, &self.stations))
             .collect();
         if !unassociated.is_empty() {
             self.flat_nodes.push(FlatNode {
@@ -203,6 +271,25 @@ impl ExplorerView {
         }
     }
 
+    /// Rebuilds the body tree from cached bodies for `selected_system_idx`.
+    /// Called after history navigation (a/d) to update the tree without a full journal update.
+    fn rebuild_tree_for_selected_system(&mut self) {
+        let addr = self.visited_systems
+            .get(self.selected_system_idx)
+            .map(|s| s.system_address);
+        if let Some(addr) = addr {
+            self.system_name = self.visited_systems
+                .get(self.selected_system_idx)
+                .map(|s| s.name.clone())
+                .unwrap_or_default();
+            let bodies = self.bodies_cache.get(&addr).cloned().unwrap_or_default();
+            self.tree = build_body_tree(&bodies);
+            self.selected_idx = 0;
+            self.scroll_offset = 0;
+            self.rebuild_flat_nodes();
+        }
+    }
+
     fn get_selected_body(&self) -> Option<&BodyScan> {
         let node = self.flat_nodes.get(self.selected_idx)?;
         // Both Body nodes and BodySignal nodes store a valid body_id
@@ -213,31 +300,115 @@ impl ExplorerView {
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
-        let n = self.flat_nodes.len();
-        match key.code {
-            KeyCode::Char('w') | KeyCode::Up => {
-                self.selected_idx = self.prev_selectable(self.selected_idx);
+        match self.focus {
+            ExplorerFocus::SystemInfo => match key.code {
+                KeyCode::Char('w') | KeyCode::Up => {
+                    // Navigate factions upward
+                    self.selected_faction = self.selected_faction.saturating_sub(1);
+                    ViewEvent::Consumed
+                }
+                KeyCode::Char('s') | KeyCode::Down => {
+                    // Navigate factions downward
+                    let faction_count = self.visited_systems
+                        .get(self.selected_system_idx)
+                        .map(|s| s.factions.len())
+                        .unwrap_or(0);
+                    if faction_count > 0 {
+                        self.selected_faction = (self.selected_faction + 1).min(faction_count - 1);
+                    }
+                    ViewEvent::Consumed
+                }
+                KeyCode::Char('a') | KeyCode::Left => {
+                    // Browse to older system (higher index = further back in history)
+                    if self.selected_system_idx + 1 < self.visited_systems.len() {
+                        self.selected_system_idx += 1;
+                        self.sys_detail_scroll = 0;
+                        self.selected_faction = 0;
+                        self.rebuild_tree_for_selected_system();
+                    }
+                    ViewEvent::Consumed
+                }
+                KeyCode::Char('d') | KeyCode::Right => {
+                    // Browse to newer system (lower index = more recent)
+                    if self.selected_system_idx > 0 {
+                        self.selected_system_idx -= 1;
+                        self.sys_detail_scroll = 0;
+                        self.selected_faction = 0;
+                        self.rebuild_tree_for_selected_system();
+                    }
+                    ViewEvent::Consumed
+                }
+                KeyCode::Tab => {
+                    self.focus = ExplorerFocus::Tree;
+                    ViewEvent::Consumed
+                }
+                KeyCode::Char(' ') => {
+                    if let Some(system) = self.visited_systems.get(self.selected_system_idx) {
+                        if !system.factions.is_empty() {
+                            let mut sorted = system.factions.clone();
+                            sorted.sort_by(|a, b| {
+                                b.influence.partial_cmp(&a.influence).unwrap_or(Ordering::Equal)
+                            });
+                            let idx = self.selected_faction.min(sorted.len() - 1);
+                            return ViewEvent::OpenFactions(sorted[idx].name.clone());
+                        }
+                    }
+                    ViewEvent::None
+                }
+                _ => ViewEvent::None,
+            },
+            ExplorerFocus::Tree => {
+                let n = self.flat_nodes.len();
+                match key.code {
+                    KeyCode::Char('w') | KeyCode::Up => {
+                        self.selected_idx = self.prev_selectable(self.selected_idx);
+                        ViewEvent::Consumed
+                    }
+                    KeyCode::Char('s') | KeyCode::Down => {
+                        self.selected_idx = self.next_selectable(self.selected_idx);
+                        ViewEvent::Consumed
+                    }
+                    KeyCode::PageUp => {
+                        let target = self.selected_idx.saturating_sub(10);
+                        self.selected_idx = self.nearest_selectable(target);
+                        ViewEvent::Consumed
+                    }
+                    KeyCode::PageDown => {
+                        let target = (self.selected_idx + 10).min(n.saturating_sub(1));
+                        self.selected_idx = self.nearest_selectable(target);
+                        ViewEvent::Consumed
+                    }
+                    KeyCode::Home => {
+                        self.selected_idx = self.nearest_selectable(0);
+                        ViewEvent::Consumed
+                    }
+                    KeyCode::End => {
+                        self.selected_idx = self.nearest_selectable(n.saturating_sub(1));
+                        ViewEvent::Consumed
+                    }
+                    KeyCode::Tab | KeyCode::Char('d') | KeyCode::Right => {
+                        self.focus = ExplorerFocus::Detail;
+                        ViewEvent::Consumed
+                    }
+                    KeyCode::Char('a') | KeyCode::Left => {
+                        self.focus = ExplorerFocus::SystemInfo;
+                        ViewEvent::Consumed
+                    }
+                    _ => ViewEvent::None,
+                }
             }
-            KeyCode::Char('s') | KeyCode::Down => {
-                self.selected_idx = self.next_selectable(self.selected_idx);
-            }
-            KeyCode::PageUp => {
-                let target = self.selected_idx.saturating_sub(10);
-                self.selected_idx = self.nearest_selectable(target);
-            }
-            KeyCode::PageDown => {
-                let target = (self.selected_idx + 10).min(n.saturating_sub(1));
-                self.selected_idx = self.nearest_selectable(target);
-            }
-            KeyCode::Home => {
-                self.selected_idx = self.nearest_selectable(0);
-            }
-            KeyCode::End => {
-                self.selected_idx = self.nearest_selectable(n.saturating_sub(1));
-            }
-            _ => {}
+            ExplorerFocus::Detail => match key.code {
+                KeyCode::Tab => {
+                    self.focus = ExplorerFocus::SystemInfo;
+                    ViewEvent::Consumed
+                }
+                KeyCode::Char('a') | KeyCode::Left | KeyCode::Esc => {
+                    self.focus = ExplorerFocus::Tree;
+                    ViewEvent::Consumed
+                }
+                _ => ViewEvent::None,
+            },
         }
-        ViewEvent::None
     }
 
     // Navigate to the previous non-header node; stay if none exists.
@@ -533,7 +704,7 @@ impl ExplorerView {
         lines
     }
 
-    fn build_detail_lines(&self, settings: &Settings) -> Vec<Line<'static>> {
+    fn build_body_detail_lines(&self, settings: &Settings) -> Vec<Line<'static>> {
         let mut lines: Vec<Line<'static>> = Vec::new();
 
         if let Some(node) = self.flat_nodes.get(self.selected_idx) {
@@ -770,38 +941,370 @@ impl ExplorerView {
         lines
     }
 
-    pub fn render(&mut self, frame: &mut Frame, area: Rect, settings: &Settings) {
-        let chunks = Layout::default()
-            .direction(Direction::Horizontal)
-            .constraints([Constraint::Percentage(55), Constraint::Percentage(45)])
+    fn build_system_info_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
+        let Some(system) = self.visited_systems.get(self.selected_system_idx) else {
+            return vec![Line::from(Span::styled(
+                "No system data available.",
+                Style::default().fg(Color::DarkGray),
+            ))];
+        };
+
+        let mut lines: Vec<Line<'static>> = Vec::new();
+
+        lines.push(Line::from(Span::styled(
+            system.name.clone(),
+            Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+        )));
+        lines.push(Line::from(""));
+
+        lines.push(sys_section("Overview"));
+        sys_row(&mut lines, "Economy", system.economy.clone());
+        if !system.second_economy.is_empty() {
+            sys_row(&mut lines, "2nd Economy", system.second_economy.clone());
+        }
+        sys_row(&mut lines, "Government", system.government.clone());
+        sys_row(&mut lines, "Allegiance", system.allegiance.clone());
+        sys_row(&mut lines, "Security", system.security.clone());
+        sys_row(&mut lines, "Population", format_population(system.population));
+        lines.push(Line::from(""));
+
+        let has_power = system.controlling_power.as_ref().map(|p| !p.is_empty()).unwrap_or(false)
+            || !system.powers.is_empty();
+        if has_power {
+            lines.push(sys_section("Powerplay"));
+            if let Some(ref power) = system.controlling_power {
+                if !power.is_empty() {
+                    sys_row(&mut lines, "Control", power.clone());
+                }
+            }
+            if !system.powers.is_empty() {
+                sys_row(&mut lines, "Powers", system.powers.join(", "));
+            }
+            lines.push(Line::from(""));
+        }
+
+        // Colonisation — current system only
+        if self.selected_system_idx == 0 {
+            let depots_in_system: Vec<_> = journal.construction_depots.values()
+                .filter(|d| d.system_name == system.name)
+                .collect();
+            let is_architect = journal.claimed_systems.contains_key(&system.system_address);
+
+            if is_architect || !depots_in_system.is_empty() {
+                lines.push(sys_section("Colonisation"));
+                if is_architect {
+                    let cmdr = if journal.pilot.name.is_empty() {
+                        "You".to_string()
+                    } else {
+                        format!("CMDR {}", journal.pilot.name)
+                    };
+                    lines.push(Line::from(Span::styled(
+                        format!("  Architect: {}", cmdr),
+                        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                    )));
+                }
+                for depot in &depots_in_system {
+                    let pct = depot.submission.progress * 100.0;
+                    let filled = (depot.submission.progress * 16.0).round() as usize;
+                    let bar_color = if pct >= 100.0 { Color::Green } else if pct > 50.0 { Color::Yellow } else { Color::Cyan };
+                    let remaining = depot.submission.resources.iter()
+                        .filter(|r| r.provided_amount < r.required_amount)
+                        .count();
+                    lines.push(Line::from(Span::styled(
+                        format!("  \u{2605} {}", depot.submission.station_name),
+                        Style::default().fg(Color::White),
+                    )));
+                    lines.push(Line::from(vec![
+                        Span::raw(format!("  {:>5.1}% [", pct)),
+                        Span::styled("\u{2588}".repeat(filled), Style::default().fg(bar_color)),
+                        Span::styled("\u{2591}".repeat(16 - filled), Style::default().fg(Color::DarkGray)),
+                        Span::raw(format!("] {}×", remaining)),
+                    ]));
+                }
+                lines.push(Line::from(""));
+            }
+        }
+
+        if !system.factions.is_empty() {
+            let mut sorted = system.factions.clone();
+            sorted.sort_by(|a, b| b.influence.partial_cmp(&a.influence).unwrap_or(Ordering::Equal));
+
+            lines.push(sys_section(&format!("Factions ({}) — space: open", sorted.len())));
+
+            let sel = self.selected_faction.min(sorted.len().saturating_sub(1));
+
+            for (i, faction) in sorted.iter().enumerate() {
+                let is_sel = i == sel && self.focus == ExplorerFocus::SystemInfo;
+                let is_controlling = faction.name == system.system_faction;
+
+                let name_style = if is_sel {
+                    Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                } else if is_controlling {
+                    Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                } else {
+                    Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
+                };
+
+                let tag = if is_controlling { " \u{2605}" } else { "" };
+                lines.push(Line::from(Span::styled(
+                    format!("  {}{}", faction.name, tag),
+                    name_style,
+                )));
+
+                let pct = faction.influence * 100.0;
+                let filled = (faction.influence * 16.0).round() as usize;
+                let bar_color = if pct < 15.0 { Color::Red } else if pct < 40.0 { Color::Yellow } else { Color::Green };
+                lines.push(Line::from(vec![
+                    Span::raw(format!("  {:>5.1}% [", pct)),
+                    Span::styled("\u{2588}".repeat(filled), Style::default().fg(bar_color)),
+                    Span::styled("\u{2591}".repeat(16 - filled), Style::default().fg(Color::DarkGray)),
+                    Span::raw("]"),
+                ]));
+
+                let mut state_parts: Vec<String> = Vec::new();
+                if !faction.active_states.is_empty() {
+                    let annotated: Vec<String> = faction.active_states.iter()
+                        .map(|s| super::annotate_faction_state(s, false))
+                        .collect();
+                    state_parts.push(format!("Active: {}", annotated.join(", ")));
+                }
+                if !faction.pending_states.is_empty() {
+                    let annotated: Vec<String> = faction.pending_states.iter()
+                        .map(|s| super::annotate_faction_state(s, true))
+                        .collect();
+                    state_parts.push(format!("Pending: {}", annotated.join(", ")));
+                }
+                if !faction.recovering_states.is_empty() {
+                    let annotated: Vec<String> = faction.recovering_states.iter()
+                        .map(|s| super::annotate_faction_state(s, false))
+                        .collect();
+                    state_parts.push(format!("Recovering: {}", annotated.join(", ")));
+                }
+                if !state_parts.is_empty() {
+                    lines.push(Line::from(Span::styled(
+                        format!("  {}", state_parts.join(" | ")),
+                        Style::default().fg(Color::DarkGray),
+                    )));
+                }
+
+                if let Some(ref c) = faction.conflict {
+                    for l in sys_conflict_lines(c) {
+                        lines.push(l);
+                    }
+                }
+
+                lines.push(Line::from(""));
+            }
+        }
+
+        lines
+    }
+
+    // Build history bar spans. inner_width is the usable width (area width - 2 for borders).
+    fn build_history_spans(&self, inner_width: usize) -> Vec<Span<'static>> {
+        let n = self.visited_systems.len();
+        if n == 0 {
+            return vec![Span::styled(
+                "No systems visited yet.",
+                Style::default().fg(Color::DarkGray),
+            )];
+        }
+
+        let arrow = " \u{2192} "; // " → "
+        let arrow_w = 3usize;
+        let more_w = 2usize; // "◄ "
+
+        // visited_systems[0] = newest/current, [n-1] = oldest
+        // Display order: oldest (display index 0) → newest (display index n-1)
+        // sel in display space = n - 1 - selected_system_idx
+        let sel_disp = n - 1 - self.selected_system_idx.min(n - 1);
+
+        let name_widths: Vec<usize> = (0..n)
+            .map(|disp| self.visited_systems[n - 1 - disp].name.chars().count())
+            .collect();
+
+        // Start window at sel_disp, expand outward to fill inner_width.
+        let mut lo = sel_disp;
+        let mut hi = sel_disp;
+        let mut used = name_widths[sel_disp];
+
+        loop {
+            let mut expanded = false;
+
+            // Expand right (toward newer / lower visited_systems index)
+            if hi + 1 < n {
+                let needed = arrow_w + name_widths[hi + 1];
+                let left_ind = if lo > 0 { more_w } else { 0 };
+                if used + needed + left_ind <= inner_width {
+                    used += needed;
+                    hi += 1;
+                    expanded = true;
+                }
+            }
+
+            // Expand left (toward older / higher visited_systems index)
+            if lo > 0 {
+                let needed = arrow_w + name_widths[lo - 1];
+                let left_ind = if lo - 1 > 0 { more_w } else { 0 };
+                if used + needed + left_ind <= inner_width {
+                    used += needed;
+                    lo -= 1;
+                    expanded = true;
+                }
+            }
+
+            if !expanded {
+                break;
+            }
+        }
+
+        let has_more_left = lo > 0;
+
+        let mut spans: Vec<Span<'static>> = Vec::new();
+
+        if has_more_left {
+            spans.push(Span::styled("\u{25C4} ", Style::default().fg(Color::DarkGray)));
+        }
+
+        for disp_idx in lo..=hi {
+            if disp_idx > lo {
+                spans.push(Span::styled(arrow.to_string(), Style::default().fg(Color::DarkGray)));
+            }
+
+            let sys_idx = n - 1 - disp_idx; // map display → visited_systems index
+            let sys = &self.visited_systems[sys_idx];
+            let is_selected = sys_idx == self.selected_system_idx;
+            let is_current = sys_idx == 0;
+
+            let style = if is_selected {
+                Style::default()
+                    .fg(Color::Black)
+                    .bg(Color::Rgb(255, 140, 0))
+                    .add_modifier(Modifier::BOLD)
+            } else if is_current {
+                Style::default().fg(Color::Rgb(255, 140, 0))
+            } else {
+                Style::default().fg(Color::White)
+            };
+
+            spans.push(Span::styled(sys.name.clone(), style));
+        }
+
+        spans
+    }
+
+    pub fn render(&mut self, frame: &mut Frame, area: Rect, settings: &Settings, journal: &JournalData) {
+        // Split: history bar (3 rows) + main panels
+        let rows = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(3), Constraint::Min(0)])
             .split(area);
 
-        let tree_area = chunks[0];
-        let detail_area = chunks[1];
+        let history_area = rows[0];
+        let main_area = rows[1];
 
+        // Render history bar
+        self.render_history_bar(frame, history_area);
+
+        // Split main area: system info | nav tree | body detail
+        let cols = Layout::default()
+            .direction(Direction::Horizontal)
+            .constraints([
+                Constraint::Percentage(25),
+                Constraint::Percentage(40),
+                Constraint::Percentage(35),
+            ])
+            .split(main_area);
+
+        let sys_area = cols[0];
+        let tree_area = cols[1];
+        let detail_area = cols[2];
+
+        let active_border = Style::default().fg(Color::Rgb(255, 140, 0));
+        let inactive_border = Style::default().fg(Color::White);
+
+        // System info panel
+        let sys_border_style = if self.focus == ExplorerFocus::SystemInfo {
+            active_border
+        } else {
+            inactive_border
+        };
+        let sys_info_lines = self.build_system_info_lines(journal);
+        let sys_visible = sys_area.height.saturating_sub(2) as usize;
+        let sys_content_len = sys_info_lines.len();
+        let sys_scroll = self.sys_detail_scroll.min(sys_content_len.saturating_sub(sys_visible));
+        frame.render_widget(
+            Paragraph::new(sys_info_lines)
+                .block(
+                    Block::default()
+                        .title(" System (w/s: factions  a/d: history  space: open) ")
+                        .borders(Borders::ALL)
+                        .border_style(sys_border_style),
+                )
+                .scroll((sys_scroll as u16, 0)),
+            sys_area,
+        );
+
+        // Navigation tree panel
+        let tree_border_style = if self.focus == ExplorerFocus::Tree {
+            active_border
+        } else {
+            inactive_border
+        };
         let visible_height = tree_area.height.saturating_sub(2) as usize;
         self.auto_scroll(visible_height);
         let tree_lines = self.build_tree_lines(settings);
+        frame.render_widget(
+            Paragraph::new(tree_lines)
+                .block(
+                    Block::default()
+                        .title(" Navigation (w/s ↑↓  PgUp/PgDn) ")
+                        .borders(Borders::ALL)
+                        .border_style(tree_border_style),
+                )
+                .scroll((self.scroll_offset as u16, 0)),
+            tree_area,
+        );
 
-        let tree_paragraph = Paragraph::new(tree_lines)
-            .block(
-                Block::default()
-                    .title(" Navigation (w/s ↑↓  PgUp/PgDn) ")
-                    .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White)),
-            )
-            .scroll((self.scroll_offset as u16, 0));
-        frame.render_widget(tree_paragraph, tree_area);
+        // Body detail panel
+        let detail_border_style = if self.focus == ExplorerFocus::Detail {
+            active_border
+        } else {
+            inactive_border
+        };
+        let detail_lines = self.build_body_detail_lines(settings);
+        frame.render_widget(
+            Paragraph::new(detail_lines)
+                .block(
+                    Block::default()
+                        .title(" Body Details ")
+                        .borders(Borders::ALL)
+                        .border_style(detail_border_style),
+                ),
+            detail_area,
+        );
+    }
 
-        let detail_lines = self.build_detail_lines(settings);
-        let detail_paragraph = Paragraph::new(detail_lines)
-            .block(
-                Block::default()
-                    .title(" Details ")
-                    .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White)),
-            );
-        frame.render_widget(detail_paragraph, detail_area);
+    fn render_history_bar(&self, frame: &mut Frame, area: Rect) {
+        let inner_width = area.width.saturating_sub(2) as usize;
+        let is_active = self.focus == ExplorerFocus::SystemInfo;
+        let border_style = if is_active {
+            Style::default().fg(Color::Rgb(255, 140, 0))
+        } else {
+            Style::default().fg(Color::DarkGray)
+        };
+
+        let spans = self.build_history_spans(inner_width);
+        frame.render_widget(
+            Paragraph::new(Line::from(spans))
+                .block(
+                    Block::default()
+                        .title(" Jump History ")
+                        .borders(Borders::ALL)
+                        .border_style(border_style),
+                ),
+            area,
+        );
     }
 }
 
@@ -967,7 +1470,7 @@ fn flatten_node(
         let prefix = format!("{}{}", child_prefix, conn);
         result.push(FlatNode {
             tree_prefix: prefix,
-            short_name: station.name.clone(),
+            short_name: carrier_display_name(station, discovered_signals),
             body_id: -1,
             distance_ls: station.dist_from_star_ls,
             has_rings: false,
@@ -1239,6 +1742,57 @@ fn signal_icon(sig: &DiscoveredSignal, settings: &Settings) -> (String, Color) {
     }
 }
 
+// ── System info helpers ──────────────────────────────────────────────────────
+
+fn sys_section(title: &str) -> Line<'static> {
+    Line::from(Span::styled(
+        format!("─ {} ", title),
+        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+    ))
+}
+
+fn sys_row(lines: &mut Vec<Line<'static>>, label: &str, value: String) {
+    lines.push(Line::from(vec![
+        Span::styled(format!("  {:<12}", label), Style::default().fg(Color::DarkGray)),
+        Span::styled(value, Style::default().fg(Color::White)),
+    ]));
+}
+
+fn sys_conflict_lines(c: &ConflictData) -> Vec<Line<'static>> {
+    let type_label = match c.war_type.to_lowercase().as_str() {
+        "war" => "War",
+        "civilwar" => "Civil War",
+        "election" => "Election",
+        _ => "Conflict",
+    };
+    let status = if c.status.is_empty() { "active".to_string() } else { c.status.clone() };
+    let score_color = Color::Rgb(255, 140, 0);
+    vec![
+        Line::from(vec![
+            Span::styled("  ".to_string(), Style::default()),
+            Span::styled(format!("{} ({})", type_label, status), Style::default().fg(score_color)),
+            Span::styled("  vs  ".to_string(), Style::default().fg(Color::DarkGray)),
+            Span::styled(c.opponent.clone(), Style::default().fg(Color::Yellow)),
+        ]),
+        Line::from(Span::styled(
+            format!("  Score: {} \u{2013} {}", c.our_won_days, c.opponent_won_days),
+            Style::default().fg(score_color),
+        )),
+    ]
+}
+
+fn format_population(pop: i64) -> String {
+    if pop >= 1_000_000_000 {
+        format!("{:.2}B", pop as f64 / 1_000_000_000.0)
+    } else if pop >= 1_000_000 {
+        format!("{:.2}M", pop as f64 / 1_000_000.0)
+    } else if pop >= 1_000 {
+        format!("{:.2}K", pop as f64 / 1_000.0)
+    } else {
+        pop.to_string()
+    }
+}
+
 // ── Detail panel helpers ─────────────────────────────────────────────────────
 
 fn section_header(title: &str) -> Line<'static> {
@@ -1305,4 +1859,30 @@ fn format_thousands(n: i64) -> String {
         result.push(c);
     }
     result
+}
+
+/// Returns true if this discovered signal represents a fleet carrier already
+/// tracked as a docked station, so it can be filtered from the signals list.
+fn is_known_carrier_signal(sig: &DiscoveredSignal, stations: &[StationData]) -> bool {
+    if sig.signal_type.as_deref() != Some("FleetCarrier") {
+        return false;
+    }
+    stations.iter().any(|s| {
+        s.station_type == "FleetCarrier"
+            && (sig.display_name == s.name || sig.display_name.ends_with(&s.name))
+    })
+}
+
+/// Returns the enriched display name for a fleet carrier station by looking up
+/// the matching FSS signal (which includes the full owner+callsign name).
+fn carrier_display_name(station: &StationData, signals: &[DiscoveredSignal]) -> String {
+    if station.station_type != "FleetCarrier" {
+        return station.name.clone();
+    }
+    signals
+        .iter()
+        .filter(|s| s.signal_type.as_deref() == Some("FleetCarrier"))
+        .find(|s| s.display_name == station.name || s.display_name.ends_with(&station.name))
+        .map(|s| s.display_name.clone())
+        .unwrap_or_else(|| station.name.clone())
 }

@@ -36,6 +36,10 @@ pub struct ConstructionView {
     detail_scroll: usize,
     focus: FocusArea,
     #[cfg(not(target_arch = "wasm32"))]
+    loading_tracked: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_tracked: Arc<Mutex<Option<Result<Vec<ConstructionDepotResponse>, String>>>>,
+    #[cfg(not(target_arch = "wasm32"))]
     pending_search: Arc<Mutex<Option<Result<Vec<ConstructionDepotResponse>, String>>>>,
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<ConstructionDepotResponse>>>>,
@@ -55,6 +59,10 @@ impl ConstructionView {
             detail_scroll: 0,
             focus: FocusArea::List,
             #[cfg(not(target_arch = "wasm32"))]
+            loading_tracked: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_tracked: Arc::new(Mutex::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
             pending_search: Arc::new(Mutex::new(None)),
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
@@ -63,6 +71,19 @@ impl ConstructionView {
 
     #[cfg(not(target_arch = "wasm32"))]
     pub fn poll_search(&mut self) {
+        if let Some(result) = self.pending_tracked.lock().unwrap().take() {
+            self.loading_tracked = false;
+            if let Ok(new_depots) = result {
+                for depot in new_depots {
+                    if !self.depots.iter().any(|d| d.market_id == depot.market_id) {
+                        self.depots.push(depot);
+                    }
+                }
+                self.depots.sort_by(|a, b| {
+                    a.system_name.cmp(&b.system_name).then(a.station_name.cmp(&b.station_name))
+                });
+            }
+        }
         if let Some(result) = self.pending_search.lock().unwrap().take() {
             if let Ok(results) = result {
                 self.results = results;
@@ -81,7 +102,45 @@ impl ConstructionView {
         }
     }
 
-    pub fn on_enter(&mut self, _api: &ApiClient) {}
+    pub fn on_enter(&mut self, api: &ApiClient) {
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let has_unloaded = self.tracked_ids.iter()
+                .any(|id| !self.depots.iter().any(|d| d.market_id == *id));
+            if has_unloaded && !self.loading_tracked {
+                self.refresh_tracked(api);
+            }
+        }
+        let _ = api;
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn refresh_tracked(&mut self, api: &ApiClient) {
+        self.loading_tracked = true;
+        let pending = Arc::clone(&self.pending_tracked);
+        let api_owned = api.clone();
+        let ids: Vec<i64> = self.tracked_ids.iter()
+            .filter(|id| !self.depots.iter().any(|d| &&d.market_id == id))
+            .copied()
+            .collect();
+        api.spawn(async move {
+            let mut results = Vec::new();
+            for mid in ids {
+                let query = ConstructionQuery {
+                    market_id: Some(mid),
+                    limit: Some(1),
+                    name: None,
+                    system_name: None,
+                };
+                if let Ok(mut r) = api_owned.search_construction_depots(&query).await {
+                    if let Some(d) = r.pop() {
+                        results.push(d);
+                    }
+                }
+            }
+            *pending.lock().unwrap() = Some(Ok(results));
+        });
+    }
 
     fn save_tracked(&self) {
         let mut pins = Pins::load();
@@ -89,10 +148,8 @@ impl ConstructionView {
         pins.save();
     }
 
-    /// Called whenever journal data updates. Adds newly-discovered depots to the
-    /// tracked list without touching the todo list. The user presses `t` to add
-    /// a depot to todo manually.
-    pub fn update_from_journal(&mut self, api: &ApiClient, journal: &JournalData) {
+    /// Called whenever journal data updates. Syncs depot progress and todo items.
+    pub fn update_from_journal(&mut self, api: &ApiClient, journal: &JournalData, todo: &mut TodoList) {
         let mut any_new = false;
 
         for depot in journal.construction_depots.values() {
@@ -113,6 +170,22 @@ impl ConstructionView {
                         payment: r.payment,
                     }
                 }).collect();
+                // Keep todo in sync so need:N in market views reflects deliveries.
+                todo.update_construction_item(ConstructionTodoItem {
+                    market_id: mid,
+                    station_name: depot.submission.station_name.clone(),
+                    system_name: depot.system_name.clone(),
+                    resources: depot.submission.resources.iter()
+                        .filter(|r| r.provided_amount < r.required_amount)
+                        .map(|r| ConstructionTodoResource {
+                            commodity_name: r.name.clone(),
+                            display_name: r.display_name.clone(),
+                            required_amount: r.required_amount,
+                            provided_amount: r.provided_amount,
+                            payment: r.payment,
+                        })
+                        .collect(),
+                });
             } else {
                 // New depot — add to tracked list.
                 self.tracked_ids.insert(mid);

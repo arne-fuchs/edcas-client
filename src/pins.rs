@@ -11,6 +11,8 @@ pub struct Pins {
     pub factions: HashSet<String>,
     #[serde(default)]
     pub constructions: HashSet<i64>,
+    #[serde(default)]
+    pub my_carriers: HashSet<i64>,
 }
 
 impl Pins {

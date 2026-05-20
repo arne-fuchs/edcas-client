@@ -34,10 +34,6 @@ impl TodoView {
         }
     }
 
-    pub fn reload(&mut self) {
-        self.todo = TodoList::load();
-    }
-
     fn total_count(&self) -> usize {
         self.todo.items.len() + self.todo.construction_items.len()
     }

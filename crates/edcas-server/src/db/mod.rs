@@ -109,7 +109,8 @@ pub async fn dispatch_event(
         | JournalEvent::FssDiscoveryScan(_)
         | JournalEvent::FssAllBodiesFound(_)
         | JournalEvent::NavBeaconScan(_)
-        | JournalEvent::ScanOrganic(_) => {}
+        | JournalEvent::ScanOrganic(_)
+        | JournalEvent::SupercruiseExit(_) => {}
     }
     Ok(())
 }

@@ -16,10 +16,6 @@ pub struct ApiClient {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl ApiClient {
-    pub fn base_url(&self) -> &str {
-        &self.base_url
-    }
-
     pub fn new(base_url: impl Into<String>, rt: tokio::runtime::Handle) -> Self {
         Self {
             base_url: base_url.into(),

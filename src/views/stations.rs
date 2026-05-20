@@ -8,10 +8,12 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use std::collections::HashSet;
+use std::cmp::Ordering;
+use std::collections::{HashMap, HashSet};
 
 use crate::api_client::ApiClient;
-use crate::views::util::{fmt_ts, truncate, FocusArea, SearchState, StationDetailTab as DetailTab};
+use crate::todo::TodoList;
+use crate::views::util::{commodity_header_line, commodity_row, fmt_ts, normalize_commodity_name, raw_pct, truncate, FocusArea, MarketSortCol, SearchState, StationDetailTab as DetailTab};
 use crate::views::ViewEvent;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -37,6 +39,8 @@ pub struct StationsView {
     status_msg: String,
     focus: FocusArea,
     detail_tab: DetailTab,
+    market_sort_col: MarketSortCol,
+    market_sort_asc: bool,
     #[cfg(not(target_arch = "wasm32"))]
     clipboard: Option<arboard::Clipboard>,
     #[cfg(target_arch = "wasm32")]
@@ -66,6 +70,8 @@ impl StationsView {
             status_msg: "Press Enter to search  |  p: pin/unpin  |  c: copy system".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Overview,
+            market_sort_col: MarketSortCol::default(),
+            market_sort_asc: true,
             #[cfg(not(target_arch = "wasm32"))]
             clipboard: arboard::Clipboard::new().ok(),
             #[cfg(target_arch = "wasm32")]
@@ -435,11 +441,8 @@ impl StationsView {
                         Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
                     )));
                 } else if self.detail_tab == DetailTab::Market {
-                    lines.push(Line::from(Span::styled(
-                        format!("{:<28} {:>8} {:>8} {:>8} {:>8} {:>8}", "Commodity", "Buy", "Sell", "Mean", "Stock", "Demand"),
-                        Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
-                    )));
-                    lines.push(Line::from(Span::styled("\u{2500}".repeat(70), Style::default().fg(Color::DarkGray))));
+                    lines.push(commodity_header_line(self.market_sort_col, self.market_sort_asc));
+                    lines.push(Line::from(Span::styled("\u{2500}".repeat(85), Style::default().fg(Color::DarkGray))));
                 } else if self.detail_tab == DetailTab::Outfitting {
                     lines.push(Line::from(Span::styled(
                         format!("{:<38} {:>12}", "Module", "Cost"),
@@ -466,7 +469,7 @@ impl StationsView {
         lines
     }
 
-    fn build_detail_body_lines(&self, history: &[StationData]) -> Vec<Line<'static>> {
+    fn build_detail_body_lines(&self, history: &[StationData], todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
         match self.selected_item_with_history(history) {
             None => vec![Line::from(Span::styled(
                 "Select a station from the list.",
@@ -474,7 +477,7 @@ impl StationsView {
             ))],
             Some(ListItem::Api(station)) => match self.detail_tab {
                 DetailTab::Overview => self.overview_body(station),
-                DetailTab::Market => self.market_body(station),
+                DetailTab::Market => self.market_body(station, todo_needed, ship_cargo, carrier_stock),
                 DetailTab::Outfitting => self.outfitting_body(station),
                 DetailTab::Shipyard => self.shipyard_body(station),
             },
@@ -551,25 +554,41 @@ impl StationsView {
         lines
     }
 
-    fn market_body(&self, station: &StationResponse) -> Vec<Line<'static>> {
+    fn market_body(&self, station: &StationResponse, todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
         if station.commodities.is_empty() {
             return vec![Line::from(Span::styled("No market data available.", Style::default().fg(Color::DarkGray)))];
         }
-        let mut lines: Vec<Line<'static>> = vec![
-            Line::from(Span::styled(
-                format!("Market data as of: {}", fmt_ts(station.market_updated_at.as_ref())),
-                Style::default().fg(Color::DarkGray),
-            )),
-            Line::from(Span::styled(
-                format!("{:<28} {:>8} {:>8} {:>8} {:>8} {:>8}", "Commodity", "Buy", "Sell", "Mean", "Stock", "Demand"),
-                Style::default().fg(Color::Cyan),
-            )),
-        ];
-        lines.extend(station.commodities.iter().map(|c| {
-            let buy = if c.buy_price > 0 { format!("{:>8}", c.buy_price) } else { format!("{:>8}", "-") };
-            let sell = if c.sell_price > 0 { format!("{:>8}", c.sell_price) } else { format!("{:>8}", "-") };
-            Line::from(format!("{:<28} {} {} {:>8} {:>8} {:>8}", truncate(&c.name, 28), buy, sell, c.mean_price, c.stock, c.demand))
-        }));
+        let effective_todo: HashMap<String, i32> = station.commodities.iter()
+            .filter(|c| c.buy_price > 0 && c.stock > 0)
+            .filter_map(|c| {
+                let norm = normalize_commodity_name(&c.name);
+                todo_needed.get(&norm).map(|&n| (norm, n))
+            })
+            .collect();
+        let mut sorted: Vec<&edcas_common::api::CommodityResponse> = station.commodities.iter().collect();
+        let asc = self.market_sort_asc;
+        sorted.sort_by(|a, b| {
+            let a_norm = normalize_commodity_name(&a.name);
+            let b_norm = normalize_commodity_name(&b.name);
+            let group = effective_todo.contains_key(&b_norm).cmp(&effective_todo.contains_key(&a_norm));
+            if group != Ordering::Equal { return group; }
+            let col_ord = match self.market_sort_col {
+                MarketSortCol::Name    => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                MarketSortCol::Buy     => a.buy_price.cmp(&b.buy_price),
+                MarketSortCol::BuyPct  => raw_pct(a.buy_price, a.mean_price).partial_cmp(&raw_pct(b.buy_price, b.mean_price)).unwrap_or(Ordering::Equal),
+                MarketSortCol::Sell    => a.sell_price.cmp(&b.sell_price),
+                MarketSortCol::SellPct => raw_pct(a.sell_price, a.mean_price).partial_cmp(&raw_pct(b.sell_price, b.mean_price)).unwrap_or(Ordering::Equal),
+                MarketSortCol::Mean    => a.mean_price.cmp(&b.mean_price),
+                MarketSortCol::Stock   => a.stock.cmp(&b.stock),
+                MarketSortCol::Demand  => a.demand.cmp(&b.demand),
+            };
+            if asc { col_ord } else { col_ord.reverse() }
+        });
+        let mut lines: Vec<Line<'static>> = vec![Line::from(Span::styled(
+            format!("Market data as of: {}", fmt_ts(station.market_updated_at.as_ref())),
+            Style::default().fg(Color::DarkGray),
+        ))];
+        lines.extend(sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo, carrier_stock)));
         lines
     }
 
@@ -687,6 +706,19 @@ impl StationsView {
                     }
                 }
             }
+            KeyCode::Char(c @ '1'..='8') => {
+                if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Market {
+                    if let Some(new_col) = MarketSortCol::from_digit(c) {
+                        if new_col == self.market_sort_col {
+                            self.market_sort_asc = !self.market_sort_asc;
+                        } else {
+                            self.market_sort_col = new_col;
+                            self.market_sort_asc = true;
+                        }
+                        return ViewEvent::Consumed;
+                    }
+                }
+            }
             KeyCode::Char('c') => {
                 if let Some(item) = self.selected_item_with_history(history) {
                     let name = match item {
@@ -706,9 +738,38 @@ impl StationsView {
 
         ViewEvent::None
     }
+}
 
-    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData) {
+impl StationsView {
+    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData, todo: &TodoList, carrier_stock: &HashMap<String, i32>) {
         let history = &journal.visited_stations;
+
+        let mut todo_needed: HashMap<String, i32> = HashMap::new();
+        for construction in &todo.construction_items {
+            for res in &construction.resources {
+                let remaining = (res.required_amount - res.provided_amount).max(0);
+                if remaining > 0 {
+                    *todo_needed.entry(normalize_commodity_name(&res.commodity_name)).or_insert(0) += remaining;
+                }
+            }
+        }
+        for item in &journal.cargo {
+            let norm = normalize_commodity_name(&item.name);
+            if let Some(needed) = todo_needed.get_mut(&norm) {
+                *needed = (*needed - item.count).max(0);
+            }
+        }
+        for (norm, qty) in carrier_stock {
+            if let Some(needed) = todo_needed.get_mut(norm) {
+                *needed = (*needed - qty).max(0);
+            }
+        }
+        todo_needed.retain(|_, v| *v > 0);
+
+        let ship_cargo: HashMap<String, i32> = journal.cargo.iter()
+            .map(|item| (normalize_commodity_name(&item.name), item.count))
+            .collect();
+
         let chunks = Layout::default()
             .direction(Direction::Horizontal)
             .constraints([Constraint::Percentage(35), Constraint::Percentage(65)])
@@ -755,7 +816,7 @@ impl StationsView {
 
         frame.render_widget(Paragraph::new(header_lines), detail_split[0]);
 
-        let body_lines = self.build_detail_body_lines(history);
+        let body_lines = self.build_detail_body_lines(history, &todo_needed, &ship_cargo, carrier_stock);
         let body_height = detail_split[1].height as usize;
         let body_max_scroll = body_lines.len().saturating_sub(body_height);
         frame.render_widget(

@@ -17,7 +17,7 @@ use crate::todo::TodoList;
 use crate::views::{
     AboutView, CarriersView, ConstructionView, EngineersView, ExplorerView, FactionsView,
     InventoryView, ModulesView, NewsView, PilotView, SettingsView, StationsView, SuitView,
-    SystemView, TodoView, TradeRoutesView, ViewEvent,
+    TodoView, TradeRoutesView, ViewEvent,
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -27,9 +27,7 @@ pub const APP_TITLE: &str = "EDCAS - Elite Dangerous Commander Assistant System"
 
 pub const TABS: &[&str] = &[
     "News",
-    "System",
     "Explorer",
-    "Inventory",
     "Stations",
     "Carriers",
     "Factions",
@@ -37,6 +35,7 @@ pub const TABS: &[&str] = &[
     "Trade Routes",
     "Pilot",
     "Ship",
+    "Inventory",
     "Suit",
     "Engineers",
     "Todo",
@@ -48,37 +47,35 @@ pub const TABS: &[&str] = &[
 pub enum AppView {
     #[default]
     News = 0,
-    System = 1,
-    Explorer = 2,
-    Materials = 3,
-    Stations = 4,
-    Carriers = 5,
-    Factions = 6,
-    Construction = 7,
-    TradeRoutes = 8,
-    Pilot = 9,
-    Modules = 10,
-    Suit = 11,
-    Engineers = 12,
-    Todo = 13,
-    Settings = 14,
-    About = 15,
+    Explorer = 1,
+    Stations = 2,
+    Carriers = 3,
+    Factions = 4,
+    Construction = 5,
+    TradeRoutes = 6,
+    Pilot = 7,
+    Modules = 8,
+    Materials = 9,
+    Suit = 10,
+    Engineers = 11,
+    Todo = 12,
+    Settings = 13,
+    About = 14,
 }
 
 impl AppView {
     pub fn next(&self) -> Self {
         match self {
-            AppView::News => AppView::System,
-            AppView::System => AppView::Explorer,
-            AppView::Explorer => AppView::Materials,
-            AppView::Materials => AppView::Stations,
+            AppView::News => AppView::Explorer,
+            AppView::Explorer => AppView::Stations,
             AppView::Stations => AppView::Carriers,
             AppView::Carriers => AppView::Factions,
             AppView::Factions => AppView::Construction,
             AppView::Construction => AppView::TradeRoutes,
             AppView::TradeRoutes => AppView::Pilot,
             AppView::Pilot => AppView::Modules,
-            AppView::Modules => AppView::Suit,
+            AppView::Modules => AppView::Materials,
+            AppView::Materials => AppView::Suit,
             AppView::Suit => AppView::Engineers,
             AppView::Engineers => AppView::Todo,
             AppView::Todo => AppView::Settings,
@@ -90,17 +87,16 @@ impl AppView {
     pub fn prev(&self) -> Self {
         match self {
             AppView::News => AppView::About,
-            AppView::System => AppView::News,
-            AppView::Explorer => AppView::System,
-            AppView::Materials => AppView::Explorer,
-            AppView::Stations => AppView::Materials,
+            AppView::Explorer => AppView::News,
+            AppView::Stations => AppView::Explorer,
             AppView::Carriers => AppView::Stations,
             AppView::Factions => AppView::Carriers,
             AppView::Construction => AppView::Factions,
             AppView::TradeRoutes => AppView::Construction,
             AppView::Pilot => AppView::TradeRoutes,
             AppView::Modules => AppView::Pilot,
-            AppView::Suit => AppView::Modules,
+            AppView::Materials => AppView::Modules,
+            AppView::Suit => AppView::Materials,
             AppView::Engineers => AppView::Suit,
             AppView::Todo => AppView::Engineers,
             AppView::Settings => AppView::Todo,
@@ -132,7 +128,6 @@ pub struct App {
     pending_tick: std::sync::Arc<std::sync::Mutex<Option<chrono::DateTime<chrono::Utc>>>>,
     pub news: NewsView,
     pub pilot: PilotView,
-    pub system: SystemView,
     pub explorer: ExplorerView,
     pub inventory: InventoryView,
     pub modules_view: ModulesView,
@@ -189,7 +184,6 @@ impl App {
             pending_tick: std::sync::Arc::new(std::sync::Mutex::new(None)),
             news: NewsView::new(),
             pilot: PilotView::new(),
-            system: SystemView::new(),
             explorer: ExplorerView::new(),
             inventory: InventoryView::new(),
             modules_view: ModulesView::new(),
@@ -222,7 +216,6 @@ impl App {
             api,
             news: NewsView::new(),
             pilot: PilotView::new(),
-            system: SystemView::new(),
             explorer: ExplorerView::new(),
             inventory: InventoryView::new(),
             modules_view: ModulesView::new(),
@@ -265,7 +258,7 @@ impl App {
                 self.journal = data;
                 self.explorer.update(&self.journal);
 
-                self.construction.update_from_journal(&self.api, &self.journal);
+                self.construction.update_from_journal(&self.api, &self.journal, &mut self.todo_view.todo);
             }
         }
 
@@ -363,13 +356,18 @@ impl App {
         match self.view {
             AppView::News => self.news.render(frame, area),
             AppView::Pilot => self.pilot.render(frame, area, &self.journal),
-            AppView::System => self.system.render(frame, area, &self.journal),
-            AppView::Explorer => self.explorer.render(frame, area, &self.settings),
+            AppView::Explorer => self.explorer.render(frame, area, &self.settings, &self.journal),
             AppView::Materials => self.inventory.render(frame, area, &self.journal),
             AppView::Modules => self.modules_view.render(frame, area, &self.journal),
             AppView::Suit    => self.suit_view.render(frame, area, &self.journal),
-            AppView::Stations => self.stations.render(frame, area, &self.journal),
-            AppView::Carriers => self.carriers.render(frame, area, &self.journal),
+            AppView::Stations => {
+                let cs = self.carriers.my_carrier_stock(&self.journal);
+                self.stations.render(frame, area, &self.journal, &self.todo_view.todo, &cs);
+            }
+            AppView::Carriers => {
+                let cs = self.carriers.my_carrier_stock(&self.journal);
+                self.carriers.render(frame, area, &self.journal, &self.todo_view.todo, &cs);
+            }
             AppView::Factions => self.factions.render(frame, area),
             AppView::Construction => self.construction.render(frame, area, &self.journal, &self.todo_view.todo),
             AppView::TradeRoutes => self.trade_routes.render(frame, area, &self.journal),
@@ -384,13 +382,12 @@ impl App {
         match self.view {
             AppView::News         => &[],
             AppView::Pilot        => &[("w/s", "scroll")],
-            AppView::System       => &[("w/s", "navigate"), ("tab/a/d", "focus"), ("space", "open faction")],
-            AppView::Explorer     => &[("w/s", "navigate"), ("p", "pin")],
+            AppView::Explorer     => &[("tab", "panel"), ("w/s", "factions"), ("a/d", "systems"), ("space", "open")],
             AppView::Materials    => &[("w/s", "navigate"), ("a/d", "panels")],
             AppView::Modules      => &[("w/s", "navigate")],
             AppView::Suit         => &[("w/s", "navigate")],
             AppView::Stations     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
-            AppView::Carriers     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("p", "pin")],
+            AppView::Carriers     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("p", "pin"), ("m", "my carrier")],
             AppView::Factions     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
             AppView::Construction => &[("f", "filter"), ("enter/tab", "panel"), ("w/s", "navigate"), ("t", "todo"), ("r", "remove")],
             AppView::TradeRoutes  => &[("tab", "filter"), ("enter", "search"), ("w/s", "navigate"), ("r", "refresh")],
@@ -472,7 +469,6 @@ impl App {
         let event = match self.view {
             AppView::News => self.news.handle_key(key),
             AppView::Pilot => self.pilot.handle_key(key),
-            AppView::System => self.system.handle_key(key, &self.journal),
             AppView::Explorer => self.explorer.handle_key(key),
             AppView::Materials => self.inventory.handle_key(key),
             AppView::Modules => self.modules_view.handle_key(key, &self.journal),
@@ -493,8 +489,6 @@ impl App {
 
         match event {
             ViewEvent::Consumed => return,
-            ViewEvent::NextTab => { self.go_next_tab(); return; }
-            ViewEvent::PrevTab => { self.go_prev_tab(); return; }
             ViewEvent::SettingsChanged => {
                 info!("Settings changed, saving");
                 self.settings_view.save_settings(&self.settings);
@@ -508,7 +502,7 @@ impl App {
                 self.view = AppView::Factions;
                 return;
             }
-            ViewEvent::None | ViewEvent::Quit => {}
+            ViewEvent::None => {}
         }
 
         match key.code {

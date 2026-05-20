@@ -7,7 +7,6 @@ pub struct EngineerInfo {
     pub name: String,
     pub system: String,
     pub station: String,
-    pub specialties: Vec<String>,
     pub unlock: String,
 }
 

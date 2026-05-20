@@ -16,7 +16,7 @@ use std::time::{Duration, SystemTime};
 
 use edcas_common::api::{ConstructionDepotSubmission, ConstructionResourceSubmission};
 use edcas_common::journal::{
-    CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan, SupercruiseExit,
+    CarrierJump, FsdJump, FssSignalDiscovered, JournalEvent, Location, Scan,
 };
 use edcas_common::journal::types::Conflict;
 use tracing::{debug, error, info, warn};
@@ -136,6 +136,8 @@ pub struct BodySignal {
 #[derive(Clone)]
 pub struct DiscoveredSignal {
     pub display_name: String,
+    /// Raw signal type string from the journal (e.g. "FleetCarrier", "StationAsteroid", USS types).
+    pub signal_type: Option<String>,
     pub uss_type: Option<String>,
     pub spawning_state: Option<String>,
     pub spawning_faction: Option<String>,
@@ -156,6 +158,7 @@ impl DiscoveredSignal {
         let spawning_state = e.spawning_state_localised.clone().or_else(|| e.spawning_state.clone());
         Self {
             display_name,
+            signal_type: e.signal_type.clone(),
             uss_type,
             spawning_state,
             spawning_faction: e.spawning_faction.clone(),
@@ -345,15 +348,6 @@ pub struct ConstructionDepotData {
     pub system_name: String,
 }
 
-impl ConstructionDepotData {
-    pub fn progress(&self) -> f32 {
-        self.submission.progress
-    }
-    pub fn station_name(&self) -> &str {
-        &self.submission.station_name
-    }
-}
-
 #[derive(Clone)]
 pub struct JournalData {
     pub current_system: Option<SystemData>,
@@ -378,6 +372,17 @@ pub struct JournalData {
     pub claimed_systems: HashMap<i64, String>,
     /// (market_id, station_name, system_name, system_address) of the last Docked event.
     pub last_docked: Option<(i64, String, String, i64)>,
+    /// Running tally of cargo transferred to each fleet carrier this session,
+    /// keyed by carrier market_id → commodity name (lowercase) → count.
+    /// Populated live from CargoTransfer events; no snapshot file exists so it
+    /// starts at zero each session.
+    pub carrier_cargo: HashMap<i64, HashMap<String, i32>>,
+    /// Best-known localised display name for a normalised commodity key, built up from any
+    /// event that carries a `Type_Localised` field alongside `Type`.
+    pub commodity_names: HashMap<String, String>,
+    /// On-foot materials stored on each fleet carrier, loaded from FCMaterials.json.
+    /// Keyed by carrier market_id → (localised_name, stock).
+    pub carrier_fc_materials: HashMap<i64, Vec<(String, i32)>>,
     /// BodyID from the most recent SupercruiseExit where BodyType != "Station".
     /// Cleared after consumption by the next Docked event or system jump.
     pending_host_body_id: Option<i32>,
@@ -416,6 +421,9 @@ impl JournalData {
             construction_depots: HashMap::new(),
             claimed_systems: HashMap::new(),
             last_docked: None,
+            carrier_cargo: HashMap::new(),
+            commodity_names: HashMap::new(),
+            carrier_fc_materials: HashMap::new(),
             pending_host_body_id: None,
             visited_systems: Vec::new(),
             visited_stations: Vec::new(),
@@ -716,6 +724,33 @@ impl JournalData {
                             self.pilot.power = v["Power"].as_str().unwrap_or("").to_string();
                             self.pilot.power_merits = v["Merits"].as_i64().unwrap_or(0);
                         }
+                        Some("CargoTransfer") => {
+                            // Track cargo moved to/from the carrier we're currently docked at.
+                            if let Some((market_id, _, _, _)) = self.last_docked {
+                                let is_carrier = self.visited_carriers.iter().any(|c| c.market_id == market_id);
+                                if is_carrier {
+                                    if let Some(transfers) = v["Transfers"].as_array() {
+                                        let cargo = self.carrier_cargo.entry(market_id).or_default();
+                                        for t in transfers {
+                                            let name = t["Type"].as_str().unwrap_or("").to_lowercase();
+                                            if name.is_empty() { continue; }
+                                            if let Some(loc) = t["Type_Localised"].as_str().filter(|s| !s.is_empty()) {
+                                                self.commodity_names.entry(name.clone()).or_insert_with(|| loc.to_string());
+                                            }
+                                            let count = t["Count"].as_i64().unwrap_or(0) as i32;
+                                            match t["Direction"].as_str().unwrap_or("") {
+                                                "tocarrier" => *cargo.entry(name).or_insert(0) += count,
+                                                "toship" => {
+                                                    let e = cargo.entry(name).or_insert(0);
+                                                    *e = (*e - count).max(0);
+                                                }
+                                                _ => {}
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                         Some("ColonisationSystemClaim") => {
                             if let (Some(addr), Some(name)) = (
                                 v["SystemAddress"].as_i64(),
@@ -848,6 +883,9 @@ impl JournalData {
     pub fn clear(&mut self) {
         self.current_system = None;
         self.clear_scan_data();
+        self.carrier_cargo.clear();
+        self.commodity_names.clear();
+        // carrier_fc_materials is file-based, not event-based — cleared by the watcher when FCMaterials.json changes
     }
 }
 
@@ -1130,10 +1168,13 @@ impl JournalReader {
             let mut journal_data = JournalData::new();
 
             info!("Loading existing journal files from: {}", journal_dir.display());
-            load_existing_files(&journal_dir, &mut journal_data);
+            load_existing_files(&journal_dir, &mut journal_data, upload_tx_opt.as_ref());
             load_cargo_file(&journal_dir.join("Cargo.json"), &mut journal_data);
             journal_data.backpack = load_onfoot_file(&journal_dir.join("Backpack.json"));
             journal_data.shiplocker = load_onfoot_file(&journal_dir.join("ShipLocker.json"));
+            if let Some((mid, items)) = load_fc_materials_file(&journal_dir.join("FCMaterials.json")) {
+                journal_data.carrier_fc_materials.insert(mid, items);
+            }
             load_modules_file(&journal_dir.join("ModulesInfo.json"), &mut journal_data);
             info!("Loaded {} bodies from existing files", journal_data.bodies.len());
             let _ = tx.send(journal_data.clone());
@@ -1167,6 +1208,59 @@ impl JournalReader {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+// Shorter initial delay in tests so retry-path tests don't take seconds.
+#[cfg(not(test))]
+const RETRY_INITIAL_DELAY: Duration = Duration::from_millis(500);
+#[cfg(test)]
+const RETRY_INITIAL_DELAY: Duration = Duration::from_millis(1);
+
+#[cfg(not(target_arch = "wasm32"))]
+fn flush_batch(
+    client: &reqwest::blocking::Client,
+    endpoint: &str,
+    batch: &[serde_json::Value],
+    send_errors: &mut u64,
+) {
+    const MAX_RETRIES: u32 = 10;
+    let mut delay = RETRY_INITIAL_DELAY;
+
+    for attempt in 0..=MAX_RETRIES {
+        let result = client.post(endpoint).json(batch).send();
+        match result {
+            Err(e) => {
+                if attempt == MAX_RETRIES {
+                    error!("Batch send failed ({} events) after {} attempts: {e:#}", batch.len(), attempt + 1);
+                    *send_errors += 1;
+                    return;
+                }
+                // Network / connect error — retry after backoff
+            }
+            Ok(r) => {
+                let status = r.status().as_u16();
+                match status {
+                    200 | 202 | 204 => return, // success
+                    503 | 504 | 429 => {
+                        if attempt == MAX_RETRIES {
+                            error!("Batch send failed ({} events) after {} attempts: HTTP {}", batch.len(), attempt + 1, status);
+                            *send_errors += 1;
+                            return;
+                        }
+                        // Transient server overload — retry after backoff
+                    }
+                    other => {
+                        error!("Batch send failed ({} events): HTTP {}", batch.len(), other);
+                        *send_errors += 1;
+                        return;
+                    }
+                }
+            }
+        }
+        thread::sleep(delay);
+        delay = (delay * 2).min(Duration::from_secs(30));
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 /// Starts a background thread that uploads all journal files (oldest first) to the server.
 /// Returns a receiver that yields progress updates.
 pub fn start_bulk_upload(
@@ -1190,7 +1284,7 @@ pub fn start_bulk_upload(
         }
 
         let client = match reqwest::blocking::Client::builder()
-            .timeout(Duration::from_secs(10))
+            .timeout(Duration::from_secs(60))
             .build()
         {
             Ok(c) => c,
@@ -1205,56 +1299,38 @@ pub fn start_bulk_upload(
                 return;
             }
         };
-        let endpoint = format!("{}/api/v1/journal/event", api_url);
-        info!("Starting single-event upload to {}", endpoint);
+        let endpoint = format!("{}/api/v1/journal/events", api_url);
+        info!("Starting batched upload to {}", endpoint);
         let mut lines_done: u64 = 0;
         let mut send_errors: u64 = 0;
+        const BATCH_SIZE: usize = 50;
 
         for (i, file) in files.iter().enumerate() {
+            let mut batch: Vec<serde_json::Value> = Vec::with_capacity(BATCH_SIZE);
+
             if let Ok(content) = std::fs::read_to_string(file) {
                 for line in content.lines() {
                     let trimmed = line.trim();
-                    if trimmed.is_empty() {
-                        continue;
-                    }
-                    // Skip events over 64 KB — these are large inventory snapshots
-                    // (ShipLocker, Backpack, NavRoute) that have no server handler.
-                    if trimmed.len() > 65_536 {
+                    if trimmed.is_empty() || trimmed.len() > 65_536 {
                         continue;
                     }
                     if let Ok(message) = serde_json::from_str::<serde_json::Value>(trimmed) {
-                        let event_type = message.get("event")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("unknown")
-                            .to_string();
-                        let body = serde_json::json!({
+                        batch.push(serde_json::json!({
                             "$schemaRef": "edcas-client-upload/v1",
                             "message": message
-                        });
-                        let result = client.post(&endpoint).json(&body).send();
-                        // On transport error, retry once — stale keep-alive connections
-                        // get closed by nginx between requests.
-                        let result = match result {
-                            Err(ref e) if e.is_request() || e.is_connect() => {
-                                client.post(&endpoint).json(&body).send()
-                            }
-                            other => other,
-                        };
-                        match result {
-                            Err(e) => {
-                                error!("Send failed ({event_type}): {e:#}");
-                                send_errors += 1;
-                            }
-                            Ok(r) if !r.status().is_success() && r.status().as_u16() != 204 => {
-                                error!("Send failed ({event_type}): HTTP {}", r.status());
-                                send_errors += 1;
-                            }
-                            Ok(_) => {}
-                        }
+                        }));
                         lines_done += 1;
+                        if batch.len() >= BATCH_SIZE {
+                            flush_batch(&client, &endpoint, &batch, &mut send_errors);
+                            batch.clear();
+                        }
                     }
                 }
             }
+            if !batch.is_empty() {
+                flush_batch(&client, &endpoint, &batch, &mut send_errors);
+            }
+
             let _ = progress_tx.send(BulkUploadProgress {
                 current_file: i + 1,
                 total_files: total,
@@ -1422,6 +1498,27 @@ fn camel_to_words(s: &str) -> String {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+fn load_fc_materials_file(path: &Path) -> Option<(i64, Vec<(String, i32)>)> {
+    let content = std::fs::read_to_string(path).ok()?;
+    let v: serde_json::Value = serde_json::from_str(&content).ok()?;
+    let market_id = v["MarketID"].as_i64()?;
+    let items: Vec<(String, i32)> = v["Items"].as_array()?
+        .iter()
+        .filter_map(|item| {
+            let stock = item["Stock"].as_i64().unwrap_or(0) as i32;
+            if stock <= 0 { return None; }
+            let name = item["Name_Localised"].as_str()
+                .or_else(|| item["Name"].as_str())
+                .map(|s| s.trim_start_matches('$').trim_end_matches("_name;").trim_end_matches(';').to_string())
+                .unwrap_or_default();
+            if name.is_empty() { return None; }
+            Some((name, stock))
+        })
+        .collect();
+    Some((market_id, items))
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn load_onfoot_file(path: &Path) -> OnFootInventory {
     let Ok(content) = std::fs::read_to_string(path) else { return OnFootInventory::default() };
     let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) else { return OnFootInventory::default() };
@@ -1434,7 +1531,11 @@ fn load_onfoot_file(path: &Path) -> OnFootInventory {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn load_existing_files(dir: &Path, data: &mut JournalData) {
+fn load_existing_files(
+    dir: &Path,
+    data: &mut JournalData,
+    upload_tx: Option<&mpsc::Sender<String>>,
+) {
     if !dir.exists() || !dir.is_dir() {
         warn!("Journal directory does not exist: {}", dir.display());
         return;
@@ -1445,7 +1546,7 @@ fn load_existing_files(dir: &Path, data: &mut JournalData) {
         return;
     }
     info!("Loading journal file: {}", files[0].display());
-    read_file_lines(&files[0], data);
+    read_file_lines(&files[0], data, upload_tx);
 
     // When the latest file starts with a Location (same system, new game session),
     // the scans from the previous session are in older files — backfill them.
@@ -1453,7 +1554,7 @@ fn load_existing_files(dir: &Path, data: &mut JournalData) {
         let system_address = data.current_system.as_ref().unwrap().system_address;
         for prev_file in files.iter().skip(1).take(3) {
             info!("Backfilling scans from previous journal: {}", prev_file.display());
-            load_previous_scans_for_system(prev_file, system_address, data);
+            load_previous_scans_for_system(prev_file, system_address, data, upload_tx);
         }
     }
 }
@@ -1471,6 +1572,7 @@ fn watch_latest_file(
     let mut last_cargo_mtime: Option<SystemTime> = None;
     let mut last_backpack_mtime: Option<SystemTime> = None;
     let mut last_shiplocker_mtime: Option<SystemTime> = None;
+    let mut last_fc_materials_mtime: Option<SystemTime> = None;
     let mut last_modules_mtime: Option<SystemTime> = None;
     let mut last_market_mtime: Option<SystemTime> = None;
     let mut last_outfitting_mtime: Option<SystemTime> = None;
@@ -1489,9 +1591,8 @@ fn watch_latest_file(
             if file_changed {
                 info!("Journal file changed to: {}", active.display());
                 last_file = Some(active.clone());
-                last_position = 0;
                 data.clear();
-                read_file_lines(&active, data);
+                read_file_lines(&active, data, upload_tx.as_ref());
                 last_position = active.metadata().map(|m| m.len()).unwrap_or(0);
                 changed = true;
             } else if let Ok(metadata) = active.metadata() {
@@ -1540,6 +1641,17 @@ fn watch_latest_file(
             if Some(mtime) != last_shiplocker_mtime {
                 last_shiplocker_mtime = Some(mtime);
                 data.shiplocker = load_onfoot_file(&shiplocker_path);
+                changed = true;
+            }
+        }
+
+        let fc_materials_path = dir.join("FCMaterials.json");
+        if let Ok(mtime) = fc_materials_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_fc_materials_mtime {
+                last_fc_materials_mtime = Some(mtime);
+                if let Some((mid, items)) = load_fc_materials_file(&fc_materials_path) {
+                    data.carrier_fc_materials.insert(mid, items);
+                }
                 changed = true;
             }
         }
@@ -1607,12 +1719,26 @@ fn upload_companion_file(path: &Path, tx: &std::sync::mpsc::Sender<String>) {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn read_file_lines(path: &Path, data: &mut JournalData) {
+fn read_file_lines(
+    path: &Path,
+    data: &mut JournalData,
+    upload_tx: Option<&mpsc::Sender<String>>,
+) {
     match File::open(path) {
         Ok(file) => {
             let reader = BufReader::new(file);
             for line in reader.lines().flatten() {
-                data.process_line(&line);
+                let trimmed = line.trim().to_owned();
+                if trimmed.is_empty() {
+                    continue;
+                }
+                data.process_line(&trimmed);
+                if let Some(tx) = upload_tx {
+                    // Skip large lines (NavRoute, ShipLocker snapshots) that have no server handler.
+                    if trimmed.len() <= 65_536 {
+                        let _ = tx.send(trimmed);
+                    }
+                }
             }
         }
         Err(e) => error!("Failed to open journal file {}: {}", path.display(), e),
@@ -1647,7 +1773,12 @@ pub fn find_latest_journal_file(dir: &Path) -> Option<PathBuf> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-fn load_previous_scans_for_system(path: &Path, system_address: i64, data: &mut JournalData) {
+fn load_previous_scans_for_system(
+    path: &Path,
+    system_address: i64,
+    data: &mut JournalData,
+    upload_tx: Option<&mpsc::Sender<String>>,
+) {
     let file = match File::open(path) {
         Ok(f) => f,
         Err(e) => {
@@ -1662,6 +1793,11 @@ fn load_previous_scans_for_system(path: &Path, system_address: i64, data: &mut J
         let trimmed = line.trim().to_owned();
         if trimmed.is_empty() {
             continue;
+        }
+        if let Some(tx) = upload_tx {
+            if trimmed.len() <= 65_536 {
+                let _ = tx.send(trimmed.clone());
+            }
         }
         let value: serde_json::Value = match serde_json::from_str(&trimmed) {
             Ok(v) => v,
@@ -1825,4 +1961,201 @@ pub struct TreeNode {
     pub body_id: i32,
     pub children: Vec<TreeNode>,
     pub data: Option<BodyScan>,
+}
+
+#[cfg(test)]
+#[cfg(not(target_arch = "wasm32"))]
+mod upload_tests {
+    use super::*;
+    use std::io::{BufRead, BufReader, Read, Write};
+    use std::net::{TcpListener, TcpStream};
+    use std::sync::{Arc, Mutex};
+
+    /// Spawns a minimal HTTP server on a random port.
+    ///
+    /// `status_fn` is called with the 0-based request index and returns the
+    /// HTTP status code to send back.  Returns `(port, request_count)`.
+    fn spawn_mock_server(
+        status_fn: impl Fn(usize) -> u16 + Send + 'static,
+    ) -> (u16, Arc<Mutex<usize>>) {
+        let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+        let port = listener.local_addr().unwrap().port();
+        let count = Arc::new(Mutex::new(0usize));
+        let count_clone = count.clone();
+
+        std::thread::spawn(move || {
+            let mut idx = 0;
+            for stream in listener.incoming() {
+                let Ok(stream) = stream else { break };
+                let status = status_fn(idx);
+                serve_request(stream, status);
+                *count_clone.lock().unwrap() += 1;
+                idx += 1;
+            }
+        });
+
+        (port, count)
+    }
+
+    fn serve_request(stream: TcpStream, status: u16) {
+        let mut reader = BufReader::new(stream.try_clone().unwrap());
+        let mut content_length = 0usize;
+
+        // Read HTTP headers
+        let mut line = String::new();
+        loop {
+            line.clear();
+            if reader.read_line(&mut line).is_err() {
+                return;
+            }
+            if line == "\r\n" || line.is_empty() {
+                break;
+            }
+            let lower = line.to_lowercase();
+            if lower.starts_with("content-length:") {
+                content_length = line[16..].trim().parse().unwrap_or(0);
+            }
+        }
+        // Drain the request body so the client doesn't get a broken-pipe error
+        let mut body = vec![0u8; content_length];
+        let _ = reader.read_exact(&mut body);
+
+        let status_text = match status {
+            200 => "OK",
+            202 => "Accepted",
+            204 => "No Content",
+            504 => "Gateway Timeout",
+            _ => "Internal Server Error",
+        };
+        let mut stream = reader.into_inner();
+        let _ = write!(
+            stream,
+            "HTTP/1.1 {} {}\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+            status, status_text
+        );
+    }
+
+    /// Creates a temp directory containing a single journal file with the given lines.
+    fn make_journal_dir(lines: &[&str]) -> std::path::PathBuf {
+        let dir = std::env::temp_dir().join(format!(
+            "edcas_upload_test_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .subsec_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+        let content = lines.join("\n");
+        std::fs::write(dir.join("Journal.2022-01-01T000000.01.log"), content).unwrap();
+        dir
+    }
+
+    fn sample_fsd_jump() -> &'static str {
+        r#"{ "timestamp":"2022-06-28T15:16:44Z", "event":"FSDJump", "Taxi":false, "Multicrew":false, "StarSystem":"Test", "SystemAddress":1, "StarPos":[0.0,0.0,0.0], "SystemAllegiance":"", "SystemEconomy":"$economy_None;", "SystemSecondEconomy":"$economy_None;", "SystemGovernment":"$government_None;", "SystemSecurity":"$GAlAXY_MAP_INFO_state_anarchy;", "Population":0, "Body":"Test", "BodyID":0, "BodyType":"Star" }"#
+    }
+
+    #[test]
+    fn upload_succeeds_and_reports_correct_counts() {
+        // 55 valid events → BATCH_SIZE=50 means 2 batches (50+5)
+        let events: Vec<&str> = std::iter::repeat(sample_fsd_jump()).take(55).collect();
+        let dir = make_journal_dir(&events);
+
+        let (port, req_count) = spawn_mock_server(|_| 202);
+        let rx = start_bulk_upload(dir.clone(), format!("http://127.0.0.1:{}", port));
+
+        let last = rx.into_iter().last().unwrap();
+        assert!(last.done, "upload should be marked done");
+        assert_eq!(last.lines_done, 55, "all 55 events should be counted");
+        assert!(last.error.is_none(), "no errors expected: {:?}", last.error);
+        assert_eq!(*req_count.lock().unwrap(), 2, "expected 2 batch requests");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn upload_counts_504_as_send_error() {
+        let events: Vec<&str> = std::iter::repeat(sample_fsd_jump()).take(5).collect();
+        let dir = make_journal_dir(&events);
+
+        let (port, _) = spawn_mock_server(|_| 504);
+        let rx = start_bulk_upload(dir.clone(), format!("http://127.0.0.1:{}", port));
+
+        let last = rx.into_iter().last().unwrap();
+        assert!(last.done);
+        assert!(
+            last.error.is_some(),
+            "504 response should be recorded as a send error"
+        );
+        assert!(
+            last.error.as_deref().unwrap_or("").contains("send error"),
+            "error message should mention 'send error', got: {:?}",
+            last.error
+        );
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn upload_skips_empty_and_malformed_lines() {
+        let lines = [
+            sample_fsd_jump(),
+            "",
+            "   ",
+            "not json",
+            sample_fsd_jump(),
+        ];
+        let dir = make_journal_dir(&lines);
+
+        let (port, req_count) = spawn_mock_server(|_| 202);
+        let rx = start_bulk_upload(dir.clone(), format!("http://127.0.0.1:{}", port));
+
+        let last = rx.into_iter().last().unwrap();
+        assert!(last.done);
+        assert_eq!(last.lines_done, 2, "only valid JSON lines count");
+        assert!(last.error.is_none());
+        // 2 valid events fit in a single batch
+        assert_eq!(*req_count.lock().unwrap(), 1);
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn upload_empty_directory_reports_no_files_error() {
+        let dir = std::env::temp_dir().join(format!(
+            "edcas_upload_test_empty_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap_or_default()
+                .subsec_nanos()
+        ));
+        std::fs::create_dir_all(&dir).unwrap();
+
+        // No server needed — upload fails immediately
+        let rx = start_bulk_upload(dir.clone(), "http://127.0.0.1:1".into());
+
+        let last = rx.into_iter().last().unwrap();
+        assert!(last.done);
+        assert!(last.error.is_some(), "empty dir should report an error");
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
+    #[test]
+    fn upload_mixed_success_and_error_accumulates_count() {
+        // 55 events → 2 batches (50+5).  First batch (idx=0) succeeds; all
+        // subsequent requests (retries of batch 1) return 503 so that batch
+        // exhausts its retries and counts as exactly 1 send error.
+        let events: Vec<&str> = std::iter::repeat(sample_fsd_jump()).take(55).collect();
+        let dir = make_journal_dir(&events);
+
+        let (port, _) = spawn_mock_server(|idx| if idx == 0 { 202 } else { 503 });
+        let rx = start_bulk_upload(dir.clone(), format!("http://127.0.0.1:{}", port));
+
+        let last = rx.into_iter().last().unwrap();
+        assert!(last.done);
+        assert_eq!(last.lines_done, 55);
+        assert!(last.error.as_deref().unwrap_or("").contains("1 send error"));
+
+        let _ = std::fs::remove_dir_all(&dir);
+    }
 }

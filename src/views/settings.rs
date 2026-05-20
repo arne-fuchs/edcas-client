@@ -65,21 +65,8 @@ enum CellType {
     Label(String),
     StringValue(String),
     BoolValue(bool),
-    EnumValue(Vec<&'static str>),
     ToggleEnabled(bool),
     Button(&'static str),
-}
-
-impl CellType {
-    fn is_editable(&self) -> bool {
-        matches!(
-            self,
-            CellType::StringValue(_)
-                | CellType::BoolValue(_)
-                | CellType::EnumValue(_)
-                | CellType::ToggleEnabled(_)
-        )
-    }
 }
 
 struct GridRow {
@@ -659,13 +646,6 @@ impl SettingsView {
                         }
                     }
                     CellType::BoolValue(b) => if *b { "true" } else { "false" }.to_string(),
-                    CellType::EnumValue(_) => {
-                        if self.section == SettingsSection::JournalReader && row_idx == 2 {
-                            settings.journal_reader.action_at_shutdown_signal.to_string()
-                        } else {
-                            String::new()
-                        }
-                    }
                     CellType::ToggleEnabled(b) => if *b { "Yes" } else { "No" }.to_string(),
                     CellType::Button(label) => label.to_string(),
                 };

@@ -52,11 +52,16 @@ pub async fn ingest_event(pool: &State<Pool>, body: Json<UploadMessage>) -> Stat
 }
 
 /// Batch variant: accepts up to 500 events in one request.
-/// Returns 204 on success; individual event errors are logged and skipped.
+/// Spawns background tasks immediately and returns 202 Accepted so the client
+/// never blocks waiting for DB processing to finish.
 #[rocket::post("/api/v1/journal/events", data = "<body>")]
 pub async fn ingest_events(pool: &State<Pool>, body: Json<Vec<UploadMessage>>) -> Status {
+    let pool = pool.inner().clone();
     for msg in body.into_inner() {
-        process_message(pool, msg).await;
+        let pool = pool.clone();
+        tokio::spawn(async move {
+            process_message(&pool, msg).await;
+        });
     }
-    Status::NoContent
+    Status::Accepted
 }

@@ -108,12 +108,6 @@ impl TodoList {
         }
     }
 
-    pub fn remove(&mut self, idx: usize) {
-        if idx < self.items.len() {
-            self.items.remove(idx);
-            self.save();
-        }
-    }
 
     pub fn add_construction_item(&mut self, item: ConstructionTodoItem) {
         if !self.construction_items.iter().any(|i| i.market_id == item.market_id) {

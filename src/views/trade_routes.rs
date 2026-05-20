@@ -225,7 +225,7 @@ impl TradeRoutesView {
         }
     }
 
-    fn handle_filter_key(&mut self, key: &KeyEvent, api: &ApiClient, _journal: &JournalData) -> ViewEvent {
+    fn handle_filter_key(&mut self, key: &KeyEvent, _api: &ApiClient, _journal: &JournalData) -> ViewEvent {
         match key.code {
             KeyCode::Tab => {
                 self.focus = FocusArea::List;
