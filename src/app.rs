@@ -392,9 +392,9 @@ impl App {
             AppView::Carriers     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("p", "pin"), ("m", "my carrier")],
             AppView::Factions     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
             AppView::Construction => &[("f", "filter"), ("enter/tab", "panel"), ("w/s", "navigate"), ("t", "todo"), ("r", "remove")],
-            AppView::TradeRoutes  => &[("tab", "filter"), ("enter", "search"), ("w/s", "navigate"), ("r", "refresh")],
+            AppView::TradeRoutes  => &[("tab", "cycle panels"), ("w/s", "navigate"), ("c", "copy system(s)"), ("r", "refresh")],
             AppView::Engineers    => &[("t", "ship/foot"), ("tab", "panel"), ("w/s", "navigate"), ("a/d", "grade"), ("enter", "add todo")],
-            AppView::Todo         => &[("w/s", "navigate"), ("x", "remove")],
+            AppView::Todo         => &[("w/s", "navigate"), ("r/Del", "remove")],
             AppView::Settings     => &[("w/s", "rows"), ("a", "sidebar"), ("d", "fields"), ("space", "toggle"), ("enter", "save")],
             AppView::About        => &[],
         }

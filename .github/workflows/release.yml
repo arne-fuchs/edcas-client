@@ -6,77 +6,184 @@ on:
       - 'v*'
 
 jobs:
-  build:
-    name: Build (${{ matrix.target }})
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - os: ubuntu-latest
-            target: x86_64-unknown-linux-gnu
-            archive: edcas-client.tar.gz
+  # ── Linux binary + .deb ─────────────────────────────────────────────────────
+  build-linux:
+    name: Build Linux
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v4
 
-          - os: windows-latest
-            target: x86_64-pc-windows-msvc
-            archive: edcas-client-windows-x86_64.zip
+      - uses: dtolnay/rust-toolchain@stable
 
-          - os: macos-latest
-            target: aarch64-apple-darwin
-            archive: edcas-client-macos-aarch64.tar.gz
+      - uses: Swatinem/rust-cache@v2
 
+      - name: Install system deps
+        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+
+      - name: Extract version
+        id: version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> "$GITHUB_OUTPUT"
+
+      - name: Build
+        run: cargo build --release --bin edcas-client
+
+      - name: Package tarball
+        run: |
+          mkdir -p dist
+          cp target/release/edcas-client dist/
+          cp settings-example.json dist/
+          tar czf edcas-client-linux-x86_64.tar.gz -C dist .
+
+      - name: Build Debian package
+        run: |
+          VER=${{ steps.version.outputs.version }}
+          PKG="edcas-client_${VER}_amd64"
+          mkdir -p "${PKG}/DEBIAN"
+          mkdir -p "${PKG}/usr/bin"
+          mkdir -p "${PKG}/usr/share/edcas-client"
+          mkdir -p "${PKG}/usr/share/applications"
+          mkdir -p "${PKG}/etc/edcas-client"
+
+          cp target/release/edcas-client          "${PKG}/usr/bin/"
+          cp settings-example.json                "${PKG}/etc/edcas-client/"
+          cp assets/graphics/logo/edcas_128.png   "${PKG}/usr/share/edcas-client/"
+          cp edcas.desktop                        "${PKG}/usr/share/applications/"
+
+          cat > "${PKG}/DEBIAN/control" << EOF
+          Package: edcas-client
+          Version: ${VER}
+          Section: games
+          Priority: optional
+          Architecture: amd64
+          Depends: libc6 (>= 2.17), libssl3 | libssl1.1
+          Maintainer: Arne Fuchs
+          Homepage: https://github.com/arne-fuchs/edcas-client
+          Description: Elite Dangerous Commander Assistant System
+           A terminal UI client for Elite Dangerous that tracks exploration,
+           cargo, construction, and engineering in a compact TUI.
+          EOF
+
+          dpkg-deb --build --root-owner-group "${PKG}"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-artifacts
+          path: |
+            edcas-client-linux-x86_64.tar.gz
+            edcas-client_*.deb
+
+  # ── Arch package (.pkg.tar.zst) ─────────────────────────────────────────────
+  package-arch:
+    name: Build Arch Package
+    runs-on: ubuntu-latest
+    needs: build-linux
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-artifacts
+
+      - name: Extract version
+        run: echo "VERSION=${GITHUB_REF_NAME#v}" >> "$GITHUB_ENV"
+
+      - name: Build Arch package via Docker
+        run: |
+          mkdir -p arch-build
+          tar xzf edcas-client-linux-x86_64.tar.gz -C arch-build
+
+          cat > arch-build/PKGBUILD << PKGEOF
+          pkgname=edcas-client
+          pkgver=${VERSION}
+          pkgrel=1
+          pkgdesc="Elite Dangerous Commander Assistant System"
+          arch=('x86_64')
+          url="https://github.com/arne-fuchs/edcas-client"
+          license=('Apache-2.0')
+          depends=('gcc-libs' 'glibc' 'openssl')
+          source=("edcas-client" "settings-example.json")
+          sha256sums=('SKIP' 'SKIP')
+
+          package() {
+              install -Dm755 "\${srcdir}/edcas-client"        "\${pkgdir}/usr/bin/edcas-client"
+              install -Dm644 "\${srcdir}/settings-example.json" "\${pkgdir}/etc/edcas-client/settings-example.json"
+          }
+          PKGEOF
+
+          docker run --rm -v "$PWD/arch-build:/pkg" archlinux:latest bash -c "
+            pacman -Syu --noconfirm base-devel &&
+            useradd -m builder &&
+            chown -R builder /pkg &&
+            su builder -c 'cd /pkg && PKGEXT=.pkg.tar.zst makepkg -f --nocheck'
+          "
+          cp arch-build/*.pkg.tar.zst .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: arch-artifacts
+          path: "*.pkg.tar.zst"
+
+  # ── Windows binary + .zip ────────────────────────────────────────────────────
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release --bin edcas-client
+
+      - name: Package
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path dist
+          Copy-Item target\release\edcas-client.exe dist\
+          Copy-Item settings-example.json, start.bat dist\
+          Compress-Archive -Path dist\* -DestinationPath edcas-client-windows-x86_64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-artifacts
+          path: edcas-client-windows-x86_64.zip
+
+  # ── macOS binary + .tar.gz ───────────────────────────────────────────────────
+  build-macos:
+    name: Build macOS (aarch64)
+    runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          targets: ${{ matrix.target }}
+          targets: aarch64-apple-darwin
 
       - uses: Swatinem/rust-cache@v2
         with:
-          key: ${{ matrix.target }}
-
-      - name: Install system deps (Linux)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y pkg-config libssl-dev
+          key: macos-aarch64
 
       - name: Build
-        run: cargo build --release --bin edcas-client --target ${{ matrix.target }}
+        run: cargo build --release --bin edcas-client --target aarch64-apple-darwin
 
-      - name: Package (Linux)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Package
         run: |
-          mkdir edcas-client
-          cp target/${{ matrix.target }}/release/edcas-client edcas-client/
-          cp settings-example.json materials.json edcas-client/
-          tar czf ${{ matrix.archive }} edcas-client/
-          rm -rf edcas-client
-
-      - name: Package (macOS)
-        if: matrix.os == 'macos-latest'
-        run: |
-          mkdir edcas-client
-          cp target/${{ matrix.target }}/release/edcas-client edcas-client/
-          cp settings-example.json materials.json edcas-client/
-          tar czf ${{ matrix.archive }} edcas-client/
-          rm -rf edcas-client
-
-      - name: Package (Windows)
-        if: matrix.os == 'windows-latest'
-        shell: pwsh
-        run: |
-          New-Item -ItemType Directory -Force -Path edcas-client
-          Copy-Item target\${{ matrix.target }}\release\edcas-client.exe edcas-client\
-          Copy-Item settings-example.json, materials.json, start.bat edcas-client\
-          Compress-Archive -Path edcas-client -DestinationPath ${{ matrix.archive }}
+          mkdir -p dist
+          cp target/aarch64-apple-darwin/release/edcas-client dist/
+          cp settings-example.json dist/
+          tar czf edcas-client-macos-aarch64.tar.gz -C dist .
 
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.archive }}
-          path: ${{ matrix.archive }}
+          name: macos-artifacts
+          path: edcas-client-macos-aarch64.tar.gz
 
+  # ── GitHub Release ───────────────────────────────────────────────────────────
   release:
-    needs: build
+    name: Create Release
+    needs: [build-linux, package-arch, build-windows, build-macos]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -89,6 +196,8 @@ jobs:
         with:
           generate_release_notes: true
           files: |
-            edcas-client.tar.gz
+            edcas-client-linux-x86_64.tar.gz
+            edcas-client_*.deb
+            *.pkg.tar.zst
             edcas-client-windows-x86_64.zip
             edcas-client-macos-aarch64.tar.gz

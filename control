@@ -1,8 +1,11 @@
 Package: edcas-client
 Version: 0.4.0
-Section: util
+Section: games
 Priority: optional
-Maintainer: Frank_The_Fish
+Architecture: amd64
+Depends: libc6 (>= 2.17), libssl3 | libssl1.1
+Maintainer: Arne Fuchs
 Homepage: https://github.com/arne-fuchs/edcas-client
-Architecture: all
-Description: EDCAS-Client for Elite Dangerous
+Description: Elite Dangerous Commander Assistant System
+ A terminal UI client for Elite Dangerous that tracks exploration,
+ cargo, construction, and engineering in a compact TUI.

@@ -463,7 +463,7 @@ impl TodoView {
                 self.show_aggregate = !self.show_aggregate;
                 self.scroll_offset = 0;
             }
-            KeyCode::Delete | KeyCode::Char('x') => {
+            KeyCode::Delete | KeyCode::Char('r') => {
                 match self.selected_kind() {
                     Some(SelectedKind::Engineering(idx)) => {
                         let removed = self.todo.decrement_or_remove(idx);
@@ -500,7 +500,7 @@ impl TodoView {
         frame.render_widget(
             Paragraph::new(left_lines).block(
                 Block::default()
-                    .title(" Todo (x: remove) ")
+                    .title(" Todo (r/Del: remove) ")
                     .borders(Borders::ALL)
                     .style(Style::default().fg(Color::Cyan)),
             ),

@@ -54,14 +54,28 @@ pub async fn ingest_event(pool: &State<Pool>, body: Json<UploadMessage>) -> Stat
 /// Batch variant: accepts up to 500 events in one request.
 /// Spawns background tasks immediately and returns 202 Accepted so the client
 /// never blocks waiting for DB processing to finish.
+/// Accepts the raw JSON value so malformed individual messages are skipped
+/// rather than rejecting the whole batch with 422.
 #[rocket::post("/api/v1/journal/events", data = "<body>")]
-pub async fn ingest_events(pool: &State<Pool>, body: Json<Vec<UploadMessage>>) -> Status {
+pub async fn ingest_events(pool: &State<Pool>, body: Json<serde_json::Value>) -> Status {
+    let msgs: Vec<serde_json::Value> = match body.into_inner() {
+        serde_json::Value::Array(arr) => arr,
+        single @ serde_json::Value::Object(_) => vec![single],
+        _ => return Status::Accepted,
+    };
     let pool = pool.inner().clone();
-    for msg in body.into_inner() {
-        let pool = pool.clone();
-        tokio::spawn(async move {
-            process_message(&pool, msg).await;
-        });
+    for msg in msgs {
+        match serde_json::from_value::<UploadMessage>(msg) {
+            Ok(upload) => {
+                let pool = pool.clone();
+                tokio::spawn(async move {
+                    process_message(&pool, upload).await;
+                });
+            }
+            Err(e) => {
+                error!("Skipping malformed message in batch: {e}");
+            }
+        }
     }
     Status::Accepted
 }

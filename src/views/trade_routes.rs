@@ -22,6 +22,7 @@ const SUPERPOWER_OPTIONS: &[&str] = &["All", "Federation", "Empire", "Alliance",
 enum FocusArea {
     Filter,
     List,
+    Detail,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -42,12 +43,15 @@ pub struct TradeRoutesView {
     loops: Vec<TradeLoopResponse>,
     selected_idx: usize,
     scroll: usize,
+    detail_cursor: usize,
     status_msg: String,
 
     #[cfg(not(target_arch = "wasm32"))]
     route_rx: Option<std::sync::mpsc::Receiver<Result<Vec<TradeRouteResponse>, String>>>,
     #[cfg(not(target_arch = "wasm32"))]
     loop_rx: Option<std::sync::mpsc::Receiver<Result<Vec<TradeLoopResponse>, String>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    clipboard: Option<arboard::Clipboard>,
 
     #[cfg(target_arch = "wasm32")]
     pending_routes: Rc<RefCell<Option<Vec<TradeRouteResponse>>>>,
@@ -68,11 +72,14 @@ impl TradeRoutesView {
             loops: Vec::new(),
             selected_idx: 0,
             scroll: 0,
+            detail_cursor: 0,
             status_msg: "Loading pre-computed trade data…".into(),
             #[cfg(not(target_arch = "wasm32"))]
             route_rx: None,
             #[cfg(not(target_arch = "wasm32"))]
             loop_rx: None,
+            #[cfg(not(target_arch = "wasm32"))]
+            clipboard: arboard::Clipboard::new().ok(),
             #[cfg(target_arch = "wasm32")]
             pending_routes: Rc::new(RefCell::new(None)),
             #[cfg(target_arch = "wasm32")]
@@ -210,7 +217,7 @@ impl TradeRoutesView {
         let l = self.loops.len();
         if r > 0 || l > 0 {
             self.status_msg = format!(
-                "{r} routes  {l} loops  |  w/s: navigate  |  Tab: filters  |  r: refresh"
+                "{r} routes  {l} loops  |  w/s: navigate  |  Tab: filters  |  c: copy systems  |  r: refresh"
             );
             self.focus = FocusArea::List;
         } else {
@@ -221,7 +228,8 @@ impl TradeRoutesView {
     pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData) -> ViewEvent {
         match self.focus {
             FocusArea::Filter => self.handle_filter_key(key, api, journal),
-            FocusArea::List => self.handle_list_key(key, api, journal),
+            FocusArea::List   => self.handle_list_key(key, api, journal),
+            FocusArea::Detail => self.handle_detail_key(key),
         }
     }
 
@@ -289,7 +297,7 @@ impl TradeRoutesView {
         let count = self.current_count();
         match key.code {
             KeyCode::Tab => {
-                self.focus = FocusArea::Filter;
+                self.focus = FocusArea::Detail;
                 return ViewEvent::Consumed;
             }
             KeyCode::Up | KeyCode::Char('w') => {
@@ -320,9 +328,79 @@ impl TradeRoutesView {
                 self.fetch_all(api);
                 return ViewEvent::Consumed;
             }
+            #[cfg(not(target_arch = "wasm32"))]
+            KeyCode::Char('c') => {
+                let text = match self.route_type() {
+                    RouteType::Routes => self
+                        .filtered_routes()
+                        .into_iter()
+                        .nth(self.selected_idx)
+                        .map(|r| format!("{} → {}", r.from_system_name, r.to_system_name)),
+                    RouteType::Loops => self
+                        .filtered_loops()
+                        .into_iter()
+                        .nth(self.selected_idx)
+                        .map(|l| format!("{} ⇄ {}", l.system_name_a, l.system_name_b)),
+                };
+                if let Some(t) = text {
+                    if let Some(cb) = &mut self.clipboard {
+                        let _ = cb.set_text(&t);
+                        self.status_msg = format!("Copied: {t}");
+                    }
+                }
+                return ViewEvent::Consumed;
+            }
             _ => {}
         }
         ViewEvent::None
+    }
+
+    fn handle_detail_key(&mut self, key: &KeyEvent) -> ViewEvent {
+        match key.code {
+            KeyCode::Tab => {
+                self.focus = FocusArea::Filter;
+                ViewEvent::Consumed
+            }
+            KeyCode::Up | KeyCode::Char('w') => {
+                if self.detail_cursor > 0 { self.detail_cursor -= 1; }
+                ViewEvent::Consumed
+            }
+            KeyCode::Down | KeyCode::Char('s') => {
+                self.detail_cursor = (self.detail_cursor + 1).min(1);
+                ViewEvent::Consumed
+            }
+            #[cfg(not(target_arch = "wasm32"))]
+            KeyCode::Char('c') => {
+                let text = match self.route_type() {
+                    RouteType::Routes => self
+                        .filtered_routes()
+                        .into_iter()
+                        .nth(self.selected_idx)
+                        .map(|r| if self.detail_cursor == 0 {
+                            r.from_system_name.clone()
+                        } else {
+                            r.to_system_name.clone()
+                        }),
+                    RouteType::Loops => self
+                        .filtered_loops()
+                        .into_iter()
+                        .nth(self.selected_idx)
+                        .map(|l| if self.detail_cursor == 0 {
+                            l.system_name_a.clone()
+                        } else {
+                            l.system_name_b.clone()
+                        }),
+                };
+                if let Some(t) = text {
+                    if let Some(cb) = &mut self.clipboard {
+                        let _ = cb.set_text(&t);
+                        self.status_msg = format!("Copied: {t}");
+                    }
+                }
+                ViewEvent::Consumed
+            }
+            _ => ViewEvent::None,
+        }
     }
 
     fn current_count(&self) -> usize {
@@ -476,6 +554,20 @@ impl TradeRoutesView {
 
     fn render_detail(&self, frame: &mut Frame, area: Rect) {
         let hl = Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+        let focused = self.focus == FocusArea::Detail;
+        let border_style = if focused {
+            Style::default().fg(Color::Rgb(255, 140, 0))
+        } else {
+            Style::default().fg(Color::White)
+        };
+        let sel_style = |pos: usize| -> Style {
+            if focused && self.detail_cursor == pos {
+                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+            } else {
+                Style::default().fg(Color::White)
+            }
+        };
+
         let mut lines: Vec<Line<'static>> = Vec::new();
 
         match self.route_type() {
@@ -485,9 +577,12 @@ impl TradeRoutesView {
                     lines.push(Line::from(""));
 
                     lines.push(Line::from(Span::styled("Buy from", Style::default().fg(Color::Cyan))));
-                    lines.push(Line::from(Span::styled(r.from_station_name.clone(), Style::default().fg(Color::White))));
                     lines.push(Line::from(Span::styled(
                         format!("  {} ({})", r.from_system_name, pad_str(&r.from_max_pad)),
+                        sel_style(0),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {}", r.from_station_name),
                         Style::default().fg(Color::Gray),
                     )));
                     lines.push(Line::from(Span::styled(
@@ -497,9 +592,12 @@ impl TradeRoutesView {
                     lines.push(Line::from(""));
 
                     lines.push(Line::from(Span::styled("Sell at", Style::default().fg(Color::Cyan))));
-                    lines.push(Line::from(Span::styled(r.to_station_name.clone(), Style::default().fg(Color::White))));
                     lines.push(Line::from(Span::styled(
                         format!("  {} ({})", r.to_system_name, pad_str(&r.to_max_pad)),
+                        sel_style(1),
+                    )));
+                    lines.push(Line::from(Span::styled(
+                        format!("  {}", r.to_station_name),
                         Style::default().fg(Color::Gray),
                     )));
                     lines.push(Line::from(Span::styled(
@@ -537,11 +635,11 @@ impl TradeRoutesView {
                     // Outbound leg
                     lines.push(Line::from(Span::styled("Outbound →", Style::default().fg(Color::Cyan))));
                     lines.push(Line::from(Span::styled(
-                        format!("  {} → {}", l.station_name_a, l.station_name_b),
-                        Style::default().fg(Color::White),
+                        format!("  {} → {}", l.system_name_a, l.system_name_b),
+                        sel_style(0),
                     )));
                     lines.push(Line::from(Span::styled(
-                        format!("  {} → {}", l.system_name_a, l.system_name_b),
+                        format!("  {} → {}", l.station_name_a, l.station_name_b),
                         Style::default().fg(Color::Gray),
                     )));
                     lines.push(Line::from(Span::styled(
@@ -557,8 +655,12 @@ impl TradeRoutesView {
                     // Return leg
                     lines.push(Line::from(Span::styled("Return ←", Style::default().fg(Color::Cyan))));
                     lines.push(Line::from(Span::styled(
+                        format!("  {} → {}", l.system_name_b, l.system_name_a),
+                        sel_style(1),
+                    )));
+                    lines.push(Line::from(Span::styled(
                         format!("  {} → {}", l.station_name_b, l.station_name_a),
-                        Style::default().fg(Color::White),
+                        Style::default().fg(Color::Gray),
                     )));
                     lines.push(Line::from(Span::styled(
                         format!("  {} ({} → {} cr)", l.commodity_back, format_num(l.buy_price_back), format_num(l.sell_price_back)),
@@ -586,12 +688,18 @@ impl TradeRoutesView {
             }
         }
 
+        let title = if focused {
+            " Detail (w/s: select  c: copy system) "
+        } else {
+            " Detail "
+        };
+
         frame.render_widget(
             Paragraph::new(lines).block(
                 Block::default()
-                    .title(" Detail ")
+                    .title(title)
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::White)),
+                    .border_style(border_style),
             ),
             area,
         );

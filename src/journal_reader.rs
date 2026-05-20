@@ -1242,6 +1242,7 @@ fn flush_batch(
                     503 | 504 | 429 => {
                         if attempt == MAX_RETRIES {
                             error!("Batch send failed ({} events) after {} attempts: HTTP {}", batch.len(), attempt + 1, status);
+                            eprintln!("Upload error: HTTP {status} after {} retries ({} events in batch)", attempt + 1, batch.len());
                             *send_errors += 1;
                             return;
                         }
@@ -1249,6 +1250,7 @@ fn flush_batch(
                     }
                     other => {
                         error!("Batch send failed ({} events): HTTP {}", batch.len(), other);
+                        eprintln!("Upload error: HTTP {other} ({} events in batch)", batch.len());
                         *send_errors += 1;
                         return;
                     }
