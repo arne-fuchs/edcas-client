@@ -187,29 +187,17 @@ impl CarriersView {
     /// Total available stock across all carriers marked as "mine":
     /// market stock (API/Market.json) + personal cargo hold (live CargoTransfer tracking).
     pub fn my_carrier_stock(&self, journal: &JournalData) -> HashMap<String, i32> {
+        // Only use CargoTransfer-tracked journal data, not API market listings.
+        // API commodities are "listed for sale to other players", not personal stored cargo.
         let mut stock: HashMap<String, i32> = HashMap::new();
-        let mut seen: HashSet<i64> = HashSet::new();
-        for carrier in &self.pinned_results {
-            if !self.my_carrier_ids.contains(&carrier.market_id) {
-                continue;
-            }
-            seen.insert(carrier.market_id);
-            for c in &carrier.commodities {
-                *stock.entry(normalize_commodity_name(&c.name)).or_insert(0) += c.stock;
-            }
-            if let Some(cargo) = journal.carrier_cargo.get(&carrier.market_id) {
-                for (name, count) in cargo {
-                    *stock.entry(normalize_commodity_name(name)).or_insert(0) += count;
-                }
-            }
-        }
-        // Also include carrier_cargo for "mine" carriers not yet pinned/fetched from API.
         for (market_id, cargo) in &journal.carrier_cargo {
-            if !self.my_carrier_ids.contains(market_id) || seen.contains(market_id) {
+            if !self.my_carrier_ids.contains(market_id) {
                 continue;
             }
             for (name, count) in cargo {
-                *stock.entry(normalize_commodity_name(name)).or_insert(0) += count;
+                if *count > 0 {
+                    *stock.entry(normalize_commodity_name(name)).or_insert(0) += count;
+                }
             }
         }
         stock

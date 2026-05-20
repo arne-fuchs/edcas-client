@@ -13,7 +13,6 @@ use crate::api_client::ApiClient;
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::{BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData, ParentType};
 use crate::settings::Settings;
-use crate::todo::TodoList;
 use crate::views::{
     AboutView, CarriersView, ConstructionView, EngineersView, ExplorerView, FactionsView,
     InventoryView, ModulesView, NewsView, PilotView, SettingsView, StationsView, SuitView,
@@ -541,9 +540,7 @@ impl App {
                 let journal = &self.journal;
                 self.trade_routes.on_enter(&self.api, journal);
             }
-            AppView::Todo => {
-                self.todo_view.todo = TodoList::load();
-            }
+            AppView::Todo => {}  // in-memory todo is always authoritative; no reload needed
             _ => {}
         }
     }
