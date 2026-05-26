@@ -51,19 +51,7 @@ jobs:
           cp assets/graphics/logo/edcas_128.png   "${PKG}/usr/share/edcas-client/"
           cp edcas.desktop                        "${PKG}/usr/share/applications/"
 
-          cat > "${PKG}/DEBIAN/control" << EOF
-          Package: edcas-client
-          Version: ${VER}
-          Section: games
-          Priority: optional
-          Architecture: amd64
-          Depends: libc6 (>= 2.17), libssl3 | libssl1.1
-          Maintainer: Arne Fuchs
-          Homepage: https://github.com/arne-fuchs/edcas-client
-          Description: Elite Dangerous Commander Assistant System
-           A terminal UI client for Elite Dangerous that tracks exploration,
-           cargo, construction, and engineering in a compact TUI.
-          EOF
+          sed "s/^Version: .*/Version: ${VER}/" control > "${PKG}/DEBIAN/control"
 
           dpkg-deb --build --root-owner-group "${PKG}"
 

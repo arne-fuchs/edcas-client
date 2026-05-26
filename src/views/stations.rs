@@ -33,6 +33,11 @@ pub struct StationsView {
     results: Vec<StationResponse>,
     pinned_ids: HashSet<i64>,
     pinned_results: Vec<StationResponse>,
+    /// Stations fetched automatically on dock; used instead of the journal snapshot.
+    auto_fetched: HashMap<i64, StationResponse>,
+    /// Market IDs for which an auto-fetch was attempted (regardless of outcome),
+    /// so we don't retry on every journal update.
+    auto_fetch_attempted: HashSet<i64>,
     selected_idx: usize,
     list_scroll: usize,
     detail_scroll: usize,
@@ -51,6 +56,10 @@ pub struct StationsView {
     pending_pins: Arc<Mutex<Option<Result<Vec<StationResponse>, String>>>>,
     #[cfg(not(target_arch = "wasm32"))]
     pending_search: Arc<Mutex<Option<Result<Vec<StationResponse>, String>>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_auto_fetch: Arc<Mutex<Option<Result<Vec<StationResponse>, String>>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    auto_fetch_in_flight: Option<i64>,
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<StationResponse>>>>,
 }
@@ -64,6 +73,8 @@ impl StationsView {
             results: Vec::new(),
             pinned_ids: pins.stations,
             pinned_results: Vec::new(),
+            auto_fetched: HashMap::new(),
+            auto_fetch_attempted: HashSet::new(),
             selected_idx: 0,
             list_scroll: 0,
             detail_scroll: 0,
@@ -82,6 +93,10 @@ impl StationsView {
             pending_pins: Arc::new(Mutex::new(None)),
             #[cfg(not(target_arch = "wasm32"))]
             pending_search: Arc::new(Mutex::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_auto_fetch: Arc::new(Mutex::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
+            auto_fetch_in_flight: None,
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
         }
@@ -176,6 +191,46 @@ impl StationsView {
         pins.save();
     }
 
+    /// Triggered automatically when the player docks at a non-carrier station.
+    /// Fetches full market data from the API and caches it so the journal snapshot
+    /// is replaced with live data without requiring the user to pin the station.
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn fetch_on_dock(&mut self, market_id: i64, api: &ApiClient) {
+        if self.pinned_ids.contains(&market_id)
+            || self.auto_fetch_attempted.contains(&market_id)
+            || self.auto_fetch_in_flight == Some(market_id)
+        {
+            return;
+        }
+        self.auto_fetch_in_flight = Some(market_id);
+        let pending = Arc::clone(&self.pending_auto_fetch);
+        let api_owned = api.clone();
+        api.spawn(async move {
+            let query = StationQuery {
+                market_id: Some(market_id),
+                limit: Some(1),
+                name: None,
+                system_name: None,
+            };
+            let result = api_owned.search_stations(&query).await.map_err(|e| e.to_string());
+            *pending.lock().unwrap() = Some(result);
+        });
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn poll_auto_fetch(&mut self) {
+        if let Some(result) = self.pending_auto_fetch.lock().unwrap().take() {
+            if let Some(id) = self.auto_fetch_in_flight.take() {
+                self.auto_fetch_attempted.insert(id);
+            }
+            if let Ok(mut results) = result {
+                if let Some(station) = results.pop() {
+                    self.auto_fetched.insert(station.market_id, station);
+                }
+            }
+        }
+    }
+
     fn build_display_list<'a>(&'a self, history: &'a [StationData]) -> Vec<ListItem<'a>> {
         let search_ids: HashSet<i64> = self.results.iter()
             .filter(|s| !self.pinned_ids.contains(&s.market_id))
@@ -189,7 +244,11 @@ impl StationsView {
             list.push(ListItem::Api(s));
         }
         for s in history.iter().filter(|s| !self.pinned_ids.contains(&s.market_id) && !search_ids.contains(&s.market_id)) {
-            list.push(ListItem::Journal(s));
+            if let Some(fetched) = self.auto_fetched.get(&s.market_id) {
+                list.push(ListItem::Api(fetched));
+            } else {
+                list.push(ListItem::Journal(s));
+            }
         }
         list
     }
@@ -373,13 +432,17 @@ impl StationsView {
             for (k, station) in hist_deduped.iter().enumerate() {
                 let i = n_pinned + n_search + k;
                 let selected = self.focus == FocusArea::List && i == self.selected_idx;
+                let has_live = self.auto_fetched.contains_key(&station.market_id);
                 let style = if selected {
                     Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                } else if has_live {
+                    Style::default().fg(Color::Rgb(100, 220, 100))
                 } else {
                     Style::default().fg(Color::Rgb(100, 180, 200))
                 };
+                let icon = if has_live { "\u{25CF}" } else { "\u{231a}" };
                 lines.push(Line::from(Span::styled(
-                    format!(" \u{231a} {:<26} {}", truncate(&station.name, 26), &station.station_type),
+                    format!(" {} {:<26} {}", icon, truncate(&station.name, 26), &station.station_type),
                     style,
                 )));
             }

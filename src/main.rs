@@ -18,6 +18,7 @@ mod cli;
 mod engineering_data;
 mod event_shim;
 mod journal_reader;
+mod my_carriers;
 mod pins;
 mod settings;
 mod todo;

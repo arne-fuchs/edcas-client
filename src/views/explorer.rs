@@ -704,7 +704,7 @@ impl ExplorerView {
         lines
     }
 
-    fn build_body_detail_lines(&self, settings: &Settings) -> Vec<Line<'static>> {
+    fn build_body_detail_lines(&self, settings: &Settings, journal: &JournalData) -> Vec<Line<'static>> {
         let mut lines: Vec<Line<'static>> = Vec::new();
 
         if let Some(node) = self.flat_nodes.get(self.selected_idx) {
@@ -835,13 +835,25 @@ impl ExplorerView {
             lines.push(section_header(&format!("Materials ({})", body.materials.len())));
             let mut mats = body.materials.clone();
             mats.sort_by(|a, b| b.percent.partial_cmp(&a.percent).unwrap_or(std::cmp::Ordering::Equal));
+            let inv_map: std::collections::HashMap<&str, i32> = journal.materials_raw.iter()
+                .map(|i| (i.name.as_str(), i.count))
+                .collect();
             for mat in &mats {
                 let name = capitalise(&mat.name);
                 let bar = material_bar(mat.percent);
+                let inv_count = inv_map.get(mat.name.as_str()).copied().unwrap_or(0);
+                let inv_color = if inv_count == 0 {
+                    Color::Rgb(255, 140, 0)
+                } else if inv_count <= 5 {
+                    Color::Yellow
+                } else {
+                    Color::DarkGray
+                };
                 lines.push(Line::from(vec![
                     Span::styled(format!("  {:<18}", name), Style::default().fg(Color::White)),
                     Span::styled(format!("{:>5.1}%", mat.percent), Style::default().fg(Color::Rgb(255, 140, 0))),
                     Span::styled(format!("  {}", bar), Style::default().fg(Color::DarkGray)),
+                    Span::styled(format!("  ×{:>3}", inv_count), Style::default().fg(inv_color)),
                 ]));
             }
         }
@@ -1272,7 +1284,7 @@ impl ExplorerView {
         } else {
             inactive_border
         };
-        let detail_lines = self.build_body_detail_lines(settings);
+        let detail_lines = self.build_body_detail_lines(settings, journal);
         frame.render_widget(
             Paragraph::new(detail_lines)
                 .block(

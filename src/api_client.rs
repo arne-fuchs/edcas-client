@@ -1,7 +1,8 @@
 use edcas_common::api::{
     BodyResponse, CarrierQuery, CarrierResponse, ConstructionDepotResponse,
     ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse,
-    ServerTickResponse, StationQuery, StationResponse, TradeLoopResponse, TradeRouteResponse,
+    NearestCommodityQuery, NearestCommodityResult, ServerTickResponse, StationQuery,
+    StationResponse, TradeLoopResponse, TradeRouteResponse,
 };
 
 // ─── Native (async) implementation ────────────────────────────────────────────
@@ -104,6 +105,15 @@ impl ApiClient {
             Ok(None)
         }
     }
+
+    pub async fn search_nearest_commodity(
+        &self,
+        query: &NearestCommodityQuery,
+    ) -> anyhow::Result<Vec<NearestCommodityResult>> {
+        let url = format!("{}/api/v1/nearest-commodity", self.base_url);
+        let resp = self.client.get(&url).query(query).send().await?;
+        if resp.status().is_success() { Ok(resp.json().await?) } else { Ok(vec![]) }
+    }
 }
 
 // ─── WASM (async) implementation ──────────────────────────────────────────────
@@ -180,6 +190,17 @@ impl ApiClient {
         match self.client.get(&url).send().await {
             Ok(resp) if resp.status().is_success() => resp.json().await.ok(),
             _ => None,
+        }
+    }
+
+    pub async fn search_nearest_commodity(
+        &self,
+        query: NearestCommodityQuery,
+    ) -> Vec<NearestCommodityResult> {
+        let url = format!("{}/api/v1/nearest-commodity", self.base_url);
+        match self.client.get(&url).query(&query).send().await {
+            Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
+            _ => vec![],
         }
     }
 }

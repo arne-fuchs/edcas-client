@@ -330,3 +330,27 @@ pub struct ServerTickResponse {
     /// Number of unique star systems that reported faction data at the last tick.
     pub system_count: Option<i32>,
 }
+
+/// GET /api/v1/nearest-commodity?commodity=X&reference_system=Y&limit=N
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct NearestCommodityQuery {
+    pub commodity: String,
+    pub reference_system: String,
+    pub limit: Option<i64>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct NearestCommodityResult {
+    pub market_id: i64,
+    pub system_address: i64,
+    pub system_name: String,
+    pub station_name: String,
+    pub station_type: Option<String>,
+    pub distance_ly: f32,
+    pub commodity_name: String,
+    pub buy_price: i32,
+    pub stock: i32,
+    pub sell_price: i32,
+    pub has_large_pad: bool,
+    pub has_medium_pad: bool,
+}

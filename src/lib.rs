@@ -3,6 +3,7 @@ pub mod app;
 pub mod engineering_data;
 pub mod event_shim;
 pub mod journal_reader;
+pub mod my_carriers;
 pub mod pins;
 pub mod settings;
 pub mod todo;

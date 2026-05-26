@@ -55,6 +55,7 @@ pub struct CarriersView {
 impl CarriersView {
     pub fn new() -> Self {
         let pins = crate::pins::Pins::load();
+        let my_carrier_ids = crate::my_carriers::MyCarriersData::load().market_ids();
         Self {
             search_query: String::new(),
             search_state: SearchState::Idle,
@@ -69,7 +70,7 @@ impl CarriersView {
             detail_tab: DetailTab::Overview,
             market_sort_col: MarketSortCol::default(),
             market_sort_asc: true,
-            my_carrier_ids: pins.my_carriers,
+            my_carrier_ids,
             #[cfg(not(target_arch = "wasm32"))]
             loading_pins: false,
             #[cfg(not(target_arch = "wasm32"))]
@@ -171,9 +172,18 @@ impl CarriersView {
     }
 
     fn save_my_carriers(&self) {
-        let mut pins = crate::pins::Pins::load();
-        pins.my_carriers = self.my_carrier_ids.clone();
-        pins.save();
+        let mut mc = crate::my_carriers::MyCarriersData::load();
+        // Add newly marked carriers (preserving existing cargo)
+        for &id in &self.my_carrier_ids {
+            mc.carriers.entry(id).or_default();
+        }
+        // Remove unmarked carriers
+        mc.carriers.retain(|id, _| self.my_carrier_ids.contains(id));
+        mc.save();
+    }
+
+    pub fn my_carrier_ids(&self) -> &std::collections::HashSet<i64> {
+        &self.my_carrier_ids
     }
 
     fn get_selected_market_id(&self, history: &[StationData]) -> Option<i64> {

@@ -63,6 +63,7 @@ async fn main() -> anyhow::Result<()> {
                 api::construction::submit_construction_depot,
                 api::journal::ingest_event,
                 api::journal::ingest_events,
+                api::nearest_commodity::nearest_commodity,
                 api::trade_routes::get_trade_routes,
                 api::trade_routes::get_trade_loops,
                 api::tick::get_server_tick,

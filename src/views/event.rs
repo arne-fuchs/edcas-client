@@ -3,4 +3,5 @@ pub enum ViewEvent {
     Consumed,
     SettingsChanged,
     OpenFactions(String),
+    OpenSearchNearest { commodity: String, system: String },
 }

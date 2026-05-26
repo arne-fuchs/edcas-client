@@ -20,11 +20,19 @@ enum SelectedKind {
     Construction(usize),
 }
 
+#[derive(Clone, Copy, PartialEq)]
+enum TodoFocus {
+    Left,
+    Right,
+}
+
 pub struct TodoView {
     pub todo: TodoList,
     selected_idx: usize,
     scroll_offset: usize,
     show_aggregate: bool,
+    focus: TodoFocus,
+    resource_selected_idx: usize,
 }
 
 impl TodoView {
@@ -34,6 +42,8 @@ impl TodoView {
             selected_idx: 0,
             scroll_offset: 0,
             show_aggregate: false,
+            focus: TodoFocus::Left,
+            resource_selected_idx: 0,
         }
     }
 
@@ -284,6 +294,12 @@ impl TodoView {
                         Style::default().fg(Color::Green),
                     )));
                 }
+                if self.focus == TodoFocus::Right {
+                    lines.push(Line::from(Span::styled(
+                        "  Tab: ← panel  f: search nearest",
+                        Style::default().fg(Color::DarkGray),
+                    )));
+                }
                 lines.push(Line::from(""));
                 lines.push(Line::from(Span::styled(
                     " Commodities needed:",
@@ -291,48 +307,73 @@ impl TodoView {
                 )));
                 lines.push(Line::from(""));
 
-                // Prefer live resources, fall back to snapshot
-                let resources_iter: Box<dyn Iterator<Item = (String, String, i32, i32, i64)>> = if let Some(depot) = live {
-                    Box::new(depot.submission.resources.iter().map(|r| {
+                // Collect resources into a vec so we can index them
+                let resources: Vec<(String, String, i32, i32, i64)> = if let Some(depot) = live {
+                    depot.submission.resources.iter().map(|r| {
                         (r.name.clone(), r.display_name.clone(), r.provided_amount, r.required_amount, r.payment)
-                    }))
+                    }).collect()
                 } else {
-                    Box::new(site.resources.iter().map(|r| {
+                    site.resources.iter().map(|r| {
                         (r.commodity_name.clone(), r.display_name.clone(), r.provided_amount, r.required_amount, r.payment)
-                    }))
+                    }).collect()
                 };
 
                 let dim_orange = Style::default().fg(Color::Rgb(160, 130, 0));
                 let mut all_done = true;
-                for (raw_name, display_name, provided, required, payment) in resources_iter {
-                    let done = provided >= required;
+                for (res_idx, (raw_name, display_name, provided, required, payment)) in resources.iter().enumerate() {
+                    let done = *provided >= *required;
                     if !done { all_done = false; }
-                    let remaining = (required - provided).max(0);
-                    let frac = if required == 0 { 1.0f32 } else { provided as f32 / required as f32 };
-                    let color = if done { Color::Green } else if frac > 0.0 { Color::Yellow } else { Color::DarkGray };
+                    let remaining = (*required - *provided).max(0);
+                    let frac = if *required == 0 { 1.0f32 } else { *provided as f32 / *required as f32 };
+                    let base_color = if done { Color::Green } else if frac > 0.0 { Color::Yellow } else { Color::DarkGray };
                     let checkmark = if done { "✓" } else { "·" };
                     let bar_w = 8usize;
                     let filled = ((frac * bar_w as f32) as usize).min(bar_w);
                     let bar = format!("[{}{}]", "█".repeat(filled), "░".repeat(bar_w - filled));
 
-                    let norm = normalize_commodity_name(&raw_name);
+                    let norm = normalize_commodity_name(raw_name);
                     let in_ship = ship_cargo.get(&norm).copied().unwrap_or(0);
                     let in_carrier = carrier_stock.get(&norm).copied().unwrap_or(0);
 
+                    let row_selected = self.focus == TodoFocus::Right && res_idx == self.resource_selected_idx;
+                    let row_style = if row_selected {
+                        Style::default().fg(Color::Black).bg(Color::Cyan).add_modifier(Modifier::BOLD)
+                    } else {
+                        Style::default().fg(base_color)
+                    };
+
                     let mut spans = vec![
-                        Span::styled(format!("  {} {}", checkmark, pad_name(&display_name, 34)), Style::default().fg(color)),
-                        Span::styled(format!("{:>7} left", remaining), Style::default().fg(if done { Color::Green } else { Color::DarkGray })),
-                        Span::styled(format!("  {}", bar), Style::default().fg(color)),
                         Span::styled(
-                            if payment > 0 { format!("  {:>7} cr/t", format_cr(payment)) } else { String::new() },
-                            Style::default().fg(Color::DarkGray),
+                            format!("  {} {}", checkmark, pad_name(display_name, 34)),
+                            if row_selected { row_style } else { Style::default().fg(base_color) },
+                        ),
+                        Span::styled(
+                            format!("{:>7} left", remaining),
+                            if row_selected { row_style } else { Style::default().fg(if done { Color::Green } else { Color::DarkGray }) },
+                        ),
+                        Span::styled(
+                            format!("  {}", bar),
+                            if row_selected { row_style } else { Style::default().fg(base_color) },
+                        ),
+                        Span::styled(
+                            if *payment > 0 { format!("  {:>7} cr/t", format_cr(*payment)) } else { String::new() },
+                            if row_selected { row_style } else { Style::default().fg(Color::DarkGray) },
                         ),
                     ];
-                    if in_ship > 0 {
-                        spans.push(Span::styled(format!("  ship:{}", in_ship), dim_orange));
-                    }
-                    if in_carrier > 0 {
-                        spans.push(Span::styled(format!("  carrier:{}", in_carrier), dim_orange));
+                    if !row_selected {
+                        if in_ship > 0 {
+                            spans.push(Span::styled(format!("  ship:{}", in_ship), dim_orange));
+                        }
+                        if in_carrier > 0 {
+                            spans.push(Span::styled(format!("  carrier:{}", in_carrier), dim_orange));
+                        }
+                    } else {
+                        if in_ship > 0 {
+                            spans.push(Span::styled(format!("  ship:{}", in_ship), row_style));
+                        }
+                        if in_carrier > 0 {
+                            spans.push(Span::styled(format!("  carrier:{}", in_carrier), row_style));
+                        }
                     }
                     lines.push(Line::from(spans));
                 }
@@ -432,24 +473,94 @@ impl TodoView {
         lines
     }
 
-    pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
+    pub fn handle_key(&mut self, key: &KeyEvent, journal: &JournalData) -> ViewEvent {
         let total = self.total_count();
+
+        // Tab switches focus between left panel and right panel
+        if key.code == KeyCode::Tab {
+            match self.focus {
+                TodoFocus::Left => {
+                    if matches!(self.selected_kind(), Some(SelectedKind::Construction(_))) {
+                        self.focus = TodoFocus::Right;
+                        self.resource_selected_idx = 0;
+                    }
+                }
+                TodoFocus::Right => {
+                    self.focus = TodoFocus::Left;
+                }
+            }
+            return ViewEvent::Consumed;
+        }
+
+        if self.focus == TodoFocus::Right {
+            match key.code {
+                KeyCode::Char('w') | KeyCode::Up => {
+                    self.resource_selected_idx = self.resource_selected_idx.saturating_sub(1);
+                }
+                KeyCode::Char('s') | KeyCode::Down => {
+                    let resource_count = match self.selected_kind() {
+                        Some(SelectedKind::Construction(idx)) => {
+                            let site = &self.todo.construction_items[idx];
+                            let live = journal.construction_depots.get(&site.market_id);
+                            if let Some(depot) = live {
+                                depot.submission.resources.len()
+                            } else {
+                                site.resources.len()
+                            }
+                        }
+                        _ => 0,
+                    };
+                    if self.resource_selected_idx + 1 < resource_count {
+                        self.resource_selected_idx += 1;
+                    }
+                }
+                KeyCode::Char('f') => {
+                    if let Some(SelectedKind::Construction(idx)) = self.selected_kind() {
+                        let site = &self.todo.construction_items[idx];
+                        let live = journal.construction_depots.get(&site.market_id);
+                        let commodity_name = if let Some(depot) = live {
+                            depot.submission.resources
+                                .get(self.resource_selected_idx)
+                                .map(|r| normalize_commodity_name(&r.name))
+                        } else {
+                            site.resources
+                                .get(self.resource_selected_idx)
+                                .map(|r| r.commodity_name.clone())
+                        };
+                        if let Some(commodity) = commodity_name {
+                            let system = journal.current_system
+                                .as_ref()
+                                .map(|s| s.name.clone())
+                                .unwrap_or_default();
+                            return ViewEvent::OpenSearchNearest { commodity, system };
+                        }
+                    }
+                }
+                _ => {}
+            }
+            return ViewEvent::Consumed;
+        }
+
+        // Left panel navigation
         match key.code {
             KeyCode::Char('w') | KeyCode::Up => {
                 if self.selected_idx > 0 {
                     self.selected_idx -= 1;
                     self.scroll_offset = 0;
+                    self.resource_selected_idx = 0;
                 }
             }
             KeyCode::Char('s') | KeyCode::Down => {
                 if self.selected_idx + 1 < total {
                     self.selected_idx += 1;
                     self.scroll_offset = 0;
+                    self.resource_selected_idx = 0;
                 }
             }
             KeyCode::PageUp => {
                 self.selected_idx = self.selected_idx.saturating_sub(10);
                 self.scroll_offset = 0;
+                self.resource_selected_idx = 0;
             }
             KeyCode::PageDown => {
                 if self.selected_idx + 10 < total {
@@ -458,6 +569,7 @@ impl TodoView {
                     self.selected_idx = total - 1;
                 }
                 self.scroll_offset = 0;
+                self.resource_selected_idx = 0;
             }
             KeyCode::Char('g') => {
                 self.show_aggregate = !self.show_aggregate;
@@ -496,17 +608,19 @@ impl TodoView {
             .constraints([Constraint::Length(46), Constraint::Min(10)])
             .split(area);
 
+        let left_border = if self.focus == TodoFocus::Left { Color::Cyan } else { Color::DarkGray };
         let left_lines = self.build_left_lines();
         frame.render_widget(
             Paragraph::new(left_lines).block(
                 Block::default()
-                    .title(" Todo (r/Del: remove) ")
+                    .title(" Todo (Tab: switch panel  r/Del: remove) ")
                     .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::Cyan)),
+                    .style(Style::default().fg(left_border)),
             ),
             chunks[0],
         );
 
+        let right_border = if self.focus == TodoFocus::Right { Color::Cyan } else { Color::White };
         let (right_lines, right_title) = if self.show_aggregate {
             (
                 self.build_aggregate_lines(journal),
@@ -515,7 +629,7 @@ impl TodoView {
         } else {
             (
                 self.build_right_lines(journal, &ship_cargo, carrier_stock),
-                " Materials (w/s: navigate, g: all) ".to_string(),
+                " Materials (w/s: navigate  Tab: switch panel  g: all) ".to_string(),
             )
         };
         let visible = area.height.saturating_sub(2) as usize;
@@ -527,7 +641,7 @@ impl TodoView {
                     Block::default()
                         .title(right_title)
                         .borders(Borders::ALL)
-                        .style(Style::default().fg(Color::White)),
+                        .style(Style::default().fg(right_border)),
                 )
                 .scroll((offset, 0)),
             chunks[1],

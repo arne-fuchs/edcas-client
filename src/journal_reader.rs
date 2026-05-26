@@ -895,7 +895,12 @@ fn faction_info_from_journal(
 ) -> FactionInfo {
     let conflict = conflicts.and_then(|cs| {
         cs.iter()
-            .find(|c| c.faction1.name == f.name || c.faction2.name == f.name)
+            .find(|c| {
+                c.status.to_lowercase() != "completed"
+                    && c.faction1.won_days < 4
+                    && c.faction2.won_days < 4
+                    && (c.faction1.name == f.name || c.faction2.name == f.name)
+            })
             .map(|c| {
                 let (ours, theirs) = if c.faction1.name == f.name {
                     (&c.faction1, &c.faction2)
@@ -1547,6 +1552,19 @@ fn load_existing_files(
         warn!("No journal file found in: {}", dir.display());
         return;
     }
+
+    // Seed carrier cargo from the persisted snapshot; these carriers are skipped
+    // during backfill to avoid double-counting events already included in the snapshot.
+    let seeded_ids = seed_my_carrier_cargo(data);
+
+    // Backfill carrier cargo from previous sessions before processing the current
+    // file so that chronological order is preserved for correct running totals.
+    let prev_files: Vec<PathBuf> = files.iter().skip(1).take(15).rev().cloned().collect();
+    if !prev_files.is_empty() {
+        info!("Backfilling carrier cargo from {} previous journal files", prev_files.len());
+        backfill_carrier_cargo(&prev_files, data, &seeded_ids);
+    }
+
     info!("Loading journal file: {}", files[0].display());
     read_file_lines(&files[0], data, upload_tx);
 
@@ -1557,6 +1575,98 @@ fn load_existing_files(
         for prev_file in files.iter().skip(1).take(3) {
             info!("Backfilling scans from previous journal: {}", prev_file.display());
             load_previous_scans_for_system(prev_file, system_address, data, upload_tx);
+        }
+    }
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn seed_my_carrier_cargo(data: &mut JournalData) -> std::collections::HashSet<i64> {
+    let mc = crate::my_carriers::MyCarriersData::load();
+    let seeded: std::collections::HashSet<i64> = mc.carriers.keys().copied().collect();
+    for (market_id, cargo) in mc.carriers {
+        data.carrier_cargo.insert(market_id, cargo);
+    }
+    seeded
+}
+
+#[cfg(not(target_arch = "wasm32"))]
+fn backfill_carrier_cargo(
+    files: &[PathBuf],
+    data: &mut JournalData,
+    skip_ids: &std::collections::HashSet<i64>,
+) {
+    for path in files {
+        let file = match File::open(path) {
+            Ok(f) => f,
+            Err(_) => continue,
+        };
+        let reader = BufReader::new(file);
+        let mut docked_carrier_market_id: Option<i64> = None;
+
+        for line in reader.lines().flatten() {
+            let trimmed = line.trim();
+            if trimmed.is_empty() {
+                continue;
+            }
+            let v: serde_json::Value = match serde_json::from_str(trimmed) {
+                Ok(v) => v,
+                Err(_) => continue,
+            };
+            match v["event"].as_str().unwrap_or("") {
+                "Docked" => {
+                    if v["StationType"].as_str() == Some("FleetCarrier") {
+                        docked_carrier_market_id = v["MarketID"].as_i64();
+                    } else {
+                        docked_carrier_market_id = None;
+                    }
+                }
+                "Location" => {
+                    if v["Docked"].as_bool() == Some(true)
+                        && v["StationType"].as_str() == Some("FleetCarrier")
+                    {
+                        docked_carrier_market_id = v["MarketID"].as_i64();
+                    } else {
+                        docked_carrier_market_id = None;
+                    }
+                }
+                "Undocked" => {
+                    docked_carrier_market_id = None;
+                }
+                "CargoTransfer" => {
+                    if let Some(market_id) = docked_carrier_market_id {
+                        // Skip carriers already seeded from the persisted snapshot
+                        if skip_ids.contains(&market_id) {
+                            continue;
+                        }
+                        if let Some(transfers) = v["Transfers"].as_array() {
+                            let cargo = data.carrier_cargo.entry(market_id).or_default();
+                            for t in transfers {
+                                let name = t["Type"].as_str().unwrap_or("").to_lowercase();
+                                if name.is_empty() {
+                                    continue;
+                                }
+                                if let Some(loc) =
+                                    t["Type_Localised"].as_str().filter(|s| !s.is_empty())
+                                {
+                                    data.commodity_names
+                                        .entry(name.clone())
+                                        .or_insert_with(|| loc.to_string());
+                                }
+                                let count = t["Count"].as_i64().unwrap_or(0) as i32;
+                                match t["Direction"].as_str().unwrap_or("") {
+                                    "tocarrier" => *cargo.entry(name).or_insert(0) += count,
+                                    "toship" => {
+                                        let e = cargo.entry(name).or_insert(0);
+                                        *e = (*e - count).max(0);
+                                    }
+                                    _ => {}
+                                }
+                            }
+                        }
+                    }
+                }
+                _ => {}
+            }
         }
     }
 }
@@ -1594,6 +1704,8 @@ fn watch_latest_file(
                 info!("Journal file changed to: {}", active.display());
                 last_file = Some(active.clone());
                 data.clear();
+                // Re-seed persisted carrier cargo so it survives new-session clear
+                seed_my_carrier_cargo(data);
                 read_file_lines(&active, data, upload_tx.as_ref());
                 last_position = active.metadata().map(|m| m.len()).unwrap_or(0);
                 changed = true;

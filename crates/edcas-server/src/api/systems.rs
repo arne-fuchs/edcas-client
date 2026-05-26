@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use deadpool_postgres::Pool;
 use edcas_common::api::{BodyResponse, MaterialResponse, ParentResponse, RingResponse, SystemFactionInfo, SystemResponse};
 use rocket::http::Status;
@@ -103,19 +104,74 @@ pub async fn get_system_bodies(
         .await
         .map_err(|_| Status::InternalServerError)?;
 
+    // Fetch rings, materials, and parents for the whole system in 3 bulk queries
+    // instead of 3 per body, avoiding the N+1 problem.
+    let ring_rows = client
+        .query(
+            "SELECT r.body_id, r.name, rc.value as ring_class, r.inner_rad, r.outer_rad, r.mass_mt
+             FROM ring r
+             LEFT JOIN ring_class rc ON r.ring_class = rc.id
+             WHERE r.system_address = $1",
+            &[&system_address],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    let material_rows = client
+        .query(
+            "SELECT pm.body_id, mt.value as name, pm.percent
+             FROM planet_material pm
+             LEFT JOIN material_type mt ON pm.material_type = mt.id
+             WHERE pm.system_address = $1
+             ORDER BY pm.percent DESC",
+            &[&system_address],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    let parent_rows = client
+        .query(
+            "SELECT type, parent_id, body_id FROM parents WHERE system_address = $1",
+            &[&system_address],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+
+    let mut rings_map: HashMap<i32, Vec<RingResponse>> = HashMap::new();
+    for row in &ring_rows {
+        let body_id: i32 = row.get("body_id");
+        rings_map.entry(body_id).or_default().push(RingResponse {
+            name: row.get("name"),
+            ring_class: row.get::<_, Option<String>>("ring_class").unwrap_or_default(),
+            inner_rad: row.get::<_, f32>("inner_rad") as f64,
+            outer_rad: row.get::<_, f32>("outer_rad") as f64,
+            mass_mt: row.get::<_, f32>("mass_mt") as f64,
+        });
+    }
+
+    let mut materials_map: HashMap<i32, Vec<MaterialResponse>> = HashMap::new();
+    for row in &material_rows {
+        let body_id: i32 = row.get("body_id");
+        materials_map.entry(body_id).or_default().push(MaterialResponse {
+            name: row.get::<_, Option<String>>("name").unwrap_or_default(),
+            percent: row.get::<_, f32>("percent") as f64,
+        });
+    }
+
+    let mut parents_map: HashMap<i32, Vec<ParentResponse>> = HashMap::new();
+    for row in &parent_rows {
+        let body_id: i32 = row.get("body_id");
+        parents_map.entry(body_id).or_default().push(ParentResponse {
+            parent_type: row.get("type"),
+            parent_id: row.get("parent_id"),
+        });
+    }
+
     let mut bodies = Vec::new();
 
     for row in body_rows.iter().chain(star_rows.iter()) {
         let body_id: i32 = row.get("id");
         let is_star: bool = row.get("is_star");
-
-        let rings = fetch_rings(&client, body_id, system_address).await?;
-        let materials = if !is_star {
-            fetch_materials(&client, body_id, system_address).await?
-        } else {
-            vec![]
-        };
-        let parents = fetch_parents(&client, body_id, system_address).await?;
 
         bodies.push(BodyResponse {
             id: body_id,
@@ -136,9 +192,9 @@ pub async fn get_system_bodies(
             was_discovered: false,
             was_mapped: row.try_get("mapped").unwrap_or(false),
             estimated_value: None,
-            rings,
-            materials,
-            parents,
+            rings: rings_map.remove(&body_id).unwrap_or_default(),
+            materials: if is_star { vec![] } else { materials_map.remove(&body_id).unwrap_or_default() },
+            parents: parents_map.remove(&body_id).unwrap_or_default(),
         });
     }
 
@@ -207,79 +263,3 @@ async fn fetch_system_factions(
     Ok(result)
 }
 
-async fn fetch_rings(
-    client: &tokio_postgres::Client,
-    body_id: i32,
-    system_address: i64,
-) -> Result<Vec<RingResponse>, Status> {
-    let rows = client
-        .query(
-            "SELECT r.name, rc.value as ring_class, r.inner_rad, r.outer_rad, r.mass_mt
-             FROM ring r
-             LEFT JOIN ring_class rc ON r.ring_class = rc.id
-             WHERE r.body_id = $1 AND r.system_address = $2",
-            &[&body_id, &system_address],
-        )
-        .await
-        .map_err(|_| Status::InternalServerError)?;
-
-    Ok(rows
-        .iter()
-        .map(|r| RingResponse {
-            name: r.get("name"),
-            ring_class: r.get::<_, Option<String>>("ring_class").unwrap_or_default(),
-            inner_rad: r.get::<_, f32>("inner_rad") as f64,
-            outer_rad: r.get::<_, f32>("outer_rad") as f64,
-            mass_mt: r.get::<_, f32>("mass_mt") as f64,
-        })
-        .collect())
-}
-
-async fn fetch_materials(
-    client: &tokio_postgres::Client,
-    body_id: i32,
-    system_address: i64,
-) -> Result<Vec<MaterialResponse>, Status> {
-    let rows = client
-        .query(
-            "SELECT mt.value as name, pm.percent
-             FROM planet_material pm
-             LEFT JOIN material_type mt ON pm.material_type = mt.id
-             WHERE pm.body_id = $1 AND pm.system_address = $2
-             ORDER BY pm.percent DESC",
-            &[&body_id, &system_address],
-        )
-        .await
-        .map_err(|_| Status::InternalServerError)?;
-
-    Ok(rows
-        .iter()
-        .map(|r| MaterialResponse {
-            name: r.get::<_, Option<String>>("name").unwrap_or_default(),
-            percent: r.get::<_, f32>("percent") as f64,
-        })
-        .collect())
-}
-
-async fn fetch_parents(
-    client: &tokio_postgres::Client,
-    body_id: i32,
-    system_address: i64,
-) -> Result<Vec<ParentResponse>, Status> {
-    let rows = client
-        .query(
-            "SELECT type, parent_id FROM parents
-             WHERE body_id = $1 AND system_address = $2",
-            &[&body_id, &system_address],
-        )
-        .await
-        .map_err(|_| Status::InternalServerError)?;
-
-    Ok(rows
-        .iter()
-        .map(|r| ParentResponse {
-            parent_type: r.get("type"),
-            parent_id: r.get("parent_id"),
-        })
-        .collect())
-}
