@@ -391,7 +391,7 @@ CREATE TABLE modul_listening (
     id              VARCHAR(255) NOT NULL,
     category        VARCHAR(255),
     name            VARCHAR(255),
-    cost            INTEGER,
+    cost            BIGINT,
     ship            VARCHAR(255),
     journal_id      BIGINT REFERENCES journal_events(id) NOT NULL,
     event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z',
@@ -403,7 +403,7 @@ CREATE TABLE ship_listening (
     market_id       BIGINT,
     id              VARCHAR(255) NOT NULL,
     name            VARCHAR(255),
-    basevalue       INTEGER,
+    basevalue       BIGINT,
     journal_id      BIGINT REFERENCES journal_events(id) NOT NULL,
     event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z',
     PRIMARY KEY (market_id, id)
@@ -438,6 +438,9 @@ CREATE INDEX idx_journal_events_type             ON journal_events (event_type);
 CREATE INDEX idx_star_systems_name               ON star_systems (name);
 CREATE INDEX idx_body_system                     ON body (system_address);
 CREATE INDEX idx_star_system                     ON star (system_address);
+CREATE INDEX idx_ring_system                     ON ring (system_address);
+CREATE INDEX idx_parents_system                  ON parents (system_address);
+CREATE INDEX idx_planet_material_system          ON planet_material (system_address);
 CREATE INDEX idx_factions_system                 ON factions (system_address);
 CREATE INDEX idx_stations_name                   ON stations (name);
 CREATE INDEX idx_stations_system                 ON stations (system_address);
@@ -559,22 +562,29 @@ CREATE TABLE cached_trade_loops (
 --
 -- ── Migration: add carrier_name column to stations ───────────────────────────
 -- ALTER TABLE stations ADD COLUMN IF NOT EXISTS carrier_name VARCHAR(255);
+--
+-- ── Migration: add missing system_address indexes (bodies query) ─────────────
+-- CREATE INDEX IF NOT EXISTS idx_ring_system           ON ring (system_address);
+-- CREATE INDEX IF NOT EXISTS idx_parents_system        ON parents (system_address);
+-- CREATE INDEX IF NOT EXISTS idx_planet_material_system ON planet_material (system_address);
+--
+-- ── Migration: widen cost/basevalue to BIGINT (ED prices exceed INTEGER range) ─
+-- ALTER TABLE modul_listening ALTER COLUMN cost      TYPE BIGINT;
+-- ALTER TABLE ship_listening  ALTER COLUMN basevalue TYPE BIGINT;;
 
 -- ── Server tick tracking ─────────────────────────────────────
 -- Each row is one detected BGS server tick.
+-- tick_hour = unix_epoch_seconds / 3600, used for dedup without an expression index.
 CREATE TABLE IF NOT EXISTS server_ticks (
     id           BIGSERIAL PRIMARY KEY,
     tick_time    TIMESTAMPTZ NOT NULL,
     system_count INTEGER     NOT NULL,
-    detected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    detected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    tick_hour    BIGINT      NOT NULL DEFAULT 0
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_server_ticks_time ON server_ticks (date_trunc('hour', tick_time));
+CREATE UNIQUE INDEX IF NOT EXISTS idx_server_ticks_tick_hour ON server_ticks (tick_hour);
 
 -- Migration (run on existing databases):
--- CREATE TABLE IF NOT EXISTS server_ticks (
---     id           BIGSERIAL PRIMARY KEY,
---     tick_time    TIMESTAMPTZ NOT NULL,
---     system_count INTEGER     NOT NULL,
---     detected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
--- );
--- CREATE UNIQUE INDEX IF NOT EXISTS idx_server_ticks_time ON server_ticks (date_trunc('hour', tick_time));
+-- ALTER TABLE server_ticks ADD COLUMN IF NOT EXISTS tick_hour BIGINT NOT NULL DEFAULT 0;
+-- UPDATE server_ticks SET tick_hour = extract(epoch from tick_time)::bigint / 3600 WHERE tick_hour = 0;
+-- CREATE UNIQUE INDEX IF NOT EXISTS idx_server_ticks_tick_hour ON server_ticks (tick_hour);

@@ -383,6 +383,11 @@ impl App {
         }
 
         if changed {
+            // Record the latest journal event timestamp so that on a mid-session restart
+            // we can skip CargoTransfer events already captured in this snapshot.
+            if !self.journal.latest_event_timestamp.is_empty() {
+                self.my_carrier_data.snapshot_timestamp = self.journal.latest_event_timestamp.clone();
+            }
             self.my_carrier_data.save();
         }
     }
@@ -611,9 +616,9 @@ impl App {
                 self.view = AppView::Factions;
                 return;
             }
-            ViewEvent::OpenSearchNearest { commodity, system } => {
-                info!("Opening Search Nearest: commodity={}, system={}", commodity, system);
-                self.search_nearest.prefill_and_search(&commodity, &system, &self.api);
+            ViewEvent::OpenSearchNearest { commodity, canonical_name, system, ship_pad_size } => {
+                info!("Opening Search Nearest: commodity={}, canonical={}, system={}, pad={}", commodity, canonical_name, system, ship_pad_size);
+                self.search_nearest.prefill_and_search(&commodity, &canonical_name, &system, ship_pad_size, &self.api);
                 self.view = AppView::SearchNearest;
                 return;
             }

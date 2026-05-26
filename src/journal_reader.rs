@@ -219,6 +219,9 @@ pub struct StationData {
     pub market_id: i64,
     /// Body the station orbits, taken from the SupercruiseExit or Location BodyID.
     pub host_body_id: Option<i32>,
+    /// Locally-parsed commodities from Market.json at the time of docking.
+    /// Empty until Market.json is detected for this station's market_id.
+    pub commodities: Vec<edcas_common::api::CommodityResponse>,
 }
 
 #[derive(Clone, Default)]
@@ -290,13 +293,16 @@ pub struct SuitData {
     pub weapons: Vec<SuitWeapon>,
 }
 
-#[derive(Clone, Default)]
+#[derive(Clone)]
 pub struct PilotData {
     pub name: String,
     pub credits: i64,
     pub ship_type: String,
     pub ship_name: String,
     pub ship_ident: String,
+    /// Minimum landing pad size required by the current ship: 'S', 'M', or 'L'.
+    /// Defaults to 'S' (no restriction) until a Loadout event is processed.
+    pub ship_pad_size: char,
     pub fuel_level: f32,
     pub fuel_capacity: f32,
     pub reserve_fuel_capacity: f32,
@@ -331,6 +337,53 @@ pub struct PilotData {
     pub power: String,
     pub power_merits: i64,
     pub suit: Option<SuitData>,
+}
+
+impl Default for PilotData {
+    fn default() -> Self {
+        Self {
+            name: String::new(),
+            credits: 0,
+            ship_type: String::new(),
+            ship_name: String::new(),
+            ship_ident: String::new(),
+            ship_pad_size: 'S',
+            fuel_level: 0.0,
+            fuel_capacity: 0.0,
+            reserve_fuel_capacity: 0.0,
+            hull_health: 0.0,
+            max_jump_range: 0.0,
+            unladen_mass: 0.0,
+            cargo_capacity: 0,
+            modules_value: 0,
+            rebuy: 0,
+            game_mode: String::new(),
+            horizons: false,
+            odyssey: false,
+            rank_combat: 0,
+            rank_trade: 0,
+            rank_explore: 0,
+            rank_soldier: 0,
+            rank_exobiologist: 0,
+            rank_empire: 0,
+            rank_federation: 0,
+            rank_cqc: 0,
+            progress_combat: 0,
+            progress_trade: 0,
+            progress_explore: 0,
+            progress_soldier: 0,
+            progress_exobiologist: 0,
+            progress_empire: 0,
+            progress_federation: 0,
+            progress_cqc: 0,
+            reputation_empire: 0.0,
+            reputation_federation: 0.0,
+            reputation_alliance: 0.0,
+            power: String::new(),
+            power_merits: 0,
+            suit: None,
+        }
+    }
 }
 
 #[derive(Clone)]
@@ -397,6 +450,18 @@ pub struct JournalData {
     pub fss_all_bodies_found: bool,
     pub nav_beacon_bodies: Option<u32>,
     pub organic_scans: Vec<OrganicScan>,
+    /// Timestamp of the most recently processed journal event (ISO 8601 string).
+    pub latest_event_timestamp: String,
+    /// When set, CargoTransfer events for seeded carriers with timestamp ≤ this value
+    /// are skipped to avoid double-counting after an in-session restart.
+    /// Cleared after the initial file load so live events are never skipped.
+    pub carrier_cargo_skip_before: Option<String>,
+    /// Market IDs that were seeded from my_carriers.json on this startup.
+    pub carrier_cargo_seeded: std::collections::HashSet<i64>,
+    /// Locally-parsed commodity data from Market.json, as (market_id, commodities).
+    /// Set by the watcher whenever Market.json changes; used to show market data
+    /// immediately without waiting for the API round-trip.
+    pub local_market: Option<(i64, Vec<edcas_common::api::CommodityResponse>)>,
 }
 
 impl JournalData {
@@ -433,6 +498,10 @@ impl JournalData {
             fss_all_bodies_found: false,
             nav_beacon_bodies: None,
             organic_scans: Vec::new(),
+            latest_event_timestamp: String::new(),
+            carrier_cargo_skip_before: None,
+            carrier_cargo_seeded: std::collections::HashSet::new(),
+            local_market: None,
         }
     }
 
@@ -447,12 +516,18 @@ impl JournalData {
             Err(_) => return,
         };
 
+        if let Some(ts) = value.get("timestamp").and_then(|v| v.as_str()) {
+            self.latest_event_timestamp = ts.to_string();
+        }
+
         // Loadout carries per-module health and detailed ship stats not in the typed event system.
         // Extract it before from_json consumes value.
         if value.get("event").and_then(|e| e.as_str()) == Some("Loadout") {
+            let ship_internal = value["Ship"].as_str().unwrap_or("");
             self.pilot.ship_type = value["Ship_Localised"].as_str()
                 .or_else(|| value["Ship"].as_str())
                 .unwrap_or("").to_string();
+            self.pilot.ship_pad_size = ship_pad_size(ship_internal);
             self.pilot.ship_name  = value["ShipName"].as_str().unwrap_or("").to_string();
             self.pilot.ship_ident = value["ShipIdent"].as_str().unwrap_or("").to_string();
             self.pilot.hull_health    = value["HullHealth"].as_f64().unwrap_or(0.0) as f32;
@@ -544,6 +619,7 @@ impl JournalData {
                             landing_pads: e.landing_pads.as_ref().map(|lp| (lp.small, lp.medium, lp.large)),
                             market_id,
                             host_body_id,
+                            commodities: Vec::new(),
                         };
                         if !self.stations.iter().any(|s| s.market_id == market_id) {
                             self.stations.push(station.clone());
@@ -552,7 +628,15 @@ impl JournalData {
                             self.visited_carriers.retain(|s| s.market_id != market_id);
                             self.visited_carriers.insert(0, station);
                         } else {
+                            let prior_commodities = self.visited_stations.iter()
+                                .find(|s| s.market_id == market_id)
+                                .map(|s| s.commodities.clone())
+                                .unwrap_or_default();
                             self.visited_stations.retain(|s| s.market_id != market_id);
+                            let mut station = station;
+                            if station.commodities.is_empty() {
+                                station.commodities = prior_commodities;
+                            }
                             self.visited_stations.insert(0, station);
                         }
                     }
@@ -685,9 +769,11 @@ impl JournalData {
                                 if !name.is_empty() { self.pilot.name = name.to_string(); }
                             }
                             self.pilot.credits = v["Credits"].as_i64().unwrap_or(0);
+                            let ship_internal = v["Ship"].as_str().unwrap_or("");
                             self.pilot.ship_type = v["Ship_Localised"].as_str()
                                 .or_else(|| v["Ship"].as_str())
                                 .unwrap_or("").to_string();
+                            self.pilot.ship_pad_size = ship_pad_size(ship_internal);
                             self.pilot.ship_name = v["ShipName"].as_str().unwrap_or("").to_string();
                             self.pilot.ship_ident = v["ShipIdent"].as_str().unwrap_or("").to_string();
                             self.pilot.fuel_level = v["FuelLevel"].as_f64().unwrap_or(0.0) as f32;
@@ -729,22 +815,33 @@ impl JournalData {
                             if let Some((market_id, _, _, _)) = self.last_docked {
                                 let is_carrier = self.visited_carriers.iter().any(|c| c.market_id == market_id);
                                 if is_carrier {
-                                    if let Some(transfers) = v["Transfers"].as_array() {
-                                        let cargo = self.carrier_cargo.entry(market_id).or_default();
-                                        for t in transfers {
-                                            let name = t["Type"].as_str().unwrap_or("").to_lowercase();
-                                            if name.is_empty() { continue; }
-                                            if let Some(loc) = t["Type_Localised"].as_str().filter(|s| !s.is_empty()) {
-                                                self.commodity_names.entry(name.clone()).or_insert_with(|| loc.to_string());
-                                            }
-                                            let count = t["Count"].as_i64().unwrap_or(0) as i32;
-                                            match t["Direction"].as_str().unwrap_or("") {
-                                                "tocarrier" => *cargo.entry(name).or_insert(0) += count,
-                                                "toship" => {
-                                                    let e = cargo.entry(name).or_insert(0);
-                                                    *e = (*e - count).max(0);
+                                    // Skip events already captured in the snapshot to avoid
+                                    // double-counting when EDCAS restarts mid-session.
+                                    let skip = self.carrier_cargo_skip_before.as_deref()
+                                        .map(|skip_ts| {
+                                            self.carrier_cargo_seeded.contains(&market_id)
+                                                && v["timestamp"].as_str()
+                                                    .map_or(false, |ts| ts <= skip_ts)
+                                        })
+                                        .unwrap_or(false);
+                                    if !skip {
+                                        if let Some(transfers) = v["Transfers"].as_array() {
+                                            let cargo = self.carrier_cargo.entry(market_id).or_default();
+                                            for t in transfers {
+                                                let name = t["Type"].as_str().unwrap_or("").to_lowercase();
+                                                if name.is_empty() { continue; }
+                                                if let Some(loc) = t["Type_Localised"].as_str().filter(|s| !s.is_empty()) {
+                                                    self.commodity_names.entry(name.clone()).or_insert_with(|| loc.to_string());
                                                 }
-                                                _ => {}
+                                                let count = t["Count"].as_i64().unwrap_or(0) as i32;
+                                                match t["Direction"].as_str().unwrap_or("") {
+                                                    "tocarrier" => *cargo.entry(name).or_insert(0) += count,
+                                                    "toship" => {
+                                                        let e = cargo.entry(name).or_insert(0);
+                                                        *e = (*e - count).max(0);
+                                                    }
+                                                    _ => {}
+                                                }
                                             }
                                         }
                                     }
@@ -831,6 +928,7 @@ impl JournalData {
                     landing_pads: e.landing_pads.as_ref().map(|lp| (lp.small, lp.medium, lp.large)),
                     market_id: e.market_id,
                     host_body_id,
+                    commodities: Vec::new(),
                 };
                 if !self.stations.iter().any(|s| s.market_id == station.market_id) {
                     self.stations.push(station.clone());
@@ -839,7 +937,17 @@ impl JournalData {
                     self.visited_carriers.retain(|s| s.market_id != station.market_id);
                     self.visited_carriers.insert(0, station);
                 } else {
+                    // Preserve commodities from a prior visit so they survive re-dock
+                    // until Market.json is re-parsed (which may take up to 500 ms).
+                    let prior_commodities = self.visited_stations.iter()
+                        .find(|s| s.market_id == station.market_id)
+                        .map(|s| s.commodities.clone())
+                        .unwrap_or_default();
                     self.visited_stations.retain(|s| s.market_id != station.market_id);
+                    let mut station = station;
+                    if station.commodities.is_empty() {
+                        station.commodities = prior_commodities;
+                    }
                     self.visited_stations.insert(0, station);
                 }
             }
@@ -885,7 +993,26 @@ impl JournalData {
         self.clear_scan_data();
         self.carrier_cargo.clear();
         self.commodity_names.clear();
+        self.carrier_cargo_seeded.clear();
+        self.carrier_cargo_skip_before = None;
         // carrier_fc_materials is file-based, not event-based — cleared by the watcher when FCMaterials.json changes
+    }
+}
+
+/// Map the internal `Ship` field from the journal Loadout event to the minimum
+/// landing pad size the ship requires: 'L', 'M', or 'S'.
+fn ship_pad_size(internal_name: &str) -> char {
+    match internal_name.to_lowercase().as_str() {
+        // Large-pad-only ships
+        "anaconda" | "corvette" | "cutter" | "belugaliner" | "orca"
+        | "type7" | "type7_multipurpose" | "type9" | "type9_military"
+        | "type10" => 'L',
+        // Small-pad ships
+        "sidewinder" | "hauler" | "eagle" | "eagle_mkii" | "adder"
+        | "viper" | "viper_mkiii" | "viper_mkiv"
+        | "imperialeargle" | "imperial_eagle" => 'S',
+        // Everything else defaults to medium (M or L pad accepted)
+        _ => 'M',
     }
 }
 
@@ -1526,6 +1653,32 @@ fn load_fc_materials_file(path: &Path) -> Option<(i64, Vec<(String, i32)>)> {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
+fn load_market_file(path: &Path) -> Option<(i64, Vec<edcas_common::api::CommodityResponse>)> {
+    let content = std::fs::read_to_string(path).ok()?;
+    let v: serde_json::Value = serde_json::from_str(&content).ok()?;
+    let market_id = v["MarketID"].as_i64()?;
+    let items = v["Items"].as_array()?;
+    let commodities: Vec<edcas_common::api::CommodityResponse> = items.iter().filter_map(|item| {
+        let name = item["Name_Localised"].as_str()
+            .filter(|s| !s.is_empty())
+            .or_else(|| item["Name"].as_str())
+            .map(|s| s.trim_start_matches('$').trim_end_matches("_name;").to_string())
+            .unwrap_or_default();
+        if name.is_empty() { return None; }
+        Some(edcas_common::api::CommodityResponse {
+            name,
+            mean_price: item["MeanPrice"].as_i64().unwrap_or(0) as i32,
+            buy_price:  item["BuyPrice"].as_i64().unwrap_or(0) as i32,
+            stock:      item["Stock"].as_i64().unwrap_or(0) as i32,
+            sell_price: item["SellPrice"].as_i64().unwrap_or(0) as i32,
+            demand:     item["Demand"].as_i64().unwrap_or(0) as i32,
+        })
+    }).collect();
+    if commodities.is_empty() { return None; }
+    Some((market_id, commodities))
+}
+
+#[cfg(not(target_arch = "wasm32"))]
 fn load_onfoot_file(path: &Path) -> OnFootInventory {
     let Ok(content) = std::fs::read_to_string(path) else { return OnFootInventory::default() };
     let Ok(v) = serde_json::from_str::<serde_json::Value>(&content) else { return OnFootInventory::default() };
@@ -1566,7 +1719,10 @@ fn load_existing_files(
     }
 
     info!("Loading journal file: {}", files[0].display());
-    read_file_lines(&files[0], data, upload_tx);
+    read_file_lines(&files[0], data, None);
+    // After replaying the journal the skip-window is no longer needed; live events must
+    // always be applied unconditionally.
+    data.carrier_cargo_skip_before = None;
 
     // When the latest file starts with a Location (same system, new game session),
     // the scans from the previous session are in older files — backfill them.
@@ -1574,7 +1730,7 @@ fn load_existing_files(
         let system_address = data.current_system.as_ref().unwrap().system_address;
         for prev_file in files.iter().skip(1).take(3) {
             info!("Backfilling scans from previous journal: {}", prev_file.display());
-            load_previous_scans_for_system(prev_file, system_address, data, upload_tx);
+            load_previous_scans_for_system(prev_file, system_address, data, None);
         }
     }
 }
@@ -1583,6 +1739,13 @@ fn load_existing_files(
 fn seed_my_carrier_cargo(data: &mut JournalData) -> std::collections::HashSet<i64> {
     let mc = crate::my_carriers::MyCarriersData::load();
     let seeded: std::collections::HashSet<i64> = mc.carriers.keys().copied().collect();
+    // If the snapshot was saved mid-session, skip CargoTransfer events that are already
+    // captured in the snapshot (timestamp ≤ snapshot_timestamp) to prevent double-counting
+    // when EDCAS is restarted without closing the game.
+    if !mc.snapshot_timestamp.is_empty() {
+        data.carrier_cargo_skip_before = Some(mc.snapshot_timestamp);
+    }
+    data.carrier_cargo_seeded = seeded.clone();
     for (market_id, cargo) in mc.carriers {
         data.carrier_cargo.insert(market_id, cargo);
     }
@@ -1679,8 +1842,13 @@ fn watch_latest_file(
     stop_flag: &AtomicBool,
     upload_tx: &Option<mpsc::Sender<String>>,
 ) {
-    let mut last_file: Option<PathBuf> = None;
-    let mut last_position: u64 = 0;
+    // Initialise to the file already loaded by load_existing_files so the first loop
+    // iteration does an incremental tail rather than a redundant full re-read.
+    let mut last_file: Option<PathBuf> = find_latest_journal_file(dir);
+    let mut last_position: u64 = last_file.as_ref()
+        .and_then(|f| f.metadata().ok())
+        .map(|m| m.len())
+        .unwrap_or(0);
     let mut last_cargo_mtime: Option<SystemTime> = None;
     let mut last_backpack_mtime: Option<SystemTime> = None;
     let mut last_shiplocker_mtime: Option<SystemTime> = None;
@@ -1704,8 +1872,11 @@ fn watch_latest_file(
                 info!("Journal file changed to: {}", active.display());
                 last_file = Some(active.clone());
                 data.clear();
-                // Re-seed persisted carrier cargo so it survives new-session clear
+                // Re-seed persisted carrier cargo so it survives new-session clear.
+                // A new journal file always means a fresh game session, so any snapshot
+                // timestamp is from before this session — no skip needed.
                 seed_my_carrier_cargo(data);
+                data.carrier_cargo_skip_before = None;
                 read_file_lines(&active, data, upload_tx.as_ref());
                 last_position = active.metadata().map(|m| m.len()).unwrap_or(0);
                 changed = true;
@@ -1786,6 +1957,13 @@ fn watch_latest_file(
                 last_market_mtime = Some(mtime);
                 if let Some(ref up_tx) = upload_tx {
                     upload_companion_file(&market_path, up_tx);
+                }
+                if let Some((mid, commodities)) = load_market_file(&market_path) {
+                    if let Some(station) = data.visited_stations.iter_mut().find(|s| s.market_id == mid) {
+                        station.commodities = commodities.clone();
+                    }
+                    data.local_market = Some((mid, commodities));
+                    changed = true;
                 }
             }
         }

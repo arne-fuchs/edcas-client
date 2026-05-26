@@ -9,6 +9,11 @@ pub struct MyCarriersData {
     /// market_id → commodity (normalised lower-case) → count
     #[serde(default)]
     pub carriers: HashMap<i64, HashMap<String, i32>>,
+    /// ISO 8601 timestamp of the last journal event processed when this snapshot was saved.
+    /// Used to skip already-counted CargoTransfer events when replaying the same journal file
+    /// after an in-session restart.
+    #[serde(default)]
+    pub snapshot_timestamp: String,
 }
 
 impl MyCarriersData {
@@ -30,6 +35,7 @@ impl MyCarriersData {
                             .into_iter()
                             .map(|id| (id, HashMap::new()))
                             .collect(),
+                        snapshot_timestamp: String::new(),
                     };
                     migrated.save();
                     return migrated;

@@ -8,6 +8,10 @@ services:
             POSTGRES_DB: edcas
             # C locale avoids locale collation overhead on string-heavy tables
             POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
+        # Docker limits /dev/shm to 64 MB by default; PostgreSQL ≥12 uses POSIX
+        # shared memory there for parallel worker coordination.  With work_mem=16MB
+        # and several parallel workers the default is exhausted immediately.
+        shm_size: 256m
         # Tuned for a write-heavy workload (~20 EDDN events/sec, each writing
         # to multiple normalised tables inside a transaction).
         command: >
@@ -23,6 +27,8 @@ services:
             -c max_connections=50
             -c random_page_cost=1.1
             -c effective_io_concurrency=200
+            -c max_parallel_workers_per_gather=2
+            -c max_parallel_workers=4
         volumes:
             - ../edcas-data/postgres-data:/var/lib/postgresql/data
             # Schema is applied automatically on first start by the official
@@ -33,6 +39,7 @@ services:
             interval: 5s
             timeout: 5s
             retries: 10
+            start_period: 120s
 
     edcas-web:
         build:

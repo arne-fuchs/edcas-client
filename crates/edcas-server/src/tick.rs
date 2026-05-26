@@ -99,14 +99,13 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
         let tick_time: DateTime<Utc> = row.get(0);
         let system_count: i32 = row.get(1);
 
+        let tick_hour: i64 = tick_time.timestamp() / 3600;
         let affected = client
             .execute(
-                r#"
-                INSERT INTO server_ticks (tick_time, system_count)
-                VALUES ($1, $2)
-                ON CONFLICT (date_trunc('hour', tick_time)) DO NOTHING
-                "#,
-                &[&tick_time, &system_count],
+                "INSERT INTO server_ticks (tick_time, system_count, tick_hour)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (tick_hour) DO NOTHING",
+                &[&tick_time, &system_count, &tick_hour],
             )
             .await?;
         if affected > 0 {

@@ -3,5 +3,5 @@ pub enum ViewEvent {
     Consumed,
     SettingsChanged,
     OpenFactions(String),
-    OpenSearchNearest { commodity: String, system: String },
+    OpenSearchNearest { commodity: String, canonical_name: String, system: String, ship_pad_size: char },
 }

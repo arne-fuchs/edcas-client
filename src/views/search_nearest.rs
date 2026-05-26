@@ -1,6 +1,8 @@
 use crate::api_client::ApiClient;
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::views::ViewEvent;
+#[cfg(not(target_arch = "wasm32"))]
+use tracing::warn;
 use edcas_common::api::{NearestCommodityQuery, NearestCommodityResult};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
@@ -223,6 +225,8 @@ enum ActiveField {
 
 pub struct SearchNearestView {
     commodity_input: String,
+    /// Canonical English name used for the API query (may differ from localized commodity_input)
+    commodity_canonical: String,
     system_input: String,
     active_field: ActiveField,
     editing: bool,
@@ -233,16 +237,23 @@ pub struct SearchNearestView {
     is_loading: bool,
     suggestions: Vec<&'static str>,
     suggestion_idx: Option<usize>,
+    /// Minimum pad size filter: 'S' = no filter, 'M' = medium or large, 'L' = large only.
+    pad_filter: char,
     #[cfg(not(target_arch = "wasm32"))]
     pending: Arc<Mutex<Option<Result<Vec<NearestCommodityResult>, String>>>>,
     #[cfg(target_arch = "wasm32")]
     pending: Rc<RefCell<Option<Vec<NearestCommodityResult>>>>,
+    #[cfg(not(target_arch = "wasm32"))]
+    clipboard: Option<arboard::Clipboard>,
+    #[cfg(target_arch = "wasm32")]
+    clipboard: (),
 }
 
 impl SearchNearestView {
     pub fn new() -> Self {
         Self {
             commodity_input: String::new(),
+            commodity_canonical: String::new(),
             system_input: String::new(),
             active_field: ActiveField::Commodity,
             editing: false,
@@ -253,19 +264,34 @@ impl SearchNearestView {
             is_loading: false,
             suggestions: Vec::new(),
             suggestion_idx: None,
+            pad_filter: 'S',
             #[cfg(not(target_arch = "wasm32"))]
             pending: Arc::new(Mutex::new(None)),
             #[cfg(target_arch = "wasm32")]
             pending: Rc::new(RefCell::new(None)),
+            #[cfg(not(target_arch = "wasm32"))]
+            clipboard: arboard::Clipboard::new().ok(),
+            #[cfg(target_arch = "wasm32")]
+            clipboard: (),
         }
     }
 
-    pub fn prefill_and_search(&mut self, commodity: &str, system: &str, api: &ApiClient) {
+    pub fn prefill_and_search(&mut self, commodity: &str, canonical_name: &str, system: &str, ship_pad_size: char, api: &ApiClient) {
         self.commodity_input = commodity.to_string();
+        self.commodity_canonical = canonical_name.to_string();
         self.system_input = system.to_string();
+        self.pad_filter = ship_pad_size;
         self.active_field = ActiveField::Commodity;
         self.editing = false;
         self.do_search(api);
+    }
+
+    fn pad_matches(&self, r: &NearestCommodityResult) -> bool {
+        match self.pad_filter {
+            'L' => r.has_large_pad,
+            'M' => r.has_large_pad || r.has_medium_pad,
+            _ => true,
+        }
     }
 
     fn normalize_for_match(s: &str) -> String {
@@ -308,8 +334,13 @@ impl SearchNearestView {
         );
         let pending = Arc::clone(&self.pending);
         let api_owned = api.clone();
+        let commodity_query = if self.commodity_canonical.is_empty() {
+            self.commodity_input.clone()
+        } else {
+            self.commodity_canonical.clone()
+        };
         let query = NearestCommodityQuery {
-            commodity: self.commodity_input.clone(),
+            commodity: commodity_query,
             reference_system: self.system_input.clone(),
             limit: Some(10),
         };
@@ -352,24 +383,30 @@ impl SearchNearestView {
             self.is_loading = false;
             match result {
                 Ok(results) => {
-                    let count = results.len();
-                    self.results = results;
+                    self.results = results.into_iter().filter(|r| self.pad_matches(r)).collect();
+                    let count = self.results.len();
                     self.selected_idx = 0;
                     self.scroll = 0;
+                    let pad_note = match self.pad_filter {
+                        'L' => " (large pad only)",
+                        'M' => " (medium+ pad)",
+                        _ => "",
+                    };
                     self.status_msg = if count == 0 {
                         if self.system_input.is_empty() {
-                            format!("No '{}' in stock anywhere", self.commodity_input)
+                            format!("No '{}' in stock anywhere{pad_note}", self.commodity_input)
                         } else {
                             format!(
-                                "No '{}' found near '{}' — system may not be in DB",
+                                "No '{}' found near '{}'{pad_note} — system may not be in DB",
                                 self.commodity_input, self.system_input
                             )
                         }
                     } else {
-                        format!("{count} station(s) found")
+                        format!("{count} station(s) found{pad_note}")
                     };
                 }
                 Err(e) => {
+                    warn!(error = %e, "search_nearest_commodity error");
                     self.status_msg = format!("API error: {e}");
                 }
             }
@@ -380,17 +417,19 @@ impl SearchNearestView {
     pub fn poll_search(&mut self) {
         if let Some(results) = self.pending.borrow_mut().take() {
             self.is_loading = false;
-            let count = results.len();
-            self.results = results;
+            self.results = results.into_iter().filter(|r| self.pad_matches(r)).collect();
+            let count = self.results.len();
             self.selected_idx = 0;
             self.scroll = 0;
+            let pad_note = match self.pad_filter {
+                'L' => " (large pad only)",
+                'M' => " (medium+ pad)",
+                _ => "",
+            };
             self.status_msg = if count == 0 {
-                format!(
-                    "No '{}' found near '{}'",
-                    self.commodity_input, self.system_input
-                )
+                format!("No '{}' found near '{}'{pad_note}", self.commodity_input, self.system_input)
             } else {
-                format!("{count} station(s) found")
+                format!("{count} station(s) found{pad_note}")
             };
         }
     }
@@ -449,6 +488,7 @@ impl SearchNearestView {
                 KeyCode::Backspace => match self.active_field {
                     ActiveField::Commodity => {
                         self.commodity_input.pop();
+                        self.commodity_canonical.clear();
                         self.update_suggestions();
                     }
                     ActiveField::System => { self.system_input.pop(); }
@@ -456,6 +496,7 @@ impl SearchNearestView {
                 KeyCode::Char(c) => match self.active_field {
                     ActiveField::Commodity => {
                         self.commodity_input.push(c);
+                        self.commodity_canonical.clear();
                         self.suggestion_idx = None;
                         self.update_suggestions();
                     }
@@ -481,6 +522,17 @@ impl SearchNearestView {
                 if self.selected_idx + 1 < self.results.len() {
                     self.selected_idx += 1;
                 }
+            }
+            KeyCode::Char('c') => {
+                if let Some(r) = self.results.get(self.selected_idx) {
+                    let name = r.system_name.trim().to_string();
+                    #[cfg(not(target_arch = "wasm32"))]
+                    if let Some(cb) = self.clipboard.as_mut() {
+                        let _ = cb.set_text(&name);
+                        self.status_msg = format!("Copied: {name}");
+                    }
+                }
+                return ViewEvent::Consumed;
             }
             _ => {}
         }
@@ -574,7 +626,7 @@ impl SearchNearestView {
         let title = if self.editing {
             " Search Nearest  (\u{2193}/\u{2191}: suggestions  |  Tab: complete  |  Enter: search  |  Esc: cancel) "
         } else {
-            " Search Nearest  (Enter: edit fields  |  w/s: navigate results) "
+            " Search Nearest  (Enter: edit fields  |  w/s: navigate results  |  c: copy system) "
         };
 
         frame.render_widget(

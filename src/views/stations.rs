@@ -532,7 +532,7 @@ impl StationsView {
         lines
     }
 
-    fn build_detail_body_lines(&self, history: &[StationData], todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
+    fn build_detail_body_lines(&self, history: &[StationData], journal: &crate::journal_reader::JournalData, todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
         match self.selected_item_with_history(history) {
             None => vec![Line::from(Span::styled(
                 "Select a station from the list.",
@@ -546,6 +546,22 @@ impl StationsView {
             },
             Some(ListItem::Journal(station)) => match self.detail_tab {
                 DetailTab::Overview => self.journal_overview_body(station),
+                DetailTab::Market => {
+                    if !station.commodities.is_empty() {
+                        return self.local_market_body(&station.commodities, todo_needed, ship_cargo, carrier_stock);
+                    }
+                    // Fallback: check if local_market still matches this station
+                    // (covers the brief window before the watcher loop stores it into the station entry)
+                    if let Some((mid, ref commodities)) = journal.local_market {
+                        if mid == station.market_id {
+                            return self.local_market_body(commodities, todo_needed, ship_cargo, carrier_stock);
+                        }
+                    }
+                    vec![Line::from(Span::styled(
+                        "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
+                        Style::default().fg(Color::DarkGray),
+                    ))]
+                }
                 _ => vec![Line::from(Span::styled(
                     "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
                     Style::default().fg(Color::DarkGray),
@@ -649,6 +665,41 @@ impl StationsView {
         });
         let mut lines: Vec<Line<'static>> = vec![Line::from(Span::styled(
             format!("Market data as of: {}", fmt_ts(station.market_updated_at.as_ref())),
+            Style::default().fg(Color::DarkGray),
+        ))];
+        lines.extend(sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo, carrier_stock)));
+        lines
+    }
+
+    fn local_market_body(&self, commodities: &[edcas_common::api::CommodityResponse], todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
+        let effective_todo: HashMap<String, i32> = commodities.iter()
+            .filter(|c| c.buy_price > 0 && c.stock > 0)
+            .filter_map(|c| {
+                let norm = normalize_commodity_name(&c.name);
+                todo_needed.get(&norm).map(|&n| (norm, n))
+            })
+            .collect();
+        let mut sorted: Vec<&edcas_common::api::CommodityResponse> = commodities.iter().collect();
+        let asc = self.market_sort_asc;
+        sorted.sort_by(|a, b| {
+            let a_norm = normalize_commodity_name(&a.name);
+            let b_norm = normalize_commodity_name(&b.name);
+            let group = effective_todo.contains_key(&b_norm).cmp(&effective_todo.contains_key(&a_norm));
+            if group != Ordering::Equal { return group; }
+            let col_ord = match self.market_sort_col {
+                MarketSortCol::Name     => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+                MarketSortCol::Buy      => a.buy_price.cmp(&b.buy_price),
+                MarketSortCol::BuyDiff  => raw_diff(a.buy_price, a.mean_price).cmp(&raw_diff(b.buy_price, b.mean_price)),
+                MarketSortCol::Sell     => a.sell_price.cmp(&b.sell_price),
+                MarketSortCol::SellDiff => raw_diff(a.sell_price, a.mean_price).cmp(&raw_diff(b.sell_price, b.mean_price)),
+                MarketSortCol::Mean     => a.mean_price.cmp(&b.mean_price),
+                MarketSortCol::Stock    => a.stock.cmp(&b.stock),
+                MarketSortCol::Demand   => a.demand.cmp(&b.demand),
+            };
+            if asc { col_ord } else { col_ord.reverse() }
+        });
+        let mut lines: Vec<Line<'static>> = vec![Line::from(Span::styled(
+            "Local market data (from Market.json)",
             Style::default().fg(Color::DarkGray),
         ))];
         lines.extend(sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo, carrier_stock)));
@@ -879,7 +930,7 @@ impl StationsView {
 
         frame.render_widget(Paragraph::new(header_lines), detail_split[0]);
 
-        let body_lines = self.build_detail_body_lines(history, &todo_needed, &ship_cargo, carrier_stock);
+        let body_lines = self.build_detail_body_lines(history, journal, &todo_needed, &ship_cargo, carrier_stock);
         let body_height = detail_split[1].height as usize;
         let body_max_scroll = body_lines.len().saturating_sub(body_height);
         frame.render_widget(

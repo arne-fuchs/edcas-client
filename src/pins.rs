@@ -20,7 +20,16 @@ impl Pins {
         #[cfg(not(target_arch = "wasm32"))]
         {
             let path = Self::native_path();
-            std::fs::read_to_string(&path)
+            // Try the canonical file first, then the leftover .tmp (written but not yet renamed).
+            let loaded = std::fs::read_to_string(&path)
+                .ok()
+                .and_then(|data| serde_json::from_str(&data).ok());
+            if let Some(pins) = loaded {
+                return pins;
+            }
+            // Fallback: if pins.json is missing or corrupt, try the temp file.
+            let tmp = path.with_extension("json.tmp");
+            std::fs::read_to_string(&tmp)
                 .ok()
                 .and_then(|data| serde_json::from_str(&data).ok())
                 .unwrap_or_default()
@@ -41,9 +50,12 @@ impl Pins {
             let path = Self::native_path();
             if let Some(parent) = path.parent() {
                 let _ = std::fs::create_dir_all(parent);
-            }
-            if let Ok(data) = serde_json::to_string_pretty(self) {
-                let _ = std::fs::write(path, data);
+                if let Ok(data) = serde_json::to_string_pretty(self) {
+                    let tmp = parent.join("pins.json.tmp");
+                    if std::fs::write(&tmp, &data).is_ok() {
+                        let _ = std::fs::rename(&tmp, &path);
+                    }
+                }
             }
         }
         #[cfg(target_arch = "wasm32")]

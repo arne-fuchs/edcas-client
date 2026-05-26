@@ -3,6 +3,7 @@ use edcas_common::api::NearestCommodityResult;
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{get, State};
+use tracing::error;
 
 #[get("/api/v1/nearest-commodity?<commodity>&<reference_system>&<limit>")]
 pub async fn nearest_commodity(
@@ -11,8 +12,13 @@ pub async fn nearest_commodity(
     reference_system: String,
     limit: Option<i64>,
 ) -> Result<Json<Vec<NearestCommodityResult>>, Status> {
-    let client = pool.get().await.map_err(|_| Status::ServiceUnavailable)?;
+    let client = pool.get().await.map_err(|e| {
+        error!("nearest_commodity: pool error: {e}");
+        Status::ServiceUnavailable
+    })?;
     let limit = limit.unwrap_or(10).clamp(1, 50);
+
+    tracing::info!("nearest_commodity: commodity={commodity:?} reference_system={reference_system:?} limit={limit}");
 
     let sys_row = client
         .query_opt(
@@ -20,11 +26,17 @@ pub async fn nearest_commodity(
             &[&reference_system],
         )
         .await
-        .map_err(|_| Status::InternalServerError)?;
+        .map_err(|e| {
+            error!("nearest_commodity: system lookup error: {e}");
+            Status::InternalServerError
+        })?;
 
     let (ref_x, ref_y, ref_z): (f32, f32, f32) = match sys_row {
         Some(r) => (r.get("x"), r.get("y"), r.get("z")),
-        None => return Ok(Json(vec![])),
+        None => {
+            tracing::warn!("nearest_commodity: reference system {reference_system:?} not found");
+            return Ok(Json(vec![]));
+        }
     };
 
     let rows = client
@@ -58,7 +70,12 @@ pub async fn nearest_commodity(
             &[&ref_x, &ref_y, &ref_z, &commodity],
         )
         .await
-        .map_err(|_| Status::InternalServerError)?;
+        .map_err(|e| {
+            error!("nearest_commodity: query error: {e}");
+            Status::InternalServerError
+        })?;
+
+    tracing::info!("nearest_commodity: returning {} results", rows.len());
 
     Ok(Json(
         rows.iter()

@@ -3,6 +3,7 @@ mod cache;
 mod config;
 mod db;
 mod listener;
+mod request_logger;
 mod stats;
 mod tick;
 
@@ -50,6 +51,7 @@ async fn main() -> anyhow::Result<()> {
 
     rocket::build()
         .configure(rocket_cfg)
+        .attach(request_logger::RequestLogger)
         .manage(pool)
         .mount(
             "/",

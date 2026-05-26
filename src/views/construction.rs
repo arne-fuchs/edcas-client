@@ -229,8 +229,8 @@ impl ConstructionView {
         }
     }
 
-    fn toggle_todo(&self, journal: &JournalData, todo: &mut TodoList) {
-        if let Some(depot) = self.selected_item() {
+    fn toggle_todo(&mut self, journal: &JournalData, todo: &mut TodoList) {
+        if let Some(depot) = self.selected_item().cloned() {
             let mid = depot.market_id;
             if todo.construction_items.iter().any(|i| i.market_id == mid) {
                 todo.remove_construction_item(mid);
@@ -238,9 +238,13 @@ impl ConstructionView {
                 let item = if let Some(local) = journal.construction_depots.get(&mid) {
                     construction_todo_item_from_depot(local)
                 } else {
-                    construction_todo_item_from_response(depot)
+                    construction_todo_item_from_response(&depot)
                 };
                 todo.add_construction_item(item);
+                // Also track the site so it persists in the pinned list after restart.
+                if self.tracked_ids.insert(mid) {
+                    self.save_tracked();
+                }
             }
             todo.save();
         }

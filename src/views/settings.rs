@@ -136,6 +136,13 @@ impl SettingsView {
         }
 
         match key.code {
+            KeyCode::Tab => {
+                let sections = SettingsSection::all();
+                self.sidebar_focus = (self.sidebar_focus + 1) % sections.len();
+                self.section = sections[self.sidebar_focus];
+                self.reset_content_position(settings);
+                return ViewEvent::Consumed;
+            }
             KeyCode::Char('w') => match self.focus {
                 FocusArea::Sidebar => {
                     if self.sidebar_focus > 0 {
@@ -538,9 +545,9 @@ impl SettingsView {
             .collect();
 
         let sidebar_title = if matches!(self.focus, FocusArea::Sidebar) {
-            " Sections (w/s: nav, d: content) "
+            " Sections (Tab: next, w/s: nav, d: content) "
         } else {
-            " Sections (a: sidebar) "
+            " Sections (Tab: next, a: sidebar) "
         };
 
         let list = List::new(items)
@@ -614,9 +621,9 @@ impl SettingsView {
             Line::from(""),
             Line::from(Span::styled(
                 if matches!(self.focus, FocusArea::Content) {
-                    "w/s: rows | a/d: columns/panel | space: edit | enter: save | esc: cancel"
+                    "Tab: next section | w/s: rows | a/d: columns/panel | space: edit | enter: save | esc: cancel"
                 } else {
-                    "d: focus content | w/s: navigate sections"
+                    "Tab: next section | d: focus content | w/s: navigate sections"
                 },
                 Style::default().fg(Color::DarkGray),
             )),

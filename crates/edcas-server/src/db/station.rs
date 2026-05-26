@@ -214,7 +214,7 @@ pub async fn insert_outfitting(
                 event_timestamp = EXCLUDED.event_timestamp",
             &[
                 &event.market_id,
-                &module.id,
+                &module.id.to_string(),
                 &module.category,
                 &module.name,
                 &module.cost,
@@ -273,7 +273,7 @@ pub async fn insert_shipyard(
                 event_timestamp = EXCLUDED.event_timestamp",
             &[
                 &event.market_id,
-                &ship.id,
+                &ship.id.to_string(),
                 &ship.name,
                 &ship.base_value,
                 &journal_id,

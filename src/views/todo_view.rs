@@ -493,9 +493,10 @@ impl TodoView {
         }
 
         if self.focus == TodoFocus::Right {
-            match key.code {
+            return match key.code {
                 KeyCode::Char('w') | KeyCode::Up => {
                     self.resource_selected_idx = self.resource_selected_idx.saturating_sub(1);
+                    ViewEvent::Consumed
                 }
                 KeyCode::Char('s') | KeyCode::Down => {
                     let resource_count = match self.selected_kind() {
@@ -513,32 +514,39 @@ impl TodoView {
                     if self.resource_selected_idx + 1 < resource_count {
                         self.resource_selected_idx += 1;
                     }
+                    ViewEvent::Consumed
                 }
                 KeyCode::Char('f') => {
                     if let Some(SelectedKind::Construction(idx)) = self.selected_kind() {
                         let site = &self.todo.construction_items[idx];
                         let live = journal.construction_depots.get(&site.market_id);
-                        let commodity_name = if let Some(depot) = live {
+                        let names = if let Some(depot) = live {
                             depot.submission.resources
                                 .get(self.resource_selected_idx)
-                                .map(|r| normalize_commodity_name(&r.name))
+                                .map(|r| (r.display_name.clone(), r.name.clone()))
                         } else {
                             site.resources
                                 .get(self.resource_selected_idx)
-                                .map(|r| r.commodity_name.clone())
+                                .map(|r| (r.display_name.clone(), r.commodity_name.clone()))
                         };
-                        if let Some(commodity) = commodity_name {
+                        if let Some((commodity, raw_name)) = names {
+                            let canonical_name = raw_name
+                                .trim_start_matches('$')
+                                .trim_end_matches(';')
+                                .trim_end_matches("_name")
+                                .to_string();
                             let system = journal.current_system
                                 .as_ref()
                                 .map(|s| s.name.clone())
                                 .unwrap_or_default();
-                            return ViewEvent::OpenSearchNearest { commodity, system };
+                            let ship_pad_size = journal.pilot.ship_pad_size;
+                            return ViewEvent::OpenSearchNearest { commodity, canonical_name, system, ship_pad_size };
                         }
                     }
+                    ViewEvent::Consumed
                 }
-                _ => {}
-            }
-            return ViewEvent::Consumed;
+                _ => ViewEvent::None,
+            };
         }
 
         // Left panel navigation
