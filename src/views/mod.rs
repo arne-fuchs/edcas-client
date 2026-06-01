@@ -1,20 +1,22 @@
 mod about;
 mod carriers;
+mod commander;
 mod construction;
-mod engineers;
+pub(super) mod engineers;
 mod event;
 mod explorer;
 mod factions;
-mod inventory;
-mod modules;
+pub(super) mod inventory;
+pub(super) mod modules;
 mod news;
-mod pilot;
+pub(super) mod pilot;
 mod search_nearest;
 mod settings;
 mod stations;
 mod todo_view;
 mod trade_routes;
 mod util;
+mod workshop;
 
 /// Appends BGS timing hints to known faction state names.
 ///
@@ -28,19 +30,16 @@ pub(super) fn annotate_faction_state(state: &str, is_pending: bool) -> String {
     }
 }
 
-pub use about::AboutView;
 pub use carriers::CarriersView;
+pub use commander::CommanderView;
 pub use construction::ConstructionView;
-pub use engineers::EngineersView;
 pub use event::ViewEvent;
 pub use explorer::ExplorerView;
 pub use factions::FactionsView;
-pub use inventory::InventoryView;
-pub use modules::ModulesView;
 pub use news::NewsView;
-pub use pilot::PilotView;
 pub use search_nearest::SearchNearestView;
 pub use settings::SettingsView;
 pub use stations::StationsView;
 pub use todo_view::TodoView;
 pub use trade_routes::TradeRoutesView;
+pub use workshop::WorkshopView;

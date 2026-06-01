@@ -32,6 +32,7 @@ enum SettingsSection {
     Icons,
     Stars,
     Planets,
+    About,
 }
 
 impl SettingsSection {
@@ -44,6 +45,7 @@ impl SettingsSection {
             SettingsSection::Icons,
             SettingsSection::Stars,
             SettingsSection::Planets,
+            SettingsSection::About,
         ]
     }
 
@@ -56,6 +58,7 @@ impl SettingsSection {
             SettingsSection::Icons => "Icons",
             SettingsSection::Stars => "Stars",
             SettingsSection::Planets => "Planets",
+            SettingsSection::About => "About",
         }
     }
 }
@@ -288,6 +291,9 @@ impl SettingsView {
     }
 
     fn build_grid(&self, settings: &Settings) -> Vec<GridRow> {
+        if self.section == SettingsSection::About {
+            return Vec::new();
+        }
         if self.is_icon_section() {
             self.build_icon_grid(settings)
         } else {
@@ -610,6 +616,24 @@ impl SettingsView {
         let _ = progress_area;
 
         let area = content_area;
+
+        if self.section == SettingsSection::About {
+            let about_lines = super::about::build_lines();
+            let inner_h = area.height.saturating_sub(2) as usize;
+            let max_scroll = about_lines.len().saturating_sub(inner_h);
+            let scroll = self.row.min(max_scroll) as u16;
+            frame.render_widget(
+                ratatui::widgets::Paragraph::new(about_lines)
+                    .block(ratatui::widgets::Block::default()
+                        .title(" About ")
+                        .borders(ratatui::widgets::Borders::ALL)
+                        .border_style(Style::default().fg(Color::Rgb(255, 140, 0))))
+                    .scroll((scroll, 0)),
+                area,
+            );
+            return;
+        }
+
         let grid = self.build_grid(settings);
         let mut lines: Vec<Line> = vec![
             Line::from(Span::styled(

@@ -84,7 +84,7 @@ fn blank() -> Line<'static> {
 
 include!("logo_lines.rs");
 
-fn build_lines() -> Vec<Line<'static>> {
+pub(super) fn build_lines() -> Vec<Line<'static>> {
     let mut lines = logo_lines();
     lines.push(blank());
     lines.extend(vec![
