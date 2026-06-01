@@ -446,6 +446,25 @@ impl StationsView {
     /// re-resolves selected_idx so the selection follows the same station even
     /// when visited_stations changes order.
     pub fn on_journal_update(&mut self, journal: &JournalData) {
+        // Auto-unpin construction sites that are now complete.
+        let completed: Vec<i64> = self.construction_tracked.iter().copied()
+            .filter(|&mid| {
+                journal.construction_depots.get(&mid)
+                    .map(|d| d.submission.construction_complete)
+                    .unwrap_or(false)
+                    || self.depots.iter().any(|d| d.market_id == mid && d.construction_complete)
+            })
+            .collect();
+        if !completed.is_empty() {
+            for mid in &completed {
+                self.construction_tracked.remove(mid);
+                self.pinned_ids.remove(mid);
+                self.pinned_results.retain(|r| r.market_id != *mid);
+            }
+            self.save_pins();
+            self.save_tracked();
+        }
+
         let Some(mid) = self.selected_market_id else { return; };
         let mids: Vec<i64> = self.build_display_list(journal).iter().map(|item| match item {
             ListItem::Api(s) => s.market_id,
@@ -998,7 +1017,7 @@ impl StationsView {
         if has_construction {
             let sel = if self.focus == FocusArea::Detail { Some(self.construction_resource_idx) } else { None };
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  t: todo) ──", Style::default().fg(Color::Rgb(255, 140, 0)))));
+            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  g: best station  t: todo) ──", Style::default().fg(Color::Rgb(255, 140, 0)))));
             lines.extend(self.construction_body(station.market_id, journal, sel));
         }
         lines
@@ -1044,7 +1063,7 @@ impl StationsView {
         if has_construction {
             let sel = if self.focus == FocusArea::Detail { Some(self.construction_resource_idx) } else { None };
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  t: todo) ──", Style::default().fg(Color::Rgb(255, 140, 0)))));
+            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  g: best station  t: todo) ──", Style::default().fg(Color::Rgb(255, 140, 0)))));
             lines.extend(self.construction_body(station.market_id, journal, sel));
         }
         lines
@@ -1127,6 +1146,31 @@ impl StationsView {
                     let system = journal.current_system.as_ref().map(|s| s.name.clone()).unwrap_or_default();
                     let ship_pad_size = journal.pilot.ship_pad_size;
                     return ViewEvent::OpenSearchNearest { commodity, canonical_name, system, ship_pad_size };
+                }
+                return ViewEvent::Consumed;
+            }
+            // 'g' — find the single best station covering the most missing commodities.
+            KeyCode::Char('g') if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Overview
+                && self.selected_construction_market_id(journal).is_some() =>
+            {
+                let mid = self.selected_construction_market_id(journal).unwrap();
+                let commodities: Vec<String> = if let Some(local) = journal.construction_depots.get(&mid) {
+                    local.submission.resources.iter()
+                        .filter(|r| r.provided_amount < r.required_amount)
+                        .map(|r| r.display_name.clone())
+                        .collect()
+                } else if let Some(depot) = self.depots.iter().find(|d| d.market_id == mid) {
+                    depot.resources.iter()
+                        .filter(|r| r.provided_amount < r.required_amount)
+                        .map(|r| r.display_name.clone())
+                        .collect()
+                } else {
+                    vec![]
+                };
+                if !commodities.is_empty() {
+                    let system = journal.current_system.as_ref().map(|s| s.name.clone()).unwrap_or_default();
+                    let ship_pad_size = journal.pilot.ship_pad_size;
+                    return ViewEvent::OpenMultiSearch { commodities, system, ship_pad_size };
                 }
                 return ViewEvent::Consumed;
             }

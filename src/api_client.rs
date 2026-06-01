@@ -1,8 +1,8 @@
 use edcas_common::api::{
     BodyResponse, CarrierQuery, CarrierResponse, ConstructionDepotResponse,
     ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse,
-    NearestCommodityQuery, NearestCommodityResult, ServerTickResponse, StationQuery,
-    StationResponse, TradeLoopResponse, TradeRouteResponse,
+    MultiCommodityQuery, MultiCommodityResult, NearestCommodityQuery, NearestCommodityResult,
+    ServerTickResponse, StationQuery, StationResponse, TradeLoopResponse, TradeRouteResponse,
 };
 
 // ─── Native (async) implementation ────────────────────────────────────────────
@@ -205,6 +205,24 @@ impl ApiClient {
             Ok(vec![])
         }
     }
+
+    pub async fn search_nearest_multi_commodity(
+        &self,
+        query: &MultiCommodityQuery,
+    ) -> anyhow::Result<Vec<MultiCommodityResult>> {
+        let url = format!("{}/api/v1/nearest-multi-commodity", self.base_url);
+        debug!(url, "API call: search_nearest_multi_commodity ({} commodities)", query.commodities.len());
+        let resp = self.client.post(&url).json(query).send().await?;
+        let status = resp.status();
+        if status.is_success() {
+            let result: Vec<MultiCommodityResult> = resp.json().await?;
+            debug!(url, count = result.len(), "API response: search_nearest_multi_commodity");
+            Ok(result)
+        } else {
+            warn!(url, %status, "API response: search_nearest_multi_commodity failed");
+            Ok(vec![])
+        }
+    }
 }
 
 // ─── WASM (async) implementation ──────────────────────────────────────────────
@@ -290,6 +308,17 @@ impl ApiClient {
     ) -> Vec<NearestCommodityResult> {
         let url = format!("{}/api/v1/nearest-commodity", self.base_url);
         match self.client.get(&url).query(&query).send().await {
+            Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
+            _ => vec![],
+        }
+    }
+
+    pub async fn search_nearest_multi_commodity(
+        &self,
+        query: MultiCommodityQuery,
+    ) -> Vec<MultiCommodityResult> {
+        let url = format!("{}/api/v1/nearest-multi-commodity", self.base_url);
+        match self.client.post(&url).json(&query).send().await {
             Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
             _ => vec![],
         }

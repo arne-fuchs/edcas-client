@@ -510,6 +510,12 @@ impl App {
                 self.view = AppView::SearchNearest;
                 return;
             }
+            ViewEvent::OpenMultiSearch { commodities, system, ship_pad_size } => {
+                info!("Opening Supply Scout: {} commodities near {}, pad={}", commodities.len(), system, ship_pad_size);
+                self.search_nearest.start_multi_search(commodities, system, ship_pad_size, &self.api);
+                self.view = AppView::SearchNearest;
+                return;
+            }
             ViewEvent::TrackConstruction(market_id) => {
                 info!("Tracking construction site {} from Stations pin", market_id);
                 self.stations.track_construction(market_id, &self.api);

@@ -3,7 +3,7 @@ use crate::event_shim::{KeyCode, KeyEvent};
 use crate::views::ViewEvent;
 #[cfg(not(target_arch = "wasm32"))]
 use tracing::warn;
-use edcas_common::api::{NearestCommodityQuery, NearestCommodityResult};
+use edcas_common::api::{MultiCommodityQuery, MultiCommodityResult, NearestCommodityQuery, NearestCommodityResult};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -264,6 +264,17 @@ pub struct SearchNearestView {
     pending: Arc<Mutex<Option<Result<Vec<NearestCommodityResult>, String>>>>,
     #[cfg(target_arch = "wasm32")]
     pending: Rc<RefCell<Option<Vec<NearestCommodityResult>>>>,
+    // ── Multi-commodity mode ──────────────────────────────────────
+    multi_mode: bool,
+    multi_results: Vec<MultiCommodityResult>,
+    /// Total number of commodities in the current multi search.
+    multi_total: usize,
+    /// Display names of the searched commodities (for the summary panel).
+    multi_commodities: Vec<String>,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_multi: Arc<Mutex<Option<Result<Vec<MultiCommodityResult>, String>>>>,
+    #[cfg(target_arch = "wasm32")]
+    pending_multi: Rc<RefCell<Option<Vec<MultiCommodityResult>>>>,
     #[cfg(not(target_arch = "wasm32"))]
     clipboard: Option<arboard::Clipboard>,
     #[cfg(target_arch = "wasm32")]
@@ -290,6 +301,14 @@ impl SearchNearestView {
             pending: Arc::new(Mutex::new(None)),
             #[cfg(target_arch = "wasm32")]
             pending: Rc::new(RefCell::new(None)),
+            multi_mode: false,
+            multi_results: Vec::new(),
+            multi_total: 0,
+            multi_commodities: Vec::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_multi: Arc::new(Mutex::new(None)),
+            #[cfg(target_arch = "wasm32")]
+            pending_multi: Rc::new(RefCell::new(None)),
             #[cfg(not(target_arch = "wasm32"))]
             clipboard: arboard::Clipboard::new().ok(),
             #[cfg(target_arch = "wasm32")]
@@ -302,6 +321,7 @@ impl SearchNearestView {
     }
 
     pub fn prefill_and_search(&mut self, commodity: &str, canonical_name: &str, system: &str, ship_pad_size: char, api: &ApiClient) {
+        self.multi_mode = false;
         self.commodity_input = commodity.to_string();
         self.commodity_canonical = canonical_name.to_string();
         self.system_input = system.to_string();
@@ -309,6 +329,42 @@ impl SearchNearestView {
         self.active_field = ActiveField::Commodity;
         self.editing = false;
         self.do_search(api);
+    }
+
+    pub fn start_multi_search(&mut self, commodities: Vec<String>, system: String, ship_pad_size: char, api: &ApiClient) {
+        self.multi_mode = true;
+        self.multi_total = commodities.len();
+        self.multi_commodities = commodities.clone();
+        self.system_input = system.clone();
+        self.pad_filter = ship_pad_size;
+        self.selected_idx = 0;
+        self.scroll = 0;
+        self.multi_results.clear();
+        self.is_loading = true;
+        self.status_msg = format!("Searching {} commodities near '{}'…", commodities.len(), system);
+        self.do_multi_search(api, commodities, system);
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn do_multi_search(&mut self, api: &ApiClient, commodities: Vec<String>, system: String) {
+        let pending = Arc::clone(&self.pending_multi);
+        let api_owned = api.clone();
+        let query = MultiCommodityQuery { commodities, reference_system: system, limit: Some(15) };
+        api.spawn(async move {
+            let result = api_owned.search_nearest_multi_commodity(&query).await.map_err(|e| e.to_string());
+            *pending.lock().unwrap() = Some(result);
+        });
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    fn do_multi_search(&mut self, api: &ApiClient, commodities: Vec<String>, system: String) {
+        let pending = Rc::clone(&self.pending_multi);
+        let api_owned = api.clone();
+        let query = MultiCommodityQuery { commodities, reference_system: system, limit: Some(15) };
+        wasm_bindgen_futures::spawn_local(async move {
+            let results = api_owned.search_nearest_multi_commodity(query).await;
+            *pending.borrow_mut() = Some(results);
+        });
     }
 
     fn pad_matches(&self, r: &NearestCommodityResult) -> bool {
@@ -436,6 +492,35 @@ impl SearchNearestView {
                 }
             }
         }
+        if let Some(result) = self.pending_multi.lock().unwrap().take() {
+            self.is_loading = false;
+            match result {
+                Ok(results) => {
+                    self.multi_results = results.into_iter()
+                        .filter(|r| match self.pad_filter {
+                            'L' => r.has_large_pad,
+                            'M' => r.has_large_pad || r.has_medium_pad,
+                            _ => true,
+                        })
+                        .collect();
+                    let count = self.multi_results.len();
+                    let pad_note = match self.pad_filter {
+                        'L' => " (large pad only)",
+                        'M' => " (medium+ pad)",
+                        _ => "",
+                    };
+                    self.status_msg = if count == 0 {
+                        format!("No stations found near '{}'{pad_note}", self.system_input)
+                    } else {
+                        format!("{count} station(s) found{pad_note}")
+                    };
+                }
+                Err(e) => {
+                    warn!(error = %e, "search_nearest_multi_commodity error");
+                    self.status_msg = format!("API error: {e}");
+                }
+            }
+        }
     }
 
     #[cfg(target_arch = "wasm32")]
@@ -455,6 +540,22 @@ impl SearchNearestView {
                 format!("No '{}' found near '{}'{pad_note}", self.commodity_input, self.system_input)
             } else {
                 format!("{count} station(s) found{pad_note}")
+            };
+        }
+        if let Some(results) = self.pending_multi.borrow_mut().take() {
+            self.is_loading = false;
+            self.multi_results = results.into_iter()
+                .filter(|r| match self.pad_filter {
+                    'L' => r.has_large_pad,
+                    'M' => r.has_large_pad || r.has_medium_pad,
+                    _ => true,
+                })
+                .collect();
+            let count = self.multi_results.len();
+            self.status_msg = if count == 0 {
+                format!("No stations found near '{}'", self.system_input)
+            } else {
+                format!("{count} station(s) found")
             };
         }
     }
@@ -534,7 +635,9 @@ impl SearchNearestView {
 
         match key.code {
             KeyCode::Enter => {
-                self.editing = true;
+                if !self.multi_mode {
+                    self.editing = true;
+                }
                 return ViewEvent::Consumed;
             }
             KeyCode::Char('w') | KeyCode::Up => {
@@ -544,13 +647,18 @@ impl SearchNearestView {
                 }
             }
             KeyCode::Char('s') | KeyCode::Down => {
-                if self.selected_idx + 1 < self.results.len() {
+                let max = if self.multi_mode { self.multi_results.len() } else { self.results.len() };
+                if self.selected_idx + 1 < max {
                     self.selected_idx += 1;
                 }
             }
             KeyCode::Char('c') => {
-                if let Some(r) = self.results.get(self.selected_idx) {
-                    let name = r.system_name.trim().to_string();
+                let name = if self.multi_mode {
+                    self.multi_results.get(self.selected_idx).map(|r| r.system_name.trim().to_string())
+                } else {
+                    self.results.get(self.selected_idx).map(|r| r.system_name.trim().to_string())
+                };
+                if let Some(name) = name {
                     #[cfg(not(target_arch = "wasm32"))]
                     if let Some(cb) = self.clipboard.as_mut() {
                         let _ = cb.set_text(&name);
@@ -565,6 +673,9 @@ impl SearchNearestView {
     }
 
     pub fn render(&self, frame: &mut Frame, area: Rect) {
+        if self.multi_mode {
+            return self.render_multi(frame, area);
+        }
         let n_sugg = if self.editing && self.active_field == ActiveField::Commodity {
             self.suggestions.len()
         } else {
@@ -754,5 +865,136 @@ impl SearchNearestView {
                 .scroll((scroll.min(max_scroll) as u16, 0)),
             chunks[1],
         );
+    }
+
+    fn render_multi(&self, frame: &mut Frame, area: Rect) {
+        let chunks = Layout::default()
+            .direction(Direction::Vertical)
+            .constraints([Constraint::Length(6), Constraint::Min(0)])
+            .split(area);
+
+        // ── Summary panel ────────────────────────────────────────
+        let commodity_preview: String = {
+            let names = &self.multi_commodities;
+            if names.len() <= 3 {
+                names.join("  ·  ")
+            } else {
+                format!("{}  ·  {}  ·  {}  +{} more", names[0], names[1], names[2], names.len() - 3)
+            }
+        };
+        let status_text = if self.is_loading {
+            "  Searching…".to_string()
+        } else {
+            format!("  {}", self.status_msg)
+        };
+        let summary_lines = vec![
+            Line::from(vec![
+                Span::styled("  Commodities: ", Style::default().fg(Color::Cyan)),
+                Span::styled(commodity_preview, Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+            ]),
+            Line::from(vec![
+                Span::styled("  Ref System:  ", Style::default().fg(Color::Cyan)),
+                Span::styled(self.system_input.clone(), Style::default().fg(Color::White)),
+            ]),
+            Line::from(""),
+            Line::from(Span::styled(status_text, Style::default().fg(Color::DarkGray))),
+        ];
+        frame.render_widget(
+            Paragraph::new(summary_lines).block(
+                Block::default()
+                    .title(" Supply Scout  (w/s: navigate  c: copy system  q: back) ")
+                    .borders(Borders::ALL)
+                    .border_style(Style::default().fg(Color::Rgb(255, 140, 0))),
+            ),
+            chunks[0],
+        );
+
+        // ── Results panel ────────────────────────────────────────
+        let mut result_lines: Vec<Line<'static>> = Vec::new();
+        let sel_style = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+
+        if self.multi_results.is_empty() && !self.is_loading {
+            result_lines.push(Line::from(Span::styled(
+                "  No results. Try a larger reference system or check commodity names.",
+                Style::default().fg(Color::DarkGray),
+            )));
+        } else {
+            result_lines.push(Line::from(Span::styled(
+                format!(
+                    "  {:>5}  {:>8}  {:<30}  {:<28}  {:<16}  Pad",
+                    "Match", "Dist ly", "System", "Station", "Type"
+                ),
+                Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
+            )));
+            result_lines.push(Line::from(Span::styled(
+                "  ".to_string() + &"\u{2500}".repeat(106),
+                Style::default().fg(Color::DarkGray),
+            )));
+
+            for (i, r) in self.multi_results.iter().enumerate() {
+                let selected = i == self.selected_idx;
+                let pad_str = match (r.has_large_pad, r.has_medium_pad) {
+                    (true, _)      => "L+M",
+                    (false, true)  => "M",
+                    _              => "S",
+                };
+                let match_col = format!("{}/{}", r.matched_count, self.multi_total);
+                let system_col = trunc(&r.system_name, 30);
+                let station_col = trunc(&r.station_name, 28);
+                let type_col = trunc(r.station_type.as_deref().unwrap_or("Unknown"), 16);
+                let header_row = format!(
+                    "  {:>5}  {:>8.2}  {}  {}  {:<16}  {}",
+                    match_col, r.distance_ly, system_col, station_col, type_col, pad_str,
+                );
+                let commodity_row = format!(
+                    "         {}",
+                    r.matched_commodities.join("  ·  "),
+                );
+                let (hdr_style, com_style) = if selected {
+                    (sel_style, sel_style)
+                } else {
+                    (Style::default().fg(Color::White), Style::default().fg(Color::DarkGray))
+                };
+                result_lines.push(Line::from(Span::styled(header_row, hdr_style)));
+                result_lines.push(Line::from(Span::styled(commodity_row, com_style)));
+            }
+        }
+
+        // Each station = 2 result lines + 2 header lines at top.
+        let visible = chunks[1].height.saturating_sub(2) as usize;
+        let item_visual = self.selected_idx * 2 + 2;
+        let scroll = if visible == 0 {
+            0
+        } else if item_visual + 2 > self.scroll + visible {
+            (item_visual + 2).saturating_sub(visible)
+        } else if item_visual < self.scroll {
+            item_visual
+        } else {
+            self.scroll
+        };
+        let max_scroll = result_lines.len().saturating_sub(visible);
+
+        frame.render_widget(
+            Paragraph::new(result_lines)
+                .block(
+                    Block::default()
+                        .title(format!(
+                            " Best coverage for {} commodities (no fleet carriers) ",
+                            self.multi_total
+                        ))
+                        .borders(Borders::ALL)
+                        .border_style(Style::default().fg(Color::White)),
+                )
+                .scroll((scroll.min(max_scroll) as u16, 0)),
+            chunks[1],
+        );
+    }
+}
+
+fn trunc(s: &str, max: usize) -> String {
+    if s.chars().count() > max {
+        format!("{}\u{2026}", s.chars().take(max - 1).collect::<String>())
+    } else {
+        format!("{:<width$}", s, width = max)
     }
 }

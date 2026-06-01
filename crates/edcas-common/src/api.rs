@@ -331,6 +331,27 @@ pub struct ServerTickResponse {
     pub system_count: Option<i32>,
 }
 
+/// POST /api/v1/nearest-multi-commodity
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct MultiCommodityQuery {
+    pub commodities: Vec<String>,
+    pub reference_system: String,
+    pub limit: Option<i64>,
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct MultiCommodityResult {
+    pub market_id: i64,
+    pub system_name: String,
+    pub station_name: String,
+    pub station_type: Option<String>,
+    pub distance_ly: f32,
+    pub has_large_pad: bool,
+    pub has_medium_pad: bool,
+    pub matched_commodities: Vec<String>,
+    pub matched_count: i64,
+}
+
 /// GET /api/v1/nearest-commodity?commodity=X&reference_system=Y&limit=N
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct NearestCommodityQuery {
