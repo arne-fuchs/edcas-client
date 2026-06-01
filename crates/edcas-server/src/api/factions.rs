@@ -15,16 +15,13 @@ pub async fn search_factions(
 
     let name_pattern = name.as_ref().map(|n| format!("%{}%", n.to_lowercase()));
 
-    // One row per unique faction name.
     let rows = client
         .query(
             &format!(
-                "SELECT DISTINCT ON (f.name) f.name, g.value as government, a.value as allegiance
-                 FROM factions f
-                 LEFT JOIN government g ON f.government = g.id
-                 LEFT JOIN allegiance a ON f.allegiance = a.id
-                 WHERE ($1::text IS NULL OR LOWER(f.name) LIKE $1)
-                 ORDER BY f.name
+                "SELECT DISTINCT ON (name) name, government, allegiance
+                 FROM factions
+                 WHERE ($1::text IS NULL OR LOWER(name) LIKE $1)
+                 ORDER BY name
                  LIMIT {limit}"
             ),
             &[&name_pattern],
@@ -54,11 +51,10 @@ async fn fetch_presences(
     let rows = client
         .query(
             "SELECT f.system_address, COALESCE(ss.name, '') as system_name,
-                    COALESCE(f.influence, 0.0) as influence, h.value as happiness,
+                    COALESCE(f.influence, 0.0) as influence, f.happiness,
                     COALESCE(je.event_timestamp, je.timestamp) as updated_at
              FROM factions f
              LEFT JOIN star_systems ss ON f.system_address = ss.system_address
-             LEFT JOIN happiness h ON f.happiness = h.id
              LEFT JOIN journal_events je ON je.id = f.journal_id
              WHERE f.name = $1
              ORDER BY f.influence DESC NULLS LAST",
@@ -73,10 +69,8 @@ async fn fetch_presences(
 
         let state_rows = client
             .query(
-                "SELECT fsn.value as state, fs.status
-                 FROM faction_states fs
-                 LEFT JOIN faction_state_name fsn ON fs.state = fsn.id
-                 WHERE fs.faction_name = $1 AND fs.system_address = $2",
+                "SELECT state, status FROM faction_states
+                 WHERE faction_name = $1 AND system_address = $2",
                 &[&faction_name, &saddr],
             )
             .await
@@ -95,7 +89,7 @@ async fn fetch_presences(
             }
         }
 
-        let conflict = fetch_conflict(&client, faction_name, saddr).await?;
+        let conflict = fetch_conflict(client, faction_name, saddr).await?;
 
         presences.push(FactionPresence {
             system_address: saddr,
@@ -120,16 +114,15 @@ async fn fetch_conflict(
 ) -> Result<Option<ConflictInfo>, Status> {
     let rows = client
         .query(
-            "SELECT wt.value as war_type, c.status,
-                    CASE WHEN c.faction1_name = $1 THEN c.faction1_won_days ELSE c.faction2_won_days END as our_won_days,
-                    CASE WHEN c.faction1_name = $1 THEN c.faction2_won_days ELSE c.faction1_won_days END as opp_won_days,
-                    CASE WHEN c.faction1_name = $1 THEN c.faction2_name    ELSE c.faction1_name    END as opponent_name,
-                    CASE WHEN c.faction1_name = $1 THEN c.faction1_stake   ELSE c.faction2_stake   END as our_stake,
-                    CASE WHEN c.faction1_name = $1 THEN c.faction2_stake   ELSE c.faction1_stake   END as opp_stake
-             FROM conflicts c
-             LEFT JOIN war_type wt ON c.war_type = wt.id
-             WHERE c.system_address = $2
-               AND (c.faction1_name = $1 OR c.faction2_name = $1)
+            "SELECT war_type, status,
+                    CASE WHEN faction1_name = $1 THEN faction1_won_days ELSE faction2_won_days END as our_won_days,
+                    CASE WHEN faction1_name = $1 THEN faction2_won_days ELSE faction1_won_days END as opp_won_days,
+                    CASE WHEN faction1_name = $1 THEN faction2_name    ELSE faction1_name    END as opponent_name,
+                    CASE WHEN faction1_name = $1 THEN faction1_stake   ELSE faction2_stake   END as our_stake,
+                    CASE WHEN faction1_name = $1 THEN faction2_stake   ELSE faction1_stake   END as opp_stake
+             FROM conflicts
+             WHERE system_address = $2
+               AND (faction1_name = $1 OR faction2_name = $1)
              LIMIT 1",
             &[&faction_name, &system_address],
         )

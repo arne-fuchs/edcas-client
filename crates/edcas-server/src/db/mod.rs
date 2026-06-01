@@ -10,8 +10,6 @@ use edcas_common::api::{ConstructionDepotSubmission, ConstructionResourceSubmiss
 use edcas_common::journal::JournalEvent;
 use tokio_postgres::NoTls;
 
-pub use tables::{lookup_or_insert, lookup_or_insert_client};
-
 /// Stores the raw message JSON in `journal_events`.
 /// Returns `(journal_id, event_timestamp)` where `event_timestamp` is
 /// parsed from `message['timestamp']`, falling back to `Utc::now()`.

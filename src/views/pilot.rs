@@ -1,5 +1,5 @@
 use crate::event_shim::{KeyCode, KeyEvent};
-use crate::journal_reader::JournalData;
+use crate::journal_reader::{JournalData, SuitData, SuitWeapon};
 use crate::views::ViewEvent;
 use ratatui::{
     layout::Rect,
@@ -231,6 +231,86 @@ impl PilotView {
         }
 
         lines.push(blank());
+
+        // ── Suit ─────────────────────────────────────────────────────
+        if p.odyssey {
+            lines.push(section("SUIT"));
+            lines.push(divider());
+            match &p.suit {
+                None => {
+                    lines.push(Line::from(Span::styled(
+                        "  No suit data — requires a SuitLoadout event",
+                        Style::default().fg(Color::DarkGray),
+                    )));
+                }
+                Some(suit) => {
+                    suit_lines(suit, &mut lines);
+                }
+            }
+            lines.push(blank());
+        }
+
         lines
+    }
+}
+
+fn suit_lines(suit: &SuitData, lines: &mut Vec<Line<'static>>) {
+    let orange = Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+    let cyan   = Style::default().fg(Color::Cyan);
+    let white  = Style::default().fg(Color::White);
+    let purple = Style::default().fg(Color::Rgb(180, 100, 255));
+    let dim    = Style::default().fg(Color::DarkGray);
+
+    let grade_dots = "●".repeat(suit.grade as usize) + &"○".repeat(5usize.saturating_sub(suit.grade as usize));
+    lines.push(Line::from(vec![
+        Span::styled("  Type        ", cyan),
+        Span::styled(
+            format!("{} G{}  {}", suit.suit_type, suit.grade, grade_dots),
+            orange,
+        ),
+    ]));
+
+    if !suit.loadout_name.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("  Loadout     ", cyan),
+            Span::styled(suit.loadout_name.clone(), white.add_modifier(Modifier::BOLD)),
+        ]));
+    }
+
+    if !suit.mods.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("  Suit Mods   ", cyan),
+            Span::styled(suit.mods.join(", "), purple),
+        ]));
+    }
+
+    if suit.weapons.is_empty() {
+        lines.push(Line::from(Span::styled("  No weapons in loadout", dim)));
+    } else {
+        lines.push(Line::from(""));
+        lines.push(Line::from(Span::styled("  Weapons", cyan)));
+        for w in &suit.weapons {
+            weapon_line(w, lines);
+        }
+    }
+}
+
+fn weapon_line(w: &SuitWeapon, lines: &mut Vec<Line<'static>>) {
+    let cyan   = Style::default().fg(Color::Cyan);
+    let white  = Style::default().fg(Color::White);
+    let purple = Style::default().fg(Color::Rgb(180, 100, 255));
+    let dim    = Style::default().fg(Color::DarkGray);
+
+    let grade_dots = "●".repeat(w.class as usize) + &"○".repeat(5usize.saturating_sub(w.class as usize));
+    lines.push(Line::from(vec![
+        Span::styled(format!("    {:<18}", w.slot), cyan),
+        Span::styled(format!("{:<24}", w.name), white),
+        Span::styled(format!("G{}  {}", w.class, grade_dots), purple),
+    ]));
+    if !w.mods.is_empty() {
+        lines.push(Line::from(vec![
+            Span::styled("      mods: ", dim),
+            Span::styled(w.mods.join(", "), purple),
+        ]));
     }
 }

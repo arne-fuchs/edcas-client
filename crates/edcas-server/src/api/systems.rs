@@ -13,17 +13,11 @@ pub async fn get_system(
     let client = pool.get().await.map_err(|_| Status::ServiceUnavailable)?;
     let row = client
         .query_opt(
-            "SELECT ss.system_address, ss.name, ss.x, ss.y, ss.z,
-                    a.value as allegiance, e.value as economy, e2.value as second_economy,
-                    g.value as government, sec.value as security, ss.population, p.value as controlling_power
-             FROM star_systems ss
-             LEFT JOIN allegiance a ON ss.allegiance = a.id
-             LEFT JOIN economy_type e ON ss.economy = e.id
-             LEFT JOIN economy_type e2 ON ss.second_economy = e2.id
-             LEFT JOIN government g ON ss.government = g.id
-             LEFT JOIN security sec ON ss.security = sec.id
-             LEFT JOIN power p ON ss.controlling_power = p.id
-             WHERE ss.system_address = $1",
+            "SELECT system_address, name, x, y, z,
+                    allegiance, economy, second_economy, government, security,
+                    population, controlling_power
+             FROM star_systems
+             WHERE system_address = $1",
             &[&system_address],
         )
         .await
@@ -62,23 +56,16 @@ pub async fn get_system_bodies(
 
     let body_rows = client
         .query(
-            "SELECT b.id, b.system_address, b.name, b.mass_em, b.radius, b.landable,
-                    b.axial_tilt, b.tidal_lock, b.mapped, b.mean_anomaly,
-                    b.eccentricity, b.ascending_node, b.orbital_period,
-                    b.semi_major_axis, b.rotation_period, b.surface_gravity,
-                    b.surface_pressure, b.orbital_inclination, b.surface_temperature,
-                    b.distance,
-                    pc.value as planet_class, v.value as volcanism,
-                    a.value as atmosphere, at.value as atmosphere_type,
-                    ts.value as terraform_state,
+            "SELECT id, system_address, name, mass_em, radius, landable,
+                    axial_tilt, tidal_lock, mapped, mean_anomaly,
+                    eccentricity, ascending_node, orbital_period,
+                    semi_major_axis, rotation_period, surface_gravity,
+                    surface_pressure, orbital_inclination, surface_temperature,
+                    distance,
+                    planet_class, volcanism, atmosphere, atmosphere_type, terraform_state,
                     false as is_star
-             FROM body b
-             LEFT JOIN planet_class pc ON b.planet_class = pc.id
-             LEFT JOIN volcanism v ON b.volcanism = v.id
-             LEFT JOIN atmosphere a ON b.atmosphere = a.id
-             LEFT JOIN atmosphere_type at ON b.atmosphere_type = at.id
-             LEFT JOIN terraform_state ts ON b.terraform_state = ts.id
-             WHERE b.system_address = $1",
+             FROM body
+             WHERE system_address = $1",
             &[&system_address],
         )
         .await
@@ -86,32 +73,28 @@ pub async fn get_system_bodies(
 
     let star_rows = client
         .query(
-            "SELECT s.id, s.system_address, s.name,
-                    NULL::real as mass_em, s.radius, false as landable,
+            "SELECT id, system_address, name,
+                    NULL::real as mass_em, radius, false as landable,
                     NULL::real as axial_tilt, false as tidal_lock, false as mapped, NULL::real as mean_anomaly,
                     NULL::real as eccentricity, NULL::real as ascending_node, NULL::real as orbital_period,
                     NULL::real as semi_major_axis, NULL::real as rotation_period, NULL::real as surface_gravity,
-                    NULL::real as surface_pressure, NULL::real as orbital_inclination, s.surface_temperature,
+                    NULL::real as surface_pressure, NULL::real as orbital_inclination, surface_temperature,
                     NULL::real as distance,
-                    st.value as planet_class, NULL::text as volcanism,
+                    star_type as planet_class, NULL::text as volcanism,
                     NULL::text as atmosphere, NULL::text as atmosphere_type, NULL::text as terraform_state,
                     true as is_star
-             FROM star s
-             LEFT JOIN star_type st ON s.star_type = st.id
-             WHERE s.system_address = $1",
+             FROM star
+             WHERE system_address = $1",
             &[&system_address],
         )
         .await
         .map_err(|_| Status::InternalServerError)?;
 
-    // Fetch rings, materials, and parents for the whole system in 3 bulk queries
-    // instead of 3 per body, avoiding the N+1 problem.
     let ring_rows = client
         .query(
-            "SELECT r.body_id, r.name, rc.value as ring_class, r.inner_rad, r.outer_rad, r.mass_mt
-             FROM ring r
-             LEFT JOIN ring_class rc ON r.ring_class = rc.id
-             WHERE r.system_address = $1",
+            "SELECT body_id, name, ring_class, inner_rad, outer_rad, mass_mt
+             FROM ring
+             WHERE system_address = $1",
             &[&system_address],
         )
         .await
@@ -119,11 +102,10 @@ pub async fn get_system_bodies(
 
     let material_rows = client
         .query(
-            "SELECT pm.body_id, mt.value as name, pm.percent
-             FROM planet_material pm
-             LEFT JOIN material_type mt ON pm.material_type = mt.id
-             WHERE pm.system_address = $1
-             ORDER BY pm.percent DESC",
+            "SELECT body_id, material_type as name, percent
+             FROM planet_material
+             WHERE system_address = $1
+             ORDER BY percent DESC",
             &[&system_address],
         )
         .await
@@ -208,13 +190,10 @@ async fn fetch_system_factions(
 ) -> Result<Vec<SystemFactionInfo>, Status> {
     let rows = client
         .query(
-            "SELECT f.name, f.influence, g.value as government, a.value as allegiance, h.value as happiness
-             FROM factions f
-             LEFT JOIN government g ON f.government = g.id
-             LEFT JOIN allegiance a ON f.allegiance = a.id
-             LEFT JOIN happiness h ON f.happiness = h.id
-             WHERE f.system_address = $1
-             ORDER BY f.influence DESC NULLS LAST",
+            "SELECT name, influence, government, allegiance, happiness
+             FROM factions
+             WHERE system_address = $1
+             ORDER BY influence DESC NULLS LAST",
             &[&system_address],
         )
         .await
@@ -225,10 +204,8 @@ async fn fetch_system_factions(
         let name: String = row.get("name");
         let state_rows = client
             .query(
-                "SELECT fsn.value as state, fs.status
-                 FROM faction_states fs
-                 LEFT JOIN faction_state_name fsn ON fs.state = fsn.id
-                 WHERE fs.faction_name = $1 AND fs.system_address = $2",
+                "SELECT state, status FROM faction_states
+                 WHERE faction_name = $1 AND system_address = $2",
                 &[&name, &system_address],
             )
             .await
@@ -241,10 +218,10 @@ async fn fetch_system_factions(
             let state: String = sr.get::<_, Option<String>>("state").unwrap_or_default();
             let status: String = sr.get("status");
             match status.as_str() {
-                "Active" => active.push(state),
-                "Pending" => pending.push(state),
+                "Active"     => active.push(state),
+                "Pending"    => pending.push(state),
                 "Recovering" => recovering.push(state),
-                _ => active.push(state),
+                _            => active.push(state),
             }
         }
 
@@ -262,4 +239,3 @@ async fn fetch_system_factions(
 
     Ok(result)
 }
-

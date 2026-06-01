@@ -16,7 +16,7 @@ use crate::settings::Settings;
 use crate::views::{
     AboutView, CarriersView, ConstructionView, EngineersView, ExplorerView, FactionsView,
     InventoryView, ModulesView, NewsView, PilotView, SearchNearestView, SettingsView, StationsView,
-    SuitView, TodoView, TradeRoutesView, ViewEvent,
+    TodoView, TradeRoutesView, ViewEvent,
 };
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -35,7 +35,6 @@ pub const TABS: &[&str] = &[
     "Pilot",
     "Ship",
     "Inventory",
-    "Suit",
     "Engineers",
     "Todo",
     "Search Nearest",
@@ -56,12 +55,11 @@ pub enum AppView {
     Pilot = 7,
     Modules = 8,
     Materials = 9,
-    Suit = 10,
-    Engineers = 11,
-    Todo = 12,
-    SearchNearest = 13,
-    Settings = 14,
-    About = 15,
+    Engineers = 10,
+    Todo = 11,
+    SearchNearest = 12,
+    Settings = 13,
+    About = 14,
 }
 
 impl AppView {
@@ -76,8 +74,7 @@ impl AppView {
             AppView::TradeRoutes => AppView::Pilot,
             AppView::Pilot => AppView::Modules,
             AppView::Modules => AppView::Materials,
-            AppView::Materials => AppView::Suit,
-            AppView::Suit => AppView::Engineers,
+            AppView::Materials => AppView::Engineers,
             AppView::Engineers => AppView::Todo,
             AppView::Todo => AppView::SearchNearest,
             AppView::SearchNearest => AppView::Settings,
@@ -98,8 +95,7 @@ impl AppView {
             AppView::Pilot => AppView::TradeRoutes,
             AppView::Modules => AppView::Pilot,
             AppView::Materials => AppView::Modules,
-            AppView::Suit => AppView::Materials,
-            AppView::Engineers => AppView::Suit,
+            AppView::Engineers => AppView::Materials,
             AppView::Todo => AppView::Engineers,
             AppView::SearchNearest => AppView::Todo,
             AppView::Settings => AppView::SearchNearest,
@@ -139,7 +135,6 @@ pub struct App {
     pub explorer: ExplorerView,
     pub inventory: InventoryView,
     pub modules_view: ModulesView,
-    pub suit_view: SuitView,
     pub stations: StationsView,
     pub carriers: CarriersView,
     pub factions: FactionsView,
@@ -200,7 +195,6 @@ impl App {
             explorer: ExplorerView::new(),
             inventory: InventoryView::new(),
             modules_view: ModulesView::new(),
-            suit_view: SuitView::new(),
             stations: StationsView::new(),
             carriers: CarriersView::new(),
             factions: FactionsView::new(),
@@ -235,7 +229,6 @@ impl App {
             explorer: ExplorerView::new(),
             inventory: InventoryView::new(),
             modules_view: ModulesView::new(),
-            suit_view: SuitView::new(),
             stations: StationsView::new(),
             carriers: CarriersView::new(),
             factions: FactionsView::new(),
@@ -295,6 +288,10 @@ impl App {
 
             self.journal = data;
             self.persist_my_carrier_cargo();
+
+            // Keep the stations view selection on the same station even when
+            // visited_stations changes order (e.g., a new dock prepends a station).
+            self.stations.on_journal_update(&self.journal.visited_stations);
 
             // Auto-fetch full market data when docking at a non-carrier station.
             let new_dock = self.journal.last_docked.as_ref().map(|(mid, _, _, _)| *mid);
@@ -467,7 +464,6 @@ impl App {
             AppView::Explorer => self.explorer.render(frame, area, &self.settings, &self.journal),
             AppView::Materials => self.inventory.render(frame, area, &self.journal),
             AppView::Modules => self.modules_view.render(frame, area, &self.journal),
-            AppView::Suit    => self.suit_view.render(frame, area, &self.journal),
             AppView::Stations => {
                 let cs = self.carriers.my_carrier_stock(&self.journal);
                 self.stations.render(frame, area, &self.journal, &self.todo_view.todo, &cs);
@@ -497,7 +493,6 @@ impl App {
             AppView::Explorer     => &[("tab", "panel"), ("w/s", "factions"), ("a/d", "systems"), ("space", "open")],
             AppView::Materials    => &[("w/s", "navigate"), ("a/d", "panels")],
             AppView::Modules      => &[("w/s", "navigate")],
-            AppView::Suit         => &[("w/s", "navigate")],
             AppView::Stations     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
             AppView::Carriers     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("p", "pin"), ("m", "my carrier")],
             AppView::Factions     => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
@@ -585,7 +580,6 @@ impl App {
             AppView::Explorer => self.explorer.handle_key(key),
             AppView::Materials => self.inventory.handle_key(key),
             AppView::Modules => self.modules_view.handle_key(key, &self.journal),
-            AppView::Suit    => self.suit_view.handle_key(key, &self.journal),
             AppView::Stations => self.stations.handle_key(key, &self.api, &self.journal),
             AppView::Carriers => self.carriers.handle_key(key, &self.api, &self.journal),
             AppView::Factions => self.factions.handle_key(key, &self.api),
@@ -650,7 +644,10 @@ impl App {
     pub fn on_tab_enter(&mut self) {
         match self.view {
             AppView::News => self.news.start_fetch(&self.api),
-            AppView::Stations => self.stations.on_enter(&self.api),
+            AppView::Stations => {
+                let history = &self.journal.visited_stations;
+                self.stations.on_enter(&self.api, history);
+            }
             AppView::Carriers => self.carriers.on_enter(&self.api),
             AppView::Factions => self.factions.on_enter(&self.api),
             AppView::Construction => self.construction.on_enter(&self.api),

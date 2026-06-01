@@ -59,9 +59,23 @@ impl MyCarriersData {
             let path = Self::native_path();
             if let Some(parent) = path.parent() {
                 let _ = std::fs::create_dir_all(parent);
-            }
-            if let Ok(data) = serde_json::to_string_pretty(self) {
-                let _ = std::fs::write(path, data);
+                // Strip zero-count entries before serializing — they're equivalent to absent.
+                let clean = Self {
+                    carriers: self.carriers.iter()
+                        .map(|(id, cargo)| {
+                            let trimmed: std::collections::HashMap<String, i32> =
+                                cargo.iter().filter(|(_, &v)| v != 0).map(|(k, &v)| (k.clone(), v)).collect();
+                            (*id, trimmed)
+                        })
+                        .collect(),
+                    snapshot_timestamp: self.snapshot_timestamp.clone(),
+                };
+                if let Ok(data) = serde_json::to_string_pretty(&clean) {
+                    let tmp = parent.join("my_carriers.json.tmp");
+                    if std::fs::write(&tmp, &data).is_ok() {
+                        let _ = std::fs::rename(&tmp, &path);
+                    }
+                }
             }
         }
         #[cfg(target_arch = "wasm32")]

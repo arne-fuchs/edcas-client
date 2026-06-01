@@ -45,7 +45,7 @@ pub async fn nearest_commodity(
                 "SELECT s.market_id, s.system_address,
                         ss.name  AS system_name,
                         s.name   AS station_name,
-                        st.value AS station_type,
+                        s.station_type,
                         cl.name  AS commodity_name,
                         cl.buy_price, cl.stock, cl.sell_price,
                         COALESCE(lp.large  > 0, false) AS has_large_pad,
@@ -58,12 +58,11 @@ pub async fn nearest_commodity(
                  FROM commodity_listening cl
                  JOIN stations s      ON cl.market_id = s.market_id
                  JOIN star_systems ss ON s.system_address = ss.system_address
-                 LEFT JOIN station_type st         ON s.type = st.id
                  LEFT JOIN station_landing_pads lp ON s.market_id = lp.market_id
                  WHERE LOWER(REPLACE(REPLACE(cl.name, ' ', ''), '-', '')) = LOWER(REPLACE(REPLACE($4::text, ' ', ''), '-', ''))
                    AND cl.stock > 0
                    AND ss.x IS NOT NULL
-                   AND (st.value IS NULL OR st.value != 'FleetCarrier')
+                   AND (s.station_type IS NULL OR s.station_type != 'FleetCarrier')
                  ORDER BY distance_ly ASC
                  LIMIT {limit}"
             ),

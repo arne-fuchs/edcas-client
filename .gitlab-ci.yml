@@ -5,11 +5,11 @@ stages:
 variables:
   WEB_IMAGE: edcas-web
   SERVER_IMAGE: edcas-server
-  # Set in GitLab CI/CD Settings > Variables:
-  #   DB_PASSWORD  (masked, required)
+  DB_PASSWORD: edcas
+  # Override DB_PASSWORD in GitLab CI/CD Settings > Variables (masked)
   # Paths on the runner host:
   DEPLOY_PATH: /mnt/m42/edcas
-  DATA_PATH: /mnt/m42/edcas-data
+  DATA_PATH: /home/debian/edacs-data
 
 build-web:
   stage: build

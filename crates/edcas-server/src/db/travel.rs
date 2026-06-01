@@ -2,8 +2,6 @@ use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
 use edcas_common::journal::{CarrierJump, FsdJump, Location};
 
-use super::tables::lookup_or_insert;
-
 pub async fn insert_fsd_jump(
     pool: &Pool,
     journal_id: i64,
@@ -12,25 +10,6 @@ pub async fn insert_fsd_jump(
 ) -> anyhow::Result<()> {
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
-
-    let allegiance = lookup_or_insert(&tx, "allegiance", &event.system_allegiance, journal_id).await?;
-    let economy = lookup_or_insert(&tx, "economy_type", &event.system_economy, journal_id).await?;
-    let second_economy = lookup_or_insert(&tx, "economy_type", &event.system_second_economy, journal_id).await?;
-    let government = lookup_or_insert(&tx, "government", &event.system_government, journal_id).await?;
-    let security = lookup_or_insert(&tx, "security", &event.system_security, journal_id).await?;
-
-    let controlling_power = if let Some(ref cp) = event.controlling_power {
-        let id = lookup_or_insert(&tx, "power", cp, journal_id).await?;
-        Some(id)
-    } else {
-        None
-    };
-
-    if let Some(ref powers) = event.powers {
-        for power in powers {
-            lookup_or_insert(&tx, "power", power, journal_id).await?;
-        }
-    }
 
     let x = event.star_pos.first().copied().unwrap_or(0.0);
     let y = event.star_pos.get(1).copied().unwrap_or(0.0);
@@ -50,16 +29,20 @@ pub async fn insert_fsd_jump(
             &event.system_address,
             &event.star_system,
             &x, &y, &z,
-            &allegiance, &economy, &second_economy, &government, &security,
-            &event.population, &controlling_power, &journal_id, &event_timestamp,
+            &event.system_allegiance,
+            &event.system_economy,
+            &event.system_second_economy,
+            &event.system_government,
+            &event.system_security,
+            &event.population,
+            &event.controlling_power,
+            &journal_id,
+            &event_timestamp,
         ],
     )
     .await?;
 
     if let Some(ref factions) = event.factions {
-        // Wipe all faction presence data for the system first. An FSDJump event
-        // is an authoritative snapshot of every faction currently in the system,
-        // so factions not present in this event have left.
         tx.execute(
             "DELETE FROM faction_states WHERE system_address = $1",
             &[&event.system_address],
@@ -75,7 +58,6 @@ pub async fn insert_fsd_jump(
         }
     }
 
-    // Always delete then re-insert conflicts so ended wars are cleared.
     tx.execute(
         "DELETE FROM conflicts WHERE system_address = $1",
         &[&event.system_address],
@@ -83,16 +65,21 @@ pub async fn insert_fsd_jump(
     .await?;
     if let Some(ref conflicts) = event.conflicts {
         for conflict in conflicts {
-            let war_type = lookup_or_insert(&tx, "war_type", &conflict.war_type, journal_id).await?;
             tx.execute(
                 "INSERT INTO conflicts
                     (system_address, war_type, status, faction1_name, faction1_stake, faction1_won_days,
                      faction2_name, faction2_stake, faction2_won_days, journal_id)
                  VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)",
                 &[
-                    &event.system_address, &war_type, &conflict.status,
-                    &conflict.faction1.name, &conflict.faction1.stake, &conflict.faction1.won_days,
-                    &conflict.faction2.name, &conflict.faction2.stake, &conflict.faction2.won_days,
+                    &event.system_address,
+                    &conflict.war_type,
+                    &conflict.status,
+                    &conflict.faction1.name,
+                    &conflict.faction1.stake,
+                    &conflict.faction1.won_days,
+                    &conflict.faction2.name,
+                    &conflict.faction2.stake,
+                    &conflict.faction2.won_days,
                     &journal_id,
                 ],
             )
@@ -244,10 +231,6 @@ async fn insert_faction(
     system_address: i64,
     faction: &edcas_common::journal::types::Faction,
 ) -> anyhow::Result<()> {
-    let government = lookup_or_insert(tx, "government", &faction.government, journal_id).await?;
-    let allegiance = lookup_or_insert(tx, "allegiance", &faction.allegiance, journal_id).await?;
-    let happiness = lookup_or_insert(tx, "happiness", &faction.happiness, journal_id).await?;
-
     tx.execute(
         "INSERT INTO factions
             (name, system_address, government, allegiance, happiness, influence, journal_id)
@@ -257,9 +240,9 @@ async fn insert_faction(
         &[
             &faction.name,
             &system_address,
-            &government,
-            &allegiance,
-            &happiness,
+            &faction.government,
+            &faction.allegiance,
+            &faction.happiness,
             &faction.influence,
             &journal_id,
         ],
@@ -274,12 +257,11 @@ async fn insert_faction(
     for (states_opt, status) in state_batches {
         if let Some(ref states) = states_opt {
             for state in states {
-                let state_id = lookup_or_insert(tx, "faction_state_name", &state.state, journal_id).await?;
                 tx.execute(
                     "INSERT INTO faction_states (faction_name, system_address, state, status, journal_id)
                      VALUES ($1,$2,$3,$4,$5)
                      ON CONFLICT (faction_name, system_address, state) DO UPDATE SET status=$4, journal_id=$5",
-                    &[&faction.name, &system_address, &state_id, &status, &journal_id],
+                    &[&faction.name, &system_address, &state.state, &status, &journal_id],
                 )
                 .await?;
             }

@@ -36,21 +36,18 @@ pub(crate) async fn query_stations(
         .query(
             &format!(
                 "SELECT s.market_id, s.system_address, ss.name as system_name,
-                        s.name, s.carrier_name, st.value as station_type,
-                        s.faction_name, g.value as government, e.value as economy,
+                        s.name, s.carrier_name, s.station_type,
+                        s.faction_name, s.government, s.economy,
                         s.event_timestamp,
                         (SELECT MAX(cl.event_timestamp) FROM commodity_listening cl
                          WHERE cl.market_id = s.market_id) AS market_updated_at
                  FROM stations s
                  LEFT JOIN star_systems ss ON s.system_address = ss.system_address
-                 LEFT JOIN station_type st ON s.type = st.id
-                 LEFT JOIN government g ON s.government = g.id
-                 LEFT JOIN economy_type e ON s.economy = e.id
                  WHERE ($1::text IS NULL OR LOWER(s.name) LIKE $1)
                    AND ($2::text IS NULL OR LOWER(ss.name) LIKE $2)
                    AND ($3::bigint IS NULL OR s.market_id = $3)
-                   AND (NOT $4 OR st.value = 'FleetCarrier')
-                   AND ($4 OR st.value IS NULL OR st.value != 'FleetCarrier')
+                   AND (NOT $4 OR s.station_type = 'FleetCarrier')
+                   AND ($4 OR s.station_type IS NULL OR s.station_type != 'FleetCarrier')
                  ORDER BY s.name
                  LIMIT {limit}"
             ),
@@ -102,10 +99,9 @@ async fn fetch_economies(
 ) -> Result<Vec<StationEconomyResponse>, Status> {
     let rows = client
         .query(
-            "SELECT et.value as name, se.proportion
-             FROM station_economies se
-             LEFT JOIN economy_type et ON se.economy_type = et.id
-             WHERE se.market_id = $1",
+            "SELECT economy_type as name, proportion
+             FROM station_economies
+             WHERE market_id = $1",
             &[&market_id],
         )
         .await
@@ -126,10 +122,7 @@ async fn fetch_services(
 ) -> Result<Vec<String>, Status> {
     let rows = client
         .query(
-            "SELECT sst.value as service
-             FROM station_services ss
-             LEFT JOIN station_services_types sst ON ss.id = sst.id
-             WHERE ss.market_id = $1",
+            "SELECT service_type FROM station_services WHERE market_id = $1",
             &[&market_id],
         )
         .await
@@ -137,7 +130,7 @@ async fn fetch_services(
 
     Ok(rows
         .iter()
-        .filter_map(|r| r.get::<_, Option<String>>("service"))
+        .filter_map(|r| r.get::<_, Option<String>>("service_type"))
         .collect())
 }
 

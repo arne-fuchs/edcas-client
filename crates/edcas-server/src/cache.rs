@@ -51,11 +51,10 @@ async fn refresh_routes(pool: &Pool, pad: &str) -> Result<u64, Box<dyn std::erro
                    ss.name AS system_name, s.name AS station_name,
                    COALESCE(slp.large,  0) AS large,
                    COALESCE(slp.medium, 0) AS medium,
-                   alg.value AS allegiance
+                   ss.allegiance
             FROM stations s
             JOIN star_systems ss ON s.system_address = ss.system_address
             LEFT JOIN station_landing_pads slp ON slp.market_id = s.market_id
-            LEFT JOIN allegiance alg ON alg.id = ss.allegiance
             WHERE ss.x BETWEEN -{r} AND {r}
               AND ss.y BETWEEN -{r} AND {r}
               AND ss.z BETWEEN -{r} AND {r}
@@ -175,11 +174,10 @@ async fn refresh_loops(pool: &Pool, pad: &str) -> Result<u64, Box<dyn std::error
                    ss.name AS system_name, s.name AS station_name,
                    COALESCE(slp.large,  0) AS large,
                    COALESCE(slp.medium, 0) AS medium,
-                   alg.value AS allegiance
+                   ss.allegiance
             FROM stations s
             JOIN star_systems ss ON s.system_address = ss.system_address
             LEFT JOIN station_landing_pads slp ON slp.market_id = s.market_id
-            LEFT JOIN allegiance alg ON alg.id = ss.allegiance
             WHERE ss.x BETWEEN -{r} AND {r}
               AND ss.y BETWEEN -{r} AND {r}
               AND ss.z BETWEEN -{r} AND {r}

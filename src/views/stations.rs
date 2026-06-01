@@ -1,6 +1,6 @@
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::{JournalData, StationData};
-use edcas_common::api::{StationQuery, StationResponse};
+use edcas_common::api::{LandingPadsResponse, StationEconomyResponse, StationQuery, StationResponse};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -8,12 +8,15 @@ use ratatui::{
     widgets::{Block, Borders, Paragraph},
     Frame,
 };
-use std::cmp::Ordering;
 use std::collections::{HashMap, HashSet};
 
 use crate::api_client::ApiClient;
 use crate::todo::TodoList;
-use crate::views::util::{commodity_header_line, commodity_row, fmt_ts, normalize_commodity_name, raw_diff, truncate, FocusArea, MarketSortCol, SearchState, StationDetailTab as DetailTab};
+use crate::views::util::{
+    commodity_header_line, commodity_row, compute_todo_needed, effective_todo_for_market,
+    fmt_ts, normalize_commodity_name, outfitting_lines, shipyard_lines, sorted_commodities, truncate,
+    FocusArea, MarketSortCol, SearchState, StationDetailTab as DetailTab,
+};
 use crate::views::ViewEvent;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -39,6 +42,9 @@ pub struct StationsView {
     /// so we don't retry on every journal update.
     auto_fetch_attempted: HashSet<i64>,
     selected_idx: usize,
+    /// Market ID of the currently selected station; used to re-resolve selected_idx
+    /// when visited_stations changes order (e.g., a new dock inserts at position 0).
+    selected_market_id: Option<i64>,
     list_scroll: usize,
     detail_scroll: usize,
     status_msg: String,
@@ -76,6 +82,7 @@ impl StationsView {
             auto_fetched: HashMap::new(),
             auto_fetch_attempted: HashSet::new(),
             selected_idx: 0,
+            selected_market_id: None,
             list_scroll: 0,
             detail_scroll: 0,
             status_msg: "Press Enter to search  |  p: pin/unpin  |  c: copy system".into(),
@@ -108,6 +115,7 @@ impl StationsView {
             let count = results.len();
             self.results = results;
             self.selected_idx = 0;
+            self.selected_market_id = None;
             self.list_scroll = 0;
             self.detail_scroll = 0;
             self.focus = FocusArea::List;
@@ -125,13 +133,17 @@ impl StationsView {
         if let Some(result) = self.pending_pins.lock().unwrap().take() {
             self.loading_pins = false;
             match result {
-                Ok(results) => {
-                    self.pinned_results = results;
+                Ok(api_results) => {
+                    // Merge: replace/enrich stubs with API data; keep stubs for stations the API didn't return.
+                    for api_station in api_results {
+                        merge_into_pinned(&mut self.pinned_results, api_station);
+                    }
+                    self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
                     if self.status_msg.starts_with("Loading") {
                         self.status_msg = "Press Enter to search  |  p: pin/unpin  |  c: copy system".into();
                     }
                 }
-                Err(e) => { self.status_msg = format!("API error loading pins: {e}"); }
+                Err(e) => { self.status_msg = format!("API unavailable: {e}"); }
             }
         }
         if let Some(result) = self.pending_search.lock().unwrap().take() {
@@ -140,6 +152,7 @@ impl StationsView {
                     let count = results.len();
                     self.results = results;
                     self.selected_idx = 0;
+                    self.selected_market_id = None;
                     self.list_scroll = 0;
                     self.detail_scroll = 0;
                     self.focus = FocusArea::List;
@@ -155,9 +168,18 @@ impl StationsView {
         }
     }
 
-    pub fn on_enter(&mut self, api: &ApiClient) {
+    pub fn on_enter(&mut self, api: &ApiClient, history: &[StationData]) {
+        // Immediately populate stubs from journal for any pinned IDs not yet in pinned_results.
+        for &mid in &self.pinned_ids {
+            if !self.pinned_results.iter().any(|r| r.market_id == mid) {
+                if let Some(h) = history.iter().find(|s| s.market_id == mid) {
+                    self.pinned_results.push(journal_station_to_response(h));
+                }
+            }
+        }
+        self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
         #[cfg(not(target_arch = "wasm32"))]
-        if !self.pinned_ids.is_empty() && self.pinned_results.is_empty() && !self.loading_pins {
+        if !self.pinned_ids.is_empty() && !self.loading_pins {
             self.refresh_pins(api);
         }
     }
@@ -165,7 +187,7 @@ impl StationsView {
     #[cfg(not(target_arch = "wasm32"))]
     fn refresh_pins(&mut self, api: &ApiClient) {
         self.loading_pins = true;
-        self.pinned_results.clear();
+        // Do NOT clear pinned_results here — stubs remain visible while API is in flight.
         self.status_msg = "Loading pinned stations…".into();
         let pending = Arc::clone(&self.pending_pins);
         let api_owned = api.clone();
@@ -217,6 +239,33 @@ impl StationsView {
         });
     }
 
+    /// Called after each journal update so the selection follows the same station
+    /// even when visited_stations changes order (e.g., a new dock prepends a station).
+    pub fn on_journal_update(&mut self, history: &[StationData]) {
+        let Some(mid) = self.selected_market_id else { return; };
+        // Collect market IDs into an owned Vec to release the borrow on self
+        // before mutating selected_idx / selected_market_id.
+        let mids: Vec<i64> = self.build_display_list(history).iter().map(|item| match item {
+            ListItem::Api(s) => s.market_id,
+            ListItem::Journal(s) => s.market_id,
+        }).collect();
+        if let Some(pos) = mids.iter().position(|&m| m == mid) {
+            self.selected_idx = pos;
+        } else {
+            self.selected_market_id = None;
+            if !mids.is_empty() {
+                self.selected_idx = self.selected_idx.min(mids.len() - 1);
+            }
+        }
+    }
+
+    fn mid_at_idx(&self, history: &[StationData]) -> Option<i64> {
+        self.selected_item_with_history(history).map(|item| match item {
+            ListItem::Api(s) => s.market_id,
+            ListItem::Journal(s) => s.market_id,
+        })
+    }
+
     #[cfg(not(target_arch = "wasm32"))]
     pub fn poll_auto_fetch(&mut self) {
         if let Some(result) = self.pending_auto_fetch.lock().unwrap().take() {
@@ -225,7 +274,14 @@ impl StationsView {
             }
             if let Ok(mut results) = result {
                 if let Some(station) = results.pop() {
-                    self.auto_fetched.insert(station.market_id, station);
+                    let mid = station.market_id;
+                    if self.pinned_ids.contains(&mid) {
+                        // Already pinned — merge directly into pinned_results.
+                        merge_into_pinned(&mut self.pinned_results, station);
+                        self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+                    } else {
+                        self.auto_fetched.insert(mid, station);
+                    }
                 }
             }
         }
@@ -290,7 +346,8 @@ impl StationsView {
                     self.selected_idx = pos;
                 }
             } else {
-                // In history section — just mark as pinned; will load via API next refresh
+                // In history section — add a stub immediately so the station stays visible,
+                // then fetch from API to fill in modules/ships/outfitting.
                 let search_ids: HashSet<i64> = self.results.iter().map(|s| s.market_id).collect();
                 let hist_deduped: Vec<&StationData> = history.iter()
                     .filter(|s| !self.pinned_ids.contains(&s.market_id) && !search_ids.contains(&s.market_id))
@@ -299,9 +356,19 @@ impl StationsView {
                 if let Some(h) = hist_deduped.get(hi) {
                     let mid = h.market_id;
                     self.pinned_ids.insert(mid);
+                    // Prefer auto-fetched API data as the stub if available.
+                    let stub = if let Some(fetched) = self.auto_fetched.remove(&mid) {
+                        fetched
+                    } else {
+                        journal_station_to_response(h)
+                    };
+                    merge_into_pinned(&mut self.pinned_results, stub);
+                    self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+                    if let Some(pos) = self.pinned_results.iter().position(|r| r.market_id == mid) {
+                        self.selected_idx = pos;
+                    }
                     #[cfg(not(target_arch = "wasm32"))]
                     self.refresh_pins(api);
-                    self.selected_idx = 0;
                 } else if !self.pinned_ids.is_empty() {
                     #[cfg(not(target_arch = "wasm32"))]
                     self.refresh_pins(api);
@@ -484,7 +551,7 @@ impl StationsView {
         }
     }
 
-    fn build_detail_header_lines(&self, history: &[StationData]) -> Vec<Line<'static>> {
+    fn build_detail_header_lines(&self, history: &[StationData], journal_for_header: &crate::journal_reader::JournalData) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
 
         let tab_active = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
@@ -521,8 +588,13 @@ impl StationsView {
                 }
             }
             Some(ListItem::Journal(station)) => {
+                let docked_here = journal_for_header.last_docked
+                    .as_ref()
+                    .map(|(mid, _, _, _)| *mid == station.market_id)
+                    .unwrap_or(false);
+                let label = if docked_here { "docked" } else { "visit snapshot" };
                 lines.push(Line::from(Span::styled(
-                    format!("\u{2500}\u{2500} {} \u{2500}\u{2500} (visit snapshot)", station.name),
+                    format!("\u{2500}\u{2500} {} \u{2500}\u{2500} ({})", station.name, label),
                     Style::default().fg(Color::Rgb(100, 180, 200)).add_modifier(Modifier::BOLD),
                 )));
             }
@@ -557,10 +629,28 @@ impl StationsView {
                             return self.local_market_body(commodities, todo_needed, ship_cargo, carrier_stock);
                         }
                     }
-                    vec![Line::from(Span::styled(
-                        "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
-                        Style::default().fg(Color::DarkGray),
-                    ))]
+                    let is_docked_here = journal.last_docked
+                        .as_ref()
+                        .map(|(mid, _, _, _)| *mid == station.market_id)
+                        .unwrap_or(false);
+                    if is_docked_here {
+                        vec![
+                            Line::from(Span::styled(
+                                "No market data for this station yet.",
+                                Style::default().fg(Color::DarkGray),
+                            )),
+                            Line::from(""),
+                            Line::from(Span::styled(
+                                "Open the Commodities Market panel in-game and the data will appear here automatically.",
+                                Style::default().fg(Color::Rgb(180, 180, 180)),
+                            )),
+                        ]
+                    } else {
+                        vec![Line::from(Span::styled(
+                            "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
+                            Style::default().fg(Color::DarkGray),
+                        ))]
+                    }
                 }
                 _ => vec![Line::from(Span::styled(
                     "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
@@ -637,33 +727,9 @@ impl StationsView {
         if station.commodities.is_empty() {
             return vec![Line::from(Span::styled("No market data available.", Style::default().fg(Color::DarkGray)))];
         }
-        let effective_todo: HashMap<String, i32> = station.commodities.iter()
-            .filter(|c| c.buy_price > 0 && c.stock > 0)
-            .filter_map(|c| {
-                let norm = normalize_commodity_name(&c.name);
-                todo_needed.get(&norm).map(|&n| (norm, n))
-            })
-            .collect();
-        let mut sorted: Vec<&edcas_common::api::CommodityResponse> = station.commodities.iter().collect();
-        let asc = self.market_sort_asc;
-        sorted.sort_by(|a, b| {
-            let a_norm = normalize_commodity_name(&a.name);
-            let b_norm = normalize_commodity_name(&b.name);
-            let group = effective_todo.contains_key(&b_norm).cmp(&effective_todo.contains_key(&a_norm));
-            if group != Ordering::Equal { return group; }
-            let col_ord = match self.market_sort_col {
-                MarketSortCol::Name    => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-                MarketSortCol::Buy     => a.buy_price.cmp(&b.buy_price),
-                MarketSortCol::BuyDiff  => raw_diff(a.buy_price, a.mean_price).cmp(&raw_diff(b.buy_price, b.mean_price)),
-                MarketSortCol::Sell    => a.sell_price.cmp(&b.sell_price),
-                MarketSortCol::SellDiff => raw_diff(a.sell_price, a.mean_price).cmp(&raw_diff(b.sell_price, b.mean_price)),
-                MarketSortCol::Mean    => a.mean_price.cmp(&b.mean_price),
-                MarketSortCol::Stock   => a.stock.cmp(&b.stock),
-                MarketSortCol::Demand  => a.demand.cmp(&b.demand),
-            };
-            if asc { col_ord } else { col_ord.reverse() }
-        });
-        let mut lines: Vec<Line<'static>> = vec![Line::from(Span::styled(
+        let effective_todo = effective_todo_for_market(&station.commodities, todo_needed);
+        let sorted = sorted_commodities(&station.commodities, &effective_todo, self.market_sort_col, self.market_sort_asc);
+        let mut lines = vec![Line::from(Span::styled(
             format!("Market data as of: {}", fmt_ts(station.market_updated_at.as_ref())),
             Style::default().fg(Color::DarkGray),
         ))];
@@ -672,33 +738,9 @@ impl StationsView {
     }
 
     fn local_market_body(&self, commodities: &[edcas_common::api::CommodityResponse], todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
-        let effective_todo: HashMap<String, i32> = commodities.iter()
-            .filter(|c| c.buy_price > 0 && c.stock > 0)
-            .filter_map(|c| {
-                let norm = normalize_commodity_name(&c.name);
-                todo_needed.get(&norm).map(|&n| (norm, n))
-            })
-            .collect();
-        let mut sorted: Vec<&edcas_common::api::CommodityResponse> = commodities.iter().collect();
-        let asc = self.market_sort_asc;
-        sorted.sort_by(|a, b| {
-            let a_norm = normalize_commodity_name(&a.name);
-            let b_norm = normalize_commodity_name(&b.name);
-            let group = effective_todo.contains_key(&b_norm).cmp(&effective_todo.contains_key(&a_norm));
-            if group != Ordering::Equal { return group; }
-            let col_ord = match self.market_sort_col {
-                MarketSortCol::Name     => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-                MarketSortCol::Buy      => a.buy_price.cmp(&b.buy_price),
-                MarketSortCol::BuyDiff  => raw_diff(a.buy_price, a.mean_price).cmp(&raw_diff(b.buy_price, b.mean_price)),
-                MarketSortCol::Sell     => a.sell_price.cmp(&b.sell_price),
-                MarketSortCol::SellDiff => raw_diff(a.sell_price, a.mean_price).cmp(&raw_diff(b.sell_price, b.mean_price)),
-                MarketSortCol::Mean     => a.mean_price.cmp(&b.mean_price),
-                MarketSortCol::Stock    => a.stock.cmp(&b.stock),
-                MarketSortCol::Demand   => a.demand.cmp(&b.demand),
-            };
-            if asc { col_ord } else { col_ord.reverse() }
-        });
-        let mut lines: Vec<Line<'static>> = vec![Line::from(Span::styled(
+        let effective_todo = effective_todo_for_market(commodities, todo_needed);
+        let sorted = sorted_commodities(commodities, &effective_todo, self.market_sort_col, self.market_sort_asc);
+        let mut lines = vec![Line::from(Span::styled(
             "Local market data (from Market.json)",
             Style::default().fg(Color::DarkGray),
         ))];
@@ -707,34 +749,11 @@ impl StationsView {
     }
 
     fn outfitting_body(&self, station: &StationResponse) -> Vec<Line<'static>> {
-        if station.modules.is_empty() {
-            return vec![Line::from(Span::styled("No outfitting data available.", Style::default().fg(Color::DarkGray)))];
-        }
-        let mut lines = Vec::new();
-        let mut last_cat = String::new();
-        for m in &station.modules {
-            let cat = m.category.as_deref().unwrap_or("");
-            if cat != last_cat {
-                if !last_cat.is_empty() { lines.push(Line::from("")); }
-                lines.push(Line::from(Span::styled(format!("[{cat}]"), Style::default().fg(Color::Yellow))));
-                last_cat = cat.to_owned();
-            }
-            let name = m.name.as_deref().unwrap_or(&m.id);
-            let cost = if m.cost > 0 { format!("{:>12}", m.cost) } else { format!("{:>12}", "-") };
-            lines.push(Line::from(format!("  {:<36} {}", truncate(name, 36), cost)));
-        }
-        lines
+        outfitting_lines(&station.modules)
     }
 
     fn shipyard_body(&self, station: &StationResponse) -> Vec<Line<'static>> {
-        if station.ships.is_empty() {
-            return vec![Line::from(Span::styled("No shipyard data available.", Style::default().fg(Color::DarkGray)))];
-        }
-        station.ships.iter().map(|s| {
-            let name = s.name.as_deref().unwrap_or(&s.id);
-            let val = if s.basevalue > 0 { format!("{:>14}", s.basevalue) } else { format!("{:>14}", "-") };
-            Line::from(format!("{:<38} {}", truncate(name, 38), val))
-        }).collect()
+        shipyard_lines(&station.ships)
     }
 
     pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData) -> ViewEvent {
@@ -768,6 +787,7 @@ impl StationsView {
                         self.selected_idx -= 1;
                         self.detail_scroll = 0;
                         self.detail_tab = DetailTab::Overview;
+                        self.selected_market_id = self.mid_at_idx(history);
                     }
                 }
                 FocusArea::Detail => { self.detail_scroll = self.detail_scroll.saturating_sub(1); }
@@ -778,18 +798,23 @@ impl StationsView {
                         self.selected_idx += 1;
                         self.detail_scroll = 0;
                         self.detail_tab = DetailTab::Overview;
+                        self.selected_market_id = self.mid_at_idx(history);
                     }
                 }
                 FocusArea::Detail => { self.detail_scroll += 1; }
             },
             KeyCode::PageUp => match self.focus {
-                FocusArea::List => { self.selected_idx = self.selected_idx.saturating_sub(10); }
+                FocusArea::List => {
+                    self.selected_idx = self.selected_idx.saturating_sub(10);
+                    self.selected_market_id = self.mid_at_idx(history);
+                }
                 FocusArea::Detail => { self.detail_scroll = self.detail_scroll.saturating_sub(10); }
             },
             KeyCode::PageDown => match self.focus {
                 FocusArea::List => {
                     let max = self.display_count(history).saturating_sub(1);
                     self.selected_idx = (self.selected_idx + 10).min(max);
+                    self.selected_market_id = self.mid_at_idx(history);
                 }
                 FocusArea::Detail => { self.detail_scroll += 10; }
             },
@@ -854,31 +879,50 @@ impl StationsView {
     }
 }
 
+fn journal_station_to_response(s: &StationData) -> StationResponse {
+    StationResponse {
+        market_id: s.market_id,
+        system_address: 0,
+        system_name: s.system_name.clone(),
+        name: s.name.clone(),
+        station_type: Some(s.station_type.clone()),
+        faction_name: if s.faction.is_empty() { None } else { Some(s.faction.clone()) },
+        government: if s.government.is_empty() { None } else { Some(s.government.clone()) },
+        economy: if s.economy.is_empty() { None } else { Some(s.economy.clone()) },
+        economies: s.secondary_economies.iter()
+            .map(|(name, prop)| StationEconomyResponse { name: name.clone(), proportion: *prop })
+            .collect(),
+        services: s.services.clone(),
+        landing_pads: s.landing_pads.map(|(small, medium, large)| LandingPadsResponse { small, medium, large }),
+        dist_from_star_ls: if s.dist_from_star_ls > 0.0 { Some(s.dist_from_star_ls) } else { None },
+        carrier_name: None,
+        updated_at: None,
+        market_updated_at: None,
+        commodities: s.commodities.clone(),
+        modules: Vec::new(),
+        ships: Vec::new(),
+    }
+}
+
+fn merge_into_pinned(pinned: &mut Vec<StationResponse>, api_station: StationResponse) {
+    if let Some(existing) = pinned.iter_mut().find(|r| r.market_id == api_station.market_id) {
+        let keep_commodities = if api_station.commodities.is_empty() {
+            existing.commodities.clone()
+        } else {
+            api_station.commodities.clone()
+        };
+        *existing = api_station;
+        existing.commodities = keep_commodities;
+    } else {
+        pinned.push(api_station);
+    }
+}
+
 impl StationsView {
     pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData, todo: &TodoList, carrier_stock: &HashMap<String, i32>) {
         let history = &journal.visited_stations;
 
-        let mut todo_needed: HashMap<String, i32> = HashMap::new();
-        for construction in &todo.construction_items {
-            for res in &construction.resources {
-                let remaining = (res.required_amount - res.provided_amount).max(0);
-                if remaining > 0 {
-                    *todo_needed.entry(normalize_commodity_name(&res.commodity_name)).or_insert(0) += remaining;
-                }
-            }
-        }
-        for item in &journal.cargo {
-            let norm = normalize_commodity_name(&item.name);
-            if let Some(needed) = todo_needed.get_mut(&norm) {
-                *needed = (*needed - item.count).max(0);
-            }
-        }
-        for (norm, qty) in carrier_stock {
-            if let Some(needed) = todo_needed.get_mut(norm) {
-                *needed = (*needed - qty).max(0);
-            }
-        }
-        todo_needed.retain(|_, v| *v > 0);
+        let todo_needed = compute_todo_needed(&todo.construction_items, &journal.cargo, carrier_stock);
 
         let ship_cargo: HashMap<String, i32> = journal.cargo.iter()
             .map(|item| (normalize_commodity_name(&item.name), item.count))
@@ -921,7 +965,7 @@ impl StationsView {
         let detail_inner = detail_block.inner(chunks[1]);
         frame.render_widget(detail_block, chunks[1]);
 
-        let header_lines = self.build_detail_header_lines(history);
+        let header_lines = self.build_detail_header_lines(history, journal);
         let header_height = header_lines.len() as u16;
         let detail_split = Layout::default()
             .direction(Direction::Vertical)

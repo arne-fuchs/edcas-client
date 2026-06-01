@@ -12,8 +12,11 @@ use std::collections::{HashMap, HashSet};
 
 use crate::api_client::ApiClient;
 use crate::todo::TodoList;
-use std::cmp::Ordering;
-use crate::views::util::{commodity_header_line, commodity_row, normalize_commodity_name, raw_diff, truncate, CarrierDetailTab as DetailTab, FocusArea, MarketSortCol, SearchState};
+use crate::views::util::{
+    commodity_header_line, commodity_row, compute_todo_needed, effective_todo_for_market,
+    normalize_commodity_name, outfitting_lines, shipyard_lines, sorted_commodities, truncate,
+    CarrierDetailTab as DetailTab, FocusArea, MarketSortCol, SearchState,
+};
 use crate::views::ViewEvent;
 
 #[cfg(not(target_arch = "wasm32"))]
@@ -572,64 +575,17 @@ impl CarriersView {
         if carrier.commodities.is_empty() {
             return vec![Line::from(Span::styled("No market data available.", Style::default().fg(Color::DarkGray)))];
         }
-        let effective_todo: HashMap<String, i32> = carrier.commodities.iter()
-            .filter(|c| c.buy_price > 0 && c.stock > 0)
-            .filter_map(|c| {
-                let norm = normalize_commodity_name(&c.name);
-                todo_needed.get(&norm).map(|&n| (norm, n))
-            })
-            .collect();
-        let mut sorted: Vec<&edcas_common::api::CommodityResponse> = carrier.commodities.iter().collect();
-        let asc = self.market_sort_asc;
-        sorted.sort_by(|a, b| {
-            let a_norm = normalize_commodity_name(&a.name);
-            let b_norm = normalize_commodity_name(&b.name);
-            let group = effective_todo.contains_key(&b_norm).cmp(&effective_todo.contains_key(&a_norm));
-            if group != Ordering::Equal { return group; }
-            let col_ord = match self.market_sort_col {
-                MarketSortCol::Name    => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
-                MarketSortCol::Buy     => a.buy_price.cmp(&b.buy_price),
-                MarketSortCol::BuyDiff  => raw_diff(a.buy_price, a.mean_price).cmp(&raw_diff(b.buy_price, b.mean_price)),
-                MarketSortCol::Sell    => a.sell_price.cmp(&b.sell_price),
-                MarketSortCol::SellDiff => raw_diff(a.sell_price, a.mean_price).cmp(&raw_diff(b.sell_price, b.mean_price)),
-                MarketSortCol::Mean    => a.mean_price.cmp(&b.mean_price),
-                MarketSortCol::Stock   => a.stock.cmp(&b.stock),
-                MarketSortCol::Demand  => a.demand.cmp(&b.demand),
-            };
-            if asc { col_ord } else { col_ord.reverse() }
-        });
+        let effective_todo = effective_todo_for_market(&carrier.commodities, todo_needed);
+        let sorted = sorted_commodities(&carrier.commodities, &effective_todo, self.market_sort_col, self.market_sort_asc);
         sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo, carrier_stock)).collect()
     }
 
     fn outfitting_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
-        if carrier.modules.is_empty() {
-            return vec![Line::from(Span::styled("No outfitting data available.", Style::default().fg(Color::DarkGray)))];
-        }
-        let mut lines = Vec::new();
-        let mut last_cat = String::new();
-        for m in &carrier.modules {
-            let cat = m.category.as_deref().unwrap_or("");
-            if cat != last_cat {
-                if !last_cat.is_empty() { lines.push(Line::from("")); }
-                lines.push(Line::from(Span::styled(format!("[{cat}]"), Style::default().fg(Color::Yellow))));
-                last_cat = cat.to_owned();
-            }
-            let name = m.name.as_deref().unwrap_or(&m.id);
-            let cost = if m.cost > 0 { format!("{:>12}", m.cost) } else { format!("{:>12}", "-") };
-            lines.push(Line::from(format!("  {:<36} {}", truncate(name, 36), cost)));
-        }
-        lines
+        outfitting_lines(&carrier.modules)
     }
 
     fn shipyard_body(&self, carrier: &CarrierResponse) -> Vec<Line<'static>> {
-        if carrier.ships.is_empty() {
-            return vec![Line::from(Span::styled("No shipyard data available.", Style::default().fg(Color::DarkGray)))];
-        }
-        carrier.ships.iter().map(|s| {
-            let name = s.name.as_deref().unwrap_or(&s.id);
-            let val = if s.basevalue > 0 { format!("{:>14}", s.basevalue) } else { format!("{:>14}", "-") };
-            Line::from(format!("{:<38} {}", truncate(name, 38), val))
-        }).collect()
+        shipyard_lines(&carrier.ships)
     }
 
     fn inventory_body(&self, market_id: i64, journal: &JournalData, todo_needed: &HashMap<String, i32>) -> Vec<Line<'static>> {
@@ -833,27 +789,7 @@ impl CarriersView {
     pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData, todo: &TodoList, carrier_stock: &HashMap<String, i32>) {
         let history = &journal.visited_carriers;
 
-        let mut todo_needed: HashMap<String, i32> = HashMap::new();
-        for construction in &todo.construction_items {
-            for res in &construction.resources {
-                let remaining = (res.required_amount - res.provided_amount).max(0);
-                if remaining > 0 {
-                    *todo_needed.entry(normalize_commodity_name(&res.commodity_name)).or_insert(0) += remaining;
-                }
-            }
-        }
-        for item in &journal.cargo {
-            let norm = normalize_commodity_name(&item.name);
-            if let Some(needed) = todo_needed.get_mut(&norm) {
-                *needed = (*needed - item.count).max(0);
-            }
-        }
-        for (norm, qty) in carrier_stock {
-            if let Some(needed) = todo_needed.get_mut(norm) {
-                *needed = (*needed - qty).max(0);
-            }
-        }
-        todo_needed.retain(|_, v| *v > 0);
+        let todo_needed = compute_todo_needed(&todo.construction_items, &journal.cargo, carrier_stock);
 
         let ship_cargo: HashMap<String, i32> = journal.cargo.iter()
             .map(|item| (normalize_commodity_name(&item.name), item.count))

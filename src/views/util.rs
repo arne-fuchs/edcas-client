@@ -1,6 +1,7 @@
+use std::cmp::Ordering;
 use std::collections::HashMap;
 
-use edcas_common::api::CommodityResponse;
+use edcas_common::api::{CommodityResponse, ModuleResponse, ShipResponse};
 use ratatui::{
     style::{Color, Modifier, Style},
     text::{Line, Span},
@@ -256,4 +257,109 @@ impl CarrierDetailTab {
             Self::Inventory  => "Inventory",
         }
     }
+}
+
+/// Compute remaining construction needs, subtracting ship cargo and carrier stock.
+pub(super) fn compute_todo_needed(
+    construction_items: &[crate::todo::ConstructionTodoItem],
+    cargo: &[crate::journal_reader::CargoItem],
+    carrier_stock: &HashMap<String, i32>,
+) -> HashMap<String, i32> {
+    let mut needed: HashMap<String, i32> = HashMap::new();
+    for item in construction_items {
+        for res in &item.resources {
+            let remaining = (res.required_amount - res.provided_amount).max(0);
+            if remaining > 0 {
+                *needed.entry(normalize_commodity_name(&res.commodity_name)).or_insert(0) += remaining;
+            }
+        }
+    }
+    for c in cargo {
+        let norm = normalize_commodity_name(&c.name);
+        if let Some(n) = needed.get_mut(&norm) {
+            *n = (*n - c.count).max(0);
+        }
+    }
+    for (norm, qty) in carrier_stock {
+        if let Some(n) = needed.get_mut(norm) {
+            *n = (*n - qty).max(0);
+        }
+    }
+    needed.retain(|_, v| *v > 0);
+    needed
+}
+
+/// Filter `todo_needed` to only commodities a market actually has for sale.
+pub(super) fn effective_todo_for_market(
+    commodities: &[CommodityResponse],
+    todo_needed: &HashMap<String, i32>,
+) -> HashMap<String, i32> {
+    commodities.iter()
+        .filter(|c| c.buy_price > 0 && c.stock > 0)
+        .filter_map(|c| {
+            let norm = normalize_commodity_name(&c.name);
+            todo_needed.get(&norm).map(|&n| (norm, n))
+        })
+        .collect()
+}
+
+/// Sort commodities: todo items first, then by the chosen column.
+pub(super) fn sorted_commodities<'a>(
+    commodities: &'a [CommodityResponse],
+    effective_todo: &HashMap<String, i32>,
+    sort_col: MarketSortCol,
+    sort_asc: bool,
+) -> Vec<&'a CommodityResponse> {
+    let mut sorted: Vec<&CommodityResponse> = commodities.iter().collect();
+    sorted.sort_by(|a, b| {
+        let a_norm = normalize_commodity_name(&a.name);
+        let b_norm = normalize_commodity_name(&b.name);
+        let group = effective_todo.contains_key(&b_norm).cmp(&effective_todo.contains_key(&a_norm));
+        if group != Ordering::Equal { return group; }
+        let col_ord = match sort_col {
+            MarketSortCol::Name     => a.name.to_lowercase().cmp(&b.name.to_lowercase()),
+            MarketSortCol::Buy      => a.buy_price.cmp(&b.buy_price),
+            MarketSortCol::BuyDiff  => raw_diff(a.buy_price, a.mean_price).cmp(&raw_diff(b.buy_price, b.mean_price)),
+            MarketSortCol::Sell     => a.sell_price.cmp(&b.sell_price),
+            MarketSortCol::SellDiff => raw_diff(a.sell_price, a.mean_price).cmp(&raw_diff(b.sell_price, b.mean_price)),
+            MarketSortCol::Mean     => a.mean_price.cmp(&b.mean_price),
+            MarketSortCol::Stock    => a.stock.cmp(&b.stock),
+            MarketSortCol::Demand   => a.demand.cmp(&b.demand),
+        };
+        if sort_asc { col_ord } else { col_ord.reverse() }
+    });
+    sorted
+}
+
+/// Render outfitting module list (shared by station and carrier views).
+pub(super) fn outfitting_lines(modules: &[ModuleResponse]) -> Vec<Line<'static>> {
+    if modules.is_empty() {
+        return vec![Line::from(Span::styled("No outfitting data available.", Style::default().fg(Color::DarkGray)))];
+    }
+    let mut lines = Vec::new();
+    let mut last_cat = String::new();
+    for m in modules {
+        let cat = m.category.as_deref().unwrap_or("");
+        if cat != last_cat {
+            if !last_cat.is_empty() { lines.push(Line::from("")); }
+            lines.push(Line::from(Span::styled(format!("[{cat}]"), Style::default().fg(Color::Yellow))));
+            last_cat = cat.to_owned();
+        }
+        let name = m.name.as_deref().unwrap_or(&m.id);
+        let cost = if m.cost > 0 { format!("{:>12}", m.cost) } else { format!("{:>12}", "-") };
+        lines.push(Line::from(format!("  {:<36} {}", truncate(name, 36), cost)));
+    }
+    lines
+}
+
+/// Render shipyard ship list (shared by station and carrier views).
+pub(super) fn shipyard_lines(ships: &[ShipResponse]) -> Vec<Line<'static>> {
+    if ships.is_empty() {
+        return vec![Line::from(Span::styled("No shipyard data available.", Style::default().fg(Color::DarkGray)))];
+    }
+    ships.iter().map(|s| {
+        let name = s.name.as_deref().unwrap_or(&s.id);
+        let val = if s.basevalue > 0 { format!("{:>14}", s.basevalue) } else { format!("{:>14}", "-") };
+        Line::from(format!("{:<38} {}", truncate(name, 38), val))
+    }).collect()
 }

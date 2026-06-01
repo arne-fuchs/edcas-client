@@ -723,10 +723,15 @@ impl SettingsView {
 
             if let Some(parent) = settings_path.parent() {
                 let _ = std::fs::create_dir_all(parent);
-            }
-            match std::fs::write(&settings_path, json) {
-                Ok(_) => tracing::info!("Settings saved to {}", settings_path.display()),
-                Err(e) => tracing::error!("Failed to save settings to {}: {}", settings_path.display(), e),
+                let tmp = parent.join("settings.json.tmp");
+                if std::fs::write(&tmp, &json).is_ok() {
+                    match std::fs::rename(&tmp, &settings_path) {
+                        Ok(_) => tracing::info!("Settings saved to {}", settings_path.display()),
+                        Err(e) => tracing::error!("Failed to save settings to {}: {}", settings_path.display(), e),
+                    }
+                } else {
+                    tracing::error!("Failed to write settings tmp file");
+                }
             }
         }
     }

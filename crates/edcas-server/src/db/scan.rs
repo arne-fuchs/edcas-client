@@ -2,8 +2,6 @@ use chrono::{DateTime, Utc};
 use deadpool_postgres::Pool;
 use edcas_common::journal::{FssBodySignals, SaaSignalsFound, Scan};
 
-use super::tables::lookup_or_insert;
-
 pub async fn insert_scan(
     pool: &Pool,
     journal_id: i64,
@@ -26,14 +24,6 @@ async fn insert_star(
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
 
-    let star_type = lookup_or_insert(
-        &tx,
-        "star_type",
-        event.star_type.as_deref().unwrap_or(""),
-        journal_id,
-    )
-    .await?;
-
     tx.execute(
         "INSERT INTO star
             (id, system_address, name, stellar_mass, radius, surface_temperature,
@@ -50,7 +40,7 @@ async fn insert_star(
             &event.stellar_mass,
             &event.radius,
             &event.surface_temperature,
-            &star_type,
+            &event.star_type,
             &event.luminosity,
             &event.age_my,
             &journal_id,
@@ -61,8 +51,6 @@ async fn insert_star(
 
     if let Some(ref rings) = event.rings {
         for ring in rings {
-            let ring_class =
-                lookup_or_insert(&tx, "ring_class", &ring.ring_class, journal_id).await?;
             tx.execute(
                 "INSERT INTO ring
                     (body_id, system_address, ring_class, inner_rad, outer_rad, mass_mt, name, journal_id)
@@ -72,7 +60,7 @@ async fn insert_star(
                 &[
                     &event.body_id,
                     &event.system_address,
-                    &ring_class,
+                    &ring.ring_class,
                     &(ring.inner_rad as f32),
                     &(ring.outer_rad as f32),
                     &(ring.mass_mt as f32),
@@ -96,42 +84,6 @@ async fn insert_body(
 ) -> anyhow::Result<()> {
     let mut client = pool.get().await?;
     let tx = client.build_transaction().start().await?;
-
-    let planet_class = lookup_or_insert(
-        &tx,
-        "planet_class",
-        event.planet_class.as_deref().unwrap_or(""),
-        journal_id,
-    )
-    .await?;
-    let volcanism = lookup_or_insert(
-        &tx,
-        "volcanism",
-        event.volcanism.as_deref().unwrap_or(""),
-        journal_id,
-    )
-    .await?;
-    let atmosphere = lookup_or_insert(
-        &tx,
-        "atmosphere",
-        event.atmosphere.as_deref().unwrap_or(""),
-        journal_id,
-    )
-    .await?;
-    let atmosphere_type = lookup_or_insert(
-        &tx,
-        "atmosphere_type",
-        event.atmosphere_type.as_deref().unwrap_or(""),
-        journal_id,
-    )
-    .await?;
-    let terraform_state = lookup_or_insert(
-        &tx,
-        "terraform_state",
-        event.terraform_state.as_deref().unwrap_or(""),
-        journal_id,
-    )
-    .await?;
 
     tx.execute(
         "INSERT INTO body
@@ -159,19 +111,19 @@ async fn insert_body(
             &event.axial_tilt,
             &event.periapsis,
             &event.tidal_lock,
-            &volcanism,
+            &event.volcanism,
             &event.was_mapped,
-            &atmosphere,
+            &event.atmosphere,
             &event.mean_anomaly,
-            &planet_class,
+            &event.planet_class,
             &event.eccentricity,
             &event.ascending_node,
             &event.orbital_period,
             &event.semi_major_axis,
-            &atmosphere_type,
+            &event.atmosphere_type,
             &event.rotation_period,
             &event.surface_gravity,
-            &terraform_state,
+            &event.terraform_state,
             &event.surface_pressure,
             &event.orbital_inclination,
             &event.surface_temperature,
@@ -190,13 +142,11 @@ async fn insert_body(
     .await?;
     if let Some(ref comps) = event.atmosphere_composition {
         for comp in comps {
-            let atm_type =
-                lookup_or_insert(&tx, "atmosphere_type", &comp.name, journal_id).await?;
             tx.execute(
                 "INSERT INTO atmosphere_composition
                     (atmosphere_type, body_id, system_address, percent, journal_id)
                  VALUES ($1,$2,$3,$4,$5)",
-                &[&atm_type, &event.body_id, &event.system_address, &comp.percent, &journal_id],
+                &[&comp.name, &event.body_id, &event.system_address, &comp.percent, &journal_id],
             )
             .await?;
         }
@@ -210,13 +160,11 @@ async fn insert_body(
     .await?;
     if let Some(ref mats) = event.materials {
         for mat in mats {
-            let mat_type =
-                lookup_or_insert(&tx, "material_type", &mat.name, journal_id).await?;
             tx.execute(
                 "INSERT INTO planet_material
                     (material_type, body_id, system_address, percent, journal_id)
                  VALUES ($1,$2,$3,$4,$5)",
-                &[&mat_type, &event.body_id, &event.system_address, &(mat.percent as f32), &journal_id],
+                &[&mat.name, &event.body_id, &event.system_address, &(mat.percent as f32), &journal_id],
             )
             .await?;
         }
@@ -230,13 +178,11 @@ async fn insert_body(
     .await?;
     if let Some(ref comp) = event.composition {
         for (comp_name, percent) in [("Rock", comp.rock), ("Ice", comp.ice), ("Metal", comp.metal)] {
-            let comp_type =
-                lookup_or_insert(&tx, "planet_composition_type", comp_name, journal_id).await?;
             tx.execute(
                 "INSERT INTO planet_composition
                     (composition_type, body_id, system_address, percent, journal_id)
                  VALUES ($1,$2,$3,$4,$5)",
-                &[&comp_type, &event.body_id, &event.system_address, &percent, &journal_id],
+                &[&comp_name, &event.body_id, &event.system_address, &percent, &journal_id],
             )
             .await?;
         }
@@ -245,8 +191,6 @@ async fn insert_body(
     // Rings
     if let Some(ref rings) = event.rings {
         for ring in rings {
-            let ring_class =
-                lookup_or_insert(&tx, "ring_class", &ring.ring_class, journal_id).await?;
             tx.execute(
                 "INSERT INTO ring
                     (body_id, system_address, ring_class, inner_rad, outer_rad, mass_mt, name, journal_id)
@@ -256,7 +200,7 @@ async fn insert_body(
                 &[
                     &event.body_id,
                     &event.system_address,
-                    &ring_class,
+                    &ring.ring_class,
                     &(ring.inner_rad as f32),
                     &(ring.outer_rad as f32),
                     &(ring.mass_mt as f32),
@@ -309,13 +253,11 @@ pub async fn insert_fss_body_signals(
     .await?;
 
     for signal in &event.signals {
-        let signal_type =
-            lookup_or_insert(&tx, "signal_type", &signal.signal_type, journal_id).await?;
         tx.execute(
             "INSERT INTO fss_body_signals (body_id, system_address, signal_type, count, journal_id)
              VALUES ($1,$2,$3,$4,$5)
              ON CONFLICT ON CONSTRAINT fss_body_signals_pkey DO UPDATE SET count=$4, journal_id=$5",
-            &[&event.body_id, &event.system_address, &signal_type, &signal.count, &journal_id],
+            &[&event.body_id, &event.system_address, &signal.signal_type, &signal.count, &journal_id],
         )
         .await?;
     }
@@ -339,13 +281,11 @@ pub async fn insert_saa_signals(
     .await?;
 
     for signal in &event.signals {
-        let signal_type =
-            lookup_or_insert(&tx, "signal_type", &signal.signal_type, journal_id).await?;
         tx.execute(
             "INSERT INTO saa_signals (body_id, system_address, signal_type, count, journal_id)
              VALUES ($1,$2,$3,$4,$5)
              ON CONFLICT ON CONSTRAINT saa_signals_pkey DO UPDATE SET count=$4, journal_id=$5",
-            &[&event.body_id, &event.system_address, &signal_type, &signal.count, &journal_id],
+            &[&event.body_id, &event.system_address, &signal.signal_type, &signal.count, &journal_id],
         )
         .await?;
     }
