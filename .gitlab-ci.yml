@@ -9,7 +9,7 @@ variables:
   # Override DB_PASSWORD in GitLab CI/CD Settings > Variables (masked)
   # Paths on the runner host:
   DEPLOY_PATH: /mnt/m42/edcas
-  DATA_PATH: /home/debian/edacs-data
+  DATA_PATH: /home/debian/edcas-data
 
 build-web:
   stage: build
@@ -42,6 +42,7 @@ deploy:
   script:
     - mkdir -p $DEPLOY_PATH/crates/edcas-server $DATA_PATH/postgres-data
     - cp docker-compose.yml $DEPLOY_PATH/docker-compose.yml
+    - rm -rf $DEPLOY_PATH/crates/edcas-server/schema.sql
     - cp crates/edcas-server/schema.sql $DEPLOY_PATH/crates/edcas-server/schema.sql
     - |
       cd $DEPLOY_PATH && \
