@@ -2220,7 +2220,11 @@ pub fn build_body_tree(bodies: &[BodyScan]) -> Vec<TreeNode> {
         .filter(|&&id| !has_known_parent.contains(&id))
         .copied()
         .collect();
-    root_ids.sort();
+    root_ids.sort_by(|&a, &b| {
+        let dist_a = body_map.get(&a).map(|b| b.distance_from_arrival_ls).unwrap_or(0.0);
+        let dist_b = body_map.get(&b).map(|b| b.distance_from_arrival_ls).unwrap_or(0.0);
+        dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+    });
 
     root_ids
         .iter()
@@ -2235,7 +2239,11 @@ fn build_tree_node(
 ) -> TreeNode {
     let body = body_map[&body_id];
     let mut child_ids = children_of.get(&body_id).cloned().unwrap_or_default();
-    child_ids.sort();
+    child_ids.sort_by(|&a, &b| {
+        let dist_a = body_map.get(&a).map(|b| b.distance_from_arrival_ls).unwrap_or(0.0);
+        let dist_b = body_map.get(&b).map(|b| b.distance_from_arrival_ls).unwrap_or(0.0);
+        dist_a.partial_cmp(&dist_b).unwrap_or(std::cmp::Ordering::Equal)
+    });
     TreeNode {
         name: body.body_name.clone(),
         body_id,

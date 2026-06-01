@@ -672,7 +672,12 @@ impl StationsView {
             Style::default().fg(Color::DarkGray),
         ));
         let sel_style = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
-        let build_tag = |mid: i64| if self.construction_tracked.contains(&mid) { " \u{2699}" } else { "" };
+        let build_tag = |mid: i64| {
+            if self.construction_tracked.contains(&mid)
+                || journal.construction_depots.contains_key(&mid)
+                || self.depots.iter().any(|d| d.market_id == mid)
+            { " \u{2699}" } else { "" }
+        };
 
         let mut lines = Vec::new();
         lines.push(Line::from(vec![
@@ -718,7 +723,7 @@ impl StationsView {
         for station in stations.iter().filter(|s| self.construction_tracked.contains(&s.market_id) && !self.pinned_ids.contains(&s.market_id)) {
             shown.insert(station.market_id);
             item_line!(item_idx,
-                format!(" \u{2605} {:<26} {} \u{2699}", truncate(&station.name, 26), &station.station_type),
+                format!(" \u{2699} {:<26} {}", truncate(&station.name, 26), &station.station_type),
                 Style::default().fg(Color::Yellow));
         }
         if n_sec1 > 0 { any_above = true; }
@@ -989,6 +994,9 @@ impl StationsView {
         lines.push(Line::from(format!("System:    {}", station.system_name)));
         lines.push(Line::from(format!("Type:      {}", station.station_type.as_deref().unwrap_or("Unknown"))));
         lines.push(Line::from(format!("Market ID: {}", station.market_id)));
+        if let Some(dist) = station.dist_from_star_ls.filter(|&d| d > 0.0) {
+            lines.push(Line::from(format!("Distance:  {dist:.0} ls")));
+        }
         let faction = station.faction_name.as_deref().or_else(|| {
             journal.visited_stations.iter()
                 .find(|s| s.market_id == station.market_id)
@@ -1286,9 +1294,21 @@ impl StationsView {
                 }
             }
             KeyCode::Char('t') => {
-                if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Overview {
-                    if let Some(mid) = self.selected_construction_market_id(journal) {
-                        self.toggle_construction_todo(mid, journal, todo);
+                let ok_tab = self.focus == FocusArea::List
+                    || (self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Overview);
+                if ok_tab {
+                    let mid = self.mid_at_idx(journal);
+                    let is_construction = mid.map(|m| {
+                        self.construction_tracked.contains(&m)
+                            || journal.construction_depots.contains_key(&m)
+                            || self.depots.iter().any(|d| d.market_id == m)
+                    }).unwrap_or(false);
+                    if is_construction {
+                        if let Some(mid) = self.selected_construction_market_id(journal) {
+                            self.toggle_construction_todo(mid, journal, todo);
+                        } else {
+                            self.status_msg = "No resource data yet — dock at the construction depot first".into();
+                        }
                         return ViewEvent::Consumed;
                     }
                 }
