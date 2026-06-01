@@ -81,12 +81,11 @@ pub(super) fn raw_diff(price: i32, mean: i32) -> i32 {
 }
 
 /// Render one commodity row with buy/sell coloured relative to mean_price.
-/// `ship_cargo` and `carrier_stock` are shown next to the need count when non-zero.
+/// `ship_cargo` is shown next to the need count when non-zero.
 pub(super) fn commodity_row(
     c: &CommodityResponse,
     todo_needed: &HashMap<String, i32>,
     ship_cargo: &HashMap<String, i32>,
-    carrier_stock: &HashMap<String, i32>,
 ) -> Line<'static> {
     let buy_str = if c.buy_price > 0 { format!("{:>8}", c.buy_price) } else { format!("{:>8}", "-") };
     let sell_str = if c.sell_price > 0 { format!("{:>8}", c.sell_price) } else { format!("{:>8}", "-") };
@@ -119,12 +118,8 @@ pub(super) fn commodity_row(
         let dim_style = Style::default().fg(Color::Rgb(160, 130, 0));
         spans.push(Span::styled(format!("  \u{2605} need:{}", needed), tag_style));
         let in_ship = ship_cargo.get(&norm).copied().unwrap_or(0);
-        let in_carrier = carrier_stock.get(&norm).copied().unwrap_or(0);
         if in_ship > 0 {
             spans.push(Span::styled(format!("  ship:{}", in_ship), dim_style));
-        }
-        if in_carrier > 0 {
-            spans.push(Span::styled(format!("  carrier:{}", in_carrier), dim_style));
         }
     }
 
@@ -196,26 +191,26 @@ pub(super) enum StationDetailTab {
 impl StationDetailTab {
     pub(super) fn next(self) -> Option<Self> {
         match self {
-            Self::Overview => Some(Self::Market),
-            Self::Market => Some(Self::Outfitting),
+            Self::Overview   => Some(Self::Market),
+            Self::Market     => Some(Self::Outfitting),
             Self::Outfitting => Some(Self::Shipyard),
-            Self::Shipyard => None,
+            Self::Shipyard   => None,
         }
     }
     pub(super) fn prev(self) -> Option<Self> {
         match self {
-            Self::Overview => None,
-            Self::Market => Some(Self::Overview),
+            Self::Overview   => None,
+            Self::Market     => Some(Self::Overview),
             Self::Outfitting => Some(Self::Market),
-            Self::Shipyard => Some(Self::Outfitting),
+            Self::Shipyard   => Some(Self::Outfitting),
         }
     }
     pub(super) fn label(self) -> &'static str {
         match self {
-            Self::Overview => "Overview",
-            Self::Market => "Market",
+            Self::Overview   => "Overview",
+            Self::Market     => "Market",
             Self::Outfitting => "Outfitting",
-            Self::Shipyard => "Shipyard",
+            Self::Shipyard   => "Shipyard",
         }
     }
 }
@@ -227,43 +222,46 @@ pub(super) enum CarrierDetailTab {
     Outfitting,
     Shipyard,
     Inventory,
+    Construction,
 }
 
 impl CarrierDetailTab {
     pub(super) fn next(self) -> Option<Self> {
         match self {
-            Self::Overview   => Some(Self::Market),
-            Self::Market     => Some(Self::Outfitting),
-            Self::Outfitting => Some(Self::Shipyard),
-            Self::Shipyard   => Some(Self::Inventory),
-            Self::Inventory  => None,
+            Self::Overview      => Some(Self::Market),
+            Self::Market        => Some(Self::Outfitting),
+            Self::Outfitting    => Some(Self::Shipyard),
+            Self::Shipyard      => Some(Self::Inventory),
+            Self::Inventory     => Some(Self::Construction),
+            Self::Construction  => None,
         }
     }
     pub(super) fn prev(self) -> Option<Self> {
         match self {
-            Self::Overview   => None,
-            Self::Market     => Some(Self::Overview),
-            Self::Outfitting => Some(Self::Market),
-            Self::Shipyard   => Some(Self::Outfitting),
-            Self::Inventory  => Some(Self::Shipyard),
+            Self::Overview      => None,
+            Self::Market        => Some(Self::Overview),
+            Self::Outfitting    => Some(Self::Market),
+            Self::Shipyard      => Some(Self::Outfitting),
+            Self::Inventory     => Some(Self::Shipyard),
+            Self::Construction  => Some(Self::Inventory),
         }
     }
     pub(super) fn label(self) -> &'static str {
         match self {
-            Self::Overview   => "Overview",
-            Self::Market     => "Market",
-            Self::Outfitting => "Outfitting",
-            Self::Shipyard   => "Shipyard",
-            Self::Inventory  => "Inventory",
+            Self::Overview      => "Overview",
+            Self::Market        => "Market",
+            Self::Outfitting    => "Outfitting",
+            Self::Shipyard      => "Shipyard",
+            Self::Inventory     => "Inventory",
+            Self::Construction  => "Construction",
         }
     }
 }
 
-/// Compute remaining construction needs, subtracting ship cargo and carrier stock.
+/// Compute remaining construction needs, subtracting ship cargo.
 pub(super) fn compute_todo_needed(
     construction_items: &[crate::todo::ConstructionTodoItem],
     cargo: &[crate::journal_reader::CargoItem],
-    carrier_stock: &HashMap<String, i32>,
 ) -> HashMap<String, i32> {
     let mut needed: HashMap<String, i32> = HashMap::new();
     for item in construction_items {
@@ -278,11 +276,6 @@ pub(super) fn compute_todo_needed(
         let norm = normalize_commodity_name(&c.name);
         if let Some(n) = needed.get_mut(&norm) {
             *n = (*n - c.count).max(0);
-        }
-    }
-    for (norm, qty) in carrier_stock {
-        if let Some(n) = needed.get_mut(norm) {
-            *n = (*n - qty).max(0);
         }
     }
     needed.retain(|_, v| *v > 0);

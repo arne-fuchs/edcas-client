@@ -14,7 +14,7 @@ use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::{BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData, ParentType};
 use crate::settings::Settings;
 use crate::views::{
-    CarriersView, CommanderView, ConstructionView, ExplorerView, FactionsView,
+    CommanderView, ExplorerView, FactionsView,
     NewsView, SearchNearestView, SettingsView, StationsView,
     TodoView, TradeRoutesView, ViewEvent, WorkshopView,
 };
@@ -28,9 +28,7 @@ pub const TABS: &[&str] = &[
     "News",
     "Explorer",
     "Stations",
-    "Carriers",
     "BGS",
-    "Colonise",
     "Trade",
     "Commander",
     "Workshop",
@@ -44,16 +42,14 @@ pub enum AppView {
     News = 0,
     Explorer = 1,
     Stations = 2,
-    Carriers = 3,
-    Factions = 4,
-    Construction = 5,
-    TradeRoutes = 6,
-    Commander = 7,
-    Workshop = 8,
-    Todo = 9,
-    Settings = 10,
+    Factions = 3,
+    TradeRoutes = 4,
+    Commander = 5,
+    Workshop = 6,
+    Todo = 7,
+    Settings = 8,
     /// Not in the tab bar — reached only via context (e.g. `f` in Todo).
-    SearchNearest = 11,
+    SearchNearest = 9,
 }
 
 impl AppView {
@@ -61,10 +57,8 @@ impl AppView {
         match self {
             AppView::News => AppView::Explorer,
             AppView::Explorer => AppView::Stations,
-            AppView::Stations => AppView::Carriers,
-            AppView::Carriers => AppView::Factions,
-            AppView::Factions => AppView::Construction,
-            AppView::Construction => AppView::TradeRoutes,
+            AppView::Stations => AppView::Factions,
+            AppView::Factions => AppView::TradeRoutes,
             AppView::TradeRoutes => AppView::Commander,
             AppView::Commander => AppView::Workshop,
             AppView::Workshop => AppView::Todo,
@@ -79,10 +73,8 @@ impl AppView {
             AppView::News => AppView::Settings,
             AppView::Explorer => AppView::News,
             AppView::Stations => AppView::Explorer,
-            AppView::Carriers => AppView::Stations,
-            AppView::Factions => AppView::Carriers,
-            AppView::Construction => AppView::Factions,
-            AppView::TradeRoutes => AppView::Construction,
+            AppView::Factions => AppView::Stations,
+            AppView::TradeRoutes => AppView::Factions,
             AppView::Commander => AppView::TradeRoutes,
             AppView::Workshop => AppView::Commander,
             AppView::Todo => AppView::Workshop,
@@ -123,16 +115,13 @@ pub struct App {
     pub explorer: ExplorerView,
     pub workshop: WorkshopView,
     pub stations: StationsView,
-    pub carriers: CarriersView,
     pub factions: FactionsView,
-    pub construction: ConstructionView,
     pub trade_routes: TradeRoutesView,
     pub todo_view: TodoView,
     pub search_nearest: SearchNearestView,
     pub settings_view: SettingsView,
     pub should_quit: bool,
     pub next_tick: Option<chrono::DateTime<chrono::Utc>>,
-    my_carrier_data: crate::my_carriers::MyCarriersData,
     #[cfg(not(target_arch = "wasm32"))]
     last_docked_market_id: Option<i64>,
 }
@@ -180,16 +169,13 @@ impl App {
             explorer: ExplorerView::new(),
             workshop: WorkshopView::new(),
             stations: StationsView::new(),
-            carriers: CarriersView::new(),
             factions: FactionsView::new(),
-            construction: ConstructionView::new(),
             trade_routes: TradeRoutesView::new(),
             todo_view: TodoView::new(),
             search_nearest: SearchNearestView::new(),
             settings_view: SettingsView::new(),
             should_quit: false,
             next_tick: None,
-            my_carrier_data: crate::my_carriers::MyCarriersData::load(),
             last_docked_market_id: None,
         };
         app.news.start_fetch(&app.api);
@@ -211,16 +197,13 @@ impl App {
             explorer: ExplorerView::new(),
             workshop: WorkshopView::new(),
             stations: StationsView::new(),
-            carriers: CarriersView::new(),
             factions: FactionsView::new(),
-            construction: ConstructionView::new(),
             trade_routes: TradeRoutesView::new(),
             todo_view: TodoView::new(),
             search_nearest: SearchNearestView::new(),
             settings_view: SettingsView::new(),
             should_quit: false,
             next_tick: None,
-            my_carrier_data: crate::my_carriers::MyCarriersData::load(),
         }
     }
 
@@ -266,11 +249,10 @@ impl App {
             }
 
             self.journal = data;
-            self.persist_my_carrier_cargo();
 
             // Keep the stations view selection on the same station even when
             // visited_stations changes order (e.g., a new dock prepends a station).
-            self.stations.on_journal_update(&self.journal.visited_stations);
+            self.stations.on_journal_update(&self.journal);
 
             // Auto-fetch full market data when docking at a non-carrier station.
             let new_dock = self.journal.last_docked.as_ref().map(|(mid, _, _, _)| *mid);
@@ -295,7 +277,7 @@ impl App {
             }
             self.explorer.update(&self.journal);
 
-            self.construction.update_from_journal(&self.api, &self.journal, &mut self.todo_view.todo);
+            self.stations.update_construction_from_journal(&self.api, &self.journal, &mut self.todo_view.todo);
         }
 
         self.trade_routes.poll_results();
@@ -321,50 +303,6 @@ impl App {
                     info!("API returned {} bodies, all already present locally", api_bodies.len());
                 }
             }
-        }
-    }
-
-    #[cfg(not(target_arch = "wasm32"))]
-    fn persist_my_carrier_cargo(&mut self) {
-        let my_ids: Vec<i64> = self.carriers.my_carrier_ids().iter().copied().collect();
-        let mut changed = false;
-
-        // Remove carriers no longer marked as mine
-        self.my_carrier_data.carriers.retain(|id, _| {
-            if !my_ids.contains(id) {
-                changed = true;
-                false
-            } else {
-                true
-            }
-        });
-
-        for &id in &my_ids {
-            if let Some(live) = self.journal.carrier_cargo.get(&id) {
-                let entry = self.my_carrier_data.carriers.entry(id).or_insert_with(|| {
-                    changed = true;
-                    std::collections::HashMap::new()
-                });
-                if entry != live {
-                    *entry = live.clone();
-                    changed = true;
-                }
-            } else {
-                // No live data this session; ensure the key exists to mark carrier as mine
-                if !self.my_carrier_data.carriers.contains_key(&id) {
-                    self.my_carrier_data.carriers.insert(id, std::collections::HashMap::new());
-                    changed = true;
-                }
-            }
-        }
-
-        if changed {
-            // Record the latest journal event timestamp so that on a mid-session restart
-            // we can skip CargoTransfer events already captured in this snapshot.
-            if !self.journal.latest_event_timestamp.is_empty() {
-                self.my_carrier_data.snapshot_timestamp = self.journal.latest_event_timestamp.clone();
-            }
-            self.my_carrier_data.save();
         }
     }
 
@@ -443,19 +381,12 @@ impl App {
             AppView::Explorer => self.explorer.render(frame, area, &self.settings, &self.journal),
             AppView::Workshop => self.workshop.render(frame, area, &self.journal),
             AppView::Stations => {
-                let cs = self.carriers.my_carrier_stock(&self.journal);
-                self.stations.render(frame, area, &self.journal, &self.todo_view.todo, &cs);
-            }
-            AppView::Carriers => {
-                let cs = self.carriers.my_carrier_stock(&self.journal);
-                self.carriers.render(frame, area, &self.journal, &self.todo_view.todo, &cs);
+                self.stations.render(frame, area, &self.journal, &self.todo_view.todo);
             }
             AppView::Factions => self.factions.render(frame, area),
-            AppView::Construction => self.construction.render(frame, area, &self.journal, &self.todo_view.todo),
             AppView::TradeRoutes => self.trade_routes.render(frame, area, &self.journal),
             AppView::Todo => {
-                let cs = self.carriers.my_carrier_stock(&self.journal);
-                self.todo_view.render(frame, area, &self.journal, &cs);
+                self.todo_view.render(frame, area, &self.journal);
             }
             AppView::SearchNearest => self.search_nearest.render(frame, area),
             AppView::Settings => self.settings_view.render(frame, area, &self.settings),
@@ -468,10 +399,8 @@ impl App {
             AppView::Commander   => &[("tab", "switch view"), ("w/s", "scroll/navigate")],
             AppView::Explorer    => &[("tab", "panel"), ("w/s", "factions"), ("a/d", "systems"), ("space", "open")],
             AppView::Workshop    => &[("1/2", "switch view"), ("w/s", "navigate"), ("a/d", "panels/grade")],
-            AppView::Stations    => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
-            AppView::Carriers    => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("p", "pin"), ("m", "my carrier")],
+            AppView::Stations    => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin"), ("t", "todo"), ("f", "nearest")],
             AppView::Factions    => &[("enter", "search"), ("w/s", "navigate"), ("tab", "panel"), ("a/d", "sub-tabs"), ("c", "copy system"), ("p", "pin")],
-            AppView::Construction => &[("f", "filter"), ("enter/tab", "panel"), ("w/s", "navigate"), ("t", "todo"), ("r", "remove")],
             AppView::TradeRoutes => &[("tab", "cycle panels"), ("w/s", "navigate"), ("c", "copy system(s)"), ("r", "refresh")],
             AppView::Todo        => &[("tab", "switch panel"), ("w/s", "navigate"), ("r/Del", "remove"), ("f", "search nearest")],
             AppView::SearchNearest => &[("w/s", "navigate"), ("q", "back to Todo")],
@@ -552,13 +481,8 @@ impl App {
             AppView::Commander => self.commander.handle_key(key, &self.journal),
             AppView::Explorer => self.explorer.handle_key(key),
             AppView::Workshop => self.workshop.handle_key(key),
-            AppView::Stations => self.stations.handle_key(key, &self.api, &self.journal),
-            AppView::Carriers => self.carriers.handle_key(key, &self.api, &self.journal),
+            AppView::Stations => self.stations.handle_key(key, &self.api, &self.journal, &mut self.todo_view.todo),
             AppView::Factions => self.factions.handle_key(key, &self.api),
-            AppView::Construction => {
-                let todo = &mut self.todo_view.todo;
-                self.construction.handle_key(key, &self.api, &self.journal, todo)
-            }
             AppView::TradeRoutes => self.trade_routes.handle_key(key, &self.api, &self.journal),
             AppView::Todo => self.todo_view.handle_key(key, &self.journal),
             AppView::SearchNearest => self.search_nearest.handle_key(key, &self.api),
@@ -584,6 +508,11 @@ impl App {
                 info!("Opening Search Nearest: commodity={}, canonical={}, system={}, pad={}", commodity, canonical_name, system, ship_pad_size);
                 self.search_nearest.prefill_and_search(&commodity, &canonical_name, &system, ship_pad_size, &self.api);
                 self.view = AppView::SearchNearest;
+                return;
+            }
+            ViewEvent::TrackConstruction(market_id) => {
+                info!("Tracking construction site {} from Stations pin", market_id);
+                self.stations.track_construction(market_id, &self.api);
                 return;
             }
             ViewEvent::None => {}
@@ -615,12 +544,9 @@ impl App {
         match self.view {
             AppView::News => self.news.start_fetch(&self.api),
             AppView::Stations => {
-                let history = &self.journal.visited_stations;
-                self.stations.on_enter(&self.api, history);
+                self.stations.on_enter(&self.api, &self.journal);
             }
-            AppView::Carriers => self.carriers.on_enter(&self.api),
             AppView::Factions => self.factions.on_enter(&self.api),
-            AppView::Construction => self.construction.on_enter(&self.api),
             AppView::TradeRoutes => {
                 let journal = &self.journal;
                 self.trade_routes.on_enter(&self.api, journal);
@@ -636,8 +562,7 @@ impl App {
         self.stations.poll_search();
         #[cfg(not(target_arch = "wasm32"))]
         self.stations.poll_auto_fetch();
-        self.carriers.poll_search();
-        self.construction.poll_search();
+        self.stations.poll_construction();
         self.search_nearest.poll_search();
         #[cfg(target_arch = "wasm32")] {
             self.trade_routes.poll_search();

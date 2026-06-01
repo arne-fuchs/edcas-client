@@ -242,7 +242,7 @@ impl CarriersView {
         self.build_display_list(history).into_iter().nth(self.selected_idx)
     }
 
-    fn toggle_pin(&mut self, api: &ApiClient, history: &[StationData]) {
+    fn toggle_pin(&mut self, api: &ApiClient, history: &[StationData]) -> Option<i64> {
         let n = self.pinned_results.len();
         if self.selected_idx < n {
             let mid = self.pinned_results[self.selected_idx].market_id;
@@ -254,39 +254,46 @@ impl CarriersView {
             } else {
                 self.selected_idx = 0;
             }
-        } else {
-            let j = self.selected_idx - n;
-            let deduped_search: Vec<&CarrierResponse> = self.results.iter()
-                .filter(|c| !self.pinned_ids.contains(&c.market_id))
-                .collect();
-            if j < deduped_search.len() {
-                let carrier = deduped_search[j].clone();
-                let mid = carrier.market_id;
-                self.pinned_ids.insert(mid);
-                self.pinned_results.push(carrier);
-                self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
-                if let Some(pos) = self.pinned_results.iter().position(|c| c.market_id == mid) {
-                    self.selected_idx = pos;
-                }
-            } else {
-                let search_ids: HashSet<i64> = self.results.iter().map(|c| c.market_id).collect();
-                let hist_deduped: Vec<&StationData> = history.iter()
-                    .filter(|c| !self.pinned_ids.contains(&c.market_id) && !search_ids.contains(&c.market_id))
-                    .collect();
-                let hi = j - deduped_search.len();
-                if let Some(h) = hist_deduped.get(hi) {
-                    let mid = h.market_id;
-                    self.pinned_ids.insert(mid);
-                    #[cfg(not(target_arch = "wasm32"))]
-                    self.refresh_pins(api);
-                    self.selected_idx = 0;
-                } else if !self.pinned_ids.is_empty() {
-                    #[cfg(not(target_arch = "wasm32"))]
-                    self.refresh_pins(api);
-                }
-            }
+            self.save_pins();
+            return None;
         }
+        let j = self.selected_idx - n;
+        let deduped_search: Vec<&CarrierResponse> = self.results.iter()
+            .filter(|c| !self.pinned_ids.contains(&c.market_id))
+            .collect();
+        let pinned_mid = if j < deduped_search.len() {
+            let carrier = deduped_search[j].clone();
+            let mid = carrier.market_id;
+            self.pinned_ids.insert(mid);
+            self.pinned_results.push(carrier);
+            self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+            if let Some(pos) = self.pinned_results.iter().position(|c| c.market_id == mid) {
+                self.selected_idx = pos;
+            }
+            Some(mid)
+        } else {
+            let search_ids: HashSet<i64> = self.results.iter().map(|c| c.market_id).collect();
+            let hist_deduped: Vec<&StationData> = history.iter()
+                .filter(|c| !self.pinned_ids.contains(&c.market_id) && !search_ids.contains(&c.market_id))
+                .collect();
+            let hi = j - deduped_search.len();
+            if let Some(h) = hist_deduped.get(hi) {
+                let mid = h.market_id;
+                self.pinned_ids.insert(mid);
+                #[cfg(not(target_arch = "wasm32"))]
+                self.refresh_pins(api);
+                self.selected_idx = 0;
+                Some(mid)
+            } else {
+                if !self.pinned_ids.is_empty() {
+                    #[cfg(not(target_arch = "wasm32"))]
+                    self.refresh_pins(api);
+                }
+                None
+            }
+        };
         self.save_pins();
+        pinned_mid
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -385,8 +392,9 @@ impl CarriersView {
             } else {
                 Style::default().fg(Color::White)
             };
+            let mine_tag = if self.my_carrier_ids.contains(&carrier.market_id) { " \u{25c6}mine" } else { "" };
             lines.push(Line::from(Span::styled(
-                format!("   {}", carrier_display(carrier, 34)),
+                format!("   {}{}", carrier_display(carrier, 34), mine_tag),
                 style,
             )));
         }
@@ -402,13 +410,15 @@ impl CarriersView {
             for (k, carrier) in hist_deduped.iter().enumerate() {
                 let i = n_pinned + n_search + k;
                 let selected = self.focus == FocusArea::List && i == self.selected_idx;
+                let is_mine = self.my_carrier_ids.contains(&carrier.market_id);
                 let style = if selected {
                     Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
                 } else {
                     Style::default().fg(Color::Rgb(100, 180, 200))
                 };
+                let mine_tag = if is_mine { " \u{25c6}mine" } else { "" };
                 lines.push(Line::from(Span::styled(
-                    format!(" \u{231a} {}", truncate(&carrier.name, 34)),
+                    format!(" \u{231a} {}{}", truncate(&carrier.name, 34), mine_tag),
                     style,
                 )));
             }
@@ -454,7 +464,7 @@ impl CarriersView {
 
         let tab_active = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
         let tab_inactive = Style::default().fg(Color::Rgb(255, 140, 0));
-        let tabs = [DetailTab::Overview, DetailTab::Market, DetailTab::Outfitting, DetailTab::Shipyard, DetailTab::Inventory];
+        let tabs = [DetailTab::Overview, DetailTab::Market, DetailTab::Outfitting, DetailTab::Shipyard, DetailTab::Inventory, DetailTab::Construction];
         let tab_spans: Vec<Span> = tabs.iter().flat_map(|&t| {
             let style = if t == self.detail_tab { tab_active } else { tab_inactive };
             [Span::styled(format!(" {} ", t.label()), style), Span::raw("  ")]
@@ -521,15 +531,35 @@ impl CarriersView {
                 DetailTab::Outfitting => self.outfitting_body(carrier),
                 DetailTab::Shipyard => self.shipyard_body(carrier),
                 DetailTab::Inventory => self.inventory_body(carrier.market_id, journal, todo_needed),
+                DetailTab::Construction => Self::construction_body(carrier.market_id, journal),
             },
             Some(ListItem::Journal(carrier)) => match self.detail_tab {
                 DetailTab::Overview => self.journal_overview_body(carrier),
                 DetailTab::Inventory => self.inventory_body(carrier.market_id, journal, todo_needed),
+                DetailTab::Construction => Self::construction_body(carrier.market_id, journal),
                 _ => vec![Line::from(Span::styled(
                     "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
                     Style::default().fg(Color::DarkGray),
                 ))],
             },
+        }
+    }
+
+    fn construction_body(market_id: i64, journal: &JournalData) -> Vec<Line<'static>> {
+        if let Some(depot) = journal.construction_depots.get(&market_id) {
+            super::construction::depot_detail_lines_local(depot)
+        } else {
+            vec![
+                Line::from(Span::styled(
+                    "No construction data for this site.",
+                    Style::default().fg(Color::DarkGray),
+                )),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "Dock at the construction site to load resource requirements.",
+                    Style::default().fg(Color::Rgb(180, 180, 180)),
+                )),
+            ]
         }
     }
 
@@ -690,7 +720,11 @@ impl CarriersView {
             }
             KeyCode::Char('p') => {
                 if self.display_count(history) > 0 {
-                    self.toggle_pin(api, history);
+                    if let Some(pinned_mid) = self.toggle_pin(api, history) {
+                        if journal.construction_depots.contains_key(&pinned_mid) {
+                            return ViewEvent::TrackConstruction(pinned_mid);
+                        }
+                    }
                 }
                 return ViewEvent::Consumed;
             }

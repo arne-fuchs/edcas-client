@@ -211,7 +211,7 @@ impl TodoView {
         lines
     }
 
-    fn build_right_lines(&self, journal: &JournalData, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
+    fn build_right_lines(&self, journal: &JournalData, ship_cargo: &HashMap<String, i32>) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
         match self.selected_kind() {
             None => {
@@ -333,7 +333,6 @@ impl TodoView {
 
                     let norm = normalize_commodity_name(raw_name);
                     let in_ship = ship_cargo.get(&norm).copied().unwrap_or(0);
-                    let in_carrier = carrier_stock.get(&norm).copied().unwrap_or(0);
 
                     let row_selected = self.focus == TodoFocus::Right && res_idx == self.resource_selected_idx;
                     let row_style = if row_selected {
@@ -360,20 +359,9 @@ impl TodoView {
                             if row_selected { row_style } else { Style::default().fg(Color::DarkGray) },
                         ),
                     ];
-                    if !row_selected {
-                        if in_ship > 0 {
-                            spans.push(Span::styled(format!("  ship:{}", in_ship), dim_orange));
-                        }
-                        if in_carrier > 0 {
-                            spans.push(Span::styled(format!("  carrier:{}", in_carrier), dim_orange));
-                        }
-                    } else {
-                        if in_ship > 0 {
-                            spans.push(Span::styled(format!("  ship:{}", in_ship), row_style));
-                        }
-                        if in_carrier > 0 {
-                            spans.push(Span::styled(format!("  carrier:{}", in_carrier), row_style));
-                        }
+                    if in_ship > 0 {
+                        let style = if row_selected { row_style } else { dim_orange };
+                        spans.push(Span::styled(format!("  ship:{}", in_ship), style));
                     }
                     lines.push(Line::from(spans));
                 }
@@ -530,11 +518,7 @@ impl TodoView {
                                 .map(|r| (r.display_name.clone(), r.commodity_name.clone()))
                         };
                         if let Some((commodity, raw_name)) = names {
-                            let canonical_name = raw_name
-                                .trim_start_matches('$')
-                                .trim_end_matches(';')
-                                .trim_end_matches("_name")
-                                .to_string();
+                            let canonical_name = super::search_nearest::resolve_commodity_canonical(&raw_name);
                             let system = journal.current_system
                                 .as_ref()
                                 .map(|s| s.name.clone())
@@ -606,7 +590,7 @@ impl TodoView {
         ViewEvent::None
     }
 
-    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData, carrier_stock: &HashMap<String, i32>) {
+    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData) {
         let ship_cargo: HashMap<String, i32> = journal.cargo.iter()
             .map(|item| (normalize_commodity_name(&item.name), item.count))
             .collect();
@@ -636,7 +620,7 @@ impl TodoView {
             )
         } else {
             (
-                self.build_right_lines(journal, &ship_cargo, carrier_stock),
+                self.build_right_lines(journal, &ship_cargo),
                 " Materials (w/s: navigate  Tab: switch panel  g: all) ".to_string(),
             )
         };

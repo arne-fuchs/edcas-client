@@ -1,5 +1,4 @@
 mod about;
-mod carriers;
 mod commander;
 mod construction;
 pub(super) mod engineers;
@@ -30,9 +29,7 @@ pub(super) fn annotate_faction_state(state: &str, is_pending: bool) -> String {
     }
 }
 
-pub use carriers::CarriersView;
 pub use commander::CommanderView;
-pub use construction::ConstructionView;
 pub use event::ViewEvent;
 pub use explorer::ExplorerView;
 pub use factions::FactionsView;

@@ -217,6 +217,27 @@ static COMMODITY_NAMES: &[&str] = &[
     "Wreckage Components",
 ];
 
+/// Resolve a raw journal commodity key (e.g. `"$buildingfabricators_name;"`) to the
+/// proper canonical name used by the API (e.g. `"Building Fabricators"`).
+/// Strips `$`, `;`, `_Name`, `_name`, then matches against the known commodity list
+/// by normalizing both sides to lowercase alphanumeric.
+pub(super) fn resolve_commodity_canonical(raw: &str) -> String {
+    let base = raw
+        .trim_start_matches('$')
+        .trim_end_matches(';')
+        .trim_end_matches("_Name")
+        .trim_end_matches("_name");
+    let normalized = base.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_lowercase();
+    COMMODITY_NAMES
+        .iter()
+        .find(|&&name| {
+            let n = name.chars().filter(|c| c.is_alphanumeric()).collect::<String>().to_lowercase();
+            n == normalized
+        })
+        .map(|&s| s.to_string())
+        .unwrap_or_else(|| base.to_string())
+}
+
 #[derive(Clone, Copy, PartialEq)]
 enum ActiveField {
     Commodity,

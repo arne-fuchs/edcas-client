@@ -1,6 +1,9 @@
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::{JournalData, StationData};
-use edcas_common::api::{LandingPadsResponse, StationEconomyResponse, StationQuery, StationResponse};
+use edcas_common::api::{
+    ConstructionDepotResponse, ConstructionQuery,
+    LandingPadsResponse, StationEconomyResponse, StationQuery, StationResponse,
+};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
@@ -11,7 +14,7 @@ use ratatui::{
 use std::collections::{HashMap, HashSet};
 
 use crate::api_client::ApiClient;
-use crate::todo::TodoList;
+use crate::todo::{ConstructionTodoItem, ConstructionTodoResource, TodoList};
 use crate::views::util::{
     commodity_header_line, commodity_row, compute_todo_needed, effective_todo_for_market,
     fmt_ts, normalize_commodity_name, outfitting_lines, shipyard_lines, sorted_commodities, truncate,
@@ -41,6 +44,16 @@ pub struct StationsView {
     /// Market IDs for which an auto-fetch was attempted (regardless of outcome),
     /// so we don't retry on every journal update.
     auto_fetch_attempted: HashSet<i64>,
+    /// Tracked construction depot IDs — source of truth, persisted to pins.json.
+    construction_tracked: HashSet<i64>,
+    /// Full API data for tracked depots (cross-session fallback when not docked).
+    depots: Vec<ConstructionDepotResponse>,
+    /// Index of the currently selected resource row in the construction overview.
+    construction_resource_idx: usize,
+    #[cfg(not(target_arch = "wasm32"))]
+    loading_depots: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_depots: Arc<Mutex<Option<Result<Vec<ConstructionDepotResponse>, String>>>>,
     selected_idx: usize,
     /// Market ID of the currently selected station; used to re-resolve selected_idx
     /// when visited_stations changes order (e.g., a new dock inserts at position 0).
@@ -81,6 +94,13 @@ impl StationsView {
             pinned_results: Vec::new(),
             auto_fetched: HashMap::new(),
             auto_fetch_attempted: HashSet::new(),
+            construction_tracked: pins.constructions,
+            depots: Vec::new(),
+            construction_resource_idx: 0,
+            #[cfg(not(target_arch = "wasm32"))]
+            loading_depots: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_depots: Arc::new(Mutex::new(None)),
             selected_idx: 0,
             selected_market_id: None,
             list_scroll: 0,
@@ -168,8 +188,8 @@ impl StationsView {
         }
     }
 
-    pub fn on_enter(&mut self, api: &ApiClient, history: &[StationData]) {
-        // Immediately populate stubs from journal for any pinned IDs not yet in pinned_results.
+    pub fn on_enter(&mut self, api: &ApiClient, journal: &JournalData) {
+        let history = &journal.visited_stations;
         for &mid in &self.pinned_ids {
             if !self.pinned_results.iter().any(|r| r.market_id == mid) {
                 if let Some(h) = history.iter().find(|s| s.market_id == mid) {
@@ -181,6 +201,14 @@ impl StationsView {
         #[cfg(not(target_arch = "wasm32"))]
         if !self.pinned_ids.is_empty() && !self.loading_pins {
             self.refresh_pins(api);
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        {
+            let has_unloaded = self.construction_tracked.iter()
+                .any(|id| !self.depots.iter().any(|d| d.market_id == *id));
+            if has_unloaded && !self.loading_depots {
+                self.refresh_tracked(api);
+            }
         }
     }
 
@@ -213,6 +241,178 @@ impl StationsView {
         pins.save();
     }
 
+    fn save_tracked(&self) {
+        let mut pins = crate::pins::Pins::load();
+        pins.constructions = self.construction_tracked.clone();
+        pins.save();
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    fn refresh_tracked(&mut self, api: &ApiClient) {
+        self.loading_depots = true;
+        let pending = Arc::clone(&self.pending_depots);
+        let api_owned = api.clone();
+        let ids: Vec<i64> = self.construction_tracked.iter()
+            .filter(|id| !self.depots.iter().any(|d| &&d.market_id == id))
+            .copied()
+            .collect();
+        api.spawn(async move {
+            let mut results = Vec::new();
+            for mid in ids {
+                let query = ConstructionQuery {
+                    market_id: Some(mid),
+                    limit: Some(1),
+                    name: None,
+                    system_name: None,
+                };
+                if let Ok(mut r) = api_owned.search_construction_depots(&query).await {
+                    if let Some(d) = r.pop() {
+                        results.push(d);
+                    }
+                }
+            }
+            *pending.lock().unwrap() = Some(Ok(results));
+        });
+    }
+
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn poll_construction(&mut self) {
+        if let Some(result) = self.pending_depots.lock().unwrap().take() {
+            self.loading_depots = false;
+            if let Ok(new_depots) = result {
+                for depot in new_depots {
+                    if !self.depots.iter().any(|d| d.market_id == depot.market_id) {
+                        self.depots.push(depot);
+                    }
+                }
+                self.depots.sort_by(|a, b| {
+                    a.system_name.cmp(&b.system_name).then(a.station_name.cmp(&b.station_name))
+                });
+            }
+        }
+    }
+
+    #[cfg(target_arch = "wasm32")]
+    pub fn poll_construction(&mut self) {}
+
+    pub fn update_construction_from_journal(
+        &mut self,
+        api: &ApiClient,
+        journal: &JournalData,
+        todo: &mut TodoList,
+    ) {
+        let mut any_new = false;
+
+        for depot in journal.construction_depots.values() {
+            let mid = depot.submission.market_id;
+            let existing = self.depots.iter_mut().find(|d| d.market_id == mid);
+
+            if let Some(entry) = existing {
+                entry.progress = depot.submission.progress;
+                entry.construction_complete = depot.submission.construction_complete;
+                entry.construction_failed = depot.submission.construction_failed;
+                entry.resources = depot.submission.resources.iter().map(|r| {
+                    edcas_common::api::ConstructionResourceResponse {
+                        name: r.name.clone(),
+                        display_name: r.display_name.clone(),
+                        required_amount: r.required_amount,
+                        provided_amount: r.provided_amount,
+                        payment: r.payment,
+                    }
+                }).collect();
+                todo.update_construction_item(ConstructionTodoItem {
+                    market_id: mid,
+                    station_name: depot.submission.station_name.clone(),
+                    system_name: depot.system_name.clone(),
+                    resources: depot.submission.resources.iter()
+                        .filter(|r| r.provided_amount < r.required_amount)
+                        .map(|r| ConstructionTodoResource {
+                            commodity_name: r.name.clone(),
+                            display_name: r.display_name.clone(),
+                            required_amount: r.required_amount,
+                            provided_amount: r.provided_amount,
+                            payment: r.payment,
+                        })
+                        .collect(),
+                });
+            } else {
+                self.construction_tracked.insert(mid);
+                any_new = true;
+
+                #[cfg(not(target_arch = "wasm32"))]
+                {
+                    let api_owned = api.clone();
+                    let submission = depot.submission.clone();
+                    api.spawn(async move {
+                        let _ = api_owned.submit_construction_depot(&submission).await;
+                    });
+                }
+                #[cfg(target_arch = "wasm32")]
+                let _ = api;
+
+                self.depots.push(edcas_common::api::ConstructionDepotResponse {
+                    market_id: mid,
+                    system_address: depot.submission.system_address,
+                    station_name: depot.submission.station_name.clone(),
+                    system_name: depot.system_name.clone(),
+                    progress: depot.submission.progress,
+                    construction_complete: depot.submission.construction_complete,
+                    construction_failed: depot.submission.construction_failed,
+                    last_updated: String::new(),
+                    resources: depot.submission.resources.iter().map(|r| {
+                        edcas_common::api::ConstructionResourceResponse {
+                            name: r.name.clone(),
+                            display_name: r.display_name.clone(),
+                            required_amount: r.required_amount,
+                            provided_amount: r.provided_amount,
+                            payment: r.payment,
+                        }
+                    }).collect(),
+                });
+            }
+        }
+
+        self.depots.sort_by(|a, b| a.system_name.cmp(&b.system_name).then(a.station_name.cmp(&b.station_name)));
+
+        if any_new {
+            self.save_tracked();
+        }
+    }
+
+    /// Tracks a new construction depot and triggers an API fetch for its data.
+    pub fn track_construction(&mut self, market_id: i64, api: &ApiClient) {
+        if self.construction_tracked.contains(&market_id) {
+            return;
+        }
+        self.construction_tracked.insert(market_id);
+        self.save_tracked();
+        #[cfg(not(target_arch = "wasm32"))]
+        if !self.depots.iter().any(|d| d.market_id == market_id) && !self.loading_depots {
+            self.refresh_tracked(api);
+        }
+        #[cfg(target_arch = "wasm32")]
+        let _ = api;
+    }
+
+    fn toggle_construction_todo(&mut self, market_id: i64, journal: &JournalData, todo: &mut TodoList) {
+        if todo.construction_items.iter().any(|i| i.market_id == market_id) {
+            todo.remove_construction_item(market_id);
+        } else {
+            let item = if let Some(local) = journal.construction_depots.get(&market_id) {
+                super::construction::construction_todo_item_from_depot(local)
+            } else if let Some(depot) = self.depots.iter().find(|d| d.market_id == market_id).cloned() {
+                super::construction::construction_todo_item_from_response(&depot)
+            } else {
+                return;
+            };
+            todo.add_construction_item(item);
+            if self.construction_tracked.insert(market_id) {
+                self.save_tracked();
+            }
+        }
+        todo.save();
+    }
+
     /// Triggered automatically when the player docks at a non-carrier station.
     /// Fetches full market data from the API and caches it so the journal snapshot
     /// is replaced with live data without requiring the user to pin the station.
@@ -239,13 +439,12 @@ impl StationsView {
         });
     }
 
-    /// Called after each journal update so the selection follows the same station
-    /// even when visited_stations changes order (e.g., a new dock prepends a station).
-    pub fn on_journal_update(&mut self, history: &[StationData]) {
+    /// Called after each journal update. Stores the latest external ID sets and
+    /// re-resolves selected_idx so the selection follows the same station even
+    /// when visited_stations changes order.
+    pub fn on_journal_update(&mut self, journal: &JournalData) {
         let Some(mid) = self.selected_market_id else { return; };
-        // Collect market IDs into an owned Vec to release the borrow on self
-        // before mutating selected_idx / selected_market_id.
-        let mids: Vec<i64> = self.build_display_list(history).iter().map(|item| match item {
+        let mids: Vec<i64> = self.build_display_list(journal).iter().map(|item| match item {
             ListItem::Api(s) => s.market_id,
             ListItem::Journal(s) => s.market_id,
         }).collect();
@@ -259,8 +458,8 @@ impl StationsView {
         }
     }
 
-    fn mid_at_idx(&self, history: &[StationData]) -> Option<i64> {
-        self.selected_item_with_history(history).map(|item| match item {
+    fn mid_at_idx(&self, journal: &JournalData) -> Option<i64> {
+        self.selected_item(journal).map(|item| match item {
             ListItem::Api(s) => s.market_id,
             ListItem::Journal(s) => s.market_id,
         })
@@ -287,95 +486,116 @@ impl StationsView {
         }
     }
 
-    fn build_display_list<'a>(&'a self, history: &'a [StationData]) -> Vec<ListItem<'a>> {
-        let search_ids: HashSet<i64> = self.results.iter()
-            .filter(|s| !self.pinned_ids.contains(&s.market_id))
-            .map(|s| s.market_id)
-            .collect();
+    fn build_display_list<'a>(&'a self, journal: &'a JournalData) -> Vec<ListItem<'a>> {
+        let stations    = &journal.visited_stations;
+        let carriers    = &journal.visited_carriers;
+        let current_sys = journal.current_system.as_ref().map(|s| s.name.as_str()).unwrap_or_default();
+        let mut shown: HashSet<i64> = HashSet::new();
         let mut list: Vec<ListItem<'a>> = Vec::new();
+
+        // 1. Pinned stations
         for s in &self.pinned_results {
+            shown.insert(s.market_id);
             list.push(ListItem::Api(s));
         }
-        for s in self.results.iter().filter(|s| !self.pinned_ids.contains(&s.market_id)) {
-            list.push(ListItem::Api(s));
+        // 1b. Tracked construction sites not already pinned
+        let tracked: Vec<&StationData> = stations.iter().filter(|s| {
+            self.construction_tracked.contains(&s.market_id) && !shown.contains(&s.market_id)
+        }).collect();
+        for s in tracked {
+            shown.insert(s.market_id);
+            if let Some(f) = self.auto_fetched.get(&s.market_id) { list.push(ListItem::Api(f)); }
+            else { list.push(ListItem::Journal(s)); }
         }
-        for s in history.iter().filter(|s| !self.pinned_ids.contains(&s.market_id) && !search_ids.contains(&s.market_id)) {
-            if let Some(fetched) = self.auto_fetched.get(&s.market_id) {
-                list.push(ListItem::Api(fetched));
-            } else {
-                list.push(ListItem::Journal(s));
+
+        // 2. Search results
+        let search: Vec<&StationResponse> = self.results.iter().filter(|s| !shown.contains(&s.market_id)).collect();
+        for s in search { shown.insert(s.market_id); list.push(ListItem::Api(s)); }
+
+        // 3. Current system
+        if !current_sys.is_empty() {
+            let cur_s: Vec<&StationData> = stations.iter().filter(|s| s.system_name == current_sys && !shown.contains(&s.market_id)).collect();
+            for s in cur_s {
+                shown.insert(s.market_id);
+                if let Some(f) = self.auto_fetched.get(&s.market_id) { list.push(ListItem::Api(f)); }
+                else { list.push(ListItem::Journal(s)); }
             }
+            let cur_c: Vec<&StationData> = carriers.iter().filter(|c| c.system_name == current_sys && !shown.contains(&c.market_id)).collect();
+            for c in cur_c { shown.insert(c.market_id); list.push(ListItem::Journal(c)); }
         }
+
+        // 5. History
+        let hist_s: Vec<&StationData> = stations.iter().filter(|s| s.system_name != current_sys && !shown.contains(&s.market_id)).collect();
+        for s in hist_s {
+            shown.insert(s.market_id);
+            if let Some(f) = self.auto_fetched.get(&s.market_id) { list.push(ListItem::Api(f)); }
+            else { list.push(ListItem::Journal(s)); }
+        }
+        let hist_c: Vec<&StationData> = carriers.iter().filter(|c| c.system_name != current_sys && !shown.contains(&c.market_id)).collect();
+        for c in hist_c { shown.insert(c.market_id); list.push(ListItem::Journal(c)); }
+
         list
     }
 
-    fn display_count(&self, history: &[StationData]) -> usize {
-        self.build_display_list(history).len()
+    fn display_count(&self, journal: &JournalData) -> usize {
+        self.build_display_list(journal).len()
     }
 
-    fn selected_item_with_history<'a>(&'a self, history: &'a [StationData]) -> Option<ListItem<'a>> {
-        self.build_display_list(history).into_iter().nth(self.selected_idx)
+    fn selected_item<'a>(&'a self, journal: &'a JournalData) -> Option<ListItem<'a>> {
+        self.build_display_list(journal).into_iter().nth(self.selected_idx)
     }
 
-    fn toggle_pin(&mut self, api: &ApiClient, history: &[StationData]) {
+    /// Returns `Some(market_id)` when a station is being **pinned** (not unpinned),
+    /// so the caller can emit `TrackConstruction` for construction sites.
+    fn toggle_pin(&mut self, api: &ApiClient, journal: &JournalData) -> Option<i64> {
+        let history = &journal.visited_stations;
         let n = self.pinned_results.len();
         if self.selected_idx < n {
             // Unpin
             let mid = self.pinned_results[self.selected_idx].market_id;
             self.pinned_ids.remove(&mid);
             self.pinned_results.remove(self.selected_idx);
-            let total = self.display_count(history);
+            let total = self.display_count(journal);
             if total > 0 {
                 self.selected_idx = self.selected_idx.min(total - 1);
             } else {
                 self.selected_idx = 0;
             }
-        } else {
-            let j = self.selected_idx - n;
-            let deduped_search: Vec<&StationResponse> = self.results.iter()
-                .filter(|s| !self.pinned_ids.contains(&s.market_id))
-                .collect();
-            if j < deduped_search.len() {
-                // Pin from search
-                let station = deduped_search[j].clone();
-                let mid = station.market_id;
-                self.pinned_ids.insert(mid);
-                self.pinned_results.push(station);
-                self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
-                if let Some(pos) = self.pinned_results.iter().position(|s| s.market_id == mid) {
-                    self.selected_idx = pos;
-                }
-            } else {
-                // In history section — add a stub immediately so the station stays visible,
-                // then fetch from API to fill in modules/ships/outfitting.
-                let search_ids: HashSet<i64> = self.results.iter().map(|s| s.market_id).collect();
-                let hist_deduped: Vec<&StationData> = history.iter()
-                    .filter(|s| !self.pinned_ids.contains(&s.market_id) && !search_ids.contains(&s.market_id))
-                    .collect();
-                let hi = j - deduped_search.len();
-                if let Some(h) = hist_deduped.get(hi) {
-                    let mid = h.market_id;
-                    self.pinned_ids.insert(mid);
-                    // Prefer auto-fetched API data as the stub if available.
-                    let stub = if let Some(fetched) = self.auto_fetched.remove(&mid) {
-                        fetched
-                    } else {
-                        journal_station_to_response(h)
-                    };
-                    merge_into_pinned(&mut self.pinned_results, stub);
-                    self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
-                    if let Some(pos) = self.pinned_results.iter().position(|r| r.market_id == mid) {
-                        self.selected_idx = pos;
-                    }
-                    #[cfg(not(target_arch = "wasm32"))]
-                    self.refresh_pins(api);
-                } else if !self.pinned_ids.is_empty() {
-                    #[cfg(not(target_arch = "wasm32"))]
-                    self.refresh_pins(api);
-                }
-            }
+            self.save_pins();
+            return None;
         }
+        // Clone the data from the selected item before mutating self.
+        let item_data = self.build_display_list(journal).into_iter()
+            .nth(self.selected_idx)
+            .map(|item| match item {
+                ListItem::Api(s)      => (s.market_id, Some(s.clone()), None),
+                ListItem::Journal(s)  => (s.market_id, None, Some(s.clone())),
+            });
+        let Some((mid, api_data, journal_data)) = item_data else {
+            return None;
+        };
+        if self.pinned_ids.contains(&mid) {
+            return None;
+        }
+        self.pinned_ids.insert(mid);
+        let stub = if let Some(s) = api_data {
+            s
+        } else if let Some(fetched) = self.auto_fetched.remove(&mid) {
+            fetched
+        } else if let Some(ref s) = journal_data {
+            journal_station_to_response(s)
+        } else {
+            return None;
+        };
+        merge_into_pinned(&mut self.pinned_results, stub);
+        self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
+        if let Some(pos) = self.pinned_results.iter().position(|r| r.market_id == mid) {
+            self.selected_idx = pos;
+        }
+        #[cfg(not(target_arch = "wasm32"))]
+        self.refresh_pins(api);
         self.save_pins();
+        Some(mid)
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -420,138 +640,172 @@ impl StationsView {
         });
     }
 
-    fn build_list_lines(&self, history: &[StationData]) -> Vec<Line<'static>> {
-        let mut lines = Vec::new();
+    fn build_list_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
+        let stations    = &journal.visited_stations;
+        let carriers    = &journal.visited_carriers;
+        let current_sys: String = journal.current_system.as_ref().map(|s| s.name.clone()).unwrap_or_default();
 
+        let sep = |label: &str| Line::from(Span::styled(
+            format!("\u{2500}\u{2500}\u{2500} {} {}", label, "\u{2500}".repeat(33usize.saturating_sub(label.len()))),
+            Style::default().fg(Color::DarkGray),
+        ));
+        let sel_style = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+        let build_tag = |mid: i64| if self.construction_tracked.contains(&mid) { " \u{2699}" } else { "" };
+
+        let mut lines = Vec::new();
         lines.push(Line::from(vec![
             Span::styled("Search: ", Style::default().fg(Color::Cyan)),
-            Span::styled(
-                self.search_query.clone(),
-                Style::default().fg(Color::White).add_modifier(Modifier::BOLD),
-            ),
-            Span::styled(
-                match self.search_state { SearchState::Typing => "_", SearchState::Idle => "" },
-                Style::default().fg(Color::Yellow),
-            ),
+            Span::styled(self.search_query.clone(), Style::default().fg(Color::White).add_modifier(Modifier::BOLD)),
+            Span::styled(match self.search_state { SearchState::Typing => "_", SearchState::Idle => "" }, Style::default().fg(Color::Yellow)),
         ]));
-        lines.push(Line::from(Span::styled(
-            self.status_msg.clone(),
-            Style::default().fg(Color::DarkGray),
-        )));
+        lines.push(Line::from(Span::styled(self.status_msg.clone(), Style::default().fg(Color::DarkGray))));
         lines.push(Line::from(""));
 
+        // Track shown market IDs and the current display-list item index
+        let mut shown: HashSet<i64> = HashSet::new();
+        let mut item_idx = 0usize;
+        let mut any_above = false;
+
+        macro_rules! item_line {
+            ($item_idx:expr, $content:expr, $default_style:expr) => {{
+                let selected = self.focus == FocusArea::List && $item_idx == self.selected_idx;
+                let style = if selected { sel_style } else { $default_style };
+                lines.push(Line::from(Span::styled($content, style)));
+                $item_idx += 1;
+            }};
+        }
+        macro_rules! section_sep {
+            ($label:expr, $n:expr, $any_above:expr) => {
+                if $n > 0 && $any_above { lines.push(sep(&$label)); }
+            };
+        }
+
+        // ── 1. Pinned stations ────────────────────────────────────────────────
         let n_pinned = self.pinned_results.len();
-        let deduped_search: Vec<&StationResponse> = self.results.iter()
-            .filter(|s| !self.pinned_ids.contains(&s.market_id))
+        let n_tracked_construction = stations.iter()
+            .filter(|s| self.construction_tracked.contains(&s.market_id) && !self.pinned_ids.contains(&s.market_id))
+            .count();
+        let n_sec1 = n_pinned + n_tracked_construction;
+        section_sep!("Pinned", n_sec1, any_above);
+        for station in &self.pinned_results {
+            shown.insert(station.market_id);
+            item_line!(item_idx,
+                format!(" \u{2605} {:<26} {}{}", truncate(&station.name, 26), station.station_type.as_deref().unwrap_or(""), build_tag(station.market_id)),
+                Style::default().fg(Color::Yellow));
+        }
+        for station in stations.iter().filter(|s| self.construction_tracked.contains(&s.market_id) && !self.pinned_ids.contains(&s.market_id)) {
+            shown.insert(station.market_id);
+            item_line!(item_idx,
+                format!(" \u{2605} {:<26} {} \u{2699}", truncate(&station.name, 26), &station.station_type),
+                Style::default().fg(Color::Yellow));
+        }
+        if n_sec1 > 0 { any_above = true; }
+
+        // ── 2. Search results ─────────────────────────────────────────────────
+        let search_results: Vec<&StationResponse> = self.results.iter()
+            .filter(|s| !shown.contains(&s.market_id))
             .collect();
-        let search_ids: HashSet<i64> = self.results.iter().map(|s| s.market_id).collect();
-        let hist_deduped: Vec<&StationData> = history.iter()
-            .filter(|s| !self.pinned_ids.contains(&s.market_id) && !search_ids.contains(&s.market_id))
+        section_sep!("Search", search_results.len(), any_above);
+        for station in &search_results {
+            shown.insert(station.market_id);
+            item_line!(item_idx,
+                format!("   {:<26} {}{}", truncate(&station.name, 26), station.station_type.as_deref().unwrap_or(""), build_tag(station.market_id)),
+                Style::default().fg(Color::White));
+        }
+        if !search_results.is_empty() { any_above = true; }
+
+        // ── 3. Current system ─────────────────────────────────────────────────
+        let cur_stations: Vec<&StationData> = stations.iter()
+            .filter(|s| s.system_name == current_sys && !shown.contains(&s.market_id))
             .collect();
+        let cur_carriers: Vec<&StationData> = carriers.iter()
+            .filter(|c| c.system_name == current_sys && !shown.contains(&c.market_id))
+            .collect();
+        let n_current = cur_stations.len() + cur_carriers.len();
+        let sys_label: &str = if current_sys.is_empty() { "Current System" } else { &current_sys };
+        section_sep!(sys_label, n_current, any_above);
+        for station in &cur_stations {
+            shown.insert(station.market_id);
+            let has_live = self.auto_fetched.contains_key(&station.market_id);
+            let icon = if has_live { "\u{25CF}" } else { "  " };
+            let base_style = if has_live { Style::default().fg(Color::Rgb(100, 220, 100)) } else { Style::default().fg(Color::White) };
+            item_line!(item_idx,
+                format!(" {} {:<26} {}{}", icon, truncate(&station.name, 26), &station.station_type, build_tag(station.market_id)),
+                base_style);
+        }
+        for carrier in &cur_carriers {
+            shown.insert(carrier.market_id);
+            item_line!(item_idx,
+                format!("   {:<26} {}", truncate(&carrier.name, 26), &carrier.station_type),
+                Style::default().fg(Color::White));
+        }
+        if n_current > 0 { any_above = true; }
 
-        let header = 3usize;
-
-        // Pinned section
-        for (i, station) in self.pinned_results.iter().enumerate() {
-            let selected = self.focus == FocusArea::List && i == self.selected_idx;
-            let style = if selected {
-                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(Color::Yellow)
-            };
-            lines.push(Line::from(Span::styled(
-                format!(" \u{2605} {:<26} {}", truncate(&station.name, 26), station.station_type.as_deref().unwrap_or("")),
-                style,
-            )));
+        // ── 5. History ────────────────────────────────────────────────────────
+        let hist_stations: Vec<&StationData> = stations.iter()
+            .filter(|s| s.system_name != current_sys && !shown.contains(&s.market_id))
+            .collect();
+        let hist_carriers: Vec<&StationData> = carriers.iter()
+            .filter(|c| c.system_name != current_sys && !shown.contains(&c.market_id))
+            .collect();
+        let n_history = hist_stations.len() + hist_carriers.len();
+        section_sep!("History", n_history, any_above);
+        for station in &hist_stations {
+            shown.insert(station.market_id);
+            let has_live = self.auto_fetched.contains_key(&station.market_id);
+            let icon = if has_live { "\u{25CF}" } else { "\u{231a}" };
+            let base_style = if has_live { Style::default().fg(Color::Rgb(100, 220, 100)) } else { Style::default().fg(Color::Rgb(100, 180, 200)) };
+            item_line!(item_idx,
+                format!(" {} {:<26} {}{}", icon, truncate(&station.name, 26), &station.station_type, build_tag(station.market_id)),
+                base_style);
+        }
+        for carrier in &hist_carriers {
+            shown.insert(carrier.market_id);
+            item_line!(item_idx,
+                format!(" \u{231a} {:<26} {}", truncate(&carrier.name, 26), &carrier.system_name),
+                Style::default().fg(Color::Rgb(100, 180, 200)));
         }
 
-        // Search separator + results
-        if !deduped_search.is_empty() && n_pinned > 0 {
-            lines.push(Line::from(Span::styled(
-                "\u{2500}\u{2500}\u{2500} Search \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
-                Style::default().fg(Color::DarkGray),
-            )));
-        }
-        for (j, station) in deduped_search.iter().enumerate() {
-            let i = n_pinned + j;
-            let selected = self.focus == FocusArea::List && i == self.selected_idx;
-            let style = if selected {
-                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
-            } else {
-                Style::default().fg(Color::White)
-            };
-            lines.push(Line::from(Span::styled(
-                format!("   {:<26} {}", truncate(&station.name, 26), station.station_type.as_deref().unwrap_or("")),
-                style,
-            )));
+        if item_idx == 0 {
+            lines.push(Line::from(Span::styled("No stations visited yet.", Style::default().fg(Color::DarkGray))));
         }
 
-        // History separator + entries
-        let n_search = deduped_search.len();
-        if !hist_deduped.is_empty() {
-            let has_above = n_pinned > 0 || n_search > 0;
-            if has_above {
-                lines.push(Line::from(Span::styled(
-                    "\u{2500}\u{2500}\u{2500} History \u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}\u{2500}",
-                    Style::default().fg(Color::DarkGray),
-                )));
-            }
-            for (k, station) in hist_deduped.iter().enumerate() {
-                let i = n_pinned + n_search + k;
-                let selected = self.focus == FocusArea::List && i == self.selected_idx;
-                let has_live = self.auto_fetched.contains_key(&station.market_id);
-                let style = if selected {
-                    Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
-                } else if has_live {
-                    Style::default().fg(Color::Rgb(100, 220, 100))
-                } else {
-                    Style::default().fg(Color::Rgb(100, 180, 200))
-                };
-                let icon = if has_live { "\u{25CF}" } else { "\u{231a}" };
-                lines.push(Line::from(Span::styled(
-                    format!(" {} {:<26} {}", icon, truncate(&station.name, 26), &station.station_type),
-                    style,
-                )));
-            }
-        }
-
-        if n_pinned == 0 && n_search == 0 && hist_deduped.is_empty() {
-            lines.push(Line::from("No results."));
-            lines.push(Line::from("Press Enter to search."));
-        }
-
-        let _ = header; // suppress unused warning
         lines
     }
 
-    fn visual_row_of_selected(&self, history: &[StationData]) -> usize {
+    fn visual_row_of_selected(&self, journal: &JournalData) -> usize {
         let header = 3usize;
-        let n_pinned = self.pinned_results.len();
-        let deduped_search: Vec<&StationResponse> = self.results.iter()
-            .filter(|s| !self.pinned_ids.contains(&s.market_id))
-            .collect();
-        let n_search = deduped_search.len();
-        let search_ids: HashSet<i64> = self.results.iter().map(|s| s.market_id).collect();
-        let n_hist = history.iter()
-            .filter(|s| !self.pinned_ids.contains(&s.market_id) && !search_ids.contains(&s.market_id))
-            .count();
+        let stations    = &journal.visited_stations;
+        let carriers    = &journal.visited_carriers;
+        let current_sys = journal.current_system.as_ref().map(|s| s.name.as_str()).unwrap_or("");
+        let mut shown: HashSet<i64> = HashSet::new();
 
-        let has_search_sep = n_pinned > 0 && n_search > 0;
-        let has_hist_sep = n_hist > 0 && (n_pinned > 0 || n_search > 0);
+        // Compute section sizes in same order as build_display_list/build_list_lines
+        let n1 = self.pinned_results.iter().map(|s| { shown.insert(s.market_id); 1usize }).sum::<usize>()
+                + stations.iter().filter(|s| self.construction_tracked.contains(&s.market_id) && !self.pinned_ids.contains(&s.market_id) && shown.insert(s.market_id)).count();
+        let n2 = self.results.iter().filter(|s| shown.insert(s.market_id)).count();
+        let n3 = stations.iter().filter(|s| s.system_name == current_sys && shown.insert(s.market_id)).count()
+               + carriers.iter().filter(|c| c.system_name == current_sys && shown.insert(c.market_id)).count();
+        let n4 = stations.iter().filter(|s| s.system_name != current_sys && shown.insert(s.market_id)).count()
+               + carriers.iter().filter(|c| c.system_name != current_sys && shown.insert(c.market_id)).count();
 
         let idx = self.selected_idx;
-        if idx < n_pinned {
-            header + idx
-        } else if idx < n_pinned + n_search {
-            header + idx + if has_search_sep { 1 } else { 0 }
-        } else {
-            header + idx
-                + if has_search_sep { 1 } else { 0 }
-                + if has_hist_sep { 1 } else { 0 }
+        let mut item_offset = 0;
+        let mut sep_count = 0;
+        let mut any_above = false;
+
+        for n in [n1, n2, n3, n4] {
+            if n == 0 { continue; }
+            if any_above { sep_count += 1; }
+            if idx < item_offset + n { return header + idx + sep_count; }
+            item_offset += n;
+            any_above = true;
         }
+
+        header + idx + sep_count
     }
 
-    fn build_detail_header_lines(&self, history: &[StationData], journal_for_header: &crate::journal_reader::JournalData) -> Vec<Line<'static>> {
+    fn build_detail_header_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
 
         let tab_active = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
@@ -563,7 +817,7 @@ impl StationsView {
         }).collect();
         lines.push(Line::from(tab_spans));
 
-        match self.selected_item_with_history(history) {
+        match self.selected_item(journal) {
             Some(ListItem::Api(station)) => {
                 if self.detail_tab == DetailTab::Overview {
                     lines.push(Line::from(Span::styled(
@@ -588,7 +842,7 @@ impl StationsView {
                 }
             }
             Some(ListItem::Journal(station)) => {
-                let docked_here = journal_for_header.last_docked
+                let docked_here = journal.last_docked
                     .as_ref()
                     .map(|(mid, _, _, _)| *mid == station.market_id)
                     .unwrap_or(false);
@@ -604,29 +858,29 @@ impl StationsView {
         lines
     }
 
-    fn build_detail_body_lines(&self, history: &[StationData], journal: &crate::journal_reader::JournalData, todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
-        match self.selected_item_with_history(history) {
+    fn build_detail_body_lines(&self, journal: &crate::journal_reader::JournalData, todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>) -> Vec<Line<'static>> {
+        match self.selected_item(journal) {
             None => vec![Line::from(Span::styled(
                 "Select a station from the list.",
                 Style::default().fg(Color::DarkGray),
             ))],
             Some(ListItem::Api(station)) => match self.detail_tab {
-                DetailTab::Overview => self.overview_body(station),
-                DetailTab::Market => self.market_body(station, todo_needed, ship_cargo, carrier_stock),
+                DetailTab::Overview => self.overview_body(station, journal),
+                DetailTab::Market => self.market_body(station, todo_needed, ship_cargo),
                 DetailTab::Outfitting => self.outfitting_body(station),
                 DetailTab::Shipyard => self.shipyard_body(station),
             },
             Some(ListItem::Journal(station)) => match self.detail_tab {
-                DetailTab::Overview => self.journal_overview_body(station),
+                DetailTab::Overview => self.journal_overview_body(station, journal),
                 DetailTab::Market => {
                     if !station.commodities.is_empty() {
-                        return self.local_market_body(&station.commodities, todo_needed, ship_cargo, carrier_stock);
+                        return self.local_market_body(&station.commodities, todo_needed, ship_cargo);
                     }
                     // Fallback: check if local_market still matches this station
                     // (covers the brief window before the watcher loop stores it into the station entry)
                     if let Some((mid, ref commodities)) = journal.local_market {
                         if mid == station.market_id {
-                            return self.local_market_body(commodities, todo_needed, ship_cargo, carrier_stock);
+                            return self.local_market_body(commodities, todo_needed, ship_cargo);
                         }
                     }
                     let is_docked_here = journal.last_docked
@@ -660,12 +914,66 @@ impl StationsView {
         }
     }
 
-    fn overview_body(&self, station: &StationResponse) -> Vec<Line<'static>> {
+    fn construction_body(&self, market_id: i64, journal: &crate::journal_reader::JournalData, selected_idx: Option<usize>) -> Vec<Line<'static>> {
+        let ship_cargo: HashMap<String, i32> = journal.cargo.iter()
+            .map(|item| (normalize_commodity_name(&item.name), item.count))
+            .collect();
+        if let Some(depot) = journal.construction_depots.get(&market_id) {
+            match selected_idx {
+                Some(idx) => super::construction::depot_detail_lines_local_with_selection(depot, &ship_cargo, idx),
+                None => super::construction::depot_detail_lines_local(depot, &ship_cargo),
+            }
+        } else if let Some(depot) = self.depots.iter().find(|d| d.market_id == market_id) {
+            let mut lines = Vec::new();
+            super::construction::build_detail_from_response(&mut lines, depot, &ship_cargo, selected_idx);
+            lines
+        } else {
+            vec![
+                Line::from(Span::styled(
+                    "No construction data for this site.",
+                    Style::default().fg(Color::DarkGray),
+                )),
+                Line::from(""),
+                Line::from(Span::styled(
+                    "Dock at the construction site to load resource requirements.",
+                    Style::default().fg(Color::Rgb(180, 180, 180)),
+                )),
+            ]
+        }
+    }
+
+    /// Returns the market ID of the selected station if it has construction data.
+    fn selected_construction_market_id(&self, journal: &JournalData) -> Option<i64> {
+        let mid = self.mid_at_idx(journal)?;
+        if journal.construction_depots.contains_key(&mid) || self.depots.iter().any(|d| d.market_id == mid) {
+            Some(mid)
+        } else {
+            None
+        }
+    }
+
+    fn construction_resource_count(&self, market_id: i64, journal: &crate::journal_reader::JournalData) -> usize {
+        if let Some(depot) = journal.construction_depots.get(&market_id) {
+            super::construction::depot_resource_count_local(depot)
+        } else if let Some(depot) = self.depots.iter().find(|d| d.market_id == market_id) {
+            super::construction::depot_resource_count_api(depot)
+        } else {
+            0
+        }
+    }
+
+    fn overview_body(&self, station: &StationResponse, journal: &crate::journal_reader::JournalData) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
         lines.push(Line::from(format!("System:    {}", station.system_name)));
         lines.push(Line::from(format!("Type:      {}", station.station_type.as_deref().unwrap_or("Unknown"))));
         lines.push(Line::from(format!("Market ID: {}", station.market_id)));
-        if let Some(ref faction) = station.faction_name { lines.push(Line::from(format!("Faction:   {faction}"))); }
+        let faction = station.faction_name.as_deref().or_else(|| {
+            journal.visited_stations.iter()
+                .find(|s| s.market_id == station.market_id)
+                .map(|s| s.faction.as_str())
+                .filter(|f| !f.is_empty())
+        });
+        if let Some(faction) = faction { lines.push(Line::from(format!("Faction:   {faction}"))); }
         if let Some(ref gov) = station.government { lines.push(Line::from(format!("Government:{gov}"))); }
         if let Some(ref econ) = station.economy { lines.push(Line::from(format!("Economy:   {econ}"))); }
         if let Some(ref pads) = station.landing_pads {
@@ -682,10 +990,18 @@ impl StationsView {
             format!("Updated:   {}", fmt_ts(station.updated_at.as_ref())),
             Style::default().fg(Color::DarkGray),
         )));
+        let has_construction = journal.construction_depots.contains_key(&station.market_id)
+            || self.depots.iter().any(|d| d.market_id == station.market_id);
+        if has_construction {
+            let sel = if self.focus == FocusArea::Detail { Some(self.construction_resource_idx) } else { None };
+            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  t: todo) ──", Style::default().fg(Color::Rgb(255, 140, 0)))));
+            lines.extend(self.construction_body(station.market_id, journal, sel));
+        }
         lines
     }
 
-    fn journal_overview_body(&self, station: &StationData) -> Vec<Line<'static>> {
+    fn journal_overview_body(&self, station: &StationData, journal: &crate::journal_reader::JournalData) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
         lines.push(Line::from(format!("System:    {}", station.system_name)));
         lines.push(Line::from(format!("Type:      {}", station.station_type)));
@@ -720,10 +1036,18 @@ impl StationsView {
             "Visit snapshot \u{2014} pin (p) to load live market data.",
             Style::default().fg(Color::DarkGray),
         )));
+        let has_construction = journal.construction_depots.contains_key(&station.market_id)
+            || self.depots.iter().any(|d| d.market_id == station.market_id);
+        if has_construction {
+            let sel = if self.focus == FocusArea::Detail { Some(self.construction_resource_idx) } else { None };
+            lines.push(Line::from(""));
+            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  t: todo) ──", Style::default().fg(Color::Rgb(255, 140, 0)))));
+            lines.extend(self.construction_body(station.market_id, journal, sel));
+        }
         lines
     }
 
-    fn market_body(&self, station: &StationResponse, todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
+    fn market_body(&self, station: &StationResponse, todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>) -> Vec<Line<'static>> {
         if station.commodities.is_empty() {
             return vec![Line::from(Span::styled("No market data available.", Style::default().fg(Color::DarkGray)))];
         }
@@ -733,18 +1057,18 @@ impl StationsView {
             format!("Market data as of: {}", fmt_ts(station.market_updated_at.as_ref())),
             Style::default().fg(Color::DarkGray),
         ))];
-        lines.extend(sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo, carrier_stock)));
+        lines.extend(sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo)));
         lines
     }
 
-    fn local_market_body(&self, commodities: &[edcas_common::api::CommodityResponse], todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>, carrier_stock: &HashMap<String, i32>) -> Vec<Line<'static>> {
+    fn local_market_body(&self, commodities: &[edcas_common::api::CommodityResponse], todo_needed: &HashMap<String, i32>, ship_cargo: &HashMap<String, i32>) -> Vec<Line<'static>> {
         let effective_todo = effective_todo_for_market(commodities, todo_needed);
         let sorted = sorted_commodities(commodities, &effective_todo, self.market_sort_col, self.market_sort_asc);
         let mut lines = vec![Line::from(Span::styled(
             "Local market data (from Market.json)",
             Style::default().fg(Color::DarkGray),
         ))];
-        lines.extend(sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo, carrier_stock)));
+        lines.extend(sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo)));
         lines
     }
 
@@ -756,8 +1080,7 @@ impl StationsView {
         shipyard_lines(&station.ships)
     }
 
-    pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData) -> ViewEvent {
-        let history = &journal.visited_stations;
+    pub fn handle_key(&mut self, key: &KeyEvent, api: &ApiClient, journal: &JournalData, todo: &mut TodoList) -> ViewEvent {
         if matches!(self.search_state, SearchState::Typing) {
             match key.code {
                 KeyCode::Esc => { self.search_state = SearchState::Idle; self.status_msg = "Search cancelled".into(); }
@@ -770,14 +1093,52 @@ impl StationsView {
         }
 
         match key.code {
+            // In detail+overview on a construction site, f opens search nearest.
+            KeyCode::Char('f') if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Overview
+                && self.selected_construction_market_id(journal).is_some() =>
+            {
+                let mid = self.selected_construction_market_id(journal).unwrap();
+                let resource = if let Some(local) = journal.construction_depots.get(&mid) {
+                    let mut sorted = local.submission.resources.clone();
+                    sorted.sort_by(|a, b| {
+                        let done_a = a.provided_amount >= a.required_amount;
+                        let done_b = b.provided_amount >= b.required_amount;
+                        done_a.cmp(&done_b).then(a.display_name.cmp(&b.display_name))
+                    });
+                    sorted.into_iter().nth(self.construction_resource_idx)
+                        .map(|r| (r.display_name.clone(), r.name.clone()))
+                } else if let Some(depot) = self.depots.iter().find(|d| d.market_id == mid).cloned() {
+                    let mut sorted = depot.resources.clone();
+                    sorted.sort_by(|a, b| {
+                        let done_a = a.provided_amount >= a.required_amount;
+                        let done_b = b.provided_amount >= b.required_amount;
+                        done_a.cmp(&done_b).then(a.display_name.cmp(&b.display_name))
+                    });
+                    sorted.into_iter().nth(self.construction_resource_idx)
+                        .map(|r| (r.display_name.clone(), r.name.clone()))
+                } else {
+                    None
+                };
+                if let Some((commodity, raw_name)) = resource {
+                    let canonical_name = super::search_nearest::resolve_commodity_canonical(&raw_name);
+                    let system = journal.current_system.as_ref().map(|s| s.name.clone()).unwrap_or_default();
+                    let ship_pad_size = journal.pilot.ship_pad_size;
+                    return ViewEvent::OpenSearchNearest { commodity, canonical_name, system, ship_pad_size };
+                }
+                return ViewEvent::Consumed;
+            }
             KeyCode::Char('/') | KeyCode::Char('f') => {
                 self.search_query.clear();
                 self.search_state = SearchState::Typing;
                 self.status_msg = "Typing… (Enter to search, Esc to cancel)".into();
             }
             KeyCode::Char('p') => {
-                if self.display_count(history) > 0 {
-                    self.toggle_pin(api, history);
+                if self.display_count(journal) > 0 {
+                    if let Some(pinned_mid) = self.toggle_pin(api, journal) {
+                        if journal.construction_depots.contains_key(&pinned_mid) {
+                            return ViewEvent::TrackConstruction(pinned_mid);
+                        }
+                    }
                 }
                 return ViewEvent::Consumed;
             }
@@ -786,42 +1147,61 @@ impl StationsView {
                     if self.selected_idx > 0 {
                         self.selected_idx -= 1;
                         self.detail_scroll = 0;
+                        self.construction_resource_idx = 0;
                         self.detail_tab = DetailTab::Overview;
-                        self.selected_market_id = self.mid_at_idx(history);
+                        self.selected_market_id = self.mid_at_idx(journal);
                     }
                 }
-                FocusArea::Detail => { self.detail_scroll = self.detail_scroll.saturating_sub(1); }
+                FocusArea::Detail => {
+                    if self.detail_tab == DetailTab::Overview && self.selected_construction_market_id(journal).is_some() {
+                        self.construction_resource_idx = self.construction_resource_idx.saturating_sub(1);
+                    } else {
+                        self.detail_scroll = self.detail_scroll.saturating_sub(1);
+                    }
+                }
             },
             KeyCode::Char('s') | KeyCode::Down => match self.focus {
                 FocusArea::List => {
-                    if self.selected_idx + 1 < self.display_count(history) {
+                    if self.selected_idx + 1 < self.display_count(journal) {
                         self.selected_idx += 1;
                         self.detail_scroll = 0;
+                        self.construction_resource_idx = 0;
                         self.detail_tab = DetailTab::Overview;
-                        self.selected_market_id = self.mid_at_idx(history);
+                        self.selected_market_id = self.mid_at_idx(journal);
                     }
                 }
-                FocusArea::Detail => { self.detail_scroll += 1; }
+                FocusArea::Detail => {
+                    if self.detail_tab == DetailTab::Overview {
+                        if let Some(mid) = self.selected_construction_market_id(journal) {
+                            let max = self.construction_resource_count(mid, journal).saturating_sub(1);
+                            if self.construction_resource_idx < max {
+                                self.construction_resource_idx += 1;
+                            }
+                            return ViewEvent::Consumed;
+                        }
+                    }
+                    self.detail_scroll += 1;
+                }
             },
             KeyCode::PageUp => match self.focus {
                 FocusArea::List => {
                     self.selected_idx = self.selected_idx.saturating_sub(10);
-                    self.selected_market_id = self.mid_at_idx(history);
+                    self.selected_market_id = self.mid_at_idx(journal);
                 }
                 FocusArea::Detail => { self.detail_scroll = self.detail_scroll.saturating_sub(10); }
             },
             KeyCode::PageDown => match self.focus {
                 FocusArea::List => {
-                    let max = self.display_count(history).saturating_sub(1);
+                    let max = self.display_count(journal).saturating_sub(1);
                     self.selected_idx = (self.selected_idx + 10).min(max);
-                    self.selected_market_id = self.mid_at_idx(history);
+                    self.selected_market_id = self.mid_at_idx(journal);
                 }
                 FocusArea::Detail => { self.detail_scroll += 10; }
             },
             KeyCode::Tab => {
                 match self.focus {
                     FocusArea::List => {
-                        if self.display_count(history) > 0 {
+                        if self.display_count(journal) > 0 {
                             self.focus = FocusArea::Detail;
                             self.detail_scroll = 0;
                         }
@@ -858,8 +1238,16 @@ impl StationsView {
                     }
                 }
             }
+            KeyCode::Char('t') => {
+                if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Overview {
+                    if let Some(mid) = self.selected_construction_market_id(journal) {
+                        self.toggle_construction_todo(mid, journal, todo);
+                        return ViewEvent::Consumed;
+                    }
+                }
+            }
             KeyCode::Char('c') => {
-                if let Some(item) = self.selected_item_with_history(history) {
+                if let Some(item) = self.selected_item(journal) {
                     let name = match item {
                         ListItem::Api(s) => s.system_name.trim().to_string(),
                         ListItem::Journal(s) => s.system_name.trim().to_string(),
@@ -919,11 +1307,8 @@ fn merge_into_pinned(pinned: &mut Vec<StationResponse>, api_station: StationResp
 }
 
 impl StationsView {
-    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData, todo: &TodoList, carrier_stock: &HashMap<String, i32>) {
-        let history = &journal.visited_stations;
-
-        let todo_needed = compute_todo_needed(&todo.construction_items, &journal.cargo, carrier_stock);
-
+    pub fn render(&self, frame: &mut Frame, area: Rect, journal: &JournalData, todo: &TodoList) {
+        let todo_needed = compute_todo_needed(&todo.construction_items, &journal.cargo);
         let ship_cargo: HashMap<String, i32> = journal.cargo.iter()
             .map(|item| (normalize_commodity_name(&item.name), item.count))
             .collect();
@@ -936,10 +1321,9 @@ impl StationsView {
         let active_border = Style::default().fg(Color::Rgb(255, 140, 0));
         let inactive_border = Style::default().fg(Color::White);
 
-        // Left: list
-        let list_lines = self.build_list_lines(history);
+        let list_lines = self.build_list_lines(journal);
         let list_height = chunks[0].height.saturating_sub(2) as usize;
-        let row = self.visual_row_of_selected(history);
+        let row = self.visual_row_of_selected(journal);
         let list_scroll = if row + 1 >= self.list_scroll + list_height {
             (row + 2).saturating_sub(list_height)
         } else if row < self.list_scroll {
@@ -957,15 +1341,14 @@ impl StationsView {
             chunks[0],
         );
 
-        // Right: detail
         let detail_block = Block::default()
-            .title(" Station Details \u{2014} Enter to search ")
+            .title(" Station Details \u{2014} / or f: search ")
             .borders(Borders::ALL)
             .border_style(if self.focus == FocusArea::Detail { active_border } else { inactive_border });
         let detail_inner = detail_block.inner(chunks[1]);
         frame.render_widget(detail_block, chunks[1]);
 
-        let header_lines = self.build_detail_header_lines(history, journal);
+        let header_lines = self.build_detail_header_lines(journal);
         let header_height = header_lines.len() as u16;
         let detail_split = Layout::default()
             .direction(Direction::Vertical)
@@ -974,7 +1357,7 @@ impl StationsView {
 
         frame.render_widget(Paragraph::new(header_lines), detail_split[0]);
 
-        let body_lines = self.build_detail_body_lines(history, journal, &todo_needed, &ship_cargo, carrier_stock);
+        let body_lines = self.build_detail_body_lines(journal, &todo_needed, &ship_cargo);
         let body_height = detail_split[1].height as usize;
         let body_max_scroll = body_lines.len().saturating_sub(body_height);
         frame.render_widget(
