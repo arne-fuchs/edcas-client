@@ -1659,10 +1659,10 @@ fn load_market_file(path: &Path) -> Option<(i64, Vec<edcas_common::api::Commodit
     let market_id = v["MarketID"].as_i64()?;
     let items = v["Items"].as_array()?;
     let commodities: Vec<edcas_common::api::CommodityResponse> = items.iter().filter_map(|item| {
-        let name = item["Name_Localised"].as_str()
-            .filter(|s| !s.is_empty())
-            .or_else(|| item["Name"].as_str())
+        let name = item["Name"].as_str()
             .map(|s| s.trim_start_matches('$').trim_end_matches("_name;").to_string())
+            .filter(|s| !s.is_empty())
+            .or_else(|| item["Name_Localised"].as_str().filter(|s| !s.is_empty()).map(|s| s.to_string()))
             .unwrap_or_default();
         if name.is_empty() { return None; }
         Some(edcas_common::api::CommodityResponse {

@@ -45,7 +45,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.web
-        image: ${WEB_IMAGE:-edcas-web}:latest
+        image: ${WEB_IMAGE:-edcas-web:latest}
         restart: unless-stopped
         ports:
             - "8080:80"
@@ -54,7 +54,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.eddn
-        image: ${SERVER_IMAGE:-edcas-server}:latest
+        image: ${SERVER_IMAGE:-edcas-server:latest}
         restart: unless-stopped
         depends_on:
             postgres:
