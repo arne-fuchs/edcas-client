@@ -1006,7 +1006,7 @@ fn ship_pad_size(internal_name: &str) -> char {
         // Large-pad-only ships
         "anaconda" | "corvette" | "cutter" | "belugaliner" | "orca"
         | "type7" | "type7_multipurpose" | "type9" | "type9_military"
-        | "type10" => 'L',
+        | "type10" | "panthermkii" => 'L',
         // Small-pad ships
         "sidewinder" | "hauler" | "eagle" | "eagle_mkii" | "adder"
         | "viper" | "viper_mkiii" | "viper_mkiv"

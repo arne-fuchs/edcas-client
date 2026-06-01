@@ -28,7 +28,7 @@ pub const TABS: &[&str] = &[
     "News",
     "Explorer",
     "Stations",
-    "BGS",
+    "Factions",
     "Trade",
     "Commander",
     "Workshop",

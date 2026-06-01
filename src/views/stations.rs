@@ -155,8 +155,11 @@ impl StationsView {
             match result {
                 Ok(api_results) => {
                     // Merge: replace/enrich stubs with API data; keep stubs for stations the API didn't return.
+                    // Skip stations that were unpinned while the request was in flight.
                     for api_station in api_results {
-                        merge_into_pinned(&mut self.pinned_results, api_station);
+                        if self.pinned_ids.contains(&api_station.market_id) {
+                            merge_into_pinned(&mut self.pinned_results, api_station);
+                        }
                     }
                     self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
                     if self.status_msg.starts_with("Loading") {

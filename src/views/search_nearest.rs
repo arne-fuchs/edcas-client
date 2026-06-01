@@ -297,6 +297,10 @@ impl SearchNearestView {
         }
     }
 
+    pub fn update_pad_filter(&mut self, ship_pad_size: char) {
+        self.pad_filter = ship_pad_size;
+    }
+
     pub fn prefill_and_search(&mut self, commodity: &str, canonical_name: &str, system: &str, ship_pad_size: char, api: &ApiClient) {
         self.commodity_input = commodity.to_string();
         self.commodity_canonical = canonical_name.to_string();
