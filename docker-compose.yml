@@ -4,7 +4,7 @@ services:
         restart: unless-stopped
         environment:
             POSTGRES_USER: edcas
-            POSTGRES_PASSWORD: edcas
+            POSTGRES_PASSWORD: ${DB_PASSWORD:-edcas}
             POSTGRES_DB: edcas
             # C locale avoids locale collation overhead on string-heavy tables
             POSTGRES_INITDB_ARGS: "--encoding=UTF8 --locale=C"
@@ -30,7 +30,7 @@ services:
             -c max_parallel_workers_per_gather=2
             -c max_parallel_workers=4
         volumes:
-            - ../edcas-data/postgres-data:/var/lib/postgresql/data
+            - ${DATA_PATH:-../edcas-data}/postgres-data:/var/lib/postgresql/data
             # Schema is applied automatically on first start by the official
             # postgres image running every *.sql file in initdb.d/.
             - ./crates/edcas-server/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
@@ -45,6 +45,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.web
+        image: ${WEB_IMAGE:-edcas-web}:latest
         restart: unless-stopped
         ports:
             - "8080:80"
@@ -53,6 +54,7 @@ services:
         build:
             context: .
             dockerfile: Dockerfile.eddn
+        image: ${SERVER_IMAGE:-edcas-server}:latest
         restart: unless-stopped
         depends_on:
             postgres:
@@ -60,7 +62,7 @@ services:
         environment:
             DB_HOST: postgres
             DB_USER: edcas
-            DB_PASSWORD: edcas
+            DB_PASSWORD: ${DB_PASSWORD:-edcas}
             DB_NAME: edcas
             DB_PORT: 5432
             API_PORT: 3000

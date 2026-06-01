@@ -1,0 +1,57 @@
+stages:
+  - build
+  - deploy
+
+variables:
+  WEB_IMAGE: edcas-web
+  SERVER_IMAGE: edcas-server
+  # Set in GitLab CI/CD Settings > Variables:
+  #   DB_PASSWORD  (masked, required)
+  # Paths on the runner host:
+  DEPLOY_PATH: /mnt/m42/edcas
+  DATA_PATH: /mnt/m42/edcas-data
+
+build-web:
+  stage: build
+  image: docker:latest
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+  script:
+    - docker build -t $WEB_IMAGE:$CI_COMMIT_SHORT_SHA -t $WEB_IMAGE:latest -f Dockerfile.web .
+  only:
+    - main
+
+build-server:
+  stage: build
+  image: docker:latest
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+  script:
+    - docker build -t $SERVER_IMAGE:$CI_COMMIT_SHORT_SHA -t $SERVER_IMAGE:latest -f Dockerfile.eddn .
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  image: docker:latest
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+  needs:
+    - build-web
+    - build-server
+  script:
+    - mkdir -p $DEPLOY_PATH/crates/edcas-server $DATA_PATH/postgres-data
+    - cp docker-compose.yml $DEPLOY_PATH/docker-compose.yml
+    - cp crates/edcas-server/schema.sql $DEPLOY_PATH/crates/edcas-server/schema.sql
+    - |
+      cd $DEPLOY_PATH && \
+      WEB_IMAGE=$WEB_IMAGE:latest \
+      SERVER_IMAGE=$SERVER_IMAGE:latest \
+      DB_PASSWORD=$DB_PASSWORD \
+      DATA_PATH=$DATA_PATH \
+      docker compose up -d --no-build
+    - docker image prune -f
+  environment:
+    name: production
+  only:
+    - main
