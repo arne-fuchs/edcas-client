@@ -753,6 +753,7 @@ impl ExplorerView {
         lines.push(Line::from(""));
 
         lines.push(section_header("Physical"));
+        detail_row(&mut lines, "Body ID", body.body_id.to_string());
         detail_row(&mut lines, "Distance", format!("{:.2} Ls", body.distance_from_arrival_ls));
         if body.radius > 0.0 {
             detail_row(&mut lines, "Radius", format!("{:.0} km", body.radius / 1000.0));
