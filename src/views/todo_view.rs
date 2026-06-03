@@ -141,7 +141,7 @@ impl TodoView {
         if !eng_empty {
             lines.push(Line::from(Span::styled(
                 "─ Engineering ",
-                Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
             )));
             for (i, item) in self.todo.items.iter().enumerate() {
                 let selected = i == self.selected_idx;
@@ -169,7 +169,7 @@ impl TodoView {
             }
             lines.push(Line::from(Span::styled(
                 "─ Construction ",
-                Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
             )));
 
             let offset = self.todo.items.len();
@@ -280,7 +280,7 @@ impl TodoView {
 
                 lines.push(Line::from(Span::styled(
                     format!(" ★ {}", site.station_name),
-                    Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                    Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
                 )));
                 if !site.system_name.is_empty() {
                     lines.push(Line::from(Span::styled(

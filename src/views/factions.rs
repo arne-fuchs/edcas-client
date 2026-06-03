@@ -500,7 +500,7 @@ impl FactionsView {
             const FRAMES: &[char] = &['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
             let ch = FRAMES[(self.spinner_frame as usize) % FRAMES.len()];
             lines.push(Line::from(vec![
-                Span::styled(format!("{ch} "), Style::default().fg(Color::Rgb(255, 140, 0))),
+                Span::styled(format!("{ch} "), Style::default().fg(crate::theme::accent())),
                 Span::styled(self.status_msg.clone(), Style::default().fg(Color::DarkGray)),
             ]));
         } else {
@@ -514,7 +514,7 @@ impl FactionsView {
         for (i, faction) in self.pinned_results.iter().enumerate() {
             let selected = i == self.selected_idx;
             let style = if selected {
-                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::Yellow)
             };
@@ -545,7 +545,7 @@ impl FactionsView {
             let i = n + j;
             let selected = i == self.selected_idx;
             let style = if selected {
-                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             };
@@ -562,9 +562,9 @@ impl FactionsView {
     fn build_detail_header_lines(&self) -> Vec<Line<'static>> {
         let tab_active = Style::default()
             .fg(Color::Black)
-            .bg(Color::Rgb(255, 140, 0))
+            .bg(crate::theme::accent())
             .add_modifier(Modifier::BOLD);
-        let tab_inactive = Style::default().fg(Color::Rgb(255, 140, 0));
+        let tab_inactive = Style::default().fg(crate::theme::accent());
         let tabs = [DetailTab::Info, DetailTab::Systems, DetailTab::History];
         let tab_spans: Vec<Span> = tabs
             .iter()
@@ -579,7 +579,7 @@ impl FactionsView {
         if let Some(faction) = self.selected_faction() {
             lines.push(Line::from(Span::styled(
                 format!("── {} ──", faction.name),
-                Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
             )));
         }
 
@@ -774,7 +774,7 @@ impl FactionsView {
             .constraints([Constraint::Percentage(35), Constraint::Percentage(65)])
             .split(area);
 
-        let active_border = Style::default().fg(Color::Rgb(255, 140, 0));
+        let active_border = Style::default().fg(crate::theme::accent());
         let inactive_border = Style::default().fg(Color::White);
 
         // ── Left: faction list ───────────────────────────────────
@@ -890,7 +890,7 @@ impl FactionsView {
             ))
             .marker(symbols::Marker::Braille)
             .graph_type(GraphType::Line)
-            .style(Style::default().fg(Color::Rgb(255, 140, 0)))
+            .style(Style::default().fg(crate::theme::accent()))
             .data(&self.history_data);
 
         let chart = Chart::new(vec![dataset])
@@ -947,7 +947,7 @@ fn info_body(faction: &FactionResponse) -> Vec<Line<'static>> {
 fn section_header(text: &str) -> Line<'static> {
     Line::from(Span::styled(
         text.to_owned(),
-        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+        Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
     ))
 }
 
@@ -1209,7 +1209,7 @@ fn systems_body(faction: &FactionResponse, selected: usize, focused: bool, sorte
                 row,
                 Style::default()
                     .fg(Color::Black)
-                    .bg(Color::Rgb(255, 140, 0))
+                    .bg(crate::theme::accent())
                     .add_modifier(Modifier::BOLD),
             )));
         } else {

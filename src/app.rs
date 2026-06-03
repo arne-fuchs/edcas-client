@@ -11,7 +11,7 @@ use tracing::{info, warn};
 
 use crate::api_client::ApiClient;
 use crate::event_shim::{KeyCode, KeyEvent};
-use crate::journal_reader::{BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData, ParentType};
+use crate::journal_reader::{BodyMaterial, BodyParent, BodyRing, BodyScan, JournalData};
 use crate::settings::Settings;
 use crate::views::{
     CommanderView, ExplorerView, FactionsView,
@@ -131,6 +131,7 @@ impl App {
     pub fn new() -> Self {
         let settings = Settings::default();
         info!("Settings loaded");
+        crate::theme::set_accent(&settings.appearance.color);
 
         let journal_dir = if !settings.journal_reader.journal_directory.is_empty() {
             let dir = PathBuf::from(&settings.journal_reader.journal_directory);
@@ -184,6 +185,7 @@ impl App {
     #[cfg(target_arch = "wasm32")]
     pub fn new_web() -> Self {
         let settings = Settings::default();
+        crate::theme::set_accent(&settings.appearance.color);
         let api = ApiClient::new(&settings.api_url);
         Self {
             view: AppView::default(),
@@ -221,9 +223,12 @@ impl App {
         };
 
         for data in updates {
+            // This fires for *every* event, so keep it to context that's meaningful regardless
+            // of the event type: which event triggered the refresh and where we are. Event-
+            // specific detail (body names, scan counts, station, …) is logged at debug level in
+            // `JournalData::process_line`, where the parsed event is actually available.
             let system_name = data.current_system.as_ref().map(|s| s.name.clone()).unwrap_or_default();
-            let body_count = data.bodies.len();
-            info!("Journal update received: system={}, bodies={}", system_name, body_count);
+            info!("Journal update received: event={}, system={}", data.latest_event, system_name);
 
             let new_addr = data.current_system.as_ref().map(|s| s.system_address).unwrap_or(0);
             if new_addr != 0 && new_addr != self.last_api_system && !self.settings.api_url.is_empty() {
@@ -357,13 +362,13 @@ impl App {
                 Block::default()
                     .borders(Borders::ALL)
                     .title(APP_TITLE)
-                    .style(Style::default().fg(Color::Rgb(255, 140, 0))),
+                    .style(Style::default().fg(crate::theme::accent())),
             )
             .select(self.view.index())
             .highlight_style(
                 Style::default()
                     .fg(Color::Black)
-                    .bg(Color::Rgb(255, 140, 0))
+                    .bg(crate::theme::accent())
                     .add_modifier(Modifier::BOLD),
             )
             .style(Style::default().fg(Color::White))
@@ -407,7 +412,7 @@ impl App {
     }
 
     fn render_status_bar(&self, frame: &mut Frame, area: ratatui::layout::Rect) {
-        let bg         = Color::Rgb(255, 140, 0);
+        let bg         = crate::theme::accent();
         let key_style  = Style::default().fg(Color::Black).bg(bg).add_modifier(Modifier::BOLD);
         let desc_style = Style::default().fg(Color::Black).bg(bg);
         let sep_style  = Style::default().fg(Color::Rgb(120, 55, 0)).bg(bg);
@@ -492,6 +497,8 @@ impl App {
             ViewEvent::SettingsChanged => {
                 info!("Settings changed, saving");
                 self.settings_view.save_settings(&self.settings);
+                // Apply the accent colour live so editing it in Settings takes effect immediately.
+                crate::theme::set_accent(&self.settings.appearance.color);
                 #[cfg(not(target_arch = "wasm32"))]
                 self.restart_journal_reader();
                 return;
@@ -586,9 +593,6 @@ pub fn body_from_api(br: &edcas_common::api::BodyResponse) -> BodyScan {
         .map(|r| BodyRing {
             name: r.name.clone(),
             ring_class: r.ring_class.clone(),
-            mass_mt: r.mass_mt,
-            inner_rad: r.inner_rad,
-            outer_rad: r.outer_rad,
         })
         .collect();
 
@@ -606,12 +610,6 @@ pub fn body_from_api(br: &edcas_common::api::BodyResponse) -> BodyScan {
         .iter()
         .map(|p| BodyParent {
             body_id: p.parent_id,
-            parent_type: match p.parent_type.as_str() {
-                "Star" => ParentType::Star,
-                "Planet" => ParentType::Planet,
-                "Ring" => ParentType::Ring,
-                _ => ParentType::Null,
-            },
         })
         .collect();
 

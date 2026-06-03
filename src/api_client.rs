@@ -1,5 +1,5 @@
 use edcas_common::api::{
-    BodyResponse, CarrierQuery, CarrierResponse, CommodityPricePoint, ConstructionDepotResponse,
+    BodyResponse, CommodityPricePoint, ConstructionDepotResponse,
     ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse, InfluencePoint,
     MultiCommodityQuery, MultiCommodityResult, NearestCommodityQuery, NearestCommodityResult,
     ServerTickResponse, StationQuery, StationResponse, TradeLoopResponse, TradeRouteResponse,
@@ -75,21 +75,6 @@ impl ApiClient {
             Ok(result)
         } else {
             warn!(url, %status, "API response: search_stations failed");
-            Ok(vec![])
-        }
-    }
-
-    pub async fn search_carriers(&self, query: &CarrierQuery) -> anyhow::Result<Vec<CarrierResponse>> {
-        let url = format!("{}/api/v1/carriers", self.base_url);
-        debug!(url, ?query, "API call: search_carriers");
-        let resp = self.client.get(&url).query(query).send().await?;
-        let status = resp.status();
-        if status.is_success() {
-            let result: Vec<CarrierResponse> = resp.json().await?;
-            debug!(url, count = result.len(), "API response: search_carriers");
-            Ok(result)
-        } else {
-            warn!(url, %status, "API response: search_carriers failed");
             Ok(vec![])
         }
     }
@@ -306,14 +291,6 @@ impl ApiClient {
 
     pub async fn search_stations(&self, query: StationQuery) -> Vec<StationResponse> {
         let url = format!("{}/api/v1/stations", self.base_url);
-        match self.client.get(&url).query(&query).send().await {
-            Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
-            _ => vec![],
-        }
-    }
-
-    pub async fn search_carriers(&self, query: CarrierQuery) -> Vec<CarrierResponse> {
-        let url = format!("{}/api/v1/carriers", self.base_url);
         match self.client.get(&url).query(&query).send().await {
             Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
             _ => vec![],

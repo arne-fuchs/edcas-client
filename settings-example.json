@@ -1,12 +1,9 @@
 {
   "appearance": {
-    "color": "purple"
+    "color": "orange"
   },
   "explorer": {
     "include_system_name": true
-  },
-  "graphics_editor": {
-    "graphics_directory": "~/.steam/root/steamapps/compatdata/359320/pfx/drive_c/users/steamuser/AppData/Local/Frontier Developments/Elite Dangerous/Options/Graphics"
   },
   "journal_reader": {
     "action_at_shutdown_signal": "Continue",

@@ -1,6 +1,6 @@
 // On native targets crossterm compiles fine — just re-export its types.
 #[cfg(not(target_arch = "wasm32"))]
-pub use crossterm::event::{KeyCode, KeyEvent, KeyModifiers};
+pub use crossterm::event::{KeyCode, KeyEvent};
 
 // On wasm32 crossterm can't compile (no unix/windows sys layer).
 // Provide minimal compatible types so the view code can stay unchanged.

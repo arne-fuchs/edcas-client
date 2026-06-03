@@ -22,6 +22,7 @@ mod journal_reader;
 mod my_carriers;
 mod pins;
 mod settings;
+mod theme;
 mod todo;
 mod views;
 

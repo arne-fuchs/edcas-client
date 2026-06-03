@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 /// Persistent state for fleet carriers the player has marked as "mine".
 /// Stored in `my_carriers.json` alongside `pins.json`.
@@ -88,10 +88,6 @@ impl MyCarriersData {
                 }
             }
         }
-    }
-
-    pub fn market_ids(&self) -> HashSet<i64> {
-        self.carriers.keys().copied().collect()
     }
 
     #[cfg(not(target_arch = "wasm32"))]

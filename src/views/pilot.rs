@@ -113,7 +113,7 @@ impl PilotView {
                     Block::default()
                         .title(" Pilot ")
                         .borders(Borders::ALL)
-                        .border_style(Style::default().fg(Color::Rgb(255, 140, 0))),
+                        .border_style(Style::default().fg(crate::theme::accent())),
                 )
                 .scroll((self.scroll, 0)),
             area,
@@ -132,7 +132,7 @@ impl PilotView {
             return lines;
         }
 
-        let orange = Style::default().fg(Color::Rgb(255, 140, 0));
+        let orange = Style::default().fg(crate::theme::accent());
         let cyan = Style::default().fg(Color::Cyan);
         let white = Style::default().fg(Color::White);
         let bold = Style::default().fg(Color::White).add_modifier(Modifier::BOLD);
@@ -141,7 +141,7 @@ impl PilotView {
         let section = |title: &'static str| -> Line<'static> {
             Line::from(vec![
                 Span::raw(" "),
-                Span::styled(title, Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)),
+                Span::styled(title, Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD)),
             ])
         };
         let divider = || Line::from(Span::styled("─".repeat(60), gray));
@@ -255,7 +255,7 @@ impl PilotView {
 }
 
 fn suit_lines(suit: &SuitData, lines: &mut Vec<Line<'static>>) {
-    let orange = Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+    let orange = Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD);
     let cyan   = Style::default().fg(Color::Cyan);
     let white  = Style::default().fg(Color::White);
     let purple = Style::default().fg(Color::Rgb(180, 100, 255));

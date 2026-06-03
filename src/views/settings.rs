@@ -26,7 +26,6 @@ use crate::views::ViewEvent;
 enum SettingsSection {
     #[default]
     JournalReader,
-    GraphicsEditor,
     Appearance,
     Explorer,
     Icons,
@@ -39,7 +38,6 @@ impl SettingsSection {
     fn all() -> Vec<Self> {
         vec![
             SettingsSection::JournalReader,
-            SettingsSection::GraphicsEditor,
             SettingsSection::Appearance,
             SettingsSection::Explorer,
             SettingsSection::Icons,
@@ -52,7 +50,6 @@ impl SettingsSection {
     fn title(&self) -> &'static str {
         match self {
             SettingsSection::JournalReader => "Journal Reader",
-            SettingsSection::GraphicsEditor => "Graphics Editor",
             SettingsSection::Appearance => "Appearance",
             SettingsSection::Explorer => "Explorer",
             SettingsSection::Icons => "Icons",
@@ -65,6 +62,9 @@ impl SettingsSection {
 
 #[derive(Clone, PartialEq)]
 enum CellType {
+    /// A non-interactive group heading that starts a new "paragraph" of related settings.
+    /// Navigation skips over these and they have no editable value.
+    Header(&'static str),
     Label(String),
     StringValue(String),
     BoolValue(bool),
@@ -74,6 +74,39 @@ enum CellType {
 
 struct GridRow {
     cells: Vec<CellType>,
+}
+
+/// Rank of a star class key for display ordering: the Harvard spectral sequence (O B A F G K M,
+/// hot→cool), then the cool brown-dwarf classes, giants/supergiants, proto stars, Wolf-Rayet,
+/// carbon, S-type, white dwarfs, compact remnants and finally non-stellar bodies. Keys not in
+/// the table rank last and fall back to alphabetical order, so unknown future classes still sort
+/// deterministically.
+fn star_class_rank(key: &str) -> usize {
+    const ORDER: &[&str] = &[
+        // Main sequence, hot → cool
+        "O", "B", "A", "F", "G", "K", "M",
+        // Cool dwarfs
+        "L", "T", "Y",
+        // Giants & supergiants
+        "A_BlueWhiteSuperGiant", "F_WhiteSuperGiant", "K_OrangeGiant", "M_RedGiant",
+        "M_RedSuperGiant",
+        // Proto stars
+        "TTS", "AeBe",
+        // Wolf-Rayet
+        "W", "WN", "WNC", "WC", "WO",
+        // Carbon stars
+        "C", "CN", "CJ", "CH", "CHd", "CS",
+        // S-type
+        "S", "MS", "MS S",
+        // White dwarfs
+        "D", "DA", "DAB", "DAV", "DAZ", "DAO", "DB", "DBV", "DBZ", "DC", "DCV", "DO", "DOV",
+        "DQ", "DX",
+        // Compact remnants
+        "N", "H", "SupermassiveBlackHole",
+        // Non-stellar / exotic
+        "X", "RoguePlanet", "Nebula", "StellarRemnantNebula",
+    ];
+    ORDER.iter().position(|&c| c == key).unwrap_or(usize::MAX)
 }
 
 pub struct SettingsView {
@@ -155,11 +188,7 @@ impl SettingsView {
                     }
                 }
                 FocusArea::Content => {
-                    if self.row > 0 {
-                        self.row -= 1;
-                        self.clamp_col(settings);
-                        self.ensure_scroll_visible();
-                    }
+                    self.move_to_prev_selectable(settings);
                 }
             },
             KeyCode::Char('s') => match self.focus {
@@ -172,13 +201,7 @@ impl SettingsView {
                     }
                 }
                 FocusArea::Content => {
-                    let grid = self.build_grid(settings);
-                    let row_count = grid.len();
-                    if self.row + 1 < row_count {
-                        self.row += 1;
-                        self.clamp_col(settings);
-                        self.ensure_scroll_visible();
-                    }
+                    self.move_to_next_selectable(settings);
                 }
             },
             KeyCode::Char('a') => match self.focus {
@@ -249,7 +272,60 @@ impl SettingsView {
         self.row = 0;
         self.col = 0;
         self.content_scroll = 0;
+        // The first row may be a group header; land on the first selectable row instead.
+        if !self.row_selectable(self.row, settings) {
+            self.move_to_next_selectable(settings);
+        }
         self.clamp_col(settings);
+    }
+
+    /// A row is selectable unless its first cell is a [`CellType::Header`] (a group heading).
+    fn row_selectable(&self, idx: usize, settings: &Settings) -> bool {
+        let grid = self.build_grid(settings);
+        !matches!(
+            grid.get(idx).and_then(|r| r.cells.first()),
+            Some(CellType::Header(_))
+        )
+    }
+
+    /// Moves the cursor up to the nearest selectable row, skipping headers.
+    fn move_to_prev_selectable(&mut self, settings: &Settings) {
+        let mut i = self.row;
+        while i > 0 {
+            i -= 1;
+            if self.row_selectable(i, settings) {
+                self.row = i;
+                self.clamp_col(settings);
+                self.ensure_scroll_visible();
+                return;
+            }
+        }
+    }
+
+    /// Moves the cursor down to the nearest selectable row, skipping headers.
+    fn move_to_next_selectable(&mut self, settings: &Settings) {
+        let row_count = self.build_grid(settings).len();
+        let mut i = self.row + 1;
+        while i < row_count {
+            if self.row_selectable(i, settings) {
+                self.row = i;
+                self.clamp_col(settings);
+                self.ensure_scroll_visible();
+                return;
+            }
+            i += 1;
+        }
+    }
+
+    /// Label of the row the cursor is on, if its first cell is a [`CellType::Label`]. Used by
+    /// the edit/toggle handlers so they key off the setting's name rather than a row index
+    /// (which shifts when rows are regrouped or headers are inserted).
+    fn row_label(&self, settings: &Settings) -> Option<String> {
+        let grid = self.build_grid(settings);
+        match grid.get(self.row).and_then(|r| r.cells.first()) {
+            Some(CellType::Label(s)) => Some(s.clone()),
+            _ => None,
+        }
     }
 
     fn clamp_col(&mut self, settings: &Settings) {
@@ -286,7 +362,17 @@ impl SettingsView {
             _ => &settings.icons,
         };
         let mut keys: Vec<String> = icons.keys().cloned().collect();
-        keys.sort();
+        if self.section == SettingsSection::Stars {
+            // Order by the Harvard spectral sequence rather than alphabetically, with the key
+            // name as a stable tie-breaker for any classes sharing a rank.
+            keys.sort_by(|a, b| {
+                star_class_rank(a)
+                    .cmp(&star_class_rank(b))
+                    .then_with(|| a.cmp(b))
+            });
+        } else {
+            keys.sort();
+        }
         keys
     }
 
@@ -304,6 +390,7 @@ impl SettingsView {
     fn build_regular_grid(&self, settings: &Settings) -> Vec<GridRow> {
         match self.section {
             SettingsSection::JournalReader => vec![
+                // ── Journal Reader ──────────────────────────────────────
                 GridRow {
                     cells: vec![
                         CellType::Label("Journal Directory".to_string()),
@@ -322,9 +409,13 @@ impl SettingsView {
                         CellType::StringValue(settings.journal_reader.action_at_shutdown_signal.to_string()),
                     ],
                 },
+                // ── edcas API ───────────────────────────────────────────
+                GridRow {
+                    cells: vec![CellType::Header("edcas API")],
+                },
                 GridRow {
                     cells: vec![
-                        CellType::Label("API URL".to_string()),
+                        CellType::Label("edcas API URL".to_string()),
                         CellType::StringValue(settings.api_url.clone()),
                     ],
                 },
@@ -333,6 +424,16 @@ impl SettingsView {
                         CellType::Label("Send to edcas API".to_string()),
                         CellType::BoolValue(settings.edcas_api_enabled),
                     ],
+                },
+                GridRow {
+                    cells: vec![
+                        CellType::Label("Upload History".to_string()),
+                        CellType::Button("[ Upload All Journal Logs ]"),
+                    ],
+                },
+                // ── EDDN ────────────────────────────────────────────────
+                GridRow {
+                    cells: vec![CellType::Header("EDDN")],
                 },
                 GridRow {
                     cells: vec![
@@ -352,22 +453,10 @@ impl SettingsView {
                         CellType::BoolValue(settings.eddn_test_mode),
                     ],
                 },
-                GridRow {
-                    cells: vec![
-                        CellType::Label("Upload History".to_string()),
-                        CellType::Button("[ Upload All Journal Logs ]"),
-                    ],
-                },
             ],
-            SettingsSection::GraphicsEditor => vec![GridRow {
-                cells: vec![
-                    CellType::Label("Graphics Directory".to_string()),
-                    CellType::StringValue(settings.graphics_editor.graphics_directory.clone()),
-                ],
-            }],
             SettingsSection::Appearance => vec![GridRow {
                 cells: vec![
-                    CellType::Label("Color".to_string()),
+                    CellType::Label("Accent Color (name, #rrggbb, or r,g,b)".to_string()),
                     CellType::StringValue(settings.appearance.color.clone()),
                 ],
             }],
@@ -432,13 +521,12 @@ impl SettingsView {
             }
         } else {
             match self.section {
-                SettingsSection::JournalReader => match self.row {
-                    0 => {
+                SettingsSection::JournalReader => match self.row_label(settings).as_deref() {
+                    Some("Journal Directory") => {
                         info!("Updated journal directory: '{}'", value);
                         settings.journal_reader.journal_directory = value;
                     }
-                    // row 1 is the Button row — not editable, no action needed here
-                    2 => {
+                    Some("Action at Shutdown") => {
                         if let Ok(action) = ActionAtShutdownSignal::from_str(&value) {
                             info!("Updated shutdown action: {}", action);
                             settings.journal_reader.action_at_shutdown_signal = action;
@@ -446,24 +534,16 @@ impl SettingsView {
                             warn!("Invalid shutdown action value: '{}'", value);
                         }
                     }
-                    3 => {
-                        info!("Updated API URL: '{}'", value);
+                    Some("edcas API URL") => {
+                        info!("Updated edcas API URL: '{}'", value);
                         settings.api_url = value;
                     }
-                    // rows 4, 5 are bool toggles (handled in toggle_bool)
-                    6 => {
+                    Some("EDDN URL") => {
                         info!("Updated EDDN URL: '{}'", value);
                         settings.eddn_url = value;
                     }
-                    // row 7 is a bool toggle; row 8 is the Upload History button
                     _ => {}
                 },
-                SettingsSection::GraphicsEditor => {
-                    if self.row == 0 {
-                        info!("Updated graphics directory: '{}'", value);
-                        settings.graphics_editor.graphics_directory = value;
-                    }
-                }
                 SettingsSection::Appearance => {
                     if self.row == 0 {
                         info!("Updated appearance color: '{}'", value);
@@ -537,16 +617,16 @@ impl SettingsView {
                 settings.explorer.include_system_name = !settings.explorer.include_system_name;
                 info!("Toggled include_system_name: {}", settings.explorer.include_system_name);
             }
-            SettingsSection::JournalReader => match self.row {
-                4 => {
+            SettingsSection::JournalReader => match self.row_label(settings).as_deref() {
+                Some("Send to edcas API") => {
                     settings.edcas_api_enabled = !settings.edcas_api_enabled;
                     info!("Toggled edcas API upload: {}", settings.edcas_api_enabled);
                 }
-                5 => {
+                Some("Send to EDDN") => {
                     settings.eddn_enabled = !settings.eddn_enabled;
                     info!("Toggled EDDN upload: {}", settings.eddn_enabled);
                 }
-                7 => {
+                Some("EDDN Test Mode") => {
                     settings.eddn_test_mode = !settings.eddn_test_mode;
                     info!("Toggled EDDN test mode: {}", settings.eddn_test_mode);
                 }
@@ -596,7 +676,7 @@ impl SettingsView {
                         format!("> {}", s.title()),
                         Style::default()
                             .fg(Color::Black)
-                            .bg(Color::Rgb(255, 140, 0))
+                            .bg(crate::theme::accent())
                             .add_modifier(Modifier::BOLD),
                     ))
                 } else {
@@ -618,7 +698,7 @@ impl SettingsView {
                     .borders(Borders::ALL)
                     .style(
                         if matches!(self.focus, FocusArea::Sidebar) {
-                            Style::default().fg(Color::Rgb(255, 140, 0))
+                            Style::default().fg(crate::theme::accent())
                         } else {
                             Style::default().fg(Color::DarkGray)
                         }
@@ -663,7 +743,7 @@ impl SettingsView {
             };
             let gauge = Gauge::default()
                 .block(Block::default().borders(Borders::ALL))
-                .gauge_style(Style::default().fg(Color::Rgb(255, 140, 0)).bg(Color::DarkGray))
+                .gauge_style(Style::default().fg(crate::theme::accent()).bg(Color::DarkGray))
                 .ratio(ratio)
                 .label(label);
             frame.render_widget(gauge, area);
@@ -682,7 +762,7 @@ impl SettingsView {
                     .block(ratatui::widgets::Block::default()
                         .title(" About ")
                         .borders(ratatui::widgets::Borders::ALL)
-                        .border_style(Style::default().fg(Color::Rgb(255, 140, 0))))
+                        .border_style(Style::default().fg(crate::theme::accent())))
                     .scroll((scroll, 0)),
                 area,
             );
@@ -694,7 +774,7 @@ impl SettingsView {
             Line::from(Span::styled(
                 self.section.title(),
                 Style::default()
-                    .fg(Color::Rgb(255, 140, 0))
+                    .fg(crate::theme::accent())
                     .add_modifier(Modifier::BOLD),
             )),
             Line::from(""),
@@ -710,6 +790,19 @@ impl SettingsView {
         ];
 
         for (row_idx, row) in grid.iter().enumerate() {
+            // A group header starts a new paragraph: a blank spacer line followed by a bold
+            // heading. It is not selectable, so it never shows the focus cursor.
+            if let Some(CellType::Header(title)) = row.cells.first() {
+                lines.push(Line::from(""));
+                lines.push(Line::from(Span::styled(
+                    title.to_string(),
+                    Style::default()
+                        .fg(crate::theme::accent())
+                        .add_modifier(Modifier::BOLD),
+                )));
+                continue;
+            }
+
             let is_row_focused = row_idx == self.row;
             let mut row_spans: Vec<Span> = Vec::new();
 
@@ -723,6 +816,7 @@ impl SettingsView {
                 let is_editing = self.editing && is_cell_focused;
 
                 let display = match cell {
+                    CellType::Header(s) => s.to_string(),
                     CellType::Label(s) => s.clone(),
                     CellType::StringValue(s) => {
                         if is_editing {
@@ -739,12 +833,12 @@ impl SettingsView {
                 let style = if is_editing {
                     Style::default()
                         .fg(Color::Black)
-                        .bg(Color::Rgb(255, 140, 0))
+                        .bg(crate::theme::accent())
                         .add_modifier(Modifier::BOLD)
                 } else if is_cell_focused {
                     Style::default()
                         .fg(Color::Black)
-                        .bg(Color::Rgb(255, 140, 0))
+                        .bg(crate::theme::accent())
                         .add_modifier(Modifier::BOLD)
                 } else if matches!(cell, CellType::Label(_)) {
                     Style::default().fg(Color::Cyan)
@@ -753,7 +847,7 @@ impl SettingsView {
                 } else if matches!(cell, CellType::ToggleEnabled(false)) {
                     Style::default().fg(Color::Red)
                 } else if matches!(cell, CellType::Button(_)) {
-                    Style::default().fg(Color::Rgb(255, 140, 0))
+                    Style::default().fg(crate::theme::accent())
                 } else {
                     Style::default().fg(Color::White)
                 };
@@ -771,7 +865,7 @@ impl SettingsView {
         }
 
         let content_border_style = if matches!(self.focus, FocusArea::Content) {
-            Style::default().fg(Color::Rgb(255, 140, 0))
+            Style::default().fg(crate::theme::accent())
         } else {
             Style::default().fg(Color::DarkGray)
         };

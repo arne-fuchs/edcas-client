@@ -219,49 +219,6 @@ impl StationDetailTab {
     }
 }
 
-#[derive(Clone, Copy, PartialEq)]
-pub(super) enum CarrierDetailTab {
-    Overview,
-    Market,
-    Outfitting,
-    Shipyard,
-    Inventory,
-    Construction,
-}
-
-impl CarrierDetailTab {
-    pub(super) fn next(self) -> Option<Self> {
-        match self {
-            Self::Overview      => Some(Self::Market),
-            Self::Market        => Some(Self::Outfitting),
-            Self::Outfitting    => Some(Self::Shipyard),
-            Self::Shipyard      => Some(Self::Inventory),
-            Self::Inventory     => Some(Self::Construction),
-            Self::Construction  => None,
-        }
-    }
-    pub(super) fn prev(self) -> Option<Self> {
-        match self {
-            Self::Overview      => None,
-            Self::Market        => Some(Self::Overview),
-            Self::Outfitting    => Some(Self::Market),
-            Self::Shipyard      => Some(Self::Outfitting),
-            Self::Inventory     => Some(Self::Shipyard),
-            Self::Construction  => Some(Self::Inventory),
-        }
-    }
-    pub(super) fn label(self) -> &'static str {
-        match self {
-            Self::Overview      => "Overview",
-            Self::Market        => "Market",
-            Self::Outfitting    => "Outfitting",
-            Self::Shipyard      => "Shipyard",
-            Self::Inventory     => "Inventory",
-            Self::Construction  => "Construction",
-        }
-    }
-}
-
 /// Compute remaining construction needs, subtracting ship cargo.
 pub(super) fn compute_todo_needed(
     construction_items: &[crate::todo::ConstructionTodoItem],

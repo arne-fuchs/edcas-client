@@ -29,17 +29,12 @@ pub struct ConflictData {
     pub opponent: String,
     pub our_won_days: i32,
     pub opponent_won_days: i32,
-    pub our_stake: String,
-    pub opponent_stake: String,
 }
 
 #[derive(Clone)]
 pub struct FactionInfo {
     pub name: String,
     pub influence: f32,
-    pub government: String,
-    pub allegiance: String,
-    pub happiness: String,
     pub active_states: Vec<String>,
     pub pending_states: Vec<String>,
     pub recovering_states: Vec<String>,
@@ -50,16 +45,12 @@ pub struct FactionInfo {
 pub struct SystemData {
     pub name: String,
     pub system_address: i64,
-    pub coords: (f32, f32, f32),
     pub economy: String,
     pub second_economy: String,
     pub government: String,
     pub allegiance: String,
     pub security: String,
     pub population: i64,
-    pub body: String,
-    pub body_id: i32,
-    pub body_type: String,
     pub factions: Vec<FactionInfo>,
     pub system_faction: String,
     pub controlling_power: Option<String>,
@@ -100,24 +91,12 @@ pub struct BodyComposition {
 #[derive(Clone)]
 pub struct BodyParent {
     pub body_id: i32,
-    pub parent_type: ParentType,
-}
-
-#[derive(Clone)]
-pub enum ParentType {
-    Star,
-    Planet,
-    Ring,
-    Null,
 }
 
 #[derive(Clone)]
 pub struct BodyRing {
     pub name: String,
     pub ring_class: String,
-    pub mass_mt: f64,
-    pub inner_rad: f64,
-    pub outer_rad: f64,
 }
 
 #[derive(Clone)]
@@ -259,7 +238,6 @@ pub struct EngineeringModifier {
 pub struct EngineeringData {
     pub blueprint: String,
     pub level: u8,
-    pub quality: f32,
     pub engineer: String,
     pub experimental: String,
     pub modifiers: Vec<EngineeringModifier>,
@@ -452,6 +430,8 @@ pub struct JournalData {
     pub organic_scans: Vec<OrganicScan>,
     /// Timestamp of the most recently processed journal event (ISO 8601 string).
     pub latest_event_timestamp: String,
+    /// `event` name of the most recently processed journal event.
+    pub latest_event: String,
     /// When set, CargoTransfer events for seeded carriers with timestamp ≤ this value
     /// are skipped to avoid double-counting after an in-session restart.
     /// Cleared after the initial file load so live events are never skipped.
@@ -499,6 +479,7 @@ impl JournalData {
             nav_beacon_bodies: None,
             organic_scans: Vec::new(),
             latest_event_timestamp: String::new(),
+            latest_event: String::new(),
             carrier_cargo_skip_before: None,
             carrier_cargo_seeded: std::collections::HashSet::new(),
             local_market: None,
@@ -518,6 +499,9 @@ impl JournalData {
 
         if let Some(ts) = value.get("timestamp").and_then(|v| v.as_str()) {
             self.latest_event_timestamp = ts.to_string();
+        }
+        if let Some(event) = value.get("event").and_then(|v| v.as_str()) {
+            self.latest_event = event.to_string();
         }
 
         // Loadout carries per-module health and detailed ship stats not in the typed event system.
@@ -665,7 +649,6 @@ impl JournalData {
                     .map(|pv| pv.iter()
                         .filter_map(|p| p.parent_id().map(|pid| BodyParent {
                             body_id: pid,
-                            parent_type: parent_type_from_str(p.parent_type()),
                         }))
                         .collect())
                     .unwrap_or_default();
@@ -760,9 +743,16 @@ impl JournalData {
                             self.materials_raw = parse_inventory_array(&v["Raw"]);
                             self.materials_manufactured = parse_inventory_array(&v["Manufactured"]);
                             self.materials_encoded = parse_inventory_array(&v["Encoded"]);
+                            debug!(
+                                "Materials: {} raw, {} manufactured, {} encoded",
+                                self.materials_raw.len(),
+                                self.materials_manufactured.len(),
+                                self.materials_encoded.len()
+                            );
                         }
                         Some("Commander") => {
                             self.pilot.name = v["Name"].as_str().unwrap_or("").to_string();
+                            debug!("Commander: {}", self.pilot.name);
                         }
                         Some("LoadGame") => {
                             if let Some(name) = v["Commander"].as_str() {
@@ -780,6 +770,10 @@ impl JournalData {
                             self.pilot.game_mode = v["GameMode"].as_str().unwrap_or("").to_string();
                             self.pilot.horizons = v["Horizons"].as_bool().unwrap_or(false);
                             self.pilot.odyssey = v["Odyssey"].as_bool().unwrap_or(false);
+                            debug!(
+                                "LoadGame: commander={}, credits={}, ship={}",
+                                self.pilot.name, self.pilot.credits, self.pilot.ship_type
+                            );
                         }
                         Some("Rank") => {
                             self.pilot.rank_combat = v["Combat"].as_u64().unwrap_or(0) as u8;
@@ -809,6 +803,25 @@ impl JournalData {
                         Some("Powerplay") => {
                             self.pilot.power = v["Power"].as_str().unwrap_or("").to_string();
                             self.pilot.power_merits = v["Merits"].as_i64().unwrap_or(0);
+                            debug!(
+                                "Powerplay: {} ({} merits)",
+                                self.pilot.power, self.pilot.power_merits
+                            );
+                        }
+                        Some("PowerplayMerits") => {
+                            // Incremental merit award between full `Powerplay` snapshots — keep
+                            // the running total current and note the gain.
+                            if let Some(power) = v["Power"].as_str().filter(|s| !s.is_empty()) {
+                                self.pilot.power = power.to_string();
+                            }
+                            let total = v["TotalMerits"].as_i64().unwrap_or(self.pilot.power_merits);
+                            self.pilot.power_merits = total;
+                            debug!(
+                                "PowerplayMerits: +{} merits ({} total) for {}",
+                                v["MeritsGained"].as_i64().unwrap_or(0),
+                                total,
+                                self.pilot.power
+                            );
                         }
                         Some("CargoTransfer") => {
                             // Track cargo moved to/from the carrier we're currently docked at.
@@ -854,6 +867,7 @@ impl JournalData {
                                 v["StarSystem"].as_str(),
                             ) {
                                 self.claimed_systems.insert(addr, name.to_string());
+                                debug!("ColonisationSystemClaim: {}", name);
                             }
                         }
                         Some("SuitLoadout") => {
@@ -880,6 +894,12 @@ impl JournalData {
                                         .unwrap_or_default(),
                                 }).collect())
                                 .unwrap_or_default();
+                            debug!(
+                                "SuitLoadout: {} (grade {}), loadout '{}'",
+                                suit_type,
+                                grade,
+                                v["LoadoutName"].as_str().unwrap_or("")
+                            );
                             self.pilot.suit = Some(SuitData {
                                 suit_type,
                                 grade,
@@ -1040,17 +1060,12 @@ fn faction_info_from_journal(
                     opponent: theirs.name.clone(),
                     our_won_days: ours.won_days,
                     opponent_won_days: theirs.won_days,
-                    our_stake: ours.stake.clone(),
-                    opponent_stake: theirs.stake.clone(),
                 }
             })
     });
     FactionInfo {
         name: f.name.clone(),
         influence: f.influence,
-        government: f.government.clone(),
-        allegiance: f.allegiance.clone(),
-        happiness: f.happiness.clone(),
         active_states: f
             .active_states
             .as_ref()
@@ -1070,30 +1085,16 @@ fn faction_info_from_journal(
     }
 }
 
-fn parent_type_from_str(s: &str) -> ParentType {
-    match s {
-        "Star" => ParentType::Star,
-        "Planet" => ParentType::Planet,
-        "Ring" => ParentType::Ring,
-        _ => ParentType::Null,
-    }
-}
-
 fn system_from_fsdjump(e: &FsdJump) -> SystemData {
-    let coords = coords_from_star_pos(&e.star_pos);
     SystemData {
         name: e.star_system.clone(),
         system_address: e.system_address,
-        coords,
         economy: e.system_economy.clone(),
         second_economy: e.system_second_economy.clone(),
         government: e.system_government.clone(),
         allegiance: e.system_allegiance.clone(),
         security: e.system_security.clone(),
         population: e.population,
-        body: e.body.clone(),
-        body_id: e.body_id,
-        body_type: e.body_type.clone(),
         factions: e
             .factions
             .as_ref()
@@ -1110,20 +1111,15 @@ fn system_from_fsdjump(e: &FsdJump) -> SystemData {
 }
 
 fn system_from_location(e: &Location) -> SystemData {
-    let coords = coords_from_star_pos(&e.star_pos);
     SystemData {
         name: e.star_system.clone(),
         system_address: e.system_address,
-        coords,
         economy: e.system_economy.clone(),
         second_economy: e.system_second_economy.clone(),
         government: e.system_government.clone(),
         allegiance: e.system_allegiance.clone(),
         security: e.system_security.clone(),
         population: e.population,
-        body: e.body.clone(),
-        body_id: e.body_id as i32,
-        body_type: e.body_type.clone(),
         factions: e
             .factions
             .as_ref()
@@ -1140,20 +1136,15 @@ fn system_from_location(e: &Location) -> SystemData {
 }
 
 fn system_from_carrier_jump(e: &CarrierJump) -> SystemData {
-    let coords = coords_from_star_pos(&e.star_pos);
     SystemData {
         name: e.star_system.clone(),
         system_address: e.system_address,
-        coords,
         economy: e.system_economy.clone(),
         second_economy: e.system_second_economy.clone(),
         government: e.system_government.clone(),
         allegiance: e.system_allegiance.clone(),
         security: e.system_security.clone(),
         population: e.population,
-        body: e.body.clone(),
-        body_id: e.body_id,
-        body_type: e.body_type.clone(),
         factions: e
             .factions
             .as_ref()
@@ -1169,14 +1160,6 @@ fn system_from_carrier_jump(e: &CarrierJump) -> SystemData {
     }
 }
 
-fn coords_from_star_pos(star_pos: &[f32]) -> (f32, f32, f32) {
-    (
-        star_pos.first().copied().unwrap_or(0.0),
-        star_pos.get(1).copied().unwrap_or(0.0),
-        star_pos.get(2).copied().unwrap_or(0.0),
-    )
-}
-
 fn body_from_scan(e: &Scan) -> BodyScan {
     let parents = e
         .parents
@@ -1186,7 +1169,6 @@ fn body_from_scan(e: &Scan) -> BodyScan {
                 .filter_map(|p| {
                     p.parent_id().map(|pid| BodyParent {
                         body_id: pid,
-                        parent_type: parent_type_from_str(p.parent_type()),
                     })
                 })
                 .collect()
@@ -1201,9 +1183,6 @@ fn body_from_scan(e: &Scan) -> BodyScan {
                 .map(|r| BodyRing {
                     name: r.name.clone(),
                     ring_class: r.ring_class.clone(),
-                    mass_mt: r.mass_mt,
-                    inner_rad: r.inner_rad,
-                    outer_rad: r.outer_rad,
                 })
                 .collect()
         })
@@ -1306,7 +1285,7 @@ impl JournalReader {
             let mut journal_data = JournalData::new();
 
             info!("Loading existing journal files from: {}", journal_dir.display());
-            load_existing_files(&journal_dir, &mut journal_data, upload_tx_opt.as_ref());
+            load_existing_files(&journal_dir, &mut journal_data);
             load_cargo_file(&journal_dir.join("Cargo.json"), &mut journal_data);
             journal_data.backpack = load_onfoot_file(&journal_dir.join("Backpack.json"));
             journal_data.shiplocker = load_onfoot_file(&journal_dir.join("ShipLocker.json"));
@@ -1629,7 +1608,6 @@ fn parse_engineering(v: &serde_json::Value) -> Option<EngineeringData> {
     Some(EngineeringData {
         blueprint:    format_blueprint(v["BlueprintName"].as_str().unwrap_or("")),
         level:        v["Level"].as_u64().unwrap_or(0) as u8,
-        quality:      v["Quality"].as_f64().unwrap_or(0.0) as f32,
         engineer:     v["Engineer"].as_str().unwrap_or("").to_string(),
         experimental,
         modifiers,
@@ -1719,7 +1697,6 @@ fn load_onfoot_file(path: &Path) -> OnFootInventory {
 fn load_existing_files(
     dir: &Path,
     data: &mut JournalData,
-    upload_tx: Option<&mpsc::Sender<String>>,
 ) {
     if !dir.exists() || !dir.is_dir() {
         warn!("Journal directory does not exist: {}", dir.display());
@@ -1890,6 +1867,7 @@ fn watch_latest_file(
     let mut last_market_mtime = mtime_of("Market.json");
     let mut last_outfitting_mtime = mtime_of("Outfitting.json");
     let mut last_shipyard_mtime = mtime_of("Shipyard.json");
+    let mut last_navroute_mtime = mtime_of("NavRoute.json");
 
     loop {
         if stop_flag.load(Ordering::SeqCst) {
@@ -2035,6 +2013,23 @@ fn watch_latest_file(
                     send_companion_to_eddn(
                         &shipyard_path,
                         crate::eddn::CompanionKind::Shipyard,
+                        ed_tx,
+                    );
+                }
+            }
+        }
+
+        // NavRoute.json holds the plotted route; the journal only carries a bare `NavRoute`
+        // marker, so the route waypoints can only be shared from this file. EDDN-only — the
+        // server already receives the marker event via the journal line stream.
+        let navroute_path = dir.join("NavRoute.json");
+        if let Ok(mtime) = navroute_path.metadata().and_then(|m| m.modified()) {
+            if Some(mtime) != last_navroute_mtime {
+                last_navroute_mtime = Some(mtime);
+                if let Some(ref ed_tx) = eddn_tx {
+                    send_companion_to_eddn(
+                        &navroute_path,
+                        crate::eddn::CompanionKind::NavRoute,
                         ed_tx,
                     );
                 }
@@ -2209,7 +2204,6 @@ fn load_previous_scans_for_system(
                         .map(|pv| pv.iter()
                             .filter_map(|p| p.parent_id().map(|pid| BodyParent {
                                 body_id: pid,
-                                parent_type: parent_type_from_str(p.parent_type()),
                             }))
                             .collect())
                         .unwrap_or_default();

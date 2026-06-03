@@ -613,7 +613,6 @@ impl StationsView {
     /// Returns `Some(market_id)` when a station is being **pinned** (not unpinned),
     /// so the caller can emit `TrackConstruction` for construction sites.
     fn toggle_pin(&mut self, api: &ApiClient, journal: &JournalData) -> Option<i64> {
-        let history = &journal.visited_stations;
         let n = self.pinned_results.len();
         if self.selected_idx < n {
             // Unpin
@@ -806,7 +805,7 @@ impl StationsView {
             format!("\u{2500}\u{2500}\u{2500} {} {}", label, "\u{2500}".repeat(33usize.saturating_sub(label.len()))),
             Style::default().fg(Color::DarkGray),
         ));
-        let sel_style = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+        let sel_style = Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD);
         let build_tag = |mid: i64| {
             if self.construction_tracked.contains(&mid)
                 || journal.construction_depots.contains_key(&mid)
@@ -970,8 +969,8 @@ impl StationsView {
     fn build_detail_header_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
         let mut lines = Vec::new();
 
-        let tab_active = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
-        let tab_inactive = Style::default().fg(Color::Rgb(255, 140, 0));
+        let tab_active = Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD);
+        let tab_inactive = Style::default().fg(crate::theme::accent());
         let tabs = [DetailTab::Overview, DetailTab::Market, DetailTab::Outfitting, DetailTab::Shipyard, DetailTab::PriceHistory];
         let tab_spans: Vec<Span> = tabs.iter().flat_map(|&t| {
             let style = if t == self.detail_tab { tab_active } else { tab_inactive };
@@ -984,7 +983,7 @@ impl StationsView {
                 if self.detail_tab == DetailTab::Overview {
                     lines.push(Line::from(Span::styled(
                         format!("\u{2500}\u{2500} {} \u{2500}\u{2500}", station.name),
-                        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                        Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
                     )));
                 } else if self.detail_tab == DetailTab::Market {
                     lines.push(commodity_header_line(self.market_sort_col, self.market_sort_asc));
@@ -1009,7 +1008,7 @@ impl StationsView {
                     };
                     lines.push(Line::from(Span::styled(
                         label,
-                        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                        Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
                     )));
                 }
             }
@@ -1172,7 +1171,7 @@ impl StationsView {
         if has_construction {
             let sel = if self.focus == FocusArea::Detail { Some(self.construction_resource_idx) } else { None };
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  g: best station  t: todo) ──", Style::default().fg(Color::Rgb(255, 140, 0)))));
+            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  g: best station  t: todo) ──", Style::default().fg(crate::theme::accent()))));
             lines.extend(self.construction_body(station.market_id, journal, sel));
         }
         lines
@@ -1218,7 +1217,7 @@ impl StationsView {
         if has_construction {
             let sel = if self.focus == FocusArea::Detail { Some(self.construction_resource_idx) } else { None };
             lines.push(Line::from(""));
-            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  g: best station  t: todo) ──", Style::default().fg(Color::Rgb(255, 140, 0)))));
+            lines.push(Line::from(Span::styled("── Construction (w/s: navigate  f: search nearest  g: best station  t: todo) ──", Style::default().fg(crate::theme::accent()))));
             lines.extend(self.construction_body(station.market_id, journal, sel));
         }
         lines
@@ -1579,7 +1578,7 @@ impl StationsView {
             .constraints([Constraint::Percentage(35), Constraint::Percentage(65)])
             .split(area);
 
-        let active_border = Style::default().fg(Color::Rgb(255, 140, 0));
+        let active_border = Style::default().fg(crate::theme::accent());
         let inactive_border = Style::default().fg(Color::White);
 
         let list_lines = self.build_list_lines(journal);
@@ -1686,7 +1685,7 @@ impl StationsView {
             .name("Buy price")
             .marker(symbols::Marker::Braille)
             .graph_type(GraphType::Line)
-            .style(Style::default().fg(Color::Rgb(255, 140, 0)))
+            .style(Style::default().fg(crate::theme::accent()))
             .data(&self.history_buy_data);
 
         let sell_dataset = Dataset::default()

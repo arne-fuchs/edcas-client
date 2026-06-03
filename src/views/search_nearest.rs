@@ -316,10 +316,6 @@ impl SearchNearestView {
         }
     }
 
-    pub fn update_pad_filter(&mut self, ship_pad_size: char) {
-        self.pad_filter = ship_pad_size;
-    }
-
     pub fn prefill_and_search(&mut self, commodity: &str, canonical_name: &str, system: &str, ship_pad_size: char, api: &ApiClient) {
         self.multi_mode = false;
         self.commodity_input = commodity.to_string();
@@ -731,7 +727,7 @@ impl SearchNearestView {
             for (i, &name) in self.suggestions.iter().enumerate() {
                 let is_selected = self.suggestion_idx == Some(i);
                 let (fg, bg) = if is_selected {
-                    (Color::Black, Color::Rgb(255, 140, 0))
+                    (Color::Black, crate::theme::accent())
                 } else {
                     (Color::DarkGray, Color::Reset)
                 };
@@ -770,7 +766,7 @@ impl SearchNearestView {
                 Block::default()
                     .title(title)
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Rgb(255, 140, 0))),
+                    .border_style(Style::default().fg(crate::theme::accent())),
             ),
             chunks[0],
         );
@@ -833,7 +829,7 @@ impl SearchNearestView {
                 let style = if selected {
                     Style::default()
                         .fg(Color::Black)
-                        .bg(Color::Rgb(255, 140, 0))
+                        .bg(crate::theme::accent())
                         .add_modifier(Modifier::BOLD)
                 } else {
                     Style::default().fg(Color::White)
@@ -904,14 +900,14 @@ impl SearchNearestView {
                 Block::default()
                     .title(" Supply Scout  (w/s: navigate  c: copy system  q: back) ")
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Rgb(255, 140, 0))),
+                    .border_style(Style::default().fg(crate::theme::accent())),
             ),
             chunks[0],
         );
 
         // ── Results panel ────────────────────────────────────────
         let mut result_lines: Vec<Line<'static>> = Vec::new();
-        let sel_style = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+        let sel_style = Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD);
 
         if self.multi_results.is_empty() && !self.is_loading {
             result_lines.push(Line::from(Span::styled(

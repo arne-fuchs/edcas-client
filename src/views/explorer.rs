@@ -12,7 +12,7 @@ use ratatui::{
 use tracing::debug;
 
 use crate::journal_reader::{
-    BodyComposition as JournalBodyComposition, BodyScan, BodySignal, ConflictData, DiscoveredSignal,
+    BodyScan, BodySignal, ConflictData, DiscoveredSignal,
     JournalData, OrganicScan, SaaBodyData, StationData, SystemData, TreeNode, build_body_tree,
 };
 use crate::settings::Settings;
@@ -70,7 +70,6 @@ struct FlatNode {
     planet_class: String,
     star_type: String,
     is_barycentre: bool,
-    composition: Option<JournalBodyComposition>,
     bio_signal_count: i32,
     geo_signal_count: i32,
     node_type: NodeType,
@@ -201,7 +200,6 @@ impl ExplorerView {
                 planet_class: String::new(),
                 star_type: String::new(),
                 is_barycentre: false,
-                composition: None,
                 bio_signal_count: 0,
                 geo_signal_count: 0,
                 node_type: NodeType::SectionHeader,
@@ -218,7 +216,6 @@ impl ExplorerView {
                     planet_class: String::new(),
                     star_type: String::new(),
                     is_barycentre: false,
-                    composition: None,
                     bio_signal_count: 0,
                     geo_signal_count: 0,
                     node_type: NodeType::Station(station.clone()),
@@ -244,7 +241,6 @@ impl ExplorerView {
                 planet_class: String::new(),
                 star_type: String::new(),
                 is_barycentre: false,
-                composition: None,
                 bio_signal_count: 0,
                 geo_signal_count: 0,
                 node_type: NodeType::SectionHeader,
@@ -261,7 +257,6 @@ impl ExplorerView {
                     planet_class: String::new(),
                     star_type: String::new(),
                     is_barycentre: false,
-                    composition: None,
                     bio_signal_count: 0,
                     geo_signal_count: 0,
                     node_type: NodeType::Signal(sig.clone()),
@@ -504,7 +499,7 @@ impl ExplorerView {
         lines.push(Line::from(Span::styled(
             header_text,
             Style::default()
-                .fg(Color::Rgb(255, 140, 0))
+                .fg(crate::theme::accent())
                 .add_modifier(Modifier::BOLD),
         )));
 
@@ -557,7 +552,7 @@ impl ExplorerView {
                             .add_modifier(Modifier::BOLD)
                     } else {
                         Style::default()
-                            .fg(Color::Rgb(255, 140, 0))
+                            .fg(crate::theme::accent())
                             .add_modifier(Modifier::BOLD)
                     };
                     lines.push(Line::from(Span::styled(
@@ -581,7 +576,7 @@ impl ExplorerView {
                             format!("{}◉ {}{}", prefix, node.short_name, dist_str),
                             Style::default()
                                 .fg(Color::Black)
-                                .bg(Color::Rgb(255, 140, 0))
+                                .bg(crate::theme::accent())
                                 .add_modifier(Modifier::BOLD),
                         )));
                     } else {
@@ -612,7 +607,7 @@ impl ExplorerView {
                             format!("{}{} {}", node.tree_prefix, icon, node.short_name),
                             Style::default()
                                 .fg(Color::Black)
-                                .bg(Color::Rgb(255, 140, 0))
+                                .bg(crate::theme::accent())
                                 .add_modifier(Modifier::BOLD),
                         )));
                     } else {
@@ -639,7 +634,7 @@ impl ExplorerView {
                             format!("{}{} {}{}", indent, icon, node.short_name, threat_str),
                             Style::default()
                                 .fg(Color::Black)
-                                .bg(Color::Rgb(255, 140, 0))
+                                .bg(crate::theme::accent())
                                 .add_modifier(Modifier::BOLD),
                         )));
                     } else {
@@ -682,7 +677,7 @@ impl ExplorerView {
                             format!("{}{} {}{}{}", node.tree_prefix, icon, display_name, dist_str, hints),
                             Style::default()
                                 .fg(Color::Black)
-                                .bg(Color::Rgb(255, 140, 0))
+                                .bg(crate::theme::accent())
                                 .add_modifier(Modifier::BOLD),
                         )));
                     } else {
@@ -735,7 +730,7 @@ impl ExplorerView {
         lines.push(Line::from(Span::styled(
             body.body_name.clone(),
             Style::default()
-                .fg(Color::Rgb(255, 140, 0))
+                .fg(crate::theme::accent())
                 .add_modifier(Modifier::BOLD),
         )));
 
@@ -844,7 +839,7 @@ impl ExplorerView {
                 let bar = material_bar(mat.percent);
                 let inv_count = inv_map.get(mat.name.as_str()).copied().unwrap_or(0);
                 let inv_color = if inv_count == 0 {
-                    Color::Rgb(255, 140, 0)
+                    crate::theme::accent()
                 } else if inv_count <= 5 {
                     Color::Yellow
                 } else {
@@ -852,7 +847,7 @@ impl ExplorerView {
                 };
                 lines.push(Line::from(vec![
                     Span::styled(format!("  {:<18}", name), Style::default().fg(Color::White)),
-                    Span::styled(format!("{:>5.1}%", mat.percent), Style::default().fg(Color::Rgb(255, 140, 0))),
+                    Span::styled(format!("{:>5.1}%", mat.percent), Style::default().fg(crate::theme::accent())),
                     Span::styled(format!("  {}", bar), Style::default().fg(Color::DarkGray)),
                     Span::styled(format!("  ×{:>3}", inv_count), Style::default().fg(inv_color)),
                 ]));
@@ -876,7 +871,7 @@ impl ExplorerView {
                 };
                 lines.push(Line::from(vec![
                     Span::styled(format!("  {:<18}", type_name), sig_style),
-                    Span::styled(format!("{:>3}x", sig.count), Style::default().fg(Color::Rgb(255, 140, 0))),
+                    Span::styled(format!("{:>3}x", sig.count), Style::default().fg(crate::theme::accent())),
                 ]));
             }
             if !saa.genuses.is_empty() {
@@ -904,7 +899,7 @@ impl ExplorerView {
                     };
                     lines.push(Line::from(vec![
                         Span::styled(format!("  {:<18}", type_name), sig_style),
-                        Span::styled(format!("{:>3}x", sig.count), Style::default().fg(Color::Rgb(255, 140, 0))),
+                        Span::styled(format!("{:>3}x", sig.count), Style::default().fg(crate::theme::accent())),
                     ]));
                 }
             }
@@ -966,7 +961,7 @@ impl ExplorerView {
 
         lines.push(Line::from(Span::styled(
             system.name.clone(),
-            Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+            Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
         )));
         lines.push(Line::from(""));
 
@@ -1013,7 +1008,7 @@ impl ExplorerView {
                     };
                     lines.push(Line::from(Span::styled(
                         format!("  Architect: {}", cmdr),
-                        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                        Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
                     )));
                 }
                 for depot in &depots_in_system {
@@ -1051,9 +1046,9 @@ impl ExplorerView {
                 let is_controlling = faction.name == system.system_faction;
 
                 let name_style = if is_sel {
-                    Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                    Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD)
                 } else if is_controlling {
-                    Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                    Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD)
                 } else {
                     Style::default().fg(Color::Green).add_modifier(Modifier::BOLD)
                 };
@@ -1192,10 +1187,10 @@ impl ExplorerView {
             let style = if is_selected {
                 Style::default()
                     .fg(Color::Black)
-                    .bg(Color::Rgb(255, 140, 0))
+                    .bg(crate::theme::accent())
                     .add_modifier(Modifier::BOLD)
             } else if is_current {
-                Style::default().fg(Color::Rgb(255, 140, 0))
+                Style::default().fg(crate::theme::accent())
             } else {
                 Style::default().fg(Color::White)
             };
@@ -1233,7 +1228,7 @@ impl ExplorerView {
         let tree_area = cols[1];
         let detail_area = cols[2];
 
-        let active_border = Style::default().fg(Color::Rgb(255, 140, 0));
+        let active_border = Style::default().fg(crate::theme::accent());
         let inactive_border = Style::default().fg(Color::White);
 
         // System info panel
@@ -1302,7 +1297,7 @@ impl ExplorerView {
         let inner_width = area.width.saturating_sub(2) as usize;
         let is_active = self.focus == ExplorerFocus::SystemInfo;
         let border_style = if is_active {
-            Style::default().fg(Color::Rgb(255, 140, 0))
+            Style::default().fg(crate::theme::accent())
         } else {
             Style::default().fg(Color::DarkGray)
         };
@@ -1368,11 +1363,6 @@ fn flatten_node(
         planet_class: body.map(|b| b.planet_class.clone()).unwrap_or_default(),
         star_type: body.map(|b| b.star_type.clone()).unwrap_or_default(),
         is_barycentre,
-        composition: body.and_then(|b| b.composition.as_ref().map(|c| JournalBodyComposition {
-            ice: c.ice,
-            rock: c.rock,
-            metal: c.metal,
-        })),
         bio_signal_count,
         geo_signal_count,
         node_type: NodeType::Body,
@@ -1446,7 +1436,6 @@ fn flatten_node(
             planet_class: String::new(),
             star_type: String::new(),
             is_barycentre: false,
-            composition: None,
             bio_signal_count: 0,
             geo_signal_count: 0,
             node_type: NodeType::BodySignal(sig.clone()),
@@ -1469,7 +1458,6 @@ fn flatten_node(
             planet_class: String::new(),
             star_type: String::new(),
             is_barycentre: false,
-            composition: None,
             bio_signal_count: 0,
             geo_signal_count: 0,
             node_type: NodeType::Signal((*sig).clone()),
@@ -1491,7 +1479,6 @@ fn flatten_node(
             planet_class: String::new(),
             star_type: String::new(),
             is_barycentre: false,
-            composition: None,
             bio_signal_count: 0,
             geo_signal_count: 0,
             node_type: NodeType::Station((*station).clone()),
@@ -1519,7 +1506,7 @@ fn build_station_detail(station: &StationData) -> Vec<Line<'static>> {
 
     lines.push(Line::from(Span::styled(
         station.name.clone(),
-        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+        Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
     )));
     lines.push(Line::from(Span::styled(
         station.station_type.clone(),
@@ -1577,7 +1564,7 @@ fn build_signal_detail(sig: &DiscoveredSignal, settings: &Settings) -> Vec<Line<
     let (icon, color) = signal_icon(sig, settings);
     lines.push(Line::from(vec![
         Span::styled(format!("{} ", icon), Style::default().fg(color).add_modifier(Modifier::BOLD)),
-        Span::styled(sig.display_name.clone(), Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)),
+        Span::styled(sig.display_name.clone(), Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD)),
     ]));
     lines.push(Line::from(""));
 
@@ -1585,7 +1572,7 @@ fn build_signal_detail(sig: &DiscoveredSignal, settings: &Settings) -> Vec<Line<
         lines.push(section_header("USS"));
         detail_row(&mut lines, "Type", uss_type.clone());
         if let Some(threat) = sig.threat_level {
-            let threat_color = if threat >= 4 { Color::Red } else if threat >= 2 { Color::Rgb(255, 140, 0) } else { Color::Yellow };
+            let threat_color = if threat >= 4 { Color::Red } else if threat >= 2 { crate::theme::accent() } else { Color::Yellow };
             lines.push(Line::from(vec![
                 Span::styled(format!("  {:<14}", "Threat"), Style::default().fg(Color::Cyan)),
                 Span::styled(threat.to_string(), Style::default().fg(threat_color)),
@@ -1682,7 +1669,7 @@ fn node_icon(node: &FlatNode, settings: &Settings) -> (String, Style) {
         // Star: color from settings, char from size tier (or settings/hardcoded fallback)
         let color = settings.stars.get(&node.star_type).filter(|i| i.enabled)
             .map(|i| parse_color(&i.color))
-            .unwrap_or(Color::Rgb(255, 140, 0));
+            .unwrap_or(crate::theme::accent());
         let icon = if node.radius > 0.0 {
             size_star_icon(node.radius).to_string()
         } else {
@@ -1735,7 +1722,7 @@ fn signal_icon(sig: &DiscoveredSignal, settings: &Settings) -> (String, Color) {
         if threat >= 4 {
             ("⚠".to_string(), Color::Red)
         } else if threat >= 2 {
-            ("⚠".to_string(), Color::Rgb(255, 140, 0))
+            ("⚠".to_string(), crate::theme::accent())
         } else {
             ("⚠".to_string(), Color::Yellow)
         }
@@ -1779,7 +1766,7 @@ fn sys_conflict_lines(c: &ConflictData) -> Vec<Line<'static>> {
         _ => "Conflict",
     };
     let status = if c.status.is_empty() { "active".to_string() } else { c.status.clone() };
-    let score_color = Color::Rgb(255, 140, 0);
+    let score_color = crate::theme::accent();
     vec![
         Line::from(vec![
             Span::styled("  ".to_string(), Style::default()),
@@ -1812,7 +1799,7 @@ fn section_header(title: &str) -> Line<'static> {
     Line::from(Span::styled(
         format!("─ {} ", title),
         Style::default()
-            .fg(Color::Rgb(255, 140, 0))
+            .fg(crate::theme::accent())
             .add_modifier(Modifier::BOLD),
     ))
 }

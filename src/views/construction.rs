@@ -160,7 +160,7 @@ fn build_depot_header(
     let status = if complete { " ✓ Complete" } else if failed { " ✗ Failed" } else { "" };
     lines.push(Line::from(Span::styled(
         format!("{}{}", station_name, status),
-        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+        Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
     )));
 
     let bar_width = 30usize;
@@ -219,7 +219,7 @@ fn push_resource_line(
 fn section_header(title: &str) -> Line<'static> {
     Line::from(Span::styled(
         format!("─ {} ", title),
-        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+        Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
     ))
 }
 
@@ -229,7 +229,7 @@ fn progress_color_style(frac: f32) -> Style {
     } else if frac >= 0.5 {
         Style::default().fg(Color::Yellow)
     } else {
-        Style::default().fg(Color::Rgb(255, 140, 0))
+        Style::default().fg(crate::theme::accent())
     }
 }
 

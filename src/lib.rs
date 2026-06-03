@@ -7,6 +7,7 @@ pub mod journal_reader;
 pub mod my_carriers;
 pub mod pins;
 pub mod settings;
+pub mod theme;
 pub mod todo;
 pub mod views;
 

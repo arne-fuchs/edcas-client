@@ -58,9 +58,9 @@ impl InventoryView {
     fn build_header_lines(&self) -> Vec<Line<'static>> {
         let tab_active = Style::default()
             .fg(Color::Black)
-            .bg(Color::Rgb(255, 140, 0))
+            .bg(crate::theme::accent())
             .add_modifier(Modifier::BOLD);
-        let tab_inactive = Style::default().fg(Color::Rgb(255, 140, 0));
+        let tab_inactive = Style::default().fg(crate::theme::accent());
         let tabs = [Tab::Materials, Tab::Cargo, Tab::Backpack, Tab::ShipLocker];
         let spans: Vec<Span> = tabs.iter().flat_map(|&t| {
             let style = if t == self.tab { tab_active } else { tab_inactive };

@@ -21,6 +21,18 @@ const JOURNAL_SCHEMA: &str = "https://eddn.edcd.io/schemas/journal/1";
 const COMMODITY_SCHEMA: &str = "https://eddn.edcd.io/schemas/commodity/3";
 const OUTFITTING_SCHEMA: &str = "https://eddn.edcd.io/schemas/outfitting/2";
 const SHIPYARD_SCHEMA: &str = "https://eddn.edcd.io/schemas/shipyard/2";
+const FSS_DISCOVERY_SCAN_SCHEMA: &str = "https://eddn.edcd.io/schemas/fssdiscoveryscan/1";
+const FSS_ALL_BODIES_FOUND_SCHEMA: &str = "https://eddn.edcd.io/schemas/fssallbodiesfound/1";
+const FSS_BODY_SIGNALS_SCHEMA: &str = "https://eddn.edcd.io/schemas/fssbodysignals/1";
+const FSS_SIGNAL_DISCOVERED_SCHEMA: &str = "https://eddn.edcd.io/schemas/fsssignaldiscovered/1";
+const NAV_BEACON_SCAN_SCHEMA: &str = "https://eddn.edcd.io/schemas/navbeaconscan/1";
+const SCAN_BARYCENTRE_SCHEMA: &str = "https://eddn.edcd.io/schemas/scanbarycentre/1";
+const CODEX_ENTRY_SCHEMA: &str = "https://eddn.edcd.io/schemas/codexentry/1";
+const NAV_ROUTE_SCHEMA: &str = "https://eddn.edcd.io/schemas/navroute/1";
+const APPROACH_SETTLEMENT_SCHEMA: &str = "https://eddn.edcd.io/schemas/approachsettlement/1";
+const FC_MATERIALS_SCHEMA: &str = "https://eddn.edcd.io/schemas/fcmaterials_journal/1";
+const DOCKING_GRANTED_SCHEMA: &str = "https://eddn.edcd.io/schemas/dockinggranted/1";
+const DOCKING_DENIED_SCHEMA: &str = "https://eddn.edcd.io/schemas/dockingdenied/1";
 
 /// Journal events that the EDDN `journal/1` schema accepts. Everything else is dropped.
 const ALLOWED_JOURNAL_EVENTS: &[&str] =
@@ -35,6 +47,9 @@ pub enum CompanionKind {
     Market,
     Outfitting,
     Shipyard,
+    /// `NavRoute.json` — the plotted multi-jump route. Not station-bound, so it has no
+    /// docked-station gating like the other companions.
+    NavRoute,
 }
 
 /// Input fed to the uploader thread.
@@ -116,7 +131,7 @@ pub fn start_uploader(config: EddnConfig) -> mpsc::Sender<EddnInput> {
                 EddnInput::Line(line) => {
                     if let Ok(v) = serde_json::from_str::<Value>(&line) {
                         update_state(&mut state, &v);
-                        if let Some(envelope) = build_journal_message(&v, &state, config.test_mode) {
+                        if let Some(envelope) = build_line_message(&v, &state, config.test_mode) {
                             post(&client, &config.url, &envelope);
                         }
                     }
@@ -132,6 +147,9 @@ pub fn start_uploader(config: EddnConfig) -> mpsc::Sender<EddnInput> {
                             }
                             CompanionKind::Shipyard => {
                                 build_shipyard_message(&v, &state, config.test_mode)
+                            }
+                            CompanionKind::NavRoute => {
+                                build_navroute_message(&v, &state, config.test_mode)
                             }
                         };
                         match envelope {
@@ -322,8 +340,18 @@ fn strip_faction_private(msg: &mut Map<String, Value>) {
 /// from tracked state when absent. Returns `None` if a value can't be supplied or if the
 /// event's own system identity contradicts our tracked position (stale data).
 fn augment_system(msg: &mut Map<String, Value>, state: &EddnState) -> Option<()> {
+    augment_system_keyed(msg, state, "StarSystem")
+}
+
+/// Like [`augment_system`], but the system-name property key varies between schemas
+/// (`StarSystem`, `SystemName`, or `System`). `SystemAddress`/`StarPos` are constant.
+fn augment_system_keyed(
+    msg: &mut Map<String, Value>,
+    state: &EddnState,
+    sys_key: &str,
+) -> Option<()> {
     // Cross-check: if the event names a system that differs from our tracked one, the
-    // augmented StarPos/StarSystem would be wrong — drop the message.
+    // augmented StarPos/system name would be wrong — drop the message.
     if let (Some(ev_addr), Some(state_addr)) = (
         msg.get("SystemAddress").and_then(|v| v.as_i64()),
         state.system_address,
@@ -333,8 +361,8 @@ fn augment_system(msg: &mut Map<String, Value>, state: &EddnState) -> Option<()>
         }
     }
 
-    if !msg.contains_key("StarSystem") {
-        msg.insert("StarSystem".to_string(), json!(state.star_system.clone()?));
+    if !msg.contains_key(sys_key) {
+        msg.insert(sys_key.to_string(), json!(state.star_system.clone()?));
     }
     if !msg.contains_key("SystemAddress") {
         msg.insert("SystemAddress".to_string(), json!(state.system_address?));
@@ -505,6 +533,324 @@ fn add_flags(message: &mut Value, state: &EddnState) {
             map.insert("odyssey".to_string(), json!(o));
         }
     }
+}
+
+/// Clones a journal event, strips every `_Localised` string, and keeps only the keys in
+/// `allowed`. The EDDN exploration/codex/docking schemas are all `additionalProperties:
+/// false`, so a stray key (or a personal field like `Progress`/`IsNewEntry`) would get the
+/// whole message rejected — this whitelist guarantees we only emit permitted keys. Returns
+/// `None` if the event isn't a JSON object.
+fn whitelist_event(event: &Value, allowed: &[&str]) -> Option<Map<String, Value>> {
+    let mut cloned = event.clone();
+    strip_localised(&mut cloned);
+    let mut map = match cloned {
+        Value::Object(m) => m,
+        _ => return None,
+    };
+    map.retain(|k, _| allowed.contains(&k.as_str()));
+    Some(map)
+}
+
+/// Whitelists the keys of every object in the array at `key`, in place. Array item objects
+/// in these schemas are also `additionalProperties: false`.
+fn whitelist_array_items(msg: &mut Map<String, Value>, key: &str, allowed: &[&str]) {
+    if let Some(Value::Array(arr)) = msg.get_mut(key) {
+        for item in arr.iter_mut() {
+            if let Value::Object(m) = item {
+                m.retain(|k, _| allowed.contains(&k.as_str()));
+            }
+        }
+    }
+}
+
+/// Adds horizons/odyssey flags and wraps a finished message map in its EDDN envelope.
+fn finish(
+    msg: Map<String, Value>,
+    schema: &str,
+    state: &EddnState,
+    test_mode: bool,
+) -> Option<Value> {
+    let mut message = Value::Object(msg);
+    add_flags(&mut message, state);
+    Some(wrap(schema, message, state, test_mode))
+}
+
+/// Routes a live journal line to the matching EDDN schema builder. The six `journal/1`
+/// events keep going through [`build_journal_message`]; the richer exploration, codex and
+/// docking events each have their own dedicated schema. Anything unrecognised yields `None`.
+pub fn build_line_message(event: &Value, state: &EddnState, test_mode: bool) -> Option<Value> {
+    let evt = event.get("event")?.as_str()?;
+    match evt {
+        "Docked" | "FSDJump" | "Scan" | "Location" | "SAASignalsFound" | "CarrierJump" => {
+            build_journal_message(event, state, test_mode)
+        }
+        "FSSDiscoveryScan" => {
+            // `Progress` is personal data and forbidden by the schema; the whitelist drops it.
+            let mut msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "SystemName",
+                    "StarPos",
+                    "SystemAddress",
+                    "BodyCount",
+                    "NonBodyCount",
+                ],
+            )?;
+            augment_system_keyed(&mut msg, state, "SystemName")?;
+            finish(msg, FSS_DISCOVERY_SCAN_SCHEMA, state, test_mode)
+        }
+        "FSSAllBodiesFound" => {
+            let mut msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "SystemName",
+                    "StarPos",
+                    "SystemAddress",
+                    "Count",
+                ],
+            )?;
+            augment_system_keyed(&mut msg, state, "SystemName")?;
+            finish(msg, FSS_ALL_BODIES_FOUND_SCHEMA, state, test_mode)
+        }
+        "FSSBodySignals" => {
+            let mut msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "StarSystem",
+                    "StarPos",
+                    "SystemAddress",
+                    "BodyID",
+                    "BodyName",
+                    "Signals",
+                ],
+            )?;
+            whitelist_array_items(&mut msg, "Signals", &["Type", "Count"]);
+            augment_system_keyed(&mut msg, state, "StarSystem")?;
+            finish(msg, FSS_BODY_SIGNALS_SCHEMA, state, test_mode)
+        }
+        "FSSSignalDiscovered" => build_fsssignaldiscovered_message(event, state, test_mode),
+        "NavBeaconScan" => {
+            let mut msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "StarSystem",
+                    "StarPos",
+                    "SystemAddress",
+                    "NumBodies",
+                ],
+            )?;
+            augment_system_keyed(&mut msg, state, "StarSystem")?;
+            finish(msg, NAV_BEACON_SCAN_SCHEMA, state, test_mode)
+        }
+        "ScanBaryCentre" => {
+            let mut msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "StarSystem",
+                    "StarPos",
+                    "SystemAddress",
+                    "BodyID",
+                    "SemiMajorAxis",
+                    "Eccentricity",
+                    "OrbitalInclination",
+                    "Periapsis",
+                    "OrbitalPeriod",
+                    "AscendingNode",
+                    "MeanAnomaly",
+                ],
+            )?;
+            augment_system_keyed(&mut msg, state, "StarSystem")?;
+            finish(msg, SCAN_BARYCENTRE_SCHEMA, state, test_mode)
+        }
+        "CodexEntry" => {
+            // `IsNewEntry` / `NewTraitsDiscovered` are personal data and forbidden — dropped
+            // by the whitelist. The system-name key for this schema is `System`.
+            let mut msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "System",
+                    "StarPos",
+                    "SystemAddress",
+                    "EntryID",
+                    "Name",
+                    "Region",
+                    "Category",
+                    "SubCategory",
+                    "Latitude",
+                    "Longitude",
+                    "NearestDestination",
+                    "VoucherAmount",
+                    "Traits",
+                    "BodyID",
+                    "BodyName",
+                ],
+            )?;
+            augment_system_keyed(&mut msg, state, "System")?;
+            finish(msg, CODEX_ENTRY_SCHEMA, state, test_mode)
+        }
+        "ApproachSettlement" => {
+            let mut msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "StarSystem",
+                    "StarPos",
+                    "SystemAddress",
+                    "Name",
+                    "BodyID",
+                    "BodyName",
+                    "Latitude",
+                    "Longitude",
+                    "MarketID",
+                    "StationGovernment",
+                    "StationAllegiance",
+                    "StationEconomy",
+                    "StationEconomies",
+                    "StationFaction",
+                    "StationServices",
+                ],
+            )?;
+            // The schema requires the body identity and surface coordinates; settlements
+            // approached without them (rare) are dropped rather than rejected by EDDN.
+            for required in ["Name", "BodyID", "BodyName", "Latitude", "Longitude"] {
+                if !msg.contains_key(required) {
+                    return None;
+                }
+            }
+            augment_system_keyed(&mut msg, state, "StarSystem")?;
+            finish(msg, APPROACH_SETTLEMENT_SCHEMA, state, test_mode)
+        }
+        "FCMaterials" => {
+            // Fleet-carrier on-foot materials market — carrier-bound, no system augmentation.
+            let mut msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "MarketID",
+                    "CarrierName",
+                    "CarrierID",
+                    "Items",
+                ],
+            )?;
+            whitelist_array_items(
+                &mut msg,
+                "Items",
+                &["id", "Name", "Price", "Stock", "Demand"],
+            );
+            finish(msg, FC_MATERIALS_SCHEMA, state, test_mode)
+        }
+        "DockingGranted" => {
+            let msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "MarketID",
+                    "StationName",
+                    "StationType",
+                    "LandingPad",
+                ],
+            )?;
+            finish(msg, DOCKING_GRANTED_SCHEMA, state, test_mode)
+        }
+        "DockingDenied" => {
+            let msg = whitelist_event(
+                event,
+                &[
+                    "timestamp",
+                    "event",
+                    "MarketID",
+                    "StationName",
+                    "StationType",
+                    "Reason",
+                ],
+            )?;
+            finish(msg, DOCKING_DENIED_SCHEMA, state, test_mode)
+        }
+        _ => None,
+    }
+}
+
+/// Builds an EDDN `fsssignaldiscovered/1` envelope from a single `FSSSignalDiscovered`
+/// journal event. The schema groups signals into a `signals` array; we emit one message per
+/// event (a single-element array), which is valid (`minItems: 1`) and avoids stateful
+/// per-system batching. Mission-target USSs are personal and skipped.
+fn build_fsssignaldiscovered_message(
+    event: &Value,
+    state: &EddnState,
+    test_mode: bool,
+) -> Option<Value> {
+    if event.get("USSType").and_then(|v| v.as_str()) == Some("$USS_Type_MissionTarget;") {
+        return None;
+    }
+    // The per-signal object is whitelisted separately from the message envelope. `TimeRemaining`
+    // is volatile/personal and forbidden; it is excluded by omission from the allow-list.
+    let signal = whitelist_event(
+        event,
+        &[
+            "timestamp",
+            "SignalName",
+            "SignalType",
+            "IsStation",
+            "USSType",
+            "SpawningState",
+            "SpawningFaction",
+            "SpawningPower",
+            "OpposingPower",
+            "ThreatLevel",
+        ],
+    )?;
+    if !signal.contains_key("SignalName") {
+        return None;
+    }
+
+    let mut msg = Map::new();
+    msg.insert(
+        "timestamp".to_string(),
+        event.get("timestamp")?.clone(),
+    );
+    msg.insert("event".to_string(), json!("FSSSignalDiscovered"));
+    if let Some(addr) = event.get("SystemAddress").and_then(|v| v.as_i64()) {
+        msg.insert("SystemAddress".to_string(), json!(addr));
+    }
+    msg.insert("signals".to_string(), json!([Value::Object(signal)]));
+    augment_system_keyed(&mut msg, state, "StarSystem")?;
+    finish(msg, FSS_SIGNAL_DISCOVERED_SCHEMA, state, test_mode)
+}
+
+/// Builds an EDDN `navroute/1` envelope from a `NavRoute.json` payload. Not station-bound,
+/// so no docked-station gating; each route waypoint is self-contained (no augmentation).
+pub fn build_navroute_message(route: &Value, state: &EddnState, test_mode: bool) -> Option<Value> {
+    let mut msg = whitelist_event(route, &["timestamp", "event", "Route"])?;
+    whitelist_array_items(
+        &mut msg,
+        "Route",
+        &["StarSystem", "SystemAddress", "StarPos", "StarClass"],
+    );
+    // A bare NavRoute.json (route cleared on arrival) has an empty Route — nothing to share.
+    let has_route = msg
+        .get("Route")
+        .and_then(|r| r.as_array())
+        .map(|a| !a.is_empty())
+        .unwrap_or(false);
+    if !has_route {
+        return None;
+    }
+    finish(msg, NAV_ROUTE_SCHEMA, state, test_mode)
 }
 
 /// Wraps a message body in the EDDN envelope (`$schemaRef` + `header` + `message`).
@@ -801,5 +1147,169 @@ mod tests {
         assert_eq!(st.uploader_id, "Jameson");
         assert_eq!(st.horizons, Some(true));
         assert_eq!(st.odyssey, Some(false));
+    }
+
+    #[test]
+    fn fssdiscoveryscan_drops_progress_and_augments_starpos() {
+        let event = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "FSSDiscoveryScan",
+            "Progress": 0.5,
+            "BodyCount": 21,
+            "NonBodyCount": 33,
+            "SystemName": "Sol",
+            "SystemAddress": 10477373803i64
+        });
+        let env = build_line_message(&event, &state(), false).unwrap();
+        assert_eq!(env["$schemaRef"], json!(FSS_DISCOVERY_SCAN_SCHEMA));
+        let msg = &env["message"];
+        assert!(msg.get("Progress").is_none(), "Progress is personal and forbidden");
+        assert_eq!(msg["BodyCount"], json!(21));
+        assert_eq!(msg["SystemName"], json!("Sol"));
+        assert_eq!(msg["StarPos"], json!([0.0, 0.0, 0.0]));
+    }
+
+    #[test]
+    fn fssbodysignals_whitelists_signal_items_and_augments() {
+        let event = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "FSSBodySignals",
+            "BodyName": "Sol 3",
+            "BodyID": 9,
+            "SystemAddress": 10477373803i64,
+            "Signals": [{
+                "Type": "$SAA_SignalType_Biological;",
+                "Type_Localised": "Biological",
+                "Count": 3
+            }]
+        });
+        let env = build_line_message(&event, &state(), false).unwrap();
+        assert_eq!(env["$schemaRef"], json!(FSS_BODY_SIGNALS_SCHEMA));
+        let msg = &env["message"];
+        assert_eq!(msg["StarSystem"], json!("Sol"));
+        assert_eq!(msg["StarPos"], json!([0.0, 0.0, 0.0]));
+        let sig = &msg["Signals"][0];
+        assert_eq!(sig["Type"], json!("$SAA_SignalType_Biological;"));
+        assert_eq!(sig["Count"], json!(3));
+        assert!(sig.get("Type_Localised").is_none());
+    }
+
+    #[test]
+    fn fsssignaldiscovered_wraps_single_signal_and_skips_mission_uss() {
+        let station = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "FSSSignalDiscovered",
+            "SystemAddress": 10477373803i64,
+            "SignalName": "$MULTIPLAYER_SCENARIO42_TITLE;",
+            "SignalName_Localised": "Nav Beacon",
+            "IsStation": true
+        });
+        let env = build_line_message(&station, &state(), false).unwrap();
+        assert_eq!(env["$schemaRef"], json!(FSS_SIGNAL_DISCOVERED_SCHEMA));
+        let msg = &env["message"];
+        assert_eq!(msg["StarSystem"], json!("Sol"));
+        let signals = msg["signals"].as_array().unwrap();
+        assert_eq!(signals.len(), 1);
+        assert_eq!(signals[0]["SignalName"], json!("$MULTIPLAYER_SCENARIO42_TITLE;"));
+        assert!(signals[0].get("SignalName_Localised").is_none());
+        assert!(signals[0].get("event").is_none());
+
+        // A personal mission-target USS must not be shared.
+        let mission = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "FSSSignalDiscovered",
+            "SystemAddress": 10477373803i64,
+            "SignalName": "$USS;",
+            "USSType": "$USS_Type_MissionTarget;"
+        });
+        assert!(build_line_message(&mission, &state(), false).is_none());
+    }
+
+    #[test]
+    fn codexentry_uses_system_key_and_drops_personal_fields() {
+        let event = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "CodexEntry",
+            "EntryID": 2100401,
+            "Name": "$Codex_Ent_Stratum_06_Name;",
+            "Name_Localised": "Stratum Tectonicas",
+            "System": "Sol",
+            "SystemAddress": 10477373803i64,
+            "IsNewEntry": true,
+            "NewTraitsDiscovered": ["foo"]
+        });
+        let env = build_line_message(&event, &state(), false).unwrap();
+        assert_eq!(env["$schemaRef"], json!(CODEX_ENTRY_SCHEMA));
+        let msg = &env["message"];
+        assert_eq!(msg["System"], json!("Sol"));
+        assert_eq!(msg["StarPos"], json!([0.0, 0.0, 0.0]));
+        assert_eq!(msg["EntryID"], json!(2100401));
+        assert!(msg.get("IsNewEntry").is_none());
+        assert!(msg.get("NewTraitsDiscovered").is_none());
+        assert!(msg.get("Name_Localised").is_none());
+    }
+
+    #[test]
+    fn navroute_keeps_route_waypoints_and_drops_empty() {
+        let route = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "NavRoute",
+            "Route": [{
+                "StarSystem": "Sol",
+                "SystemAddress": 10477373803i64,
+                "StarPos": [0.0, 0.0, 0.0],
+                "StarClass": "G",
+                "Extra": "should be dropped"
+            }]
+        });
+        let env = build_navroute_message(&route, &state(), false).unwrap();
+        assert_eq!(env["$schemaRef"], json!(NAV_ROUTE_SCHEMA));
+        let wp = &env["message"]["Route"][0];
+        assert_eq!(wp["StarClass"], json!("G"));
+        assert!(wp.get("Extra").is_none());
+
+        let empty = json!({"timestamp": "t", "event": "NavRoute", "Route": []});
+        assert!(build_navroute_message(&empty, &state(), false).is_none());
+    }
+
+    #[test]
+    fn dockingdenied_passes_reason_through() {
+        let event = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "DockingDenied",
+            "Reason": "Distance",
+            "MarketID": 3228032i64,
+            "StationName": "Galileo",
+            "StationType": "Orbis"
+        });
+        let env = build_line_message(&event, &state(), false).unwrap();
+        assert_eq!(env["$schemaRef"], json!(DOCKING_DENIED_SCHEMA));
+        let msg = &env["message"];
+        assert_eq!(msg["Reason"], json!("Distance"));
+        assert_eq!(msg["StationName"], json!("Galileo"));
+    }
+
+    #[test]
+    fn fcmaterials_strips_item_localised() {
+        let event = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "FCMaterials",
+            "MarketID": 3700005i64,
+            "CarrierName": "TEST CARRIER",
+            "CarrierID": "X9Z-99Z",
+            "Items": [{
+                "id": 128961528,
+                "Name": "$insight_name;",
+                "Name_Localised": "Insight",
+                "Price": 100,
+                "Stock": 5,
+                "Demand": 0
+            }]
+        });
+        let env = build_line_message(&event, &state(), false).unwrap();
+        assert_eq!(env["$schemaRef"], json!(FC_MATERIALS_SCHEMA));
+        let item = &env["message"]["Items"][0];
+        assert_eq!(item["Name"], json!("$insight_name;"));
+        assert!(item.get("Name_Localised").is_none());
     }
 }

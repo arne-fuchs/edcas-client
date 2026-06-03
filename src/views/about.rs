@@ -1,56 +1,12 @@
 use ratatui::{
-    layout::Rect,
     style::{Color, Modifier, Style},
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
-    Frame,
 };
-use crate::event_shim::{KeyCode, KeyEvent};
-use crate::views::ViewEvent;
-
-pub struct AboutView {
-    scroll: usize,
-}
-
-impl AboutView {
-    pub fn new() -> Self {
-        Self { scroll: 0 }
-    }
-
-    pub fn handle_key(&mut self, key: &KeyEvent) -> ViewEvent {
-        match key.code {
-            KeyCode::Char('w') | KeyCode::Up   => { self.scroll = self.scroll.saturating_sub(1); }
-            KeyCode::Char('s') | KeyCode::Down => { self.scroll += 1; }
-            KeyCode::PageUp   => { self.scroll = self.scroll.saturating_sub(10); }
-            KeyCode::PageDown => { self.scroll += 10; }
-            _ => {}
-        }
-        ViewEvent::None
-    }
-
-    pub fn render(&self, frame: &mut Frame, area: Rect) {
-        let lines = build_lines();
-        let inner_height = area.height.saturating_sub(2) as usize;
-        let max_scroll = lines.len().saturating_sub(inner_height);
-
-        let paragraph = Paragraph::new(lines)
-            .block(
-                Block::default()
-                    .title(" About ")
-                    .borders(Borders::ALL)
-                    .style(Style::default().fg(Color::White)),
-            )
-            .style(Style::default().fg(Color::White))
-            .scroll((self.scroll.min(max_scroll) as u16, 0));
-
-        frame.render_widget(paragraph, area);
-    }
-}
 
 fn heading(text: &str) -> Line<'static> {
     Line::from(Span::styled(
         text.to_owned(),
-        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+        Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
     ))
 }
 
@@ -65,7 +21,7 @@ fn ctrl(key: &str, desc: &str) -> Line<'static> {
     Line::from(vec![
         Span::styled(
             format!("    {:<20}", key),
-            Style::default().fg(Color::Rgb(255, 140, 0)),
+            Style::default().fg(crate::theme::accent()),
         ),
         Span::styled(desc.to_owned(), Style::default().fg(Color::White)),
     ])
@@ -90,7 +46,7 @@ pub(super) fn build_lines() -> Vec<Line<'static>> {
     lines.extend(vec![
         Line::from(Span::styled(
             "EDCAS — Elite Dangerous Commander Assistant System",
-            Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+            Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD),
         )),
         Line::from(Span::styled("Version 0.4.0", Style::default().fg(Color::DarkGray))),
         blank(),

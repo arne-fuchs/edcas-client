@@ -85,7 +85,7 @@ impl ModulesView {
             if selected {
                 lines.push(Line::from(Span::styled(
                     format!(" {slot}  {item}  {power}  {cond}{grade}"),
-                    Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                    Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD),
                 )));
             } else {
                 let cond_color = condition_color(m.health);
@@ -110,7 +110,7 @@ impl ModulesView {
                 Block::default()
                     .title(format!(" Modules ({count}) "))
                     .borders(Borders::ALL)
-                    .border_style(Style::default().fg(Color::Rgb(255, 140, 0))),
+                    .border_style(Style::default().fg(crate::theme::accent())),
             ),
             area,
         );
@@ -121,7 +121,7 @@ impl ModulesView {
 
         let p = &journal.pilot;
         if !p.ship_type.is_empty() {
-            let orange = Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+            let orange = Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD);
             let cyan   = Style::default().fg(Color::Cyan);
             let white  = Style::default().fg(Color::White);
             let dim    = Style::default().fg(Color::DarkGray);
@@ -150,7 +150,7 @@ impl ModulesView {
                 let pct = (p.hull_health * 100.0) as u8;
                 let color = if pct > 75 { Color::Green }
                             else if pct > 50 { Color::Yellow }
-                            else if pct > 25 { Color::Rgb(255, 140, 0) }
+                            else if pct > 25 { crate::theme::accent() }
                             else { Color::Red };
                 lines.push(Line::from(vec![
                     Span::styled("Hull        ", cyan),
@@ -243,7 +243,7 @@ impl ModulesView {
             };
             lines.push(Line::from(Span::styled(
                 pwr,
-                Style::default().fg(Color::Rgb(255, 140, 0)),
+                Style::default().fg(crate::theme::accent()),
             )));
             lines.push(Line::from(""));
             lines.push(Line::from(Span::styled(
@@ -364,7 +364,7 @@ fn condition_color(health: Option<f32>) -> Color {
     match health {
         Some(h) if h > 0.75 => Color::Green,
         Some(h) if h > 0.50 => Color::Yellow,
-        Some(h) if h > 0.25 => Color::Rgb(255, 140, 0),
+        Some(h) if h > 0.25 => crate::theme::accent(),
         Some(_) => Color::Red,
         None => Color::DarkGray,
     }

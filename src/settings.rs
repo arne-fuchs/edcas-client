@@ -4,12 +4,10 @@ use std::collections::HashMap;
 
 pub mod appearance;
 pub mod explorer;
-pub mod grapic_editor;
 pub mod icons;
 pub mod journal_reader;
 pub use icons::Icon;
 
-use crate::settings::grapic_editor::GraphicEditorSettings;
 use crate::settings::journal_reader::JournalReaderSettings;
 
 #[derive(Serialize, Deserialize, Clone)]
@@ -17,7 +15,6 @@ pub struct Settings {
     pub appearance: appearance::AppearanceSettings,
     pub journal_reader: journal_reader::JournalReaderSettings,
     pub explorer: explorer::ExplorerSettings,
-    pub graphics_editor: grapic_editor::GraphicEditorSettings,
     #[serde(default = "HashMap::default")]
     pub icons: HashMap<String, Icon>,
     #[serde(default = "HashMap::default")]
@@ -37,7 +34,7 @@ pub struct Settings {
     #[serde(default = "default_eddn_url")]
     pub eddn_url: String,
     /// When true, EDDN messages are sent to the test pipeline (`/test` schemaRef suffix).
-    #[serde(default = "default_true")]
+    #[serde(default)]
     pub eddn_test_mode: bool,
 }
 
@@ -76,7 +73,6 @@ impl Settings {
                 appearance: Default::default(),
                 journal_reader: Default::default(),
                 explorer: Default::default(),
-                graphics_editor: Default::default(),
                 icons: Default::default(),
                 stars: Default::default(),
                 planets: Default::default(),
@@ -84,7 +80,7 @@ impl Settings {
                 edcas_api_enabled: true,
                 eddn_enabled: true,
                 eddn_url: default_eddn_url(),
-                eddn_test_mode: true,
+                eddn_test_mode: false,
             })
     }
 
@@ -181,22 +177,6 @@ impl Settings {
             settings.journal_reader = JournalReaderSettings::default();
         }
         debug!("Journal logs: {}", &settings.journal_reader.journal_directory);
-
-        if !Path::new(&settings.graphics_editor.graphics_directory).exists() {
-            warn!("graphics path {} does not exist", &settings.graphics_editor.graphics_directory);
-            settings.graphics_editor = GraphicEditorSettings::default();
-        } else if cfg!(target_os = "windows") {
-            settings.graphics_editor.graphic_override_content = format!(
-                "{}\\GraphicsConfigurationOverride.xml",
-                &settings.graphics_editor.graphic_override_content
-            );
-        } else if cfg!(target_os = "linux") {
-            settings.graphics_editor.graphic_override_content = format!(
-                "{}/GraphicsConfigurationOverride.xml",
-                &settings.graphics_editor.graphic_override_content
-            );
-        }
-        debug!("Graphics path: {}", &settings.graphics_editor.graphics_directory);
 
         settings
     }

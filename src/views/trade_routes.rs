@@ -430,14 +430,14 @@ impl TradeRoutesView {
     fn render_filter(&self, frame: &mut Frame, area: Rect) {
         let focused = self.focus == FocusArea::Filter;
         let border_style = if focused {
-            Style::default().fg(Color::Rgb(255, 140, 0))
+            Style::default().fg(crate::theme::accent())
         } else {
             Style::default().fg(Color::White)
         };
 
         let field_style = |idx: usize| -> Style {
             if focused && self.filter_field == idx {
-                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             }
@@ -484,7 +484,7 @@ impl TradeRoutesView {
 
         let focused = self.focus == FocusArea::List;
         let border_style = if focused {
-            Style::default().fg(Color::Rgb(255, 140, 0))
+            Style::default().fg(crate::theme::accent())
         } else {
             Style::default().fg(Color::White)
         };
@@ -553,16 +553,16 @@ impl TradeRoutesView {
     }
 
     fn render_detail(&self, frame: &mut Frame, area: Rect) {
-        let hl = Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
+        let hl = Style::default().fg(crate::theme::accent()).add_modifier(Modifier::BOLD);
         let focused = self.focus == FocusArea::Detail;
         let border_style = if focused {
-            Style::default().fg(Color::Rgb(255, 140, 0))
+            Style::default().fg(crate::theme::accent())
         } else {
             Style::default().fg(Color::White)
         };
         let sel_style = |pos: usize| -> Style {
             if focused && self.detail_cursor == pos {
-                Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+                Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD)
             } else {
                 Style::default().fg(Color::White)
             }
@@ -648,7 +648,7 @@ impl TradeRoutesView {
                     )));
                     lines.push(Line::from(Span::styled(
                         format!("  profit: {} cr", format_num(l.profit_out)),
-                        Style::default().fg(Color::Rgb(255, 140, 0)),
+                        Style::default().fg(crate::theme::accent()),
                     )));
                     lines.push(Line::from(""));
 
@@ -668,7 +668,7 @@ impl TradeRoutesView {
                     )));
                     lines.push(Line::from(Span::styled(
                         format!("  profit: {} cr", format_num(l.profit_back)),
-                        Style::default().fg(Color::Rgb(255, 140, 0)),
+                        Style::default().fg(crate::theme::accent()),
                     )));
                     lines.push(Line::from(""));
 
@@ -708,7 +708,7 @@ impl TradeRoutesView {
 
 fn row_style(selected: bool) -> Style {
     if selected {
-        Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD)
+        Style::default().fg(Color::Black).bg(crate::theme::accent()).add_modifier(Modifier::BOLD)
     } else {
         Style::default().fg(Color::White)
     }
