@@ -31,14 +31,27 @@ function fmtUtc(iso) {
   );
 }
 
+// Format in the browser's configured locale + time zone, including the zone
+// abbreviation (e.g. "Jun 4, 2026, 21:00 CEST").
+function fmtLocal(iso) {
+  if (!iso) return "—";
+  const d = new Date(iso);
+  if (isNaN(d)) return "—";
+  return new Intl.DateTimeFormat(undefined, {
+    year: "numeric", month: "short", day: "2-digit",
+    hour: "2-digit", minute: "2-digit",
+    timeZoneName: "short",
+  }).format(d);
+}
+
 async function fetchTick() {
   try {
     const r = await fetch(API.tick, { cache: "no-store" });
     if (!r.ok) throw new Error(r.status);
     const d = await r.json();
     nextTickMs = d.next_predicted_tick ? new Date(d.next_predicted_tick).getTime() : null;
-    el.next.textContent = fmtUtc(d.next_predicted_tick);
-    el.last.textContent = fmtUtc(d.last_tick);
+    el.next.textContent = fmtLocal(d.next_predicted_tick);
+    el.last.textContent = fmtLocal(d.last_tick);
     el.count.textContent =
       d.system_count != null ? d.system_count.toLocaleString() : "—";
   } catch (e) {
@@ -162,6 +175,20 @@ async function fetchHistory() {
     },
   });
 }
+
+// ─── Kiosk idle behaviour ─────────────────────────────────────
+// Hide the cursor and the scroll hint when idle; reveal them on any pointer,
+// touch, scroll or key activity, then fade back out after a few seconds. On an
+// untouched kiosk screen the page stays a pure countdown clock.
+let idleTimer = null;
+function markActive() {
+  document.body.classList.add("active");
+  clearTimeout(idleTimer);
+  idleTimer = setTimeout(() => document.body.classList.remove("active"), 3000);
+}
+["mousemove", "mousedown", "touchstart", "wheel", "keydown"].forEach((ev) =>
+  window.addEventListener(ev, markActive, { passive: true })
+);
 
 // ─── Boot ─────────────────────────────────────────────────────
 fetchTick();

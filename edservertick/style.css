@@ -63,29 +63,26 @@ body::after {
 }
 
 .hero-frame {
-  width: min(1400px, 96vw);
+  width: min(1700px, 98vw);
   text-align: center;
-  border: 1px solid rgba(255, 113, 0, 0.25);
-  background: var(--bg-panel);
-  padding: clamp(1.5rem, 5vh, 5rem) clamp(1rem, 4vw, 4rem);
+  padding: 2vh 2vw;
   position: relative;
-  clip-path: polygon(0 14px, 14px 0, calc(100% - 14px) 0, 100% 14px,
-                     100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px));
 }
 
-.title {
-  font-weight: 500;
-  font-size: clamp(1rem, 3.2vw, 2.4rem);
-  letter-spacing: 0.4em;
-  color: var(--orange-hi);
-  text-shadow: var(--glow);
-  margin-bottom: clamp(0.6rem, 1.5vh, 1.2rem);
+/* Visually hidden, but available to screen readers and search engines. */
+.sr-only {
+  position: absolute; width: 1px; height: 1px;
+  padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }
+
 .tagline {
-  font-size: clamp(0.6rem, 1.4vw, 1rem);
-  letter-spacing: 0.4em;
-  color: var(--text-dim);
-  margin-bottom: clamp(1rem, 4vh, 2.6rem);
+  font-size: clamp(0.75rem, 2vw, 1.6rem);
+  letter-spacing: 0.55em;
+  text-indent: 0.55em; /* compensate trailing letter-spacing so it stays centred */
+  color: var(--orange);
+  text-shadow: 0 0 10px rgba(255, 113, 0, 0.4);
+  margin-bottom: clamp(0.8rem, 3vh, 2rem);
 }
 
 .countdown {
@@ -100,7 +97,7 @@ body::after {
 .seg { display: flex; flex-direction: column; align-items: center; }
 .num {
   font-weight: 900;
-  font-size: clamp(3.5rem, 18vw, 16rem);
+  font-size: clamp(3.5rem, 17vw, 30rem);
   text-shadow: var(--glow);
   font-variant-numeric: tabular-nums;
   font-feature-settings: "tnum";
@@ -113,7 +110,7 @@ body::after {
 }
 .sep {
   font-weight: 700;
-  font-size: clamp(2.5rem, 12vw, 11rem);
+  font-size: clamp(2.5rem, 11vw, 19rem);
   color: var(--orange-dim);
   text-shadow: var(--glow);
   animation: blink 2s steps(1) infinite;
@@ -123,7 +120,7 @@ body::after {
 .imminent {
   display: none;
   font-weight: 900;
-  font-size: clamp(2.5rem, 11vw, 9rem);
+  font-size: clamp(2.5rem, 13vw, 18rem);
   color: var(--orange-hi);
   text-shadow: var(--glow);
   animation: pulse 1.1s ease-in-out infinite;
@@ -143,9 +140,15 @@ body::after {
   position: absolute; bottom: 3vh; left: 50%; transform: translateX(-50%);
   display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
   color: var(--text-dim); text-decoration: none; font-size: 0.7rem; letter-spacing: 0.3em;
-  transition: color 0.2s;
+  opacity: 0; transition: color 0.2s, opacity 0.5s ease;
 }
 .scroll-hint:hover { color: var(--orange-hi); }
+
+/* ── Kiosk idle behaviour ──────────────────────────────────── */
+/* Untouched (no "active" class) → pure clock: cursor and scroll hint hidden.
+   Any pointer/touch/key activity adds .active for a few seconds (see app.js). */
+body:not(.active) { cursor: none; }
+body.active .scroll-hint { opacity: 1; }
 .scroll-hint .chev { font-size: 1.6rem; animation: bob 1.8s ease-in-out infinite; }
 @keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
 
