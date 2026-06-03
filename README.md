@@ -207,7 +207,7 @@ This is the easiest way. From the repository root:
 docker compose up --build
 ```
 
-This starts PostgreSQL (with the schema applied automatically on first boot) and `edcas-server` together. The API is available at `http://localhost:3000`.
+This starts PostgreSQL and `edcas-server` together. The API is available at `http://localhost:3000`.
 
 Data is persisted in `../edcas-data/postgres-data` relative to the repository root.
 
@@ -217,8 +217,11 @@ Data is persisted in `../edcas-data/postgres-data` relative to the repository ro
 
 ```bash
 createdb edcas
-psql -d edcas -f crates/edcas-server/schema.sql
 ```
+
+That's it — `edcas-server` **applies the schema and any pending migrations automatically on
+startup** (tracked in a `schema_migrations` table), so you don't need to run `psql -f`
+manually. On an existing database it only creates what's missing.
 
 **2. Set environment variables**
 
@@ -241,6 +244,19 @@ export DB_PASSWORD=edcas
 
 cargo run --release --bin edcas-server
 ```
+
+### Database migrations
+
+The server runs migrations automatically on startup, tracked in a `schema_migrations`
+table so each is applied exactly once. The migration set is embedded into the binary, so
+deploying a new build is all that's needed to bring a database up to date — no manual SQL.
+
+- `crates/edcas-server/schema.sql` is migration `0001` (the full canonical schema). It uses
+  `CREATE … IF NOT EXISTS`, so it also adopts a pre-existing database by creating only the
+  objects that are missing.
+- To add a change, append a new `(version, include_str!("migrations/NNNN_name.sql"))` entry
+  to the list in `crates/edcas-server/src/migrations.rs`. **Never edit or reorder existing
+  entries** — they may already be recorded as applied in production.
 
 ### Pointing the client at your own server
 

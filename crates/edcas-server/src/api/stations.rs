@@ -203,7 +203,7 @@ async fn fetch_modules(
             id: r.get("id"),
             name: r.get("name"),
             category: r.get("category"),
-            cost: r.get("cost"),
+            cost: r.get::<_, Option<i64>>("cost").unwrap_or(0),
             ship: r.get("ship"),
         })
         .collect())
@@ -229,7 +229,7 @@ async fn fetch_ships(
         .map(|r| ShipResponse {
             id: r.get("id"),
             name: r.get("name"),
-            basevalue: r.get("basevalue"),
+            basevalue: r.get::<_, Option<i64>>("basevalue").unwrap_or(0),
         })
         .collect())
 }

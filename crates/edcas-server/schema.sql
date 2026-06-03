@@ -8,7 +8,7 @@
 -- Every EDDN message is stored here before being dispatched to
 -- typed tables. schema_ref is the EDDN schema URL.
 
-CREATE TABLE journal_events (
+CREATE TABLE IF NOT EXISTS journal_events (
     id              BIGSERIAL PRIMARY KEY,
     timestamp       TIMESTAMPTZ NOT NULL,
     event_timestamp TIMESTAMPTZ,
@@ -19,7 +19,7 @@ CREATE TABLE journal_events (
 
 -- ── Star systems ─────────────────────────────────────────────
 
-CREATE TABLE star_systems (
+CREATE TABLE IF NOT EXISTS star_systems (
     system_address  BIGINT PRIMARY KEY,
     name            VARCHAR(255) NOT NULL,
     x               REAL,
@@ -38,7 +38,7 @@ CREATE TABLE star_systems (
 
 -- ── Factions ─────────────────────────────────────────────────
 
-CREATE TABLE factions (
+CREATE TABLE IF NOT EXISTS factions (
     name            VARCHAR(255) NOT NULL,
     system_address  BIGINT,
     government      VARCHAR(255),
@@ -49,7 +49,7 @@ CREATE TABLE factions (
     PRIMARY KEY (name, system_address)
 );
 
-CREATE TABLE faction_states (
+CREATE TABLE IF NOT EXISTS faction_states (
     faction_name    VARCHAR(255) NOT NULL,
     system_address  BIGINT NOT NULL,
     state           VARCHAR(255) NOT NULL,
@@ -59,7 +59,7 @@ CREATE TABLE faction_states (
     FOREIGN KEY (faction_name, system_address) REFERENCES factions(name, system_address)
 );
 
-CREATE TABLE conflicts (
+CREATE TABLE IF NOT EXISTS conflicts (
     id                  BIGSERIAL PRIMARY KEY,
     system_address      BIGINT,
     war_type            VARCHAR(255),
@@ -75,7 +75,7 @@ CREATE TABLE conflicts (
 
 -- ── Stars ────────────────────────────────────────────────────
 
-CREATE TABLE star (
+CREATE TABLE IF NOT EXISTS star (
     id                  INTEGER NOT NULL,
     system_address      BIGINT,
     name                VARCHAR(255) NOT NULL,
@@ -92,7 +92,7 @@ CREATE TABLE star (
 
 -- ── Planetary bodies ─────────────────────────────────────────
 
-CREATE TABLE body (
+CREATE TABLE IF NOT EXISTS body (
     id                  INTEGER NOT NULL,
     system_address      BIGINT,
     name                VARCHAR(255) NOT NULL,
@@ -124,7 +124,7 @@ CREATE TABLE body (
     PRIMARY KEY (id, system_address)
 );
 
-CREATE TABLE ring (
+CREATE TABLE IF NOT EXISTS ring (
     body_id         INTEGER NOT NULL,
     system_address  BIGINT NOT NULL,
     name            VARCHAR(255) NOT NULL,
@@ -136,7 +136,7 @@ CREATE TABLE ring (
     PRIMARY KEY (body_id, system_address, name)
 );
 
-CREATE TABLE parents (
+CREATE TABLE IF NOT EXISTS parents (
     type            VARCHAR(20),
     parent_id       INTEGER,
     body_id         INTEGER NOT NULL,
@@ -145,7 +145,7 @@ CREATE TABLE parents (
     PRIMARY KEY (parent_id, body_id, system_address)
 );
 
-CREATE TABLE atmosphere_composition (
+CREATE TABLE IF NOT EXISTS atmosphere_composition (
     atmosphere_type VARCHAR(255),
     body_id         INTEGER NOT NULL,
     system_address  BIGINT NOT NULL,
@@ -153,7 +153,7 @@ CREATE TABLE atmosphere_composition (
     journal_id      BIGINT REFERENCES journal_events(id) NOT NULL
 );
 
-CREATE TABLE planet_material (
+CREATE TABLE IF NOT EXISTS planet_material (
     material_type   VARCHAR(255),
     body_id         INTEGER NOT NULL,
     system_address  BIGINT NOT NULL,
@@ -161,7 +161,7 @@ CREATE TABLE planet_material (
     journal_id      BIGINT REFERENCES journal_events(id) NOT NULL
 );
 
-CREATE TABLE planet_composition (
+CREATE TABLE IF NOT EXISTS planet_composition (
     composition_type VARCHAR(255),
     body_id          INTEGER NOT NULL,
     system_address   BIGINT NOT NULL,
@@ -171,7 +171,7 @@ CREATE TABLE planet_composition (
 
 -- ── FSS / SAA signal tables ──────────────────────────────────
 
-CREATE TABLE fss_body_signals (
+CREATE TABLE IF NOT EXISTS fss_body_signals (
     body_id         INTEGER NOT NULL,
     system_address  BIGINT NOT NULL,
     signal_type     VARCHAR(255) NOT NULL,
@@ -180,7 +180,7 @@ CREATE TABLE fss_body_signals (
     PRIMARY KEY (body_id, system_address, signal_type)
 );
 
-CREATE TABLE saa_signals (
+CREATE TABLE IF NOT EXISTS saa_signals (
     body_id         INTEGER NOT NULL,
     system_address  BIGINT NOT NULL,
     signal_type     VARCHAR(255) NOT NULL,
@@ -191,7 +191,7 @@ CREATE TABLE saa_signals (
 
 -- ── Stations ─────────────────────────────────────────────────
 
-CREATE TABLE stations (
+CREATE TABLE IF NOT EXISTS stations (
     market_id       BIGINT PRIMARY KEY,
     system_address  BIGINT,
     name            VARCHAR(255) NOT NULL,
@@ -204,14 +204,14 @@ CREATE TABLE stations (
     event_timestamp TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01T00:00:00Z'
 );
 
-CREATE TABLE station_services (
+CREATE TABLE IF NOT EXISTS station_services (
     service_type    VARCHAR(255) NOT NULL,
     market_id       BIGINT REFERENCES stations(market_id),
     journal_id      BIGINT REFERENCES journal_events(id) NOT NULL,
     PRIMARY KEY (service_type, market_id)
 );
 
-CREATE TABLE station_economies (
+CREATE TABLE IF NOT EXISTS station_economies (
     market_id    BIGINT REFERENCES stations(market_id),
     economy_type VARCHAR(255) NOT NULL,
     proportion   REAL NOT NULL,
@@ -219,7 +219,7 @@ CREATE TABLE station_economies (
     PRIMARY KEY (market_id, economy_type)
 );
 
-CREATE TABLE station_landing_pads (
+CREATE TABLE IF NOT EXISTS station_landing_pads (
     market_id   BIGINT PRIMARY KEY REFERENCES stations(market_id),
     small       INTEGER,
     medium      INTEGER,
@@ -229,7 +229,7 @@ CREATE TABLE station_landing_pads (
 
 -- ── Market data ──────────────────────────────────────────────
 
-CREATE TABLE commodity_listening (
+CREATE TABLE IF NOT EXISTS commodity_listening (
     market_id       BIGINT,
     name            VARCHAR(255) NOT NULL,
     mean_price      INTEGER,
@@ -244,7 +244,7 @@ CREATE TABLE commodity_listening (
     PRIMARY KEY (market_id, name)
 );
 
-CREATE TABLE modul_listening (
+CREATE TABLE IF NOT EXISTS modul_listening (
     market_id       BIGINT,
     id              VARCHAR(255) NOT NULL,
     category        VARCHAR(255),
@@ -256,7 +256,7 @@ CREATE TABLE modul_listening (
     PRIMARY KEY (market_id, id)
 );
 
-CREATE TABLE ship_listening (
+CREATE TABLE IF NOT EXISTS ship_listening (
     market_id       BIGINT,
     id              VARCHAR(255) NOT NULL,
     name            VARCHAR(255),
@@ -266,28 +266,64 @@ CREATE TABLE ship_listening (
     PRIMARY KEY (market_id, id)
 );
 
+-- ── Append-only history tables ───────────────────────────────
+-- Unique constraints make ingestion idempotent: the same snapshot can arrive twice
+-- (directly via the API and again via the EDDN relay) without creating duplicate rows.
+
+CREATE TABLE IF NOT EXISTS commodity_price_history (
+    id              BIGSERIAL PRIMARY KEY,
+    market_id       BIGINT NOT NULL,
+    name            VARCHAR NOT NULL,
+    buy_price       INT NOT NULL,
+    sell_price      INT NOT NULL,
+    stock           INT NOT NULL,
+    demand          INT NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL,
+    CONSTRAINT commodity_price_history_unique UNIQUE (market_id, name, event_timestamp)
+);
+CREATE INDEX IF NOT EXISTS idx_cph_lookup ON commodity_price_history (market_id, name, event_timestamp DESC);
+
+CREATE TABLE IF NOT EXISTS system_population_history (
+    id              BIGSERIAL PRIMARY KEY,
+    system_address  BIGINT NOT NULL,
+    population      BIGINT NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL,
+    CONSTRAINT system_population_history_unique UNIQUE (system_address, event_timestamp)
+);
+CREATE INDEX IF NOT EXISTS idx_sph_lookup ON system_population_history (system_address, event_timestamp DESC);
+
+CREATE TABLE IF NOT EXISTS faction_influence_history (
+    id              BIGSERIAL PRIMARY KEY,
+    faction_name    VARCHAR NOT NULL,
+    system_address  BIGINT NOT NULL,
+    influence       REAL NOT NULL,
+    event_timestamp TIMESTAMPTZ NOT NULL,
+    CONSTRAINT faction_influence_history_unique UNIQUE (faction_name, system_address, event_timestamp)
+);
+CREATE INDEX IF NOT EXISTS idx_fih_lookup ON faction_influence_history (faction_name, system_address, event_timestamp DESC);
+
 -- ── Indexes ──────────────────────────────────────────────────
 
-CREATE INDEX idx_journal_events_type             ON journal_events (event_type);
-CREATE INDEX idx_star_systems_name               ON star_systems (name);
-CREATE INDEX idx_body_system                     ON body (system_address);
-CREATE INDEX idx_star_system                     ON star (system_address);
-CREATE INDEX idx_ring_system                     ON ring (system_address);
-CREATE INDEX idx_parents_system                  ON parents (system_address);
-CREATE INDEX idx_planet_material_system          ON planet_material (system_address);
-CREATE INDEX idx_factions_system                 ON factions (system_address);
-CREATE INDEX idx_stations_name                   ON stations (name);
-CREATE INDEX idx_stations_system                 ON stations (system_address);
-CREATE INDEX idx_fss_body_signals_system         ON fss_body_signals (system_address);
-CREATE INDEX idx_saa_signals_system              ON saa_signals (system_address);
-CREATE INDEX idx_construction_depots_system      ON construction_depots (system_address);
-CREATE INDEX idx_construction_depots_name        ON construction_depots (LOWER(station_name));
-CREATE INDEX idx_star_systems_coords             ON star_systems (x, y, z);
-CREATE INDEX idx_commodity_listening_name        ON commodity_listening (name);
+CREATE INDEX IF NOT EXISTS idx_journal_events_type             ON journal_events (event_type);
+CREATE INDEX IF NOT EXISTS idx_star_systems_name               ON star_systems (name);
+CREATE INDEX IF NOT EXISTS idx_body_system                     ON body (system_address);
+CREATE INDEX IF NOT EXISTS idx_star_system                     ON star (system_address);
+CREATE INDEX IF NOT EXISTS idx_ring_system                     ON ring (system_address);
+CREATE INDEX IF NOT EXISTS idx_parents_system                  ON parents (system_address);
+CREATE INDEX IF NOT EXISTS idx_planet_material_system          ON planet_material (system_address);
+CREATE INDEX IF NOT EXISTS idx_factions_system                 ON factions (system_address);
+CREATE INDEX IF NOT EXISTS idx_stations_name                   ON stations (name);
+CREATE INDEX IF NOT EXISTS idx_stations_system                 ON stations (system_address);
+CREATE INDEX IF NOT EXISTS idx_fss_body_signals_system         ON fss_body_signals (system_address);
+CREATE INDEX IF NOT EXISTS idx_saa_signals_system              ON saa_signals (system_address);
+CREATE INDEX IF NOT EXISTS idx_construction_depots_system      ON construction_depots (system_address);
+CREATE INDEX IF NOT EXISTS idx_construction_depots_name        ON construction_depots (LOWER(station_name));
+CREATE INDEX IF NOT EXISTS idx_star_systems_coords             ON star_systems (x, y, z);
+CREATE INDEX IF NOT EXISTS idx_commodity_listening_name        ON commodity_listening (name);
 
 -- ── Colonisation construction depots ───────────────────────
 
-CREATE TABLE construction_depots (
+CREATE TABLE IF NOT EXISTS construction_depots (
     market_id               BIGINT PRIMARY KEY,
     system_address          BIGINT NOT NULL,
     station_name            VARCHAR(255) NOT NULL,
@@ -298,7 +334,7 @@ CREATE TABLE construction_depots (
     journal_id              BIGINT REFERENCES journal_events(id)
 );
 
-CREATE TABLE construction_resources (
+CREATE TABLE IF NOT EXISTS construction_resources (
     market_id       BIGINT NOT NULL REFERENCES construction_depots(market_id) ON DELETE CASCADE,
     name            VARCHAR(255) NOT NULL,
     display_name    VARCHAR(255) NOT NULL,
@@ -310,7 +346,7 @@ CREATE TABLE construction_resources (
 
 -- ── Pre-computed trade cache ─────────────────────────────────
 
-CREATE TABLE cached_trade_routes (
+CREATE TABLE IF NOT EXISTS cached_trade_routes (
     pad_filter          VARCHAR(3)   NOT NULL DEFAULT 'any',
     rank                INTEGER      NOT NULL,
     from_market_id      BIGINT       NOT NULL,
@@ -334,7 +370,7 @@ CREATE TABLE cached_trade_routes (
     PRIMARY KEY (pad_filter, rank)
 );
 
-CREATE TABLE cached_trade_loops (
+CREATE TABLE IF NOT EXISTS cached_trade_loops (
     pad_filter          VARCHAR(3)   NOT NULL DEFAULT 'any',
     rank                INTEGER      NOT NULL,
     market_id_a         BIGINT       NOT NULL,

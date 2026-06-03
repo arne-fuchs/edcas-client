@@ -117,7 +117,7 @@ pub struct ModuleResponse {
     pub id: String,
     pub name: Option<String>,
     pub category: Option<String>,
-    pub cost: i32,
+    pub cost: i64,
     pub ship: Option<String>,
 }
 
@@ -125,7 +125,7 @@ pub struct ModuleResponse {
 pub struct ShipResponse {
     pub id: String,
     pub name: Option<String>,
-    pub basevalue: i32,
+    pub basevalue: i64,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

@@ -3,6 +3,7 @@ mod cache;
 mod config;
 mod db;
 mod listener;
+mod migrations;
 mod request_logger;
 mod stats;
 mod tick;
@@ -26,6 +27,9 @@ async fn main() -> anyhow::Result<()> {
         client.query_one("SELECT 1", &[]).await?;
     }
     info!("Database connection OK");
+
+    migrations::run(&pool).await?;
+    info!("Database migrations up to date");
 
     listener::spawn_listener(cfg.eddn_url.clone(), pool.clone());
     info!("EDDN listener started, connecting to {}", cfg.eddn_url);
