@@ -45,7 +45,7 @@ body::after {
 }
 
 .scanlines {
-  position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0.35;
+  position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0.12;
   background: repeating-linear-gradient(
     to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.25) 3px, rgba(0,0,0,0) 4px);
   mix-blend-mode: multiply;
@@ -86,7 +86,7 @@ body::after {
 }
 
 .countdown {
-  display: flex; flex-wrap: nowrap; align-items: flex-start; justify-content: center;
+  display: flex; flex-wrap: nowrap; align-items: center; justify-content: center;
   gap: clamp(0.4rem, 1.5vw, 2rem);
   color: var(--orange);
   line-height: 0.9;
@@ -94,7 +94,10 @@ body::after {
 .countdown[data-state="imminent"] { display: none; }
 .countdown[data-state="loading"] .num { opacity: 0.4; }
 
-.seg { display: flex; flex-direction: column; align-items: center; flex-shrink: 0; }
+/* The label is absolutely positioned so the segment's height equals the digit
+   height only — that lets align-items:center on .countdown line the colons up
+   with the vertical centre of the digits (not the digits+label block). */
+.seg { position: relative; flex-shrink: 0; }
 .num {
   font-weight: 900;
   font-size: clamp(3.5rem, 17vw, 30rem);
@@ -109,10 +112,11 @@ body::after {
   text-align: center;
 }
 .lbl {
+  position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+  margin-top: 0.4em;
   font-size: clamp(0.5rem, 1.4vw, 1rem);
   color: var(--text-dim);
   letter-spacing: 0.35em;
-  margin-top: 0.6em;
 }
 .sep {
   font-weight: 700;
