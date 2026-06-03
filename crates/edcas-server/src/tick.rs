@@ -104,7 +104,7 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
         .await?
         .get(0);
 
-    let rows = if history_rows >= MIN_HISTORY_ROWS_FOR_DETECTION {
+    let mut rows = if history_rows >= MIN_HISTORY_ROWS_FOR_DETECTION {
         info!("tick detector: using faction_influence_history ({history_rows} rows in 48 h)");
         detect_from_influence_history(&client).await?
     } else {
@@ -113,6 +113,17 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
         );
         detect_from_journal_events(&client).await?
     };
+
+    // Bootstrap bridge: the influence-history method can only flag a change when a
+    // faction-system has a *previous* reading to diff against. Right after the history
+    // table starts filling up, almost every row is a first-seen value, so it yields no
+    // candidates even though there is plenty of journal data. In that case fall back to
+    // the journal_events traffic-peak method so we still record a (rougher) tick; this
+    // self-upgrades to the accurate influence method once two dense days exist.
+    if rows.is_empty() && history_rows >= MIN_HISTORY_ROWS_FOR_DETECTION {
+        info!("tick detector: influence history too shallow to diff yet, falling back to journal_events");
+        rows = detect_from_journal_events(&client).await?;
+    }
 
     // Upsert one row per UTC day. We re-scan the last ~72 h every run and refine each
     // day's estimate as more post-tick reports arrive — the unique key is the calendar
@@ -134,7 +145,7 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
             )
             .await?;
         stored += 1;
-        info!("server tick {tick_date} at {tick_time} ({system_count} systems with influence changes)");
+        info!("server tick {tick_date} at {tick_time} ({system_count} systems)");
     }
 
     if stored == 0 {
