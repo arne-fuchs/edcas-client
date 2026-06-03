@@ -8,6 +8,7 @@
 //! <https://github.com/EDCD/EDDN/blob/live/docs/Developers.md>
 #![cfg(not(target_arch = "wasm32"))]
 
+use std::collections::HashSet;
 use std::sync::mpsc;
 use std::thread;
 use std::time::Duration;
@@ -54,6 +55,10 @@ pub struct EddnConfig {
     /// When true, `/test` is appended to every `$schemaRef` so messages hit the EDDN
     /// test pipeline (validated but not relayed to consumers).
     pub test_mode: bool,
+    /// MarketIDs of fleet carriers the commander owns (from persisted state). At an
+    /// owned carrier the game writes the player's *own* parked fleet into `Shipyard.json`
+    /// (priced at resale value), so its shipyard must not be uploaded.
+    pub owned_carriers: HashSet<i64>,
 }
 
 /// Augmentation state accumulated from the journal line stream. EDDN requires several
@@ -69,6 +74,13 @@ pub struct EddnState {
     pub star_system: Option<String>,
     pub system_address: Option<i64>,
     pub star_pos: Option<[f64; 3]>,
+    /// MarketID of the station we are currently docked at, if any. Used to ensure that
+    /// market/outfitting/shipyard companion files are only uploaded for the live station
+    /// (never a stale file, nor the player's own stored-ship list).
+    pub docked_market_id: Option<i64>,
+    /// MarketIDs of fleet carriers the commander owns. Seeded from persisted state and
+    /// extended live from `CarrierStats` events.
+    pub owned_carriers: HashSet<i64>,
 }
 
 /// Spawns the uploader thread and returns the sender used to feed it.
@@ -90,7 +102,10 @@ pub fn start_uploader(config: EddnConfig) -> mpsc::Sender<EddnInput> {
             config.url, config.test_mode
         );
 
-        let mut state = EddnState::default();
+        let mut state = EddnState {
+            owned_carriers: config.owned_carriers.clone(),
+            ..Default::default()
+        };
         for input in rx {
             match input {
                 EddnInput::Seed(line) => {
@@ -180,6 +195,28 @@ fn update_state(state: &mut EddnState, event: &Value) {
             }
             if let Some(p) = event.get("StarPos").and_then(parse_star_pos) {
                 state.star_pos = Some(p);
+            }
+            // An FSDJump means we left any station; a Location/CarrierJump may report
+            // being docked, so honour its `Docked` flag.
+            if evt == "FSDJump" {
+                state.docked_market_id = None;
+            } else if event.get("Docked").and_then(|v| v.as_bool()) == Some(true) {
+                state.docked_market_id = event.get("MarketID").and_then(|v| v.as_i64());
+            } else if event.get("Docked").and_then(|v| v.as_bool()) == Some(false) {
+                state.docked_market_id = None;
+            }
+        }
+        "Docked" => {
+            state.docked_market_id = event.get("MarketID").and_then(|v| v.as_i64());
+        }
+        "Undocked" => {
+            state.docked_market_id = None;
+        }
+        // These events only ever fire for a carrier the commander owns; the CarrierID is
+        // that carrier's MarketID.
+        "CarrierStats" | "CarrierBuy" => {
+            if let Some(id) = event.get("CarrierID").and_then(|v| v.as_i64()) {
+                state.owned_carriers.insert(id);
             }
         }
         _ => {}
@@ -311,6 +348,31 @@ fn clean_commodity_name(raw: &str) -> String {
     n.to_lowercase()
 }
 
+/// Lowercases the symbol at `key` for each item, preserving order and dropping duplicates.
+/// The EDDN outfitting/shipyard schemas require the module/ship arrays to be unique, and
+/// the game's files can list the same entry more than once.
+fn unique_symbols(items: &[Value], key: &str) -> Vec<String> {
+    let mut seen = HashSet::new();
+    items
+        .iter()
+        .filter_map(|it| it.get(key).and_then(|v| v.as_str()))
+        .map(|s| s.to_lowercase())
+        .filter(|s| seen.insert(s.clone()))
+        .collect()
+}
+
+/// Returns `true` if a station companion file (market/outfitting/shipyard) for `market_id`
+/// may be uploaded — i.e. we are currently docked at exactly that station.
+///
+/// Every persistent-file uploader **must** gate on this. Companion files sit on disk
+/// between sessions and are read by mtime, so without this check a stale file (or the
+/// player's own stored-ship list written to `Shipyard.json`) could be uploaded as if it
+/// were the live station's data. Streamed journal events don't need it — they're only
+/// uploaded live and are already system-cross-checked in [`augment_system`].
+fn companion_for_docked_station(state: &EddnState, market_id: i64) -> bool {
+    state.docked_market_id == Some(market_id)
+}
+
 fn num(item: &Value, key: &str) -> Value {
     item.get(key)
         .filter(|v| v.is_number())
@@ -323,6 +385,9 @@ pub fn build_commodity_message(market: &Value, state: &EddnState, test_mode: boo
     let system = market.get("StarSystem").and_then(|v| v.as_str())?;
     let station = market.get("StationName").and_then(|v| v.as_str())?;
     let market_id = market.get("MarketID").and_then(|v| v.as_i64())?;
+    if !companion_for_docked_station(state, market_id) {
+        return None;
+    }
     let timestamp = market.get("timestamp").and_then(|v| v.as_str())?;
     let items = market.get("Items").and_then(|v| v.as_array())?;
 
@@ -371,14 +436,13 @@ pub fn build_outfitting_message(
     let system = outfitting.get("StarSystem").and_then(|v| v.as_str())?;
     let station = outfitting.get("StationName").and_then(|v| v.as_str())?;
     let market_id = outfitting.get("MarketID").and_then(|v| v.as_i64())?;
+    if !companion_for_docked_station(state, market_id) {
+        return None;
+    }
     let timestamp = outfitting.get("timestamp").and_then(|v| v.as_str())?;
     let items = outfitting.get("Items").and_then(|v| v.as_array())?;
 
-    let modules: Vec<String> = items
-        .iter()
-        .filter_map(|it| it.get("Name").and_then(|v| v.as_str()))
-        .map(|s| s.to_lowercase())
-        .collect();
+    let modules = unique_symbols(items, "Name");
     if modules.is_empty() {
         return None;
     }
@@ -399,14 +463,19 @@ pub fn build_shipyard_message(shipyard: &Value, state: &EddnState, test_mode: bo
     let system = shipyard.get("StarSystem").and_then(|v| v.as_str())?;
     let station = shipyard.get("StationName").and_then(|v| v.as_str())?;
     let market_id = shipyard.get("MarketID").and_then(|v| v.as_i64())?;
+    if !companion_for_docked_station(state, market_id) {
+        return None;
+    }
+    // At a carrier the commander owns, `Shipyard.json` lists the player's own parked fleet
+    // (priced at resale value), not a public for-sale list — never upload it. Other
+    // commanders' carriers (and stations) still report a genuine for-sale list.
+    if state.owned_carriers.contains(&market_id) {
+        return None;
+    }
     let timestamp = shipyard.get("timestamp").and_then(|v| v.as_str())?;
     let price_list = shipyard.get("PriceList").and_then(|v| v.as_array())?;
 
-    let ships: Vec<String> = price_list
-        .iter()
-        .filter_map(|s| s.get("ShipType").and_then(|v| v.as_str()))
-        .map(|s| s.to_lowercase())
-        .collect();
+    let ships = unique_symbols(price_list, "ShipType");
     if ships.is_empty() {
         return None;
     }
@@ -504,6 +573,8 @@ mod tests {
             star_system: Some("Sol".into()),
             system_address: Some(10477373803),
             star_pos: Some([0.0, 0.0, 0.0]),
+            docked_market_id: Some(3228032),
+            owned_carriers: HashSet::new(),
         }
     }
 
@@ -622,6 +693,87 @@ mod tests {
         assert_eq!(c["sellPrice"], json!(9401));
         assert_eq!(c["demand"], json!(56));
         assert!(c.get("Category").is_none());
+    }
+
+    #[test]
+    fn shipyard_not_uploaded_when_not_docked_at_that_market() {
+        // A stale Shipyard.json from a different/previous station (or the player's own
+        // stored-ship list) must not be uploaded.
+        let mut st = state();
+        st.docked_market_id = Some(99999); // docked elsewhere
+        let shipyard = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "Shipyard",
+            "MarketID": 3228032i64,
+            "StationName": "Galileo",
+            "StarSystem": "Sol",
+            "PriceList": [{"id": 1, "ShipType": "corsair", "ShipPrice": 1}]
+        });
+        assert!(build_shipyard_message(&shipyard, &st, false).is_none());
+
+        // And not uploaded at all when we don't know we're docked.
+        st.docked_market_id = None;
+        assert!(build_shipyard_message(&shipyard, &st, false).is_none());
+    }
+
+    #[test]
+    fn shipyard_at_own_carrier_is_suppressed_but_market_outfitting_upload() {
+        // Docked at a carrier we own: Shipyard.json is our own parked fleet.
+        let mut st = state();
+        let carrier_id = 3704402432i64;
+        st.docked_market_id = Some(carrier_id);
+        st.owned_carriers.insert(carrier_id);
+
+        let shipyard = json!({
+            "timestamp": "2026-01-01T00:00:00Z", "event": "Shipyard",
+            "MarketID": carrier_id, "StationName": "Q2K-BHB", "StarSystem": "Sol",
+            "PriceList": [{"id": 0, "ShipType": "cutter", "ShipPrice": 815215912i64}]
+        });
+        assert!(build_shipyard_message(&shipyard, &st, false).is_none());
+
+        // The carrier's commodity market and outfitting are genuine public data — still sent.
+        let market = json!({
+            "timestamp": "2026-01-01T00:00:00Z", "event": "Market",
+            "MarketID": carrier_id, "StationName": "Q2K-BHB", "StarSystem": "Sol",
+            "Items": [{"Name": "$gold_name;", "BuyPrice": 0, "SellPrice": 9401,
+                       "MeanPrice": 9009, "StockBracket": 0, "Stock": 0,
+                       "DemandBracket": 2, "Demand": 56}]
+        });
+        assert!(build_commodity_message(&market, &st, false).is_some());
+
+        let outfitting = json!({
+            "timestamp": "2026-01-01T00:00:00Z", "event": "Outfitting",
+            "MarketID": carrier_id, "StationName": "Q2K-BHB", "StarSystem": "Sol",
+            "Items": [{"id": 1, "Name": "int_engine_size3_class5"}]
+        });
+        assert!(build_outfitting_message(&outfitting, &st, false).is_some());
+    }
+
+    #[test]
+    fn carrierstats_marks_carrier_as_owned() {
+        let mut st = EddnState::default();
+        update_state(&mut st, &json!({"event": "CarrierStats", "CarrierID": 3704402432i64}));
+        assert!(st.owned_carriers.contains(&3704402432));
+    }
+
+    #[test]
+    fn shipyard_ships_are_deduplicated() {
+        let shipyard = json!({
+            "timestamp": "2026-01-01T00:00:00Z",
+            "event": "Shipyard",
+            "MarketID": 3228032i64,
+            "StationName": "Galileo",
+            "StarSystem": "Sol",
+            "PriceList": [
+                {"id": 1, "ShipType": "Cutter", "ShipPrice": 1},
+                {"id": 2, "ShipType": "Type8", "ShipPrice": 2},
+                {"id": 3, "ShipType": "cutter", "ShipPrice": 3},
+                {"id": 4, "ShipType": "Type8", "ShipPrice": 4}
+            ]
+        });
+        let env = build_shipyard_message(&shipyard, &state(), false).unwrap();
+        let ships = env["message"]["ships"].as_array().unwrap();
+        assert_eq!(ships, &[json!("cutter"), json!("type8")]);
     }
 
     #[test]

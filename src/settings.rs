@@ -138,9 +138,17 @@ impl Settings {
     /// The EDDN uploader configuration, or `None` when EDDN uploads are disabled.
     pub fn eddn_config(&self) -> Option<crate::eddn::EddnConfig> {
         if self.eddn_enabled && !self.eddn_url.trim().is_empty() {
+            // Carriers the commander owns; their `Shipyard.json` lists the player's own
+            // parked fleet, which must not be uploaded.
+            let owned_carriers = crate::my_carriers::MyCarriersData::load()
+                .carriers
+                .keys()
+                .copied()
+                .collect();
             Some(crate::eddn::EddnConfig {
                 url: self.eddn_url.trim().to_string(),
                 test_mode: self.eddn_test_mode,
+                owned_carriers,
             })
         } else {
             None

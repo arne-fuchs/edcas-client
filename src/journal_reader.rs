@@ -1875,14 +1875,21 @@ fn watch_latest_file(
         .and_then(|f| f.metadata().ok())
         .map(|m| m.len())
         .unwrap_or(0);
-    let mut last_cargo_mtime: Option<SystemTime> = None;
-    let mut last_backpack_mtime: Option<SystemTime> = None;
-    let mut last_shiplocker_mtime: Option<SystemTime> = None;
-    let mut last_fc_materials_mtime: Option<SystemTime> = None;
-    let mut last_modules_mtime: Option<SystemTime> = None;
-    let mut last_market_mtime: Option<SystemTime> = None;
-    let mut last_outfitting_mtime: Option<SystemTime> = None;
-    let mut last_shipyard_mtime: Option<SystemTime> = None;
+    // Seed the companion-file mtimes to their current on-disk values (mirroring how
+    // `last_position` is seeded to end-of-file) so the first loop iteration does not treat
+    // pre-existing files as "changed" and re-upload stale data left over from a previous
+    // session. Only files the game writes *while we are running* are uploaded.
+    let mtime_of = |name: &str| -> Option<SystemTime> {
+        dir.join(name).metadata().and_then(|m| m.modified()).ok()
+    };
+    let mut last_cargo_mtime = mtime_of("Cargo.json");
+    let mut last_backpack_mtime = mtime_of("Backpack.json");
+    let mut last_shiplocker_mtime = mtime_of("ShipLocker.json");
+    let mut last_fc_materials_mtime = mtime_of("FCMaterials.json");
+    let mut last_modules_mtime = mtime_of("ModulesInfo.json");
+    let mut last_market_mtime = mtime_of("Market.json");
+    let mut last_outfitting_mtime = mtime_of("Outfitting.json");
+    let mut last_shipyard_mtime = mtime_of("Shipyard.json");
 
     loop {
         if stop_flag.load(Ordering::SeqCst) {
