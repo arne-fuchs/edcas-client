@@ -1,5 +1,6 @@
+use chrono::Utc;
 use deadpool_postgres::Pool;
-use edcas_common::api::{ConflictInfo, FactionPresence, FactionResponse};
+use edcas_common::api::{ConflictInfo, FactionPresence, FactionResponse, InfluencePoint};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{get, State};
@@ -142,4 +143,34 @@ async fn fetch_conflict(
     } else {
         Ok(None)
     }
+}
+
+#[get("/api/v1/faction-influence-history?<name>&<system_address>&<days>")]
+pub async fn faction_influence_history(
+    pool: &State<Pool>,
+    name: String,
+    system_address: i64,
+    days: Option<i32>,
+) -> Result<Json<Vec<InfluencePoint>>, Status> {
+    let client = pool.get().await.map_err(|_| Status::ServiceUnavailable)?;
+    let days = days.unwrap_or(90).clamp(1, 365) as i64;
+    let cutoff = Utc::now() - chrono::Duration::days(days);
+    let rows = client
+        .query(
+            "SELECT influence, event_timestamp
+             FROM faction_influence_history
+             WHERE faction_name = $1 AND system_address = $2 AND event_timestamp >= $3
+             ORDER BY event_timestamp ASC",
+            &[&name, &system_address, &cutoff],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+    let points = rows
+        .iter()
+        .map(|r| InfluencePoint {
+            influence: r.get("influence"),
+            timestamp: r.get("event_timestamp"),
+        })
+        .collect();
+    Ok(Json(points))
 }

@@ -1,6 +1,7 @@
 use std::collections::HashMap;
+use chrono::Utc;
 use deadpool_postgres::Pool;
-use edcas_common::api::{BodyResponse, MaterialResponse, ParentResponse, RingResponse, SystemFactionInfo, SystemResponse};
+use edcas_common::api::{BodyResponse, MaterialResponse, ParentResponse, PopulationPoint, RingResponse, SystemFactionInfo, SystemResponse};
 use rocket::http::Status;
 use rocket::serde::json::Json;
 use rocket::{get, State};
@@ -182,6 +183,35 @@ pub async fn get_system_bodies(
 
     bodies.sort_by_key(|b| b.distance_from_arrival_ls.map(|d| (d * 100.0) as i64).unwrap_or(0));
     Ok(Json(bodies))
+}
+
+#[get("/api/v1/system-population-history?<system_address>&<days>")]
+pub async fn system_population_history(
+    pool: &State<Pool>,
+    system_address: i64,
+    days: Option<i32>,
+) -> Result<Json<Vec<PopulationPoint>>, Status> {
+    let client = pool.get().await.map_err(|_| Status::ServiceUnavailable)?;
+    let days = days.unwrap_or(180).clamp(1, 365) as i64;
+    let cutoff = Utc::now() - chrono::Duration::days(days);
+    let rows = client
+        .query(
+            "SELECT population, event_timestamp
+             FROM system_population_history
+             WHERE system_address = $1 AND event_timestamp >= $2
+             ORDER BY event_timestamp ASC",
+            &[&system_address, &cutoff],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+    let points = rows
+        .iter()
+        .map(|r| PopulationPoint {
+            population: r.get("population"),
+            timestamp: r.get("event_timestamp"),
+        })
+        .collect();
+    Ok(Json(points))
 }
 
 async fn fetch_system_factions(

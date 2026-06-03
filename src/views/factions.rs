@@ -1,10 +1,11 @@
 use crate::event_shim::{KeyCode, KeyEvent};
-use edcas_common::api::{FactionQuery, FactionResponse};
+use edcas_common::api::{FactionQuery, FactionResponse, InfluencePoint};
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
+    symbols,
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph},
     Frame,
 };
 use std::cmp::Ordering;
@@ -24,6 +25,7 @@ use std::sync::{Arc, Mutex};
 enum DetailTab {
     Info,
     Systems,
+    History,
 }
 
 #[derive(Clone, Copy, PartialEq)]
@@ -50,20 +52,23 @@ enum SortDir { Asc, Desc }
 impl DetailTab {
     fn next(self) -> Option<Self> {
         match self {
-            Self::Info => Some(Self::Systems),
-            Self::Systems => None,
+            Self::Info    => Some(Self::Systems),
+            Self::Systems => Some(Self::History),
+            Self::History => None,
         }
     }
     fn prev(self) -> Option<Self> {
         match self {
-            Self::Info => None,
+            Self::Info    => None,
             Self::Systems => Some(Self::Info),
+            Self::History => Some(Self::Systems),
         }
     }
     fn label(self) -> &'static str {
         match self {
-            Self::Info => "Info",
+            Self::Info    => "Info",
             Self::Systems => "Systems",
+            Self::History => "History",
         }
     }
 }
@@ -95,6 +100,20 @@ pub struct FactionsView {
     pending_search: Arc<Mutex<Option<Result<Vec<FactionResponse>, String>>>>,
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<FactionResponse>>>>,
+
+    // History tab state
+    history_faction_name: String,
+    history_system_name: String,
+    /// Pre-computed chart points: (days_since_first, influence_percent)
+    history_data: Vec<(f64, f64)>,
+    history_time_bounds: [f64; 2],
+    history_y_bounds: [f64; 2],
+    history_x_labels: Vec<String>,
+    history_y_labels: Vec<String>,
+    #[cfg(not(target_arch = "wasm32"))]
+    loading_history: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_history: Arc<Mutex<Option<Result<Vec<InfluencePoint>, String>>>>,
 }
 
 impl FactionsView {
@@ -129,6 +148,17 @@ impl FactionsView {
             pending_search: Arc::new(Mutex::new(None)),
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
+            history_faction_name: String::new(),
+            history_system_name: String::new(),
+            history_data: Vec::new(),
+            history_time_bounds: [0.0, 1.0],
+            history_y_bounds: [0.0, 100.0],
+            history_x_labels: Vec::new(),
+            history_y_labels: Vec::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            loading_history: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_history: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -168,6 +198,18 @@ impl FactionsView {
             }
         } else if self.loading {
             self.spinner_frame = self.spinner_frame.wrapping_add(1);
+        }
+
+        let history_result = self.pending_history.lock().unwrap().take();
+        if let Some(result) = history_result {
+            self.loading_history = false;
+            match result {
+                Ok(points) => self.set_history_data(points),
+                Err(e) => {
+                    self.history_data.clear();
+                    self.history_x_labels = vec![format!("Error: {e}")];
+                }
+            }
         }
     }
 
@@ -318,6 +360,97 @@ impl FactionsView {
         });
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    fn fetch_history(&mut self, api: &ApiClient) {
+        // Collect needed data while self is borrowed immutably, then release the borrow.
+        let info = {
+            let faction = match self.selected_faction() {
+                Some(f) => f,
+                None => return,
+            };
+            let indices = self.sorted_system_indices(faction);
+            let sys_i = match indices.get(self.selected_system).copied() {
+                Some(i) => i,
+                None => return,
+            };
+            match faction.presences.get(sys_i) {
+                Some(p) => (faction.name.clone(), p.system_name.clone(), p.system_address),
+                None => return,
+            }
+        };
+        let (faction_name, system_name, system_address) = info;
+
+        self.history_faction_name = faction_name.clone();
+        self.history_system_name = system_name;
+        self.loading_history = true;
+        self.history_data.clear();
+        self.history_x_labels.clear();
+
+        let pending = Arc::clone(&self.pending_history);
+        let api_clone = api.clone();
+
+        api.spawn(async move {
+            let result = api_clone
+                .fetch_faction_influence_history(&faction_name, system_address, 90)
+                .await
+                .map_err(|e| e.to_string());
+            *pending.lock().unwrap() = Some(result);
+        });
+    }
+
+    fn set_history_data(&mut self, mut points: Vec<InfluencePoint>) {
+        if points.is_empty() {
+            self.history_data.clear();
+            self.history_x_labels = vec!["No data yet".to_string()];
+            return;
+        }
+
+        // Deduplicate: keep one point per hour (last one wins) to reduce noise.
+        points.dedup_by(|a, b| {
+            let ta = a.timestamp.timestamp() / 3600;
+            let tb = b.timestamp.timestamp() / 3600;
+            ta == tb
+        });
+
+        let min_ts = points[0].timestamp.timestamp() as f64;
+        let max_ts = points.last().unwrap().timestamp.timestamp() as f64;
+        let total_days = ((max_ts - min_ts) / 86400.0).max(0.5);
+
+        self.history_data = points
+            .iter()
+            .map(|p| {
+                let x = (p.timestamp.timestamp() as f64 - min_ts) / 86400.0;
+                let y = (p.influence * 100.0) as f64;
+                (x, y)
+            })
+            .collect();
+
+        self.history_time_bounds = [0.0, total_days];
+
+        let values: Vec<f64> = self.history_data.iter().map(|(_, y)| *y).collect();
+        let min_y = values.iter().cloned().fold(f64::INFINITY, f64::min);
+        let max_y = values.iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let padding = ((max_y - min_y) * 0.15).max(2.0);
+        self.history_y_bounds = [(min_y - padding).max(0.0), (max_y + padding).min(100.0)];
+
+        let n_x = 5usize;
+        let start_ts = chrono::DateTime::from_timestamp(points[0].timestamp.timestamp(), 0)
+            .unwrap_or(points[0].timestamp);
+        self.history_x_labels = (0..n_x)
+            .map(|i| {
+                let secs = (total_days * i as f64 / (n_x - 1) as f64 * 86400.0) as i64;
+                let dt = start_ts + chrono::Duration::seconds(secs);
+                dt.format("%m/%d").to_string()
+            })
+            .collect();
+
+        let y_lo = self.history_y_bounds[0];
+        let y_hi = self.history_y_bounds[1];
+        self.history_y_labels = (0..5)
+            .map(|i| format!("{:.0}%", y_lo + (y_hi - y_lo) * i as f64 / 4.0))
+            .collect();
+    }
+
     fn sorted_system_indices(&self, faction: &FactionResponse) -> Vec<usize> {
         let mut indices: Vec<usize> = (0..faction.presences.len()).collect();
         indices.sort_by(|&a, &b| {
@@ -432,7 +565,7 @@ impl FactionsView {
             .bg(Color::Rgb(255, 140, 0))
             .add_modifier(Modifier::BOLD);
         let tab_inactive = Style::default().fg(Color::Rgb(255, 140, 0));
-        let tabs = [DetailTab::Info, DetailTab::Systems];
+        let tabs = [DetailTab::Info, DetailTab::Systems, DetailTab::History];
         let tab_spans: Vec<Span> = tabs
             .iter()
             .flat_map(|&t| {
@@ -467,6 +600,7 @@ impl FactionsView {
                 let indices = self.sorted_system_indices(faction);
                 systems_body(faction, self.selected_system, self.focus == FocusArea::Detail, &indices, self.system_sort, self.system_sort_dir)
             }
+            DetailTab::History => vec![], // rendered directly as a Chart in render()
         }
     }
 
@@ -590,6 +724,10 @@ impl FactionsView {
                     if let Some(next) = self.detail_tab.next() {
                         self.detail_tab = next;
                         self.detail_scroll = 0;
+                        #[cfg(not(target_arch = "wasm32"))]
+                        if next == DetailTab::History {
+                            self.fetch_history(api);
+                        }
                     }
                 }
             }
@@ -689,15 +827,89 @@ impl FactionsView {
 
         frame.render_widget(Paragraph::new(header_lines), detail_split[0]);
 
-        let body_lines = self.build_detail_body_lines();
-        let body_height = detail_split[1].height as usize;
-        let body_max_scroll = body_lines.len().saturating_sub(body_height);
+        if self.detail_tab == DetailTab::History {
+            self.render_history_chart(frame, detail_split[1]);
+        } else {
+            let body_lines = self.build_detail_body_lines();
+            let body_height = detail_split[1].height as usize;
+            let body_max_scroll = body_lines.len().saturating_sub(body_height);
+            frame.render_widget(
+                Paragraph::new(body_lines)
+                    .scroll((self.detail_scroll.min(body_max_scroll) as u16, 0)),
+                detail_split[1],
+            );
+        }
+    }
 
-        frame.render_widget(
-            Paragraph::new(body_lines)
-                .scroll((self.detail_scroll.min(body_max_scroll) as u16, 0)),
-            detail_split[1],
-        );
+    fn render_history_chart(&self, frame: &mut Frame, area: Rect) {
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.loading_history {
+            frame.render_widget(
+                Paragraph::new(Line::from(Span::styled(
+                    "Loading influence history…",
+                    Style::default().fg(Color::DarkGray),
+                ))),
+                area,
+            );
+            return;
+        }
+
+        if self.history_data.len() < 2 {
+            let msg = if self.history_faction_name.is_empty() {
+                "Navigate to Systems tab, select a system, then press d to load history."
+            } else if self.history_data.is_empty() {
+                "No history data recorded yet for this faction-system pair."
+            } else {
+                "Not enough data points to draw a chart yet."
+            };
+            frame.render_widget(
+                Paragraph::new(Line::from(Span::styled(
+                    msg,
+                    Style::default().fg(Color::DarkGray),
+                ))),
+                area,
+            );
+            return;
+        }
+
+        let x_labels: Vec<Span> = self
+            .history_x_labels
+            .iter()
+            .map(|s| Span::raw(s.as_str()))
+            .collect();
+        let y_labels: Vec<Span> = self
+            .history_y_labels
+            .iter()
+            .map(|s| Span::raw(s.as_str()))
+            .collect();
+
+        let dataset = Dataset::default()
+            .name(format!(
+                "{} in {}",
+                self.history_faction_name, self.history_system_name
+            ))
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Rgb(255, 140, 0)))
+            .data(&self.history_data);
+
+        let chart = Chart::new(vec![dataset])
+            .x_axis(
+                Axis::default()
+                    .title("Date")
+                    .bounds(self.history_time_bounds)
+                    .labels(x_labels)
+                    .style(Style::default().fg(Color::DarkGray)),
+            )
+            .y_axis(
+                Axis::default()
+                    .title("Influence %")
+                    .bounds(self.history_y_bounds)
+                    .labels(y_labels)
+                    .style(Style::default().fg(Color::DarkGray)),
+            );
+
+        frame.render_widget(chart, area);
     }
 }
 

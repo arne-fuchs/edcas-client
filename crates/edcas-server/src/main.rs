@@ -58,9 +58,12 @@ async fn main() -> anyhow::Result<()> {
             rocket::routes![
                 api::systems::get_system,
                 api::systems::get_system_bodies,
+                api::systems::system_population_history,
                 api::stations::search_stations,
                 api::carriers::search_carriers,
                 api::factions::search_factions,
+                api::factions::faction_influence_history,
+                api::stations::commodity_price_history,
                 api::construction::search_construction_depots,
                 api::construction::submit_construction_depot,
                 api::journal::ingest_event,

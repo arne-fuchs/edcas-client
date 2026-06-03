@@ -1,6 +1,6 @@
 use edcas_common::api::{
-    BodyResponse, CarrierQuery, CarrierResponse, ConstructionDepotResponse,
-    ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse,
+    BodyResponse, CarrierQuery, CarrierResponse, CommodityPricePoint, ConstructionDepotResponse,
+    ConstructionDepotSubmission, ConstructionQuery, FactionQuery, FactionResponse, InfluencePoint,
     MultiCommodityQuery, MultiCommodityResult, NearestCommodityQuery, NearestCommodityResult,
     ServerTickResponse, StationQuery, StationResponse, TradeLoopResponse, TradeRouteResponse,
 };
@@ -223,6 +223,64 @@ impl ApiClient {
             Ok(vec![])
         }
     }
+
+    pub async fn fetch_faction_influence_history(
+        &self,
+        name: &str,
+        system_address: i64,
+        days: u32,
+    ) -> anyhow::Result<Vec<InfluencePoint>> {
+        let url = format!("{}/api/v1/faction-influence-history", self.base_url);
+        debug!(url, name, system_address, days, "API call: fetch_faction_influence_history");
+        let resp = self
+            .client
+            .get(&url)
+            .query(&[
+                ("name", name.to_string()),
+                ("system_address", system_address.to_string()),
+                ("days", days.to_string()),
+            ])
+            .send()
+            .await?;
+        let status = resp.status();
+        if status.is_success() {
+            let result: Vec<InfluencePoint> = resp.json().await?;
+            debug!(url, count = result.len(), "API response: fetch_faction_influence_history");
+            Ok(result)
+        } else {
+            warn!(url, %status, "API response: fetch_faction_influence_history failed");
+            Ok(vec![])
+        }
+    }
+
+    pub async fn fetch_commodity_price_history(
+        &self,
+        market_id: i64,
+        commodity: &str,
+        days: u32,
+    ) -> anyhow::Result<Vec<CommodityPricePoint>> {
+        let url = format!("{}/api/v1/commodity-price-history", self.base_url);
+        debug!(url, market_id, commodity, days, "API call: fetch_commodity_price_history");
+        let resp = self
+            .client
+            .get(&url)
+            .query(&[
+                ("market_id", market_id.to_string()),
+                ("commodity", commodity.to_string()),
+                ("days", days.to_string()),
+            ])
+            .send()
+            .await?;
+        let status = resp.status();
+        if status.is_success() {
+            let result: Vec<CommodityPricePoint> = resp.json().await?;
+            debug!(url, count = result.len(), "API response: fetch_commodity_price_history");
+            Ok(result)
+        } else {
+            warn!(url, %status, "API response: fetch_commodity_price_history failed");
+            Ok(vec![])
+        }
+    }
 }
 
 // ─── WASM (async) implementation ──────────────────────────────────────────────
@@ -322,5 +380,23 @@ impl ApiClient {
             Ok(resp) if resp.status().is_success() => resp.json().await.unwrap_or_default(),
             _ => vec![],
         }
+    }
+
+    pub async fn fetch_faction_influence_history(
+        &self,
+        _name: &str,
+        _system_address: i64,
+        _days: u32,
+    ) -> Vec<InfluencePoint> {
+        vec![]
+    }
+
+    pub async fn fetch_commodity_price_history(
+        &self,
+        _market_id: i64,
+        _commodity: &str,
+        _days: u32,
+    ) -> Vec<CommodityPricePoint> {
+        vec![]
     }
 }

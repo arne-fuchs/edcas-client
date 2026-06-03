@@ -143,6 +143,22 @@ pub async fn insert_commodities(
             ],
         )
         .await?;
+
+        tx.execute(
+            "INSERT INTO commodity_price_history
+                (market_id, name, buy_price, sell_price, stock, demand, event_timestamp)
+             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+            &[
+                &event.market_id,
+                &commodity.name,
+                &commodity.buy_price,
+                &commodity.sell_price,
+                &commodity.stock,
+                &commodity.demand,
+                &event_timestamp,
+            ],
+        )
+        .await?;
     }
 
     // Remove commodities that were in the previous snapshot but not this one.

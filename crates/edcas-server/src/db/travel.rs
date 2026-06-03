@@ -42,6 +42,15 @@ pub async fn insert_fsd_jump(
     )
     .await?;
 
+    if event.population > 0 {
+        tx.execute(
+            "INSERT INTO system_population_history (system_address, population, event_timestamp)
+             VALUES ($1, $2, $3)",
+            &[&event.system_address, &event.population, &event_timestamp],
+        )
+        .await?;
+    }
+
     if let Some(ref factions) = event.factions {
         tx.execute(
             "DELETE FROM faction_states WHERE system_address = $1",
@@ -54,7 +63,7 @@ pub async fn insert_fsd_jump(
         )
         .await?;
         for faction in factions {
-            insert_faction(&tx, journal_id, event.system_address, faction).await?;
+            insert_faction(&tx, journal_id, event_timestamp, event.system_address, faction).await?;
         }
     }
 
@@ -228,6 +237,7 @@ pub async fn insert_carrier_jump(
 async fn insert_faction(
     tx: &tokio_postgres::Transaction<'_>,
     journal_id: i64,
+    event_timestamp: DateTime<Utc>,
     system_address: i64,
     faction: &edcas_common::journal::types::Faction,
 ) -> anyhow::Result<()> {
@@ -246,6 +256,13 @@ async fn insert_faction(
             &faction.influence,
             &journal_id,
         ],
+    )
+    .await?;
+
+    tx.execute(
+        "INSERT INTO faction_influence_history (faction_name, system_address, influence, event_timestamp)
+         VALUES ($1, $2, $3, $4)",
+        &[&faction.name, &system_address, &faction.influence, &event_timestamp],
     )
     .await?;
 

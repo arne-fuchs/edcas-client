@@ -1,6 +1,7 @@
+use chrono::Utc;
 use deadpool_postgres::Pool;
 use edcas_common::api::{
-    CommodityResponse, LandingPadsResponse, ModuleResponse, ShipResponse,
+    CommodityPricePoint, CommodityResponse, LandingPadsResponse, ModuleResponse, ShipResponse,
     StationEconomyResponse, StationResponse,
 };
 use rocket::http::Status;
@@ -231,4 +232,37 @@ async fn fetch_ships(
             basevalue: r.get("basevalue"),
         })
         .collect())
+}
+
+#[get("/api/v1/commodity-price-history?<market_id>&<commodity>&<days>")]
+pub async fn commodity_price_history(
+    pool: &State<Pool>,
+    market_id: i64,
+    commodity: String,
+    days: Option<i32>,
+) -> Result<Json<Vec<CommodityPricePoint>>, Status> {
+    let client = pool.get().await.map_err(|_| Status::ServiceUnavailable)?;
+    let days = days.unwrap_or(30).clamp(1, 90) as i64;
+    let cutoff = Utc::now() - chrono::Duration::days(days);
+    let rows = client
+        .query(
+            "SELECT buy_price, sell_price, stock, demand, event_timestamp
+             FROM commodity_price_history
+             WHERE market_id = $1 AND name = $2 AND event_timestamp >= $3
+             ORDER BY event_timestamp ASC",
+            &[&market_id, &commodity, &cutoff],
+        )
+        .await
+        .map_err(|_| Status::InternalServerError)?;
+    let points = rows
+        .iter()
+        .map(|r| CommodityPricePoint {
+            buy_price: r.get("buy_price"),
+            sell_price: r.get("sell_price"),
+            stock: r.get("stock"),
+            demand: r.get("demand"),
+            timestamp: r.get("event_timestamp"),
+        })
+        .collect();
+    Ok(Json(points))
 }

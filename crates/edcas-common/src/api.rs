@@ -320,6 +320,30 @@ pub struct ConstructionResourceSubmission {
     pub payment: i64,
 }
 
+/// One time-series point for GET /api/v1/system-population-history
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PopulationPoint {
+    pub population: i64,
+    pub timestamp: DateTime<Utc>,
+}
+
+/// One time-series point for GET /api/v1/faction-influence-history
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct InfluencePoint {
+    pub influence: f32,
+    pub timestamp: DateTime<Utc>,
+}
+
+/// One time-series point for GET /api/v1/commodity-price-history
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct CommodityPricePoint {
+    pub buy_price: i32,
+    pub sell_price: i32,
+    pub stock: i32,
+    pub demand: i32,
+    pub timestamp: DateTime<Utc>,
+}
+
 /// GET /api/v1/server-tick
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct ServerTickResponse {

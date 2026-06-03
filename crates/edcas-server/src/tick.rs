@@ -6,6 +6,11 @@ use tracing::{error, info, warn};
 const MIN_TICK_INTERVAL_SECS: i64 = 20 * 3600; // ticks cannot be closer than 20 h
 const FALLBACK_INTERVAL_SECS: i64 = 24 * 3600;
 
+// Minimum rows in faction_influence_history within the last 48 h before we trust
+// it for tick detection. Below this threshold the table is too new and we fall back
+// to the slower JSONB scan of journal_events.
+const MIN_HISTORY_ROWS_FOR_DETECTION: i64 = 500;
+
 /// Fetches the last 14 ticks and returns (last_tick, next_predicted_tick, system_count).
 /// Intervals shorter than 20 h are treated as false positives and excluded from the average.
 /// Falls back to +24 h if no valid intervals exist.
@@ -102,7 +107,122 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
         return Ok(());
     }
 
-    let rows = client
+    // Choose detection method based on how much history data we have.
+    let history_rows: i64 = client
+        .query_one(
+            "SELECT COUNT(*) FROM faction_influence_history WHERE event_timestamp > NOW() - INTERVAL '48 hours'",
+            &[],
+        )
+        .await?
+        .get(0);
+
+    let rows = if history_rows >= MIN_HISTORY_ROWS_FOR_DETECTION {
+        info!("tick detector: using faction_influence_history ({history_rows} rows in 48 h)");
+        detect_from_influence_history(&client).await?
+    } else {
+        info!(
+            "tick detector: history table has only {history_rows} rows (need {MIN_HISTORY_ROWS_FOR_DETECTION}), using journal_events fallback"
+        );
+        detect_from_journal_events(&client).await?
+    };
+
+    let mut inserted = 0usize;
+    for row in &rows {
+        let tick_time: DateTime<Utc> = row.get(0);
+        let system_count: i32 = row.get(1);
+
+        let tick_hour: i64 = tick_time.timestamp() / 3600;
+        let affected = client
+            .execute(
+                "INSERT INTO server_ticks (tick_time, system_count, tick_hour)
+                 VALUES ($1, $2, $3)
+                 ON CONFLICT (tick_hour) DO NOTHING",
+                &[&tick_time, &system_count, &tick_hour],
+            )
+            .await?;
+        if affected > 0 {
+            inserted += 1;
+            info!("detected server tick at {tick_time} ({system_count} systems with changes)");
+        }
+    }
+
+    if inserted == 0 {
+        info!("tick detector: no new ticks found");
+    }
+
+    Ok(())
+}
+
+/// Detect ticks by finding 15-minute windows where the largest number of distinct
+/// systems reported ACTUAL CHANGES in faction influence.  This is more accurate than
+/// counting all reports because after a BGS tick influence values change; between ticks
+/// the same values are re-reported and do not count.
+///
+/// Uses the indexed faction_influence_history table (fast, no JSONB).
+async fn detect_from_influence_history(
+    client: &tokio_postgres::Client,
+) -> anyhow::Result<Vec<tokio_postgres::Row>> {
+    Ok(client
+        .query(
+            r#"
+            WITH influence_changes AS (
+                -- Compute per-faction-system influence delta vs previous reading.
+                -- We look slightly beyond 72 h so LAG can see a "previous" value
+                -- for entries near the 72 h boundary.
+                SELECT
+                    system_address,
+                    event_timestamp,
+                    ABS(
+                        influence - LAG(influence) OVER (
+                            PARTITION BY faction_name, system_address
+                            ORDER BY event_timestamp
+                        )
+                    ) AS delta
+                FROM faction_influence_history
+                WHERE event_timestamp > NOW() - INTERVAL '74 hours'
+            ),
+            changed_systems AS (
+                -- A system "changed" in a 15-min window if any faction in it had
+                -- a delta > 0.1 pp (0.001 in 0–1 scale).
+                SELECT DISTINCT
+                    system_address,
+                    date_trunc('hour', event_timestamp) +
+                        make_interval(mins => (EXTRACT(MINUTE FROM event_timestamp)::int / 15) * 15)
+                        AS window_start
+                FROM influence_changes
+                WHERE delta IS NOT NULL
+                  AND delta > 0.001
+                  AND event_timestamp > NOW() - INTERVAL '72 hours'
+            ),
+            windows AS (
+                SELECT window_start, COUNT(DISTINCT system_address)::int AS system_count
+                FROM changed_systems
+                GROUP BY 1
+            ),
+            day_peaks AS (
+                -- One tick candidate per calendar day: the window with the most changes.
+                SELECT DISTINCT ON (DATE(window_start AT TIME ZONE 'UTC'))
+                    window_start,
+                    system_count
+                FROM windows
+                WHERE system_count >= 10
+                ORDER BY DATE(window_start AT TIME ZONE 'UTC'), system_count DESC
+            )
+            SELECT window_start, system_count FROM day_peaks
+            ORDER BY window_start DESC
+            "#,
+            &[],
+        )
+        .await?)
+}
+
+/// Legacy detection: scan raw journal_events JSONB for 15-min windows with many
+/// distinct systems reporting faction data.  Used as a fallback while the
+/// faction_influence_history table is still new and sparse.
+async fn detect_from_journal_events(
+    client: &tokio_postgres::Client,
+) -> anyhow::Result<Vec<tokio_postgres::Row>> {
+    Ok(client
         .query(
             r#"
             WITH windows AS (
@@ -130,31 +250,5 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
             "#,
             &[],
         )
-        .await?;
-
-    let mut inserted = 0usize;
-    for row in &rows {
-        let tick_time: DateTime<Utc> = row.get(0);
-        let system_count: i32 = row.get(1);
-
-        let tick_hour: i64 = tick_time.timestamp() / 3600;
-        let affected = client
-            .execute(
-                "INSERT INTO server_ticks (tick_time, system_count, tick_hour)
-                 VALUES ($1, $2, $3)
-                 ON CONFLICT (tick_hour) DO NOTHING",
-                &[&tick_time, &system_count, &tick_hour],
-            )
-            .await?;
-        if affected > 0 {
-            inserted += 1;
-            info!("detected server tick at {tick_time} ({system_count} systems)");
-        }
-    }
-
-    if inserted == 0 {
-        info!("tick detector: no new ticks found");
-    }
-
-    Ok(())
+        .await?)
 }

@@ -186,31 +186,35 @@ pub(super) enum StationDetailTab {
     Market,
     Outfitting,
     Shipyard,
+    PriceHistory,
 }
 
 impl StationDetailTab {
     pub(super) fn next(self) -> Option<Self> {
         match self {
-            Self::Overview   => Some(Self::Market),
-            Self::Market     => Some(Self::Outfitting),
-            Self::Outfitting => Some(Self::Shipyard),
-            Self::Shipyard   => None,
+            Self::Overview      => Some(Self::Market),
+            Self::Market        => Some(Self::Outfitting),
+            Self::Outfitting    => Some(Self::Shipyard),
+            Self::Shipyard      => Some(Self::PriceHistory),
+            Self::PriceHistory  => None,
         }
     }
     pub(super) fn prev(self) -> Option<Self> {
         match self {
-            Self::Overview   => None,
-            Self::Market     => Some(Self::Overview),
-            Self::Outfitting => Some(Self::Market),
-            Self::Shipyard   => Some(Self::Outfitting),
+            Self::Overview      => None,
+            Self::Market        => Some(Self::Overview),
+            Self::Outfitting    => Some(Self::Market),
+            Self::Shipyard      => Some(Self::Outfitting),
+            Self::PriceHistory  => Some(Self::Shipyard),
         }
     }
     pub(super) fn label(self) -> &'static str {
         match self {
-            Self::Overview   => "Overview",
-            Self::Market     => "Market",
-            Self::Outfitting => "Outfitting",
-            Self::Shipyard   => "Shipyard",
+            Self::Overview      => "Overview",
+            Self::Market        => "Market",
+            Self::Outfitting    => "Outfitting",
+            Self::Shipyard      => "Shipyard",
+            Self::PriceHistory  => "Price History",
         }
     }
 }

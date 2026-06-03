@@ -1,14 +1,15 @@
 use crate::event_shim::{KeyCode, KeyEvent};
 use crate::journal_reader::{JournalData, StationData};
 use edcas_common::api::{
-    ConstructionDepotResponse, ConstructionQuery,
+    CommodityPricePoint, ConstructionDepotResponse, ConstructionQuery,
     LandingPadsResponse, StationEconomyResponse, StationQuery, StationResponse,
 };
 use ratatui::{
     layout::{Constraint, Direction, Layout, Rect},
     style::{Color, Modifier, Style},
+    symbols,
     text::{Line, Span},
-    widgets::{Block, Borders, Paragraph},
+    widgets::{Axis, Block, Borders, Chart, Dataset, GraphType, Paragraph},
     Frame,
 };
 use std::collections::{HashMap, HashSet};
@@ -81,6 +82,22 @@ pub struct StationsView {
     auto_fetch_in_flight: Option<i64>,
     #[cfg(target_arch = "wasm32")]
     pending_search: Rc<RefCell<Option<Vec<StationResponse>>>>,
+
+    // Market commodity selection (for price history)
+    market_selected_row: usize,
+    /// Commodity name currently shown in the PriceHistory tab
+    commodity_history_name: String,
+    commodity_history_market_id: Option<i64>,
+    history_buy_data: Vec<(f64, f64)>,
+    history_sell_data: Vec<(f64, f64)>,
+    history_time_bounds: [f64; 2],
+    history_y_bounds: [f64; 2],
+    history_x_labels: Vec<String>,
+    history_y_labels: Vec<String>,
+    #[cfg(not(target_arch = "wasm32"))]
+    loading_history: bool,
+    #[cfg(not(target_arch = "wasm32"))]
+    pending_history: Arc<Mutex<Option<Result<Vec<CommodityPricePoint>, String>>>>,
 }
 
 impl StationsView {
@@ -126,6 +143,19 @@ impl StationsView {
             auto_fetch_in_flight: None,
             #[cfg(target_arch = "wasm32")]
             pending_search: Rc::new(RefCell::new(None)),
+            market_selected_row: 0,
+            commodity_history_name: String::new(),
+            commodity_history_market_id: None,
+            history_buy_data: Vec::new(),
+            history_sell_data: Vec::new(),
+            history_time_bounds: [0.0, 1.0],
+            history_y_bounds: [0.0, 1.0],
+            history_x_labels: Vec::new(),
+            history_y_labels: Vec::new(),
+            #[cfg(not(target_arch = "wasm32"))]
+            loading_history: false,
+            #[cfg(not(target_arch = "wasm32"))]
+            pending_history: Arc::new(Mutex::new(None)),
         }
     }
 
@@ -187,6 +217,19 @@ impl StationsView {
                     };
                 }
                 Err(e) => { self.status_msg = format!("API error: {e}"); }
+            }
+        }
+
+        let history_result = self.pending_history.lock().unwrap().take();
+        if let Some(result) = history_result {
+            self.loading_history = false;
+            match result {
+                Ok(points) => self.set_commodity_history_data(points),
+                Err(e) => {
+                    self.history_buy_data.clear();
+                    self.history_sell_data.clear();
+                    self.history_x_labels = vec![format!("Error: {e}")];
+                }
             }
         }
     }
@@ -662,6 +705,98 @@ impl StationsView {
         });
     }
 
+    #[cfg(not(target_arch = "wasm32"))]
+    fn fetch_commodity_history(&mut self, api: &ApiClient) {
+        let Some(market_id) = self.commodity_history_market_id else { return };
+        let commodity = self.commodity_history_name.clone();
+        if commodity.is_empty() { return; }
+        self.loading_history = true;
+        self.history_buy_data.clear();
+        self.history_sell_data.clear();
+        self.history_x_labels.clear();
+        let pending = Arc::clone(&self.pending_history);
+        let api_clone = api.clone();
+        api.spawn(async move {
+            let result = api_clone
+                .fetch_commodity_price_history(market_id, &commodity, 30)
+                .await
+                .map_err(|e| e.to_string());
+            *pending.lock().unwrap() = Some(result);
+        });
+    }
+
+    fn set_commodity_history_data(&mut self, mut points: Vec<CommodityPricePoint>) {
+        if points.is_empty() {
+            self.history_buy_data.clear();
+            self.history_sell_data.clear();
+            self.history_x_labels = vec!["No data yet".to_string()];
+            return;
+        }
+
+        points.dedup_by(|a, b| {
+            let ta = a.timestamp.timestamp() / 3600;
+            let tb = b.timestamp.timestamp() / 3600;
+            ta == tb
+        });
+
+        let min_ts = points[0].timestamp.timestamp() as f64;
+        let max_ts = points.last().unwrap().timestamp.timestamp() as f64;
+        let total_days = ((max_ts - min_ts) / 86400.0).max(0.5);
+
+        self.history_buy_data = points
+            .iter()
+            .map(|p| {
+                let x = (p.timestamp.timestamp() as f64 - min_ts) / 86400.0;
+                (x, p.buy_price as f64)
+            })
+            .collect();
+        self.history_sell_data = points
+            .iter()
+            .map(|p| {
+                let x = (p.timestamp.timestamp() as f64 - min_ts) / 86400.0;
+                (x, p.sell_price as f64)
+            })
+            .collect();
+
+        self.history_time_bounds = [0.0, total_days];
+
+        let all_prices: Vec<f64> = points
+            .iter()
+            .flat_map(|p| [p.buy_price as f64, p.sell_price as f64])
+            .filter(|&v| v > 0.0)
+            .collect();
+        let min_p = all_prices.iter().cloned().fold(f64::INFINITY, f64::min);
+        let max_p = all_prices.iter().cloned().fold(0.0_f64, f64::max);
+        let padding = ((max_p - min_p) * 0.1).max(10.0);
+        self.history_y_bounds = [(min_p - padding).max(0.0), max_p + padding];
+
+        let n_x = 5usize;
+        let start_ts = chrono::DateTime::from_timestamp(points[0].timestamp.timestamp(), 0)
+            .unwrap_or(points[0].timestamp);
+        self.history_x_labels = (0..n_x)
+            .map(|i| {
+                let secs = (total_days * i as f64 / (n_x - 1) as f64 * 86400.0) as i64;
+                let dt = start_ts + chrono::Duration::seconds(secs);
+                dt.format("%m/%d").to_string()
+            })
+            .collect();
+
+        let y_lo = self.history_y_bounds[0];
+        let y_hi = self.history_y_bounds[1];
+        self.history_y_labels = (0..5)
+            .map(|i| {
+                let v = y_lo + (y_hi - y_lo) * i as f64 / 4.0;
+                if v >= 1_000_000.0 {
+                    format!("{:.1}M", v / 1_000_000.0)
+                } else if v >= 1_000.0 {
+                    format!("{:.0}k", v / 1_000.0)
+                } else {
+                    format!("{:.0}", v)
+                }
+            })
+            .collect();
+    }
+
     fn build_list_lines(&self, journal: &JournalData) -> Vec<Line<'static>> {
         let stations    = &journal.visited_stations;
         let carriers    = &journal.visited_carriers;
@@ -837,7 +972,7 @@ impl StationsView {
 
         let tab_active = Style::default().fg(Color::Black).bg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD);
         let tab_inactive = Style::default().fg(Color::Rgb(255, 140, 0));
-        let tabs = [DetailTab::Overview, DetailTab::Market, DetailTab::Outfitting, DetailTab::Shipyard];
+        let tabs = [DetailTab::Overview, DetailTab::Market, DetailTab::Outfitting, DetailTab::Shipyard, DetailTab::PriceHistory];
         let tab_spans: Vec<Span> = tabs.iter().flat_map(|&t| {
             let style = if t == self.detail_tab { tab_active } else { tab_inactive };
             [Span::styled(format!(" {} ", t.label()), style), Span::raw("  ")]
@@ -866,6 +1001,16 @@ impl StationsView {
                         Style::default().fg(Color::Cyan).add_modifier(Modifier::BOLD),
                     )));
                     lines.push(Line::from(Span::styled("\u{2500}".repeat(54), Style::default().fg(Color::DarkGray))));
+                } else if self.detail_tab == DetailTab::PriceHistory {
+                    let label = if self.commodity_history_name.is_empty() {
+                        "Price History — select a commodity in Market tab and press h".to_string()
+                    } else {
+                        format!("Price History: {}", self.commodity_history_name)
+                    };
+                    lines.push(Line::from(Span::styled(
+                        label,
+                        Style::default().fg(Color::Rgb(255, 140, 0)).add_modifier(Modifier::BOLD),
+                    )));
                 }
             }
             Some(ListItem::Journal(station)) => {
@@ -896,6 +1041,7 @@ impl StationsView {
                 DetailTab::Market => self.market_body(station, todo_needed, ship_cargo),
                 DetailTab::Outfitting => self.outfitting_body(station),
                 DetailTab::Shipyard => self.shipyard_body(station),
+                DetailTab::PriceHistory => vec![], // rendered as Chart in render()
             },
             Some(ListItem::Journal(station)) => match self.detail_tab {
                 DetailTab::Overview => self.journal_overview_body(station, journal),
@@ -933,6 +1079,7 @@ impl StationsView {
                         ))]
                     }
                 }
+                DetailTab::PriceHistory => vec![],
                 _ => vec![Line::from(Span::styled(
                     "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
                     Style::default().fg(Color::DarkGray),
@@ -1084,10 +1231,23 @@ impl StationsView {
         let effective_todo = effective_todo_for_market(&station.commodities, todo_needed);
         let sorted = sorted_commodities(&station.commodities, &effective_todo, self.market_sort_col, self.market_sort_asc);
         let mut lines = vec![Line::from(Span::styled(
-            format!("Market data as of: {}", fmt_ts(station.market_updated_at.as_ref())),
+            format!("Market data as of: {} — w/s: select  h: price history", fmt_ts(station.market_updated_at.as_ref())),
             Style::default().fg(Color::DarkGray),
         ))];
-        lines.extend(sorted.into_iter().map(|c| commodity_row(c, &effective_todo, ship_cargo)));
+        let in_detail = self.focus == FocusArea::Detail;
+        for (i, c) in sorted.into_iter().enumerate() {
+            let row = commodity_row(c, &effective_todo, ship_cargo);
+            if in_detail && i == self.market_selected_row {
+                let highlighted: Vec<Span<'static>> = row
+                    .spans
+                    .into_iter()
+                    .map(|s| Span::styled(s.content, s.style.bg(Color::Rgb(30, 40, 55))))
+                    .collect();
+                lines.push(Line::from(highlighted));
+            } else {
+                lines.push(row);
+            }
+        }
         lines
     }
 
@@ -1203,12 +1363,18 @@ impl StationsView {
                         self.selected_idx -= 1;
                         self.detail_scroll = 0;
                         self.construction_resource_idx = 0;
+                        self.market_selected_row = 0;
                         self.detail_tab = DetailTab::Overview;
                         self.selected_market_id = self.mid_at_idx(journal);
                     }
                 }
                 FocusArea::Detail => {
-                    if self.detail_tab == DetailTab::Overview && self.selected_construction_market_id(journal).is_some() {
+                    if self.detail_tab == DetailTab::Market {
+                        self.market_selected_row = self.market_selected_row.saturating_sub(1);
+                        let scroll = self.market_selected_row.saturating_sub(3);
+                        self.detail_scroll = self.detail_scroll.min(scroll + 1).max(scroll.saturating_sub(1));
+                        return ViewEvent::Consumed;
+                    } else if self.detail_tab == DetailTab::Overview && self.selected_construction_market_id(journal).is_some() {
                         self.construction_resource_idx = self.construction_resource_idx.saturating_sub(1);
                     } else {
                         self.detail_scroll = self.detail_scroll.saturating_sub(1);
@@ -1221,12 +1387,21 @@ impl StationsView {
                         self.selected_idx += 1;
                         self.detail_scroll = 0;
                         self.construction_resource_idx = 0;
+                        self.market_selected_row = 0;
                         self.detail_tab = DetailTab::Overview;
                         self.selected_market_id = self.mid_at_idx(journal);
                     }
                 }
                 FocusArea::Detail => {
-                    if self.detail_tab == DetailTab::Overview {
+                    if self.detail_tab == DetailTab::Market {
+                        let max_rows = self.selected_item(journal)
+                            .and_then(|item| if let ListItem::Api(s) = item { Some(s.commodities.len().saturating_sub(1)) } else { None })
+                            .unwrap_or(0);
+                        if self.market_selected_row < max_rows {
+                            self.market_selected_row += 1;
+                        }
+                        return ViewEvent::Consumed;
+                    } else if self.detail_tab == DetailTab::Overview {
                         if let Some(mid) = self.selected_construction_market_id(journal) {
                             let max = self.construction_resource_count(mid, journal).saturating_sub(1);
                             if self.construction_resource_idx < max {
@@ -1238,6 +1413,25 @@ impl StationsView {
                     self.detail_scroll += 1;
                 }
             },
+            KeyCode::Char('h') if self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Market => {
+                let history_target = if let Some(ListItem::Api(station)) = self.selected_item(journal) {
+                    let effective_todo = compute_todo_needed(&todo.construction_items, &journal.cargo);
+                    let local_effective = effective_todo_for_market(&station.commodities, &effective_todo);
+                    let sorted = sorted_commodities(&station.commodities, &local_effective, self.market_sort_col, self.market_sort_asc);
+                    sorted.get(self.market_selected_row).map(|c| (c.name.clone(), station.market_id))
+                } else {
+                    None
+                };
+                if let Some((name, market_id)) = history_target {
+                    self.commodity_history_name = name;
+                    self.commodity_history_market_id = Some(market_id);
+                    self.detail_tab = DetailTab::PriceHistory;
+                    self.detail_scroll = 0;
+                    #[cfg(not(target_arch = "wasm32"))]
+                    self.fetch_commodity_history(api);
+                }
+                return ViewEvent::Consumed;
+            }
             KeyCode::PageUp => match self.focus {
                 FocusArea::List => {
                     self.selected_idx = self.selected_idx.saturating_sub(10);
@@ -1424,13 +1618,101 @@ impl StationsView {
 
         frame.render_widget(Paragraph::new(header_lines), detail_split[0]);
 
-        let body_lines = self.build_detail_body_lines(journal, &todo_needed, &ship_cargo);
-        let body_height = detail_split[1].height as usize;
-        let body_max_scroll = body_lines.len().saturating_sub(body_height);
-        frame.render_widget(
-            Paragraph::new(body_lines).scroll((self.detail_scroll.min(body_max_scroll) as u16, 0)),
-            detail_split[1],
-        );
+        if self.detail_tab == DetailTab::PriceHistory {
+            self.render_price_history_chart(frame, detail_split[1]);
+        } else {
+            let body_lines = self.build_detail_body_lines(journal, &todo_needed, &ship_cargo);
+            let body_height = detail_split[1].height as usize;
+            let body_max_scroll = body_lines.len().saturating_sub(body_height);
+            frame.render_widget(
+                Paragraph::new(body_lines).scroll((self.detail_scroll.min(body_max_scroll) as u16, 0)),
+                detail_split[1],
+            );
+        }
+    }
+
+    fn render_price_history_chart(&self, frame: &mut Frame, area: Rect) {
+        #[cfg(not(target_arch = "wasm32"))]
+        if self.loading_history {
+            frame.render_widget(
+                Paragraph::new(Line::from(Span::styled(
+                    "Loading price history…",
+                    Style::default().fg(Color::DarkGray),
+                ))),
+                area,
+            );
+            return;
+        }
+
+        if self.commodity_history_name.is_empty() {
+            frame.render_widget(
+                Paragraph::new(Line::from(Span::styled(
+                    "Go to Market tab, select a commodity with w/s, then press h.",
+                    Style::default().fg(Color::DarkGray),
+                ))),
+                area,
+            );
+            return;
+        }
+
+        if self.history_buy_data.len() < 2 {
+            let msg = if self.history_buy_data.is_empty() {
+                "No price history recorded yet for this commodity."
+            } else {
+                "Not enough data points to draw a chart yet."
+            };
+            frame.render_widget(
+                Paragraph::new(Line::from(Span::styled(
+                    msg,
+                    Style::default().fg(Color::DarkGray),
+                ))),
+                area,
+            );
+            return;
+        }
+
+        let x_labels: Vec<Span> = self
+            .history_x_labels
+            .iter()
+            .map(|s| Span::raw(s.as_str()))
+            .collect();
+        let y_labels: Vec<Span> = self
+            .history_y_labels
+            .iter()
+            .map(|s| Span::raw(s.as_str()))
+            .collect();
+
+        let buy_dataset = Dataset::default()
+            .name("Buy price")
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Rgb(255, 140, 0)))
+            .data(&self.history_buy_data);
+
+        let sell_dataset = Dataset::default()
+            .name("Sell price")
+            .marker(symbols::Marker::Braille)
+            .graph_type(GraphType::Line)
+            .style(Style::default().fg(Color::Green))
+            .data(&self.history_sell_data);
+
+        let chart = Chart::new(vec![buy_dataset, sell_dataset])
+            .x_axis(
+                Axis::default()
+                    .title("Date")
+                    .bounds(self.history_time_bounds)
+                    .labels(x_labels)
+                    .style(Style::default().fg(Color::DarkGray)),
+            )
+            .y_axis(
+                Axis::default()
+                    .title("Credits")
+                    .bounds(self.history_y_bounds)
+                    .labels(y_labels)
+                    .style(Style::default().fg(Color::DarkGray)),
+            );
+
+        frame.render_widget(chart, area);
     }
 }
 
