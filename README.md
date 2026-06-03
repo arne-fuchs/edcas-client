@@ -16,12 +16,38 @@ Shows system information compact for explorer.
 
 ## Features
 
-* System and its data represented in a compact view
-* List signals found in system to find Raxxla ASAP
-* Get help mining by showing relevant data
-* Keep track of your materials
-* Keep track of your constructions you'll never finish
-* Keep track of what the feds are doing in the news tab
+edcas is a fast terminal UI (TUI) that reads your Elite Dangerous journal logs live and
+organises everything into tabbed views.
+
+**Exploration**
+* System and its bodies represented in a compact, scannable view
+* Body details: type, terraforming state, estimated scan/mapping value, gravity, atmosphere, materials
+* Lists the signals found in a system so you can find Raxxla ASAP
+* Mining tab that surfaces the data that actually helps you mine
+
+**Commander & ship**
+* Commander overview — ranks, reputation, credits and powerplay
+* Ship, modules and on-foot suit loadout at a glance
+* Engineering workshop — track materials, modules and blueprint progress
+
+**Galaxy & trade (powered by the edcas server / EDDN)**
+* Station and fleet-carrier search with live market, outfitting and shipyard data
+* Faction / background-simulation (BGS) search
+* Trade-route and trade-loop finder
+* "Nearest commodity" search for buying/selling runs
+* Construction-depot (colonisation) tracking for the constructions you'll never finish
+* GalNet news tab to keep track of what the feds are doing
+
+**Data sharing**
+* Contributes back to the community: uploads sanitised data to the [EDDN](https://github.com/EDCD/EDDN)
+  network (like EDMC / EDDiscovery) and, optionally, to the edcas API — each is an
+  independent opt-in/opt-out toggle (see [Data uploads](#data-uploads-eddn--edcas-api))
+
+**Quality of life**
+* Background journal file watcher — the UI updates live as you play
+* Pin entries and keep a personal todo list
+* Runs natively on Linux & Windows, or in the browser via WebAssembly
+* Self-hostable server (EDDN ingest + REST API) — or just use the public instance
 * Written in rust so you know its good
 * All open source
 
@@ -122,6 +148,40 @@ Add to your [min-ed-launcher](https://github.com/rfvgyhn/min-ed-launcher) config
 
 ---
 
+## Data uploads (EDDN & edcas API)
+
+As you play, edcas can share data with two destinations. Both are **on by default** and
+each can be turned off independently in the **Settings** tab.
+
+| Setting | Default | Description |
+|---|---|---|
+| `edcas_api_enabled` | `true` | Upload journal events to the edcas API (`api_url`) for the search/trade features |
+| `eddn_enabled` | `true` | Upload to the public [EDDN](https://github.com/EDCD/EDDN) network |
+| `eddn_url` | `https://eddn.edcd.io:4430/upload/` | EDDN upload gateway |
+| `eddn_test_mode` | `true` | Send to EDDN's **test** pipeline (validated but not relayed) |
+
+### What gets sent to EDDN
+
+Like EDMC and EDDiscovery, edcas converts a curated, **sanitised** subset of your journal
+into the public EDDN schemas: `journal/1` (Docked, FSDJump, Scan, Location, SAASignalsFound,
+CarrierJump) plus `commodity/3`, `outfitting/2` and `shipyard/2` from the game's
+`Market.json` / `Outfitting.json` / `Shipyard.json`. All `_Localised` strings and
+Cmdr-specific fields are stripped before sending, per the EDDN rules.
+
+### Going live
+
+There is **no registration** for EDDN — you just start uploading. edcas identifies itself
+with the `softwareName` `EDCAS` and its crate version, and will automatically appear in the
+EDDN stats at <https://eddn.edcd.io/>.
+
+The client ships in **test mode** so the first real-world data goes to EDDN's test pipeline.
+Once you've confirmed uploads succeed (look for `HTTP 200 OK` in the log; a `400`/`426`
+indicates a schema problem), turn off **EDDN Test Mode** in the Settings tab to contribute
+to the live network. If you ever need beta/dev endpoints, ask in the `#eddn` channel of the
+[EDCD Discord](https://edcd.github.io/).
+
+---
+
 ## Running the server
 
 The server (`edcas-server`) listens to the [Elite Dangerous Data Network (EDDN)](https://github.com/EDCD/EDDN) ZeroMQ stream, ingests it into PostgreSQL, and exposes a REST API that the client queries for search results.
@@ -196,12 +256,21 @@ http://localhost:3000
 |---|---|---|
 | `GET` | `/api/v1/systems/:address` | Star system metadata |
 | `GET` | `/api/v1/systems/:address/bodies` | All bodies in a system |
+| `GET` | `/api/v1/system-population-history?system_address=&days=` | Population history for a system |
 | `GET` | `/api/v1/stations?name=&system_name=&market_id=&limit=` | Station search |
+| `GET` | `/api/v1/commodity-price-history?market_id=&commodity=&days=` | Commodity price history |
 | `GET` | `/api/v1/carriers?name=&callsign=&system_name=&market_id=&limit=` | Fleet carrier search |
 | `GET` | `/api/v1/factions?name=&limit=` | Faction search |
+| `GET` | `/api/v1/faction-influence-history?name=&system_address=&days=` | Faction (BGS) influence history |
 | `GET` | `/api/v1/construction-depots?name=&system_name=&market_id=&limit=` | Construction depot search |
 | `POST` | `/api/v1/construction-depots` | Submit construction depot data |
-| `POST` | `/api/v1/journal/event` | Upload a journal event |
+| `GET` | `/api/v1/trade-routes` | Best one-way trade routes |
+| `GET` | `/api/v1/trade-loops` | Round-trip trade loops |
+| `GET` | `/api/v1/nearest-commodity?commodity=&reference_system=&limit=` | Nearest market for a commodity |
+| `POST` | `/api/v1/nearest-multi-commodity` | Nearest market for several commodities |
+| `GET` | `/api/v1/server-tick` | Predicted BGS server tick |
+| `POST` | `/api/v1/journal/event` | Upload a single journal event |
+| `POST` | `/api/v1/journal/events` | Upload a batch of journal events |
 
 All responses are JSON.
 
