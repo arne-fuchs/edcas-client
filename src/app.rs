@@ -143,11 +143,9 @@ impl App {
 
         let journal = JournalData::new();
 
-        let api_url = settings.api_url.trim().to_string();
         let journal_reader = journal_dir.map(|dir| {
             info!("Starting journal reader for directory: {}", dir.display());
-            let url = if api_url.is_empty() { None } else { Some(api_url.clone()) };
-            JournalReader::start(dir, url)
+            JournalReader::start(dir, settings.edcas_api_url(), settings.eddn_config())
         });
 
         let rt = tokio::runtime::Runtime::new().expect("failed to build async runtime");
@@ -309,14 +307,14 @@ impl App {
     #[cfg(not(target_arch = "wasm32"))]
     pub fn restart_journal_reader(&mut self) {
         let dir = PathBuf::from(&self.settings.journal_reader.journal_directory);
-        let api_url = self.settings.api_url.trim().to_string();
-        let url = if api_url.is_empty() { None } else { Some(api_url) };
+        let url = self.settings.edcas_api_url();
+        let eddn = self.settings.eddn_config();
         if dir.exists() {
             info!("Restarting journal reader with directory: {}", dir.display());
             if let Some(ref mut reader) = self.journal_reader {
-                reader.restart(dir, url);
+                reader.restart(dir, url, eddn);
             } else {
-                self.journal_reader = Some(JournalReader::start(dir, url));
+                self.journal_reader = Some(JournalReader::start(dir, url, eddn));
             }
         } else {
             warn!("Journal directory does not exist: {}", dir.display());

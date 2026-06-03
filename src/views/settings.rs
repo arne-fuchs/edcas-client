@@ -218,7 +218,7 @@ impl SettingsView {
                                 self.edit_buffer = s.clone();
                             }
                             CellType::BoolValue(_) => {
-                                settings.explorer.include_system_name = !settings.explorer.include_system_name;
+                                self.toggle_bool(settings);
                                 return ViewEvent::SettingsChanged;
                             }
                             CellType::ToggleEnabled(_) => {
@@ -330,6 +330,30 @@ impl SettingsView {
                 },
                 GridRow {
                     cells: vec![
+                        CellType::Label("Send to edcas API".to_string()),
+                        CellType::BoolValue(settings.edcas_api_enabled),
+                    ],
+                },
+                GridRow {
+                    cells: vec![
+                        CellType::Label("Send to EDDN".to_string()),
+                        CellType::BoolValue(settings.eddn_enabled),
+                    ],
+                },
+                GridRow {
+                    cells: vec![
+                        CellType::Label("EDDN URL".to_string()),
+                        CellType::StringValue(settings.eddn_url.clone()),
+                    ],
+                },
+                GridRow {
+                    cells: vec![
+                        CellType::Label("EDDN Test Mode".to_string()),
+                        CellType::BoolValue(settings.eddn_test_mode),
+                    ],
+                },
+                GridRow {
+                    cells: vec![
                         CellType::Label("Upload History".to_string()),
                         CellType::Button("[ Upload All Journal Logs ]"),
                     ],
@@ -426,6 +450,12 @@ impl SettingsView {
                         info!("Updated API URL: '{}'", value);
                         settings.api_url = value;
                     }
+                    // rows 4, 5 are bool toggles (handled in toggle_bool)
+                    6 => {
+                        info!("Updated EDDN URL: '{}'", value);
+                        settings.eddn_url = value;
+                    }
+                    // row 7 is a bool toggle; row 8 is the Upload History button
                     _ => {}
                 },
                 SettingsSection::GraphicsEditor => {
@@ -447,11 +477,10 @@ impl SettingsView {
 
     #[cfg(not(target_arch = "wasm32"))]
     fn start_bulk_upload(&mut self, settings: &Settings) {
-        let api_url = settings.api_url.trim().to_string();
-        if api_url.is_empty() {
-            warn!("API URL not configured — cannot upload journal history");
+        let Some(api_url) = settings.edcas_api_url() else {
+            warn!("edcas API upload disabled or URL not configured — cannot upload journal history");
             return;
-        }
+        };
         let dir = settings.journal_reader.journal_directory.trim().to_string();
         if dir.is_empty() {
             warn!("Journal directory not configured");
@@ -498,6 +527,32 @@ impl SettingsView {
             None => {
                 warn!("No journal log file found in: {}", dir);
             }
+        }
+    }
+
+    /// Toggles the boolean setting at the focused section/row.
+    fn toggle_bool(&self, settings: &mut Settings) {
+        match self.section {
+            SettingsSection::Explorer => {
+                settings.explorer.include_system_name = !settings.explorer.include_system_name;
+                info!("Toggled include_system_name: {}", settings.explorer.include_system_name);
+            }
+            SettingsSection::JournalReader => match self.row {
+                4 => {
+                    settings.edcas_api_enabled = !settings.edcas_api_enabled;
+                    info!("Toggled edcas API upload: {}", settings.edcas_api_enabled);
+                }
+                5 => {
+                    settings.eddn_enabled = !settings.eddn_enabled;
+                    info!("Toggled EDDN upload: {}", settings.eddn_enabled);
+                }
+                7 => {
+                    settings.eddn_test_mode = !settings.eddn_test_mode;
+                    info!("Toggled EDDN test mode: {}", settings.eddn_test_mode);
+                }
+                _ => {}
+            },
+            _ => {}
         }
     }
 

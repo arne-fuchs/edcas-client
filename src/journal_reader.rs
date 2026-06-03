@@ -1269,11 +1269,17 @@ pub struct JournalReader {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl JournalReader {
-    pub fn start(journal_dir: PathBuf, api_url: Option<String>) -> Self {
+    pub fn start(
+        journal_dir: PathBuf,
+        api_url: Option<String>,
+        eddn: Option<crate::eddn::EddnConfig>,
+    ) -> Self {
         info!("Initializing journal reader for: {}", journal_dir.display());
         let (tx, rx) = mpsc::channel();
         let should_stop = std::sync::Arc::new(AtomicBool::new(false));
         let stop_flag = should_stop.clone();
+
+        let eddn_tx_opt = eddn.map(crate::eddn::start_uploader);
 
         let upload_tx_opt = api_url.filter(|u| !u.is_empty()).map(|url| {
             let (upload_tx, upload_rx) = mpsc::channel::<String>();
@@ -1309,9 +1315,23 @@ impl JournalReader {
             }
             load_modules_file(&journal_dir.join("ModulesInfo.json"), &mut journal_data);
             info!("Loaded {} bodies from existing files", journal_data.bodies.len());
+
+            // Seed EDDN augmentation state (game version, current system, cmdr) from the
+            // current session file without re-uploading those historical events.
+            if let Some(ref eddn_tx) = eddn_tx_opt {
+                seed_eddn_state(&journal_dir, eddn_tx);
+            }
+
             let _ = tx.send(journal_data.clone());
 
-            watch_latest_file(&journal_dir, &mut journal_data, &tx, &stop_flag, &upload_tx_opt);
+            watch_latest_file(
+                &journal_dir,
+                &mut journal_data,
+                &tx,
+                &stop_flag,
+                &upload_tx_opt,
+                &eddn_tx_opt,
+            );
         });
 
         Self {
@@ -1333,9 +1353,14 @@ impl JournalReader {
         }
     }
 
-    pub fn restart(&mut self, journal_dir: PathBuf, api_url: Option<String>) {
+    pub fn restart(
+        &mut self,
+        journal_dir: PathBuf,
+        api_url: Option<String>,
+        eddn: Option<crate::eddn::EddnConfig>,
+    ) {
         self.stop();
-        *self = Self::start(journal_dir, api_url);
+        *self = Self::start(journal_dir, api_url, eddn);
     }
 }
 
@@ -1719,7 +1744,7 @@ fn load_existing_files(
     }
 
     info!("Loading journal file: {}", files[0].display());
-    read_file_lines(&files[0], data, None);
+    read_file_lines(&files[0], data, None, None);
     // After replaying the journal the skip-window is no longer needed; live events must
     // always be applied unconditionally.
     data.carrier_cargo_skip_before = None;
@@ -1841,6 +1866,7 @@ fn watch_latest_file(
     tx: &mpsc::Sender<JournalData>,
     stop_flag: &AtomicBool,
     upload_tx: &Option<mpsc::Sender<String>>,
+    eddn_tx: &Option<mpsc::Sender<crate::eddn::EddnInput>>,
 ) {
     // Initialise to the file already loaded by load_existing_files so the first loop
     // iteration does an incremental tail rather than a redundant full re-read.
@@ -1877,7 +1903,7 @@ fn watch_latest_file(
                 // timestamp is from before this session — no skip needed.
                 seed_my_carrier_cargo(data);
                 data.carrier_cargo_skip_before = None;
-                read_file_lines(&active, data, upload_tx.as_ref());
+                read_file_lines(&active, data, upload_tx.as_ref(), eddn_tx.as_ref());
                 last_position = active.metadata().map(|m| m.len()).unwrap_or(0);
                 changed = true;
             } else if let Ok(metadata) = active.metadata() {
@@ -1890,6 +1916,9 @@ fn watch_latest_file(
                             let trimmed = line.trim().to_owned();
                             if !trimmed.is_empty() {
                                 data.process_line(&trimmed);
+                                if let Some(ref ed_tx) = eddn_tx {
+                                    let _ = ed_tx.send(crate::eddn::EddnInput::Line(trimmed.clone()));
+                                }
                                 if let Some(ref up_tx) = upload_tx {
                                     let _ = up_tx.send(trimmed);
                                 }
@@ -1958,6 +1987,9 @@ fn watch_latest_file(
                 if let Some(ref up_tx) = upload_tx {
                     upload_companion_file(&market_path, up_tx);
                 }
+                if let Some(ref ed_tx) = eddn_tx {
+                    send_companion_to_eddn(&market_path, crate::eddn::CompanionKind::Market, ed_tx);
+                }
                 if let Some((mid, commodities)) = load_market_file(&market_path) {
                     if let Some(station) = data.visited_stations.iter_mut().find(|s| s.market_id == mid) {
                         station.commodities = commodities.clone();
@@ -1975,6 +2007,13 @@ fn watch_latest_file(
                 if let Some(ref up_tx) = upload_tx {
                     upload_companion_file(&outfitting_path, up_tx);
                 }
+                if let Some(ref ed_tx) = eddn_tx {
+                    send_companion_to_eddn(
+                        &outfitting_path,
+                        crate::eddn::CompanionKind::Outfitting,
+                        ed_tx,
+                    );
+                }
             }
         }
 
@@ -1984,6 +2023,13 @@ fn watch_latest_file(
                 last_shipyard_mtime = Some(mtime);
                 if let Some(ref up_tx) = upload_tx {
                     upload_companion_file(&shipyard_path, up_tx);
+                }
+                if let Some(ref ed_tx) = eddn_tx {
+                    send_companion_to_eddn(
+                        &shipyard_path,
+                        crate::eddn::CompanionKind::Shipyard,
+                        ed_tx,
+                    );
                 }
             }
         }
@@ -2010,11 +2056,46 @@ fn upload_companion_file(path: &Path, tx: &std::sync::mpsc::Sender<String>) {
     }
 }
 
+/// Reads a companion file (Market/Outfitting/Shipyard.json) and forwards it to the EDDN
+/// uploader, which converts it into the appropriate EDDN schema.
+#[cfg(not(target_arch = "wasm32"))]
+fn send_companion_to_eddn(
+    path: &Path,
+    kind: crate::eddn::CompanionKind,
+    tx: &mpsc::Sender<crate::eddn::EddnInput>,
+) {
+    match std::fs::read_to_string(path) {
+        Ok(content) => {
+            let _ = tx.send(crate::eddn::EddnInput::Companion { kind, content });
+        }
+        Err(e) => error!("Failed to read companion file {}: {}", path.display(), e),
+    }
+}
+
+/// Feeds the current session file to the EDDN uploader as state-only input so that
+/// augmentation data (game version, current system, commander) is available before any
+/// live event is uploaded, without re-sending the historical events themselves.
+#[cfg(not(target_arch = "wasm32"))]
+fn seed_eddn_state(dir: &Path, tx: &mpsc::Sender<crate::eddn::EddnInput>) {
+    let Some(path) = find_latest_journal_file(dir) else {
+        return;
+    };
+    if let Ok(content) = std::fs::read_to_string(&path) {
+        for line in content.lines() {
+            let trimmed = line.trim();
+            if !trimmed.is_empty() {
+                let _ = tx.send(crate::eddn::EddnInput::Seed(trimmed.to_owned()));
+            }
+        }
+    }
+}
+
 #[cfg(not(target_arch = "wasm32"))]
 fn read_file_lines(
     path: &Path,
     data: &mut JournalData,
     upload_tx: Option<&mpsc::Sender<String>>,
+    eddn_tx: Option<&mpsc::Sender<crate::eddn::EddnInput>>,
 ) {
     match File::open(path) {
         Ok(file) => {
@@ -2025,6 +2106,11 @@ fn read_file_lines(
                     continue;
                 }
                 data.process_line(&trimmed);
+                if let Some(tx) = eddn_tx {
+                    if trimmed.len() <= 65_536 {
+                        let _ = tx.send(crate::eddn::EddnInput::Line(trimmed.clone()));
+                    }
+                }
                 if let Some(tx) = upload_tx {
                     // Skip large lines (NavRoute, ShipLocker snapshots) that have no server handler.
                     if trimmed.len() <= 65_536 {

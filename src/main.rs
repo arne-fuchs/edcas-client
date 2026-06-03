@@ -15,6 +15,7 @@ use tracing_appender::non_blocking::WorkerGuard;
 mod api_client;
 mod app;
 mod cli;
+mod eddn;
 mod engineering_data;
 mod event_shim;
 mod journal_reader;

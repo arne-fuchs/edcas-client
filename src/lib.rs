@@ -1,5 +1,6 @@
 pub mod api_client;
 pub mod app;
+pub mod eddn;
 pub mod engineering_data;
 pub mod event_shim;
 pub mod journal_reader;

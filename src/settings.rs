@@ -27,10 +27,30 @@ pub struct Settings {
     /// Base URL of the edcas-eddn REST API, e.g. "http://localhost:3000"
     #[serde(default = "default_api_url")]
     pub api_url: String,
+    /// Whether to upload journal data to the edcas API. Default: true.
+    #[serde(default = "default_true")]
+    pub edcas_api_enabled: bool,
+    /// Whether to upload journal data to the EDDN network. Default: true.
+    #[serde(default = "default_true")]
+    pub eddn_enabled: bool,
+    /// EDDN upload gateway URL.
+    #[serde(default = "default_eddn_url")]
+    pub eddn_url: String,
+    /// When true, EDDN messages are sent to the test pipeline (`/test` schemaRef suffix).
+    #[serde(default = "default_true")]
+    pub eddn_test_mode: bool,
 }
 
 fn default_api_url() -> String {
     "https://edcas.de".into()
+}
+
+fn default_true() -> bool {
+    true
+}
+
+fn default_eddn_url() -> String {
+    "https://eddn.edcd.io:4430/upload/".into()
 }
 
 impl Default for Settings {
@@ -61,6 +81,10 @@ impl Settings {
                 stars: Default::default(),
                 planets: Default::default(),
                 api_url: default_api_url(),
+                edcas_api_enabled: true,
+                eddn_enabled: true,
+                eddn_url: default_eddn_url(),
+                eddn_test_mode: true,
             })
     }
 
@@ -101,6 +125,28 @@ pub fn config_dir() -> std::path::PathBuf {
 
 #[cfg(not(target_arch = "wasm32"))]
 impl Settings {
+    /// The edcas-API base URL to upload to, or `None` when uploading is disabled or unset.
+    pub fn edcas_api_url(&self) -> Option<String> {
+        let url = self.api_url.trim();
+        if self.edcas_api_enabled && !url.is_empty() {
+            Some(url.to_string())
+        } else {
+            None
+        }
+    }
+
+    /// The EDDN uploader configuration, or `None` when EDDN uploads are disabled.
+    pub fn eddn_config(&self) -> Option<crate::eddn::EddnConfig> {
+        if self.eddn_enabled && !self.eddn_url.trim().is_empty() {
+            Some(crate::eddn::EddnConfig {
+                url: self.eddn_url.trim().to_string(),
+                test_mode: self.eddn_test_mode,
+            })
+        } else {
+            None
+        }
+    }
+
     fn load_native() -> Self {
         use std::fs::File;
         use std::io::Read;

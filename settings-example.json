@@ -12,6 +12,11 @@
     "action_at_shutdown_signal": "Continue",
     "directory": ""
   },
+  "api_url": "https://edcas.de",
+  "edcas_api_enabled": true,
+  "eddn_enabled": true,
+  "eddn_url": "https://eddn.edcd.io:4430/upload/",
+  "eddn_test_mode": true,
   "icons": {
     "bio_signal": {
       "char": "🌿",

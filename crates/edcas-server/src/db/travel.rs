@@ -45,7 +45,8 @@ pub async fn insert_fsd_jump(
     if event.population > 0 {
         tx.execute(
             "INSERT INTO system_population_history (system_address, population, event_timestamp)
-             VALUES ($1, $2, $3)",
+             VALUES ($1, $2, $3)
+             ON CONFLICT (system_address, event_timestamp) DO NOTHING",
             &[&event.system_address, &event.population, &event_timestamp],
         )
         .await?;
@@ -261,7 +262,8 @@ async fn insert_faction(
 
     tx.execute(
         "INSERT INTO faction_influence_history (faction_name, system_address, influence, event_timestamp)
-         VALUES ($1, $2, $3, $4)",
+         VALUES ($1, $2, $3, $4)
+         ON CONFLICT (faction_name, system_address, event_timestamp) DO NOTHING",
         &[&faction.name, &system_address, &faction.influence, &event_timestamp],
     )
     .await?;

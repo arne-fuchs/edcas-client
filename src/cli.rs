@@ -8,10 +8,14 @@ use crate::settings::Settings;
 pub fn upload_logs() {
     let settings = Settings::default();
 
-    if settings.api_url.is_empty() {
-        eprintln!("Error: no API URL configured. Set it in the Settings tab first.");
+    let Some(api_url) = settings.edcas_api_url() else {
+        if !settings.edcas_api_enabled {
+            eprintln!("Error: edcas API upload is disabled. Enable it in the Settings tab first.");
+        } else {
+            eprintln!("Error: no API URL configured. Set it in the Settings tab first.");
+        }
         std::process::exit(1);
-    }
+    };
 
     let journal_dir = PathBuf::from(&settings.journal_reader.journal_directory);
     if !journal_dir.exists() {
@@ -23,9 +27,9 @@ pub fn upload_logs() {
     }
 
     println!("Uploading journal logs from: {}", journal_dir.display());
-    println!("Server: {}", settings.api_url);
+    println!("Server: {}", api_url);
 
-    let rx = start_bulk_upload(journal_dir, settings.api_url);
+    let rx = start_bulk_upload(journal_dir, api_url);
 
     for progress in rx {
         if progress.total_files > 0 {

@@ -147,7 +147,8 @@ pub async fn insert_commodities(
         tx.execute(
             "INSERT INTO commodity_price_history
                 (market_id, name, buy_price, sell_price, stock, demand, event_timestamp)
-             VALUES ($1, $2, $3, $4, $5, $6, $7)",
+             VALUES ($1, $2, $3, $4, $5, $6, $7)
+             ON CONFLICT (market_id, name, event_timestamp) DO NOTHING",
             &[
                 &event.market_id,
                 &commodity.name,
