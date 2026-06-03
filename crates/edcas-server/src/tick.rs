@@ -37,7 +37,14 @@ pub async fn get_tick_prediction(
             rows.len(),
             avg_secs as f64 / 3600.0
         );
-        last_tick + chrono::Duration::seconds(avg_secs)
+        let mut next_predicted = last_tick + chrono::Duration::seconds(avg_secs);
+        let now = Utc::now();
+        if avg_secs > 0 {
+            while next_predicted <= now {
+                next_predicted += chrono::Duration::seconds(avg_secs);
+            }
+        }
+        next_predicted
     } else {
         last_tick + chrono::Duration::hours(24)
     };
