@@ -21,6 +21,15 @@ let nextTickMs = null; // epoch ms of predicted next tick
 
 const pad = (n) => String(n).padStart(2, "0");
 
+// Render each character in its own fixed-width cell so the (non-monospace)
+// Orbitron digits don't shift the layout as the numbers change every second.
+function setDigits(elm, str) {
+  elm.innerHTML = String(str)
+    .split("")
+    .map((c) => `<span class="d">${c}</span>`)
+    .join("");
+}
+
 function fmtUtc(iso) {
   if (!iso) return "—";
   const d = new Date(iso);
@@ -63,7 +72,9 @@ async function fetchTick() {
 function render() {
   if (nextTickMs == null) {
     el.cd.dataset.state = "loading";
-    el.h.textContent = el.m.textContent = el.s.textContent = "--";
+    setDigits(el.h, "--");
+    setDigits(el.m, "--");
+    setDigits(el.s, "--");
     return;
   }
   const diff = nextTickMs - Date.now();
@@ -74,9 +85,9 @@ function render() {
   }
   el.cd.dataset.state = "ready";
   const total = Math.floor(diff / 1000);
-  el.h.textContent = pad(Math.floor(total / 3600));
-  el.m.textContent = pad(Math.floor((total % 3600) / 60));
-  el.s.textContent = pad(total % 60);
+  setDigits(el.h, pad(Math.floor(total / 3600)));
+  setDigits(el.m, pad(Math.floor((total % 3600) / 60)));
+  setDigits(el.s, pad(total % 60));
 }
 
 // ─── History chart ────────────────────────────────────────────

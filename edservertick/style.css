@@ -99,8 +99,13 @@ body::after {
   font-weight: 900;
   font-size: clamp(3.5rem, 17vw, 30rem);
   text-shadow: var(--glow);
-  font-variant-numeric: tabular-nums;
-  font-feature-settings: "tnum";
+}
+/* Fixed-width cell per digit — Orbitron isn't monospace, so without this the
+   row reflows every second as the glyph widths change. */
+.num .d {
+  display: inline-block;
+  width: 0.64em;
+  text-align: center;
 }
 .lbl {
   font-size: clamp(0.5rem, 1.4vw, 1rem);
@@ -179,6 +184,9 @@ body.active .scroll-hint { opacity: 1; }
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   color: var(--text-dim); letter-spacing: 0.2em; font-size: clamp(0.8rem, 2vw, 1.2rem); text-align: center; padding: 2rem;
 }
+/* The .chart-empty display:flex above outranks the [hidden] attribute's
+   UA display:none, so hidden had no effect. Restore it explicitly. */
+.chart-empty[hidden] { display: none; }
 
 /* ── About / SEO content ───────────────────────────────────── */
 .about {
