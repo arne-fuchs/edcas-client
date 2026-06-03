@@ -30,7 +30,7 @@ const ALLOWED_JOURNAL_EVENTS: &[&str] =
 const FACTION_PRIVATE_KEYS: &[&str] =
     &["HappiestSystem", "HomeSystem", "MyReputation", "SquadronFaction"];
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum CompanionKind {
     Market,
     Outfitting,
@@ -134,8 +134,12 @@ pub fn start_uploader(config: EddnConfig) -> mpsc::Sender<EddnInput> {
                                 build_shipyard_message(&v, &state, config.test_mode)
                             }
                         };
-                        if let Some(envelope) = envelope {
-                            post(&client, &config.url, &envelope);
+                        match envelope {
+                            Some(envelope) => post(&client, &config.url, &envelope),
+                            None => debug!(
+                                "EDDN: {kind:?} companion not uploaded \
+                                 (not docked at its market, or it's your own carrier)"
+                            ),
                         }
                     }
                 }
@@ -532,7 +536,14 @@ fn post(client: &reqwest::blocking::Client, url: &str, envelope: &Value) {
             Ok(resp) => {
                 let status = resp.status().as_u16();
                 match status {
-                    200 => return,
+                    200 => {
+                        let schema = envelope
+                            .get("$schemaRef")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("?");
+                        debug!("EDDN: accepted {schema}");
+                        return;
+                    }
                     400 | 426 => {
                         // Bad/outdated schema — our fault, retrying won't help.
                         error!(

@@ -43,6 +43,9 @@ FROM deps AS builder
 
 COPY crates/edcas-common/src crates/edcas-common/src
 COPY crates/edcas-server/src crates/edcas-server/src
+# Embedded by the migration runner via include_str! — must be present at compile time.
+COPY crates/edcas-server/schema.sql crates/edcas-server/schema.sql
+COPY crates/edcas-server/migrations crates/edcas-server/migrations
 
 RUN cargo build --release --bin edcas-server
 

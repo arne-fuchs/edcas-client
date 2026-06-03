@@ -8,8 +8,9 @@ so each runs exactly once.
   `0001_initial_schema`. It uses `CREATE … IF NOT EXISTS`, so it both initialises a fresh
   database and safely adopts an existing one (creating only what's missing).
 - To add a change: create `NNNN_description.sql` here and append a matching
-  `(version, include_str!(...))` entry to `MIGRATIONS` in `src/migrations.rs`. Never edit or
-  reorder entries that may already be applied in production.
+  `(version, include_str!("../migrations/NNNN_description.sql"))` entry to `MIGRATIONS` in
+  `../src/migrations.rs`. Never edit or reorder entries that may already be applied in
+  production.
 
 ## Legacy files
 

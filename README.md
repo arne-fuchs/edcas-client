@@ -254,9 +254,10 @@ deploying a new build is all that's needed to bring a database up to date — no
 - `crates/edcas-server/schema.sql` is migration `0001` (the full canonical schema). It uses
   `CREATE … IF NOT EXISTS`, so it also adopts a pre-existing database by creating only the
   objects that are missing.
-- To add a change, append a new `(version, include_str!("migrations/NNNN_name.sql"))` entry
-  to the list in `crates/edcas-server/src/migrations.rs`. **Never edit or reorder existing
-  entries** — they may already be recorded as applied in production.
+- To add a change, drop `crates/edcas-server/migrations/NNNN_name.sql` and append a
+  `(version, include_str!("../migrations/NNNN_name.sql"))` entry to the list in
+  `crates/edcas-server/src/migrations.rs`. **Never edit or reorder existing entries** — they
+  may already be recorded as applied in production.
 
 ### Pointing the client at your own server
 
