@@ -2,12 +2,12 @@
 :root {
   --bg:        #050505;
   --bg-panel:  rgba(20, 10, 2, 0.35);
-  --orange:    #cc4b00;   /* ED primary HUD orange — hsl(22,100%,40%), deep & rich */
-  --orange-hi: #ff711f;   /* highlight / hover — hsl(22,100%,56%) */
-  --orange-dim:#993800;   /* separators — hsl(22,100%,30%) */
+  --orange:    hsl(22, 75%, 39%);   /* ED HUD orange — deep, slightly brown */
+  --orange-hi: #ff711f;             /* highlight / hover — hsl(22,100%,56%) */
+  --orange-dim:hsl(22, 68%, 27%);   /* separators — darker brown */
   --text:      #ffce9e;
   --text-dim:  #8a5a30;
-  --glow:      0 0 8px rgba(204, 75, 0, 0.65), 0 0 24px rgba(204, 75, 0, 0.35);
+  --glow:      0 0 8px hsla(22, 75%, 39%, 0.65), 0 0 24px hsla(22, 75%, 39%, 0.35);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
