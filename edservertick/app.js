@@ -120,8 +120,8 @@ async function fetchHistory() {
     data.push(d.getUTCHours() + d.getUTCMinutes() / 60);
   }
 
-  const orange = "#ff7100";
-  const orangeHi = "#ffb000";
+  const orange = "#ff5e00";
+  const orangeHi = "#ff8c1a";
   const dim = "#8a5a30";
 
   new Chart(document.getElementById("tickChart"), {

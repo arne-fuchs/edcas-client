@@ -14,3 +14,7 @@ log
 tmp.json
 log.log
 postgres_data
+
+# edservertick local preview / screenshot scratch (chromium headless)
+edservertick/_preview.html
+_*.png
