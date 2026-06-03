@@ -168,13 +168,13 @@ async function fetchHistory() {
       },
       scales: {
         x: {
-          grid: { color: "rgba(255,113,0,0.08)" },
+          grid: { color: "rgba(255,94,0,0.08)" },
           ticks: { color: dim, maxRotation: 60, minRotation: 45, autoSkipPadding: 16 },
         },
         y: {
           min: 0,
           max: 24,
-          grid: { color: "rgba(255,113,0,0.08)" },
+          grid: { color: "rgba(255,94,0,0.08)" },
           ticks: {
             color: dim,
             stepSize: 3,
