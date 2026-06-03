@@ -355,6 +355,17 @@ pub struct ServerTickResponse {
     pub system_count: Option<i32>,
 }
 
+/// One recorded server tick. GET /api/v1/server-ticks returns these newest-first.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct ServerTickEntry {
+    /// UTC timestamp of the detected tick (leading edge of the post-tick reporting wave).
+    pub tick_time: DateTime<Utc>,
+    /// Number of unique star systems that reported a faction-influence change for this tick.
+    pub system_count: i32,
+    /// When the detector first stored this tick.
+    pub detected_at: DateTime<Utc>,
+}
+
 /// POST /api/v1/nearest-multi-commodity
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct MultiCommodityQuery {

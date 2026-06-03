@@ -77,6 +77,7 @@ async fn main() -> anyhow::Result<()> {
                 api::trade_routes::get_trade_routes,
                 api::trade_routes::get_trade_loops,
                 api::tick::get_server_tick,
+                api::tick::get_server_ticks,
             ],
         )
         .launch()

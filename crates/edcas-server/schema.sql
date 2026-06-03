@@ -402,11 +402,15 @@ CREATE TABLE IF NOT EXISTS cached_trade_loops (
 
 -- ── Server tick tracking ─────────────────────────────────────
 
+-- One row per BGS tick. The BGS tick is a single daily server event, so the
+-- canonical key is the UTC calendar day (tick_date): the detector upserts the
+-- day's best estimate as more post-tick reports arrive.
 CREATE TABLE IF NOT EXISTS server_ticks (
     id           BIGSERIAL PRIMARY KEY,
     tick_time    TIMESTAMPTZ NOT NULL,
+    tick_date    DATE        NOT NULL,
     system_count INTEGER     NOT NULL,
-    detected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    tick_hour    BIGINT      NOT NULL DEFAULT 0
+    detected_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-CREATE UNIQUE INDEX IF NOT EXISTS idx_server_ticks_tick_hour ON server_ticks (tick_hour);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_server_ticks_tick_date ON server_ticks (tick_date);
+CREATE INDEX        IF NOT EXISTS idx_server_ticks_time      ON server_ticks (tick_time DESC);

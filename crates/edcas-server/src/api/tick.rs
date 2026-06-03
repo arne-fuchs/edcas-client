@@ -1,5 +1,5 @@
 use deadpool_postgres::Pool;
-use edcas_common::api::ServerTickResponse;
+use edcas_common::api::{ServerTickEntry, ServerTickResponse};
 use rocket::{get, State};
 use rocket::serde::json::Json;
 
@@ -18,5 +18,23 @@ pub async fn get_server_tick(pool: &State<Pool>) -> Json<ServerTickResponse> {
             next_predicted_tick: None,
             system_count: None,
         }),
+    }
+}
+
+/// Full list of recorded server ticks, newest first.
+#[get("/api/v1/server-ticks")]
+pub async fn get_server_ticks(pool: &State<Pool>) -> Json<Vec<ServerTickEntry>> {
+    match tick::get_all_ticks(pool).await {
+        Ok(ticks) => Json(
+            ticks
+                .into_iter()
+                .map(|(tick_time, system_count, detected_at)| ServerTickEntry {
+                    tick_time,
+                    system_count,
+                    detected_at,
+                })
+                .collect(),
+        ),
+        Err(_) => Json(Vec::new()),
     }
 }
