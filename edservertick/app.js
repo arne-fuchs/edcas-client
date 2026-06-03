@@ -120,8 +120,8 @@ async function fetchHistory() {
     data.push(d.getUTCHours() + d.getUTCMinutes() / 60);
   }
 
-  const orange = "#ff5e00";
-  const orangeHi = "#ff8c1a";
+  const orange = "#eb5600";
+  const orangeHi = "#ff711f";
   const dim = "#8a5a30";
 
   new Chart(document.getElementById("tickChart"), {
@@ -168,13 +168,13 @@ async function fetchHistory() {
       },
       scales: {
         x: {
-          grid: { color: "rgba(255,94,0,0.08)" },
+          grid: { color: "rgba(235,86,0,0.08)" },
           ticks: { color: dim, maxRotation: 60, minRotation: 45, autoSkipPadding: 16 },
         },
         y: {
           min: 0,
           max: 24,
-          grid: { color: "rgba(255,94,0,0.08)" },
+          grid: { color: "rgba(235,86,0,0.08)" },
           ticks: {
             color: dim,
             stepSize: 3,
