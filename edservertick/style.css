@@ -1,0 +1,220 @@
+/* ── Elite Dangerous HUD theme ─────────────────────────────── */
+:root {
+  --bg:        #050505;
+  --bg-panel:  rgba(20, 10, 2, 0.35);
+  --orange:    #ff7100;   /* ED primary HUD orange */
+  --orange-hi: #ffb000;   /* highlight / hover */
+  --orange-dim:#a84a00;
+  --text:      #ffce9e;
+  --text-dim:  #8a5a30;
+  --glow:      0 0 8px rgba(255, 113, 0, 0.65), 0 0 24px rgba(255, 113, 0, 0.35);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Orbitron', sans-serif;
+  overflow-x: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* radial backdrop glow */
+body::before {
+  content: "";
+  position: fixed; inset: 0; z-index: -2;
+  background:
+    radial-gradient(circle at 50% 38%, rgba(255, 113, 0, 0.10), transparent 55%),
+    radial-gradient(circle at 50% 120%, rgba(255, 113, 0, 0.08), transparent 50%),
+    var(--bg);
+}
+
+/* faint HUD grid */
+body::after {
+  content: "";
+  position: fixed; inset: 0; z-index: -1; opacity: 0.05; pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255,113,0,0.6) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,113,0,0.6) 1px, transparent 1px);
+  background-size: 64px 64px;
+}
+
+.scanlines {
+  position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0.35;
+  background: repeating-linear-gradient(
+    to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.25) 3px, rgba(0,0,0,0) 4px);
+  mix-blend-mode: multiply;
+}
+.vignette {
+  position: fixed; inset: 0; z-index: 49; pointer-events: none;
+  box-shadow: inset 0 0 240px 40px rgba(0,0,0,0.9);
+}
+
+/* ── Hero / countdown ──────────────────────────────────────── */
+.hero {
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  position: relative; padding: 4vh 4vw;
+}
+
+.hero-frame {
+  width: min(1400px, 96vw);
+  text-align: center;
+  border: 1px solid rgba(255, 113, 0, 0.25);
+  background: var(--bg-panel);
+  padding: clamp(1.5rem, 5vh, 5rem) clamp(1rem, 4vw, 4rem);
+  position: relative;
+  clip-path: polygon(0 14px, 14px 0, calc(100% - 14px) 0, 100% 14px,
+                     100% calc(100% - 14px), calc(100% - 14px) 100%, 14px 100%, 0 calc(100% - 14px));
+}
+
+.title {
+  font-weight: 500;
+  font-size: clamp(1rem, 3.2vw, 2.4rem);
+  letter-spacing: 0.4em;
+  color: var(--orange-hi);
+  text-shadow: var(--glow);
+  margin-bottom: clamp(0.6rem, 1.5vh, 1.2rem);
+}
+.tagline {
+  font-size: clamp(0.6rem, 1.4vw, 1rem);
+  letter-spacing: 0.4em;
+  color: var(--text-dim);
+  margin-bottom: clamp(1rem, 4vh, 2.6rem);
+}
+
+.countdown {
+  display: flex; align-items: flex-start; justify-content: center;
+  gap: clamp(0.4rem, 1.5vw, 2rem);
+  color: var(--orange);
+  line-height: 0.9;
+}
+.countdown[data-state="imminent"] { display: none; }
+.countdown[data-state="loading"] .num { opacity: 0.4; }
+
+.seg { display: flex; flex-direction: column; align-items: center; }
+.num {
+  font-weight: 900;
+  font-size: clamp(3.5rem, 18vw, 16rem);
+  text-shadow: var(--glow);
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+.lbl {
+  font-size: clamp(0.5rem, 1.4vw, 1rem);
+  color: var(--text-dim);
+  letter-spacing: 0.35em;
+  margin-top: 0.6em;
+}
+.sep {
+  font-weight: 700;
+  font-size: clamp(2.5rem, 12vw, 11rem);
+  color: var(--orange-dim);
+  text-shadow: var(--glow);
+  animation: blink 2s steps(1) infinite;
+}
+@keyframes blink { 0%, 50% { opacity: 1; } 51%, 100% { opacity: 0.25; } }
+
+.imminent {
+  display: none;
+  font-weight: 900;
+  font-size: clamp(2.5rem, 11vw, 9rem);
+  color: var(--orange-hi);
+  text-shadow: var(--glow);
+  animation: pulse 1.1s ease-in-out infinite;
+}
+.countdown[data-state="imminent"] + .imminent { display: block; }
+@keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.55; transform: scale(1.03); } }
+
+.meta {
+  display: flex; flex-wrap: wrap; justify-content: center;
+  gap: clamp(1rem, 4vw, 4rem);
+  margin-top: clamp(1.5rem, 5vh, 4rem);
+}
+.meta dt { font-size: clamp(0.5rem, 1.1vw, 0.8rem); color: var(--text-dim); letter-spacing: 0.3em; }
+.meta dd { font-size: clamp(0.85rem, 1.8vw, 1.4rem); color: var(--text); margin-top: 0.4em; text-shadow: 0 0 6px rgba(255,113,0,0.3); }
+
+.scroll-hint {
+  position: absolute; bottom: 3vh; left: 50%; transform: translateX(-50%);
+  display: flex; flex-direction: column; align-items: center; gap: 0.4rem;
+  color: var(--text-dim); text-decoration: none; font-size: 0.7rem; letter-spacing: 0.3em;
+  transition: color 0.2s;
+}
+.scroll-hint:hover { color: var(--orange-hi); }
+.scroll-hint .chev { font-size: 1.6rem; animation: bob 1.8s ease-in-out infinite; }
+@keyframes bob { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(6px); } }
+
+/* ── History ───────────────────────────────────────────────── */
+.history {
+  min-height: 100vh;
+  display: flex; flex-direction: column; justify-content: center;
+  padding: 6vh 4vw 2vh;
+}
+.history-frame {
+  width: min(1400px, 96vw); margin: 0 auto; flex: 1;
+  display: flex; flex-direction: column;
+}
+.subtitle {
+  font-weight: 500; font-size: clamp(1rem, 2.6vw, 1.8rem);
+  letter-spacing: 0.3em; color: var(--orange-hi); text-shadow: var(--glow);
+}
+.caption {
+  font-size: clamp(0.6rem, 1.2vw, 0.85rem); color: var(--text-dim);
+  letter-spacing: 0.15em; text-transform: none; margin: 0.8rem 0 1.6rem; max-width: 60ch;
+}
+.chart-wrap {
+  position: relative; flex: 1; min-height: 320px;
+  border: 1px solid rgba(255,113,0,0.2); background: var(--bg-panel); padding: 1rem;
+}
+#tickChart { width: 100% !important; height: 100% !important; }
+.chart-empty {
+  position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  color: var(--text-dim); letter-spacing: 0.2em; font-size: clamp(0.8rem, 2vw, 1.2rem); text-align: center; padding: 2rem;
+}
+
+/* ── About / SEO content ───────────────────────────────────── */
+.about {
+  padding: 8vh 4vw 2vh;
+}
+.about-frame {
+  width: min(900px, 92vw); margin: 0 auto;
+}
+.about p {
+  text-transform: none; letter-spacing: 0.02em; line-height: 1.7;
+  color: var(--text); font-size: clamp(0.85rem, 1.6vw, 1.05rem);
+  margin: 0.9rem 0; max-width: 75ch;
+}
+.about strong { color: var(--orange-hi); font-weight: 500; }
+.about a { color: var(--orange); text-decoration: none; border-bottom: 1px solid rgba(255,113,0,0.4); }
+.about a:hover { color: var(--orange-hi); }
+.about .q {
+  font-weight: 500; text-transform: none; letter-spacing: 0.04em;
+  color: var(--orange); font-size: clamp(1rem, 2vw, 1.3rem);
+  margin: 2rem 0 0.4rem;
+}
+.about abbr { text-decoration: none; border-bottom: 1px dotted var(--text-dim); cursor: help; }
+
+.disclaimer {
+  width: min(900px, 92vw); margin: 2.5rem auto 0;
+  text-transform: none; letter-spacing: 0.02em; font-size: 0.7rem; line-height: 1.5;
+  color: var(--text-dim); opacity: 0.7;
+}
+
+.footer {
+  width: min(900px, 92vw); margin: 1.2rem auto 0;
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
+  padding-top: 1.2rem; border-top: 1px solid rgba(255,113,0,0.15);
+  font-size: 0.65rem; letter-spacing: 0.25em; color: var(--text-dim);
+}
+.footer a { color: var(--text-dim); text-decoration: none; }
+.footer a:hover { color: var(--orange-hi); }
+
+@media (max-width: 600px) {
+  body { letter-spacing: 0.04em; }
+  .lbl { letter-spacing: 0.2em; }
+}

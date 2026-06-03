@@ -4,6 +4,7 @@ stages:
 
 variables:
   WEB_IMAGE: edcas-web
+  TICKWEB_IMAGE: edcas-tickweb
   SERVER_IMAGE: edcas-server
   DB_PASSWORD: edcas
   # Override DB_PASSWORD in GitLab CI/CD Settings > Variables (masked)
@@ -18,6 +19,16 @@ build-web:
     DOCKER_HOST: "unix:///var/run/docker.sock"
   script:
     - docker build -t $WEB_IMAGE:$CI_COMMIT_SHORT_SHA -t $WEB_IMAGE:latest -f Dockerfile.web .
+  only:
+    - main
+
+build-tickweb:
+  stage: build
+  image: docker:latest
+  variables:
+    DOCKER_HOST: "unix:///var/run/docker.sock"
+  script:
+    - docker build -t $TICKWEB_IMAGE:$CI_COMMIT_SHORT_SHA -t $TICKWEB_IMAGE:latest -f Dockerfile.tickweb .
   only:
     - main
 
@@ -38,6 +49,7 @@ deploy:
     DOCKER_HOST: "unix:///var/run/docker.sock"
   needs:
     - build-web
+    - build-tickweb
     - build-server
   script:
     - mkdir -p $DEPLOY_PATH/crates/edcas-server $DATA_PATH/postgres-data
@@ -47,6 +59,7 @@ deploy:
     - |
       cd $DEPLOY_PATH && \
       WEB_IMAGE=$WEB_IMAGE:latest \
+      TICKWEB_IMAGE=$TICKWEB_IMAGE:latest \
       SERVER_IMAGE=$SERVER_IMAGE:latest \
       DB_PASSWORD=$DB_PASSWORD \
       DATA_PATH=$DATA_PATH \

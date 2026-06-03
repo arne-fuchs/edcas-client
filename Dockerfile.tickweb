@@ -1,0 +1,10 @@
+# ── edservertick.de — static site + API reverse proxy ───────
+# Pure static site; no build step. nginx serves the page and proxies /api/ to
+# the edcas-server container over the shared docker-compose network.
+FROM nginx:alpine
+
+COPY edservertick/nginx.conf /etc/nginx/conf.d/default.conf
+COPY edservertick/index.html edservertick/style.css edservertick/app.js \
+     edservertick/robots.txt edservertick/sitemap.xml \
+     edservertick/favicon.svg edservertick/og-image.png \
+     /usr/share/nginx/html/

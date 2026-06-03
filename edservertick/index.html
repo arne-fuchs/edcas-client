@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+
+  <!-- ── Primary SEO ──────────────────────────────────────── -->
+  <title>Elite Dangerous Server Tick — Live Countdown &amp; Tracker</title>
+  <meta name="description" content="Live countdown to the next Elite Dangerous server tick (BGS tick). See exactly when the next galactic tick happens, plus a history graph of past tick times. Free, real-time tick tracker."/>
+  <meta name="keywords" content="Elite Dangerous server tick, BGS tick, Elite Dangerous tick, server tick counter, server tick tracker, tick time, next server tick, galactic tick, Elite Dangerous BGS tick, when is the tick"/>
+  <meta name="robots" content="index, follow, max-image-preview:large"/>
+  <meta name="author" content="EDCAS"/>
+  <link rel="canonical" href="https://edservertick.de/"/>
+  <meta name="theme-color" content="#0a0a0a"/>
+
+  <!-- ── Open Graph (Discord / forum / Reddit link previews) ─ -->
+  <meta property="og:type" content="website"/>
+  <meta property="og:site_name" content="ED Server Tick"/>
+  <meta property="og:title" content="Elite Dangerous Server Tick — Live Countdown"/>
+  <meta property="og:description" content="A live, dramatic countdown to the next Elite Dangerous BGS server tick, with a history of past tick times."/>
+  <meta property="og:url" content="https://edservertick.de/"/>
+  <meta property="og:image" content="https://edservertick.de/og-image.png"/>
+  <meta property="og:image:width" content="1200"/>
+  <meta property="og:image:height" content="630"/>
+  <meta property="og:locale" content="en_US"/>
+
+  <!-- ── Twitter card ─────────────────────────────────────── -->
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:title" content="Elite Dangerous Server Tick — Live Countdown"/>
+  <meta name="twitter:description" content="Live countdown to the next Elite Dangerous BGS server tick, with a history of past tick times."/>
+  <meta name="twitter:image" content="https://edservertick.de/og-image.png"/>
+
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+
+  <!-- ── Structured data ──────────────────────────────────── -->
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@graph": [
+      {
+        "@type": "WebSite",
+        "@id": "https://edservertick.de/#website",
+        "url": "https://edservertick.de/",
+        "name": "ED Server Tick",
+        "description": "Live countdown to the next Elite Dangerous server tick (BGS tick).",
+        "inLanguage": "en"
+      },
+      {
+        "@type": "WebApplication",
+        "name": "Elite Dangerous Server Tick Tracker",
+        "url": "https://edservertick.de/",
+        "applicationCategory": "GameApplication",
+        "operatingSystem": "Any",
+        "browserRequirements": "Requires JavaScript",
+        "description": "A real-time countdown and history tracker for the Elite Dangerous background simulation (BGS) server tick.",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+      },
+      {
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "What is the Elite Dangerous server tick?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The server tick (or BGS tick) is the daily background simulation update in Elite Dangerous, when minor faction influence, states and conflicts are recalculated across the galaxy based on commander activity over the previous day."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "When is the next Elite Dangerous server tick?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "The tick happens roughly once every 24 hours. Its exact time drifts from day to day, so this page detects recent ticks and shows a live countdown to the predicted next server tick."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What time does the BGS tick happen in UTC?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "There is no fixed time. Historically the tick occurs in the evening UTC, but it drifts. The history graph on this page plots the UTC time-of-day of recent ticks so you can see the trend."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How is the server tick detected?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Tick detection watches live EDDN and player journal data for the moment many star systems begin reporting changed faction influence. The next tick is then predicted from the average interval of recent ticks."
+            }
+          }
+        ]
+      }
+    ]
+  }
+  </script>
+</head>
+<body>
+  <div class="scanlines" aria-hidden="true"></div>
+  <div class="vignette" aria-hidden="true"></div>
+
+  <!-- ── Countdown hero ─────────────────────────────────────── -->
+  <section id="hero" class="hero">
+    <div class="hero-frame">
+      <h1 class="title">Elite Dangerous Server Tick</h1>
+      <p class="tagline">Next galactic tick in</p>
+
+      <div id="countdown" class="countdown" data-state="loading">
+        <div class="seg"><span class="num" id="cd-h">--</span><span class="lbl">Hours</span></div>
+        <div class="sep">:</div>
+        <div class="seg"><span class="num" id="cd-m">--</span><span class="lbl">Minutes</span></div>
+        <div class="sep">:</div>
+        <div class="seg"><span class="num" id="cd-s">--</span><span class="lbl">Seconds</span></div>
+      </div>
+
+      <div id="imminent" class="imminent">Tick Imminent</div>
+
+      <dl class="meta">
+        <div><dt>Predicted tick (UTC)</dt><dd id="m-next">—</dd></div>
+        <div><dt>Last detected tick</dt><dd id="m-last">—</dd></div>
+        <div><dt>Systems at last tick</dt><dd id="m-count">—</dd></div>
+      </dl>
+    </div>
+
+    <a class="scroll-hint" href="#history" aria-label="Scroll to tick history">
+      <span>Tick History</span>
+      <span class="chev" aria-hidden="true">⌄</span>
+    </a>
+  </section>
+
+  <!-- ── History graph ──────────────────────────────────────── -->
+  <section id="history" class="history">
+    <div class="history-frame">
+      <h2 class="subtitle">Recorded Server Ticks — Time of Day</h2>
+      <p class="caption">Each point is a detected Elite Dangerous BGS tick, plotted by its UTC time of day.
+        Drift over the days is the galaxy's heartbeat.</p>
+      <div class="chart-wrap">
+        <canvas id="tickChart"></canvas>
+        <div id="chart-empty" class="chart-empty" hidden>No ticks recorded yet — stand by, Commander.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── SEO / informational content ────────────────────────── -->
+  <section id="about" class="about">
+    <div class="about-frame">
+      <h2 class="subtitle">About the Elite Dangerous Server Tick</h2>
+      <p>The <strong>Elite Dangerous server tick</strong> — often called the <strong>BGS tick</strong> — is the
+        daily background simulation update. At the tick, the game recalculates minor
+        <strong>faction influence</strong>, states, conflicts and economies across every populated system in the
+        galaxy, based on what commanders did during the previous day. If you play the Background Simulation,
+        Powerplay or colonisation, knowing exactly <strong>when the next server tick happens</strong> matters.</p>
+      <p>This page is a live <strong>server tick counter</strong>: it detects recent ticks from real player data and
+        counts down to the predicted next one. Scroll up for the full-screen countdown, or check the graph above for
+        the <strong>tick time</strong> on recent days.</p>
+
+      <h3 class="q">When is the next server tick?</h3>
+      <p>The tick occurs roughly once every 24 hours, but Frontier does not publish a fixed time and it
+        <strong>drifts</strong> from day to day. That is why a live tick tracker is useful — the countdown updates as
+        soon as a new tick is detected.</p>
+
+      <h3 class="q">What time does the BGS tick happen (UTC)?</h3>
+      <p>Historically the tick has landed in the evening UTC, but the exact <strong>tick time</strong> moves around.
+        The history chart plots the UTC time-of-day of recent ticks so you can spot the trend at a glance.</p>
+
+      <h3 class="q">How is the server tick detected?</h3>
+      <p>Detection watches live <abbr title="Elite Dangerous Data Network">EDDN</abbr> and player journal data for the
+        moment many star systems start reporting <strong>changed faction influence</strong>. The next tick is then
+        predicted from the average interval of recent ticks. Data is provided by the
+        <a href="https://edcas.de" rel="noopener">EDCAS</a> project.</p>
+    </div>
+
+    <p class="disclaimer">Elite Dangerous is a trademark of Frontier Developments plc. This is an
+      unofficial fan-made tool and is not affiliated with or endorsed by Frontier Developments.</p>
+
+    <footer class="footer">
+      <span>edservertick.de</span>
+      <span>Elite Dangerous Server Tick Tracker · Data: EDCAS · EDDN</span>
+      <a href="#hero">▲ Top</a>
+    </footer>
+  </section>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

@@ -50,6 +50,17 @@ services:
         ports:
             - "8080:80"
 
+    tickweb:
+        build:
+            context: .
+            dockerfile: Dockerfile.tickweb
+        image: ${TICKWEB_IMAGE:-edcas-tickweb:latest}
+        restart: unless-stopped
+        depends_on:
+            - server
+        ports:
+            - "8081:80"
+
     server:
         build:
             context: .
