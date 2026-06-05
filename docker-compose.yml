@@ -14,6 +14,10 @@ services:
         shm_size: 256m
         # Tuned for a write-heavy workload (~20 EDDN events/sec, each writing
         # to multiple normalised tables inside a transaction).
+        # Guardrails (temp_file_limit/statement_timeout/log_temp_files): a single
+        # unbounded query once spilled ~485 GB of temp files and filled the host
+        # disk.  Cap per-query temp well below disk size, abort multi-hour
+        # runaways, and log any >1 GB spill so a new offender is visible early.
         command: >
             postgres
             -c shared_buffers=256MB
@@ -29,10 +33,6 @@ services:
             -c effective_io_concurrency=200
             -c max_parallel_workers_per_gather=2
             -c max_parallel_workers=4
-            # Guardrails: a single unbounded query once spilled ~485 GB of temp
-            # files and filled the host disk.  Cap per-query temp usage well below
-            # disk size, abort multi-hour runaways, and log any big spill so a new
-            # offender shows up in the server log instead of silently growing.
             -c temp_file_limit=50GB
             -c statement_timeout=10min
             -c log_temp_files=1GB
