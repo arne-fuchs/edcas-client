@@ -173,9 +173,12 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
 /// (systems that changed) / (systems observed) per 15-min window. Right after a tick
 /// nearly every visited system reports a fresh value, so the rate is high; as the cycle
 /// ages, repeat visits dominate and the rate decays to a trough just before the next
-/// tick. We smooth that rate, find its **local minima** (the pre-tick lulls), and place
-/// the tick one window after each trough. This is calendar-day-agnostic (no 00:00 reset),
-/// robust to the diurnal curve, and yields one tick per ~24 h cycle.
+/// tick. We smooth that rate and find the **deepest minimum of each ~24 h cycle** — the
+/// single pre-tick lull — then place the tick one window after it. The minimum is taken
+/// over the preceding ~11 h (not a narrow +/- 3 h window, which shallow mid-decline noise
+/// dips would satisfy), so only the genuine cycle-wide lull qualifies. This is
+/// calendar-day-agnostic (no 00:00 reset), robust to the diurnal curve, and yields one
+/// tick per ~24 h cycle.
 ///
 /// Windows with < 30 observed systems are dropped so ingestion gaps (e.g. a server
 /// restart) can't masquerade as a change lull. The most recent trough is only emitted
@@ -232,14 +235,22 @@ async fn detect_from_influence_history(
                 FROM windows
             ),
             troughs AS (
-                -- A window is a pre-tick lull when its smoothed rate is the minimum within
-                -- +/- 3 h. Require >= 2 h of *following* data so the trailing edge of the
-                -- data window isn't mistaken for a trough.
+                -- A window is *the* pre-tick lull when its smoothed change-rate is the lowest
+                -- across the preceding ~11 h (most of a full tick cycle) AND the next 2 h, i.e.
+                -- the rate has already bottomed out and turned back up.
+                --
+                -- The old test only compared against +/- 3 h, so during the long, gentle decline
+                -- from the post-tick peak any shallow noise dip was trivially "the minimum within
+                -- 3 h" and got mistaken for the lull — pinning the tick to a random daytime window
+                -- (e.g. a bogus 10:45 when the real trough/tick is ~17:45). Requiring the deepest
+                -- point of the whole cycle isolates the single genuine lull that precedes a tick;
+                -- the 8 FOLLOWING (rate has risen again) is what makes it a trough rather than just
+                -- the lowest-so-far point on the way down.
                 SELECT
                     window_start,
                     rate_ma,
                     MIN(rate_ma) OVER (
-                        ORDER BY window_start ROWS BETWEEN 12 PRECEDING AND 12 FOLLOWING
+                        ORDER BY window_start ROWS BETWEEN 44 PRECEDING AND 8 FOLLOWING
                     ) AS local_min,
                     COUNT(*) OVER (
                         ORDER BY window_start ROWS BETWEEN 1 FOLLOWING AND 12 FOLLOWING

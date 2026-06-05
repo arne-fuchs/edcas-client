@@ -122,8 +122,13 @@ pub struct App {
     pub settings_view: SettingsView,
     pub should_quit: bool,
     pub next_tick: Option<chrono::DateTime<chrono::Utc>>,
-    #[cfg(not(target_arch = "wasm32"))]
-    last_docked_market_id: Option<i64>,
+    /// Market IDs of fleet carriers the commander has marked as "mine".
+    /// Authoritative in-memory copy of `my_carriers.json` keys; survives the
+    /// wholesale `self.journal` replacement on each watcher snapshot.
+    owned_carriers: std::collections::HashSet<i64>,
+    /// Last owned-carrier cargo subset written to `my_carriers.json`, used to skip
+    /// redundant disk writes when a snapshot leaves the inventory unchanged.
+    last_persisted_carriers: std::collections::HashMap<i64, std::collections::HashMap<String, i32>>,
 }
 
 impl App {
@@ -143,6 +148,10 @@ impl App {
         };
 
         let journal = JournalData::new();
+
+        let persisted = crate::my_carriers::MyCarriersData::load();
+        let owned_carriers: std::collections::HashSet<i64> = persisted.carriers.keys().copied().collect();
+        let last_persisted_carriers = persisted.carriers;
 
         let journal_reader = journal_dir.map(|dir| {
             info!("Starting journal reader for directory: {}", dir.display());
@@ -175,7 +184,8 @@ impl App {
             settings_view: SettingsView::new(),
             should_quit: false,
             next_tick: None,
-            last_docked_market_id: None,
+            owned_carriers,
+            last_persisted_carriers,
         };
         app.news.start_fetch(&app.api);
         app.refresh_server_tick();
@@ -187,6 +197,9 @@ impl App {
         let settings = Settings::default();
         crate::theme::set_accent(&settings.appearance.color);
         let api = ApiClient::new(&settings.api_url);
+        let persisted = crate::my_carriers::MyCarriersData::load();
+        let owned_carriers: std::collections::HashSet<i64> = persisted.carriers.keys().copied().collect();
+        let last_persisted_carriers = persisted.carriers;
         Self {
             view: AppView::default(),
             settings,
@@ -204,7 +217,33 @@ impl App {
             settings_view: SettingsView::new(),
             should_quit: false,
             next_tick: None,
+            owned_carriers,
+            last_persisted_carriers,
         }
+    }
+
+    /// Writes the cargo of all carriers marked "mine" to `my_carriers.json`, stamped with
+    /// the latest processed event timestamp so a restart can skip already-counted transfers.
+    /// No-ops on disk when the owned-carrier inventory is unchanged since the last write.
+    fn persist_my_carriers(&mut self) {
+        use std::collections::HashMap;
+        let carriers: HashMap<i64, HashMap<String, i32>> = self.owned_carriers.iter()
+            .map(|&id| {
+                let cargo = self.journal.carrier_cargo.get(&id)
+                    .map(|c| c.iter().filter(|(_, &v)| v != 0).map(|(k, &v)| (k.clone(), v)).collect())
+                    .unwrap_or_default();
+                (id, cargo)
+            })
+            .collect();
+        if carriers == self.last_persisted_carriers {
+            return;
+        }
+        self.last_persisted_carriers = carriers.clone();
+        let data = crate::my_carriers::MyCarriersData {
+            carriers,
+            snapshot_timestamp: self.journal.latest_event_timestamp.clone(),
+        };
+        data.save();
     }
 
     #[cfg(not(target_arch = "wasm32"))]
@@ -253,21 +292,23 @@ impl App {
 
             self.journal = data;
 
+            // The watcher's snapshot only knows about carriers it seeded at *its* startup,
+            // so re-assert marks made (or carriers marked mine) later this session. This keeps
+            // the "mine" indicator and inventory stable across the wholesale journal swap.
+            let owned: Vec<i64> = self.owned_carriers.iter().copied().collect();
+            for id in owned {
+                self.journal.carrier_cargo.entry(id).or_default();
+                self.journal.carrier_cargo_seeded.insert(id);
+            }
+
             // Keep the stations view selection on the same station even when
             // visited_stations changes order (e.g., a new dock prepends a station).
             self.stations.on_journal_update(&self.journal);
 
-            // Auto-fetch full market data when docking at a non-carrier station.
-            let new_dock = self.journal.last_docked.as_ref().map(|(mid, _, _, _)| *mid);
-            if new_dock != self.last_docked_market_id {
-                self.last_docked_market_id = new_dock;
-                if let Some(market_id) = new_dock {
-                    let is_carrier = self.journal.visited_carriers.iter().any(|c| c.market_id == market_id);
-                    if !is_carrier && !self.settings.api_url.is_empty() {
-                        self.stations.fetch_on_dock(market_id, &self.api);
-                    }
-                }
-            }
+            // Note: we intentionally do NOT fetch server market data on dock. The game's
+            // local Market.json for the station you're docked at is the freshest source;
+            // server data may be from an earlier session and stale. Live data is requested
+            // lazily (poll_lazy_fetch) only for selected stations that have no session data.
 
             // Re-merge API bodies: the watcher snapshot doesn't include them,
             // so without this they're lost on every subsequent journal update.
@@ -281,6 +322,10 @@ impl App {
             self.explorer.update(&self.journal);
 
             self.stations.update_construction_from_journal(&self.api, &self.journal, &mut self.todo_view.todo);
+
+            // Persist owned-carrier inventory after applying this snapshot; the helper
+            // skips the write when nothing changed, so this is cheap for non-cargo events.
+            self.persist_my_carriers();
         }
 
         self.trade_routes.poll_results();
@@ -526,6 +571,21 @@ impl App {
                 self.stations.track_construction(market_id, &self.api);
                 return;
             }
+            ViewEvent::ToggleMyCarrier(market_id) => {
+                if self.owned_carriers.remove(&market_id) {
+                    info!("Unmarked carrier {} as mine", market_id);
+                    self.journal.carrier_cargo.remove(&market_id);
+                    self.journal.carrier_cargo_seeded.remove(&market_id);
+                } else {
+                    info!("Marked carrier {} as mine", market_id);
+                    self.owned_carriers.insert(market_id);
+                    // Keep any cargo already tallied live this session; default to empty.
+                    self.journal.carrier_cargo.entry(market_id).or_default();
+                    self.journal.carrier_cargo_seeded.insert(market_id);
+                }
+                self.persist_my_carriers();
+                return;
+            }
             ViewEvent::None => {}
         }
 
@@ -573,6 +633,10 @@ impl App {
         self.stations.poll_search();
         #[cfg(not(target_arch = "wasm32"))]
         self.stations.poll_auto_fetch();
+        #[cfg(not(target_arch = "wasm32"))]
+        if matches!(self.view, AppView::Stations) {
+            self.stations.poll_lazy_fetch(&self.api, &self.journal);
+        }
         self.stations.poll_construction();
         self.search_nearest.poll_search();
         #[cfg(target_arch = "wasm32")] {

@@ -122,7 +122,7 @@ impl StationsView {
             selected_market_id: None,
             list_scroll: 0,
             detail_scroll: 0,
-            status_msg: "Press Enter to search  |  p: pin/unpin  |  c: copy system".into(),
+            status_msg: "Press Enter to search  |  p: pin  |  m: mark carrier mine  |  c: copy system".into(),
             focus: FocusArea::List,
             detail_tab: DetailTab::Overview,
             market_sort_col: MarketSortCol::default(),
@@ -193,7 +193,7 @@ impl StationsView {
                     }
                     self.pinned_results.sort_by(|a, b| a.name.cmp(&b.name));
                     if self.status_msg.starts_with("Loading") {
-                        self.status_msg = "Press Enter to search  |  p: pin/unpin  |  c: copy system".into();
+                        self.status_msg = "Press Enter to search  |  p: pin  |  m: mark carrier mine  |  c: copy system".into();
                     }
                 }
                 Err(e) => { self.status_msg = format!("API unavailable: {e}"); }
@@ -459,14 +459,16 @@ impl StationsView {
         todo.save();
     }
 
-    /// Triggered automatically when the player docks at a non-carrier station.
-    /// Fetches full market data from the API and caches it so the journal snapshot
-    /// is replaced with live data without requiring the user to pin the station.
+    /// Fetches full station data (market, outfitting, shipyard) from the API and caches it
+    /// so the journal snapshot is replaced with live data without requiring the user to pin.
+    /// Triggered on dock and lazily for whichever snapshot station is currently selected.
+    /// The per-station attempt guard means each station is requested at most once per session.
     #[cfg(not(target_arch = "wasm32"))]
-    pub fn fetch_on_dock(&mut self, market_id: i64, api: &ApiClient) {
+    pub fn request_station_data(&mut self, market_id: i64, api: &ApiClient) {
         if self.pinned_ids.contains(&market_id)
+            || self.auto_fetched.contains_key(&market_id)
             || self.auto_fetch_attempted.contains(&market_id)
-            || self.auto_fetch_in_flight == Some(market_id)
+            || self.auto_fetch_in_flight.is_some()
         {
             return;
         }
@@ -549,6 +551,39 @@ impl StationsView {
                 }
             }
         }
+    }
+
+    /// Lazily requests live data for whichever station is currently selected, when it's
+    /// only a journal snapshot with no data from the current session. Called every frame
+    /// while the Stations view is open; the attempt guard and single in-flight slot keep
+    /// this to one request per station and one in flight at a time.
+    ///
+    /// The server is queried only as a last resort — when we have nothing local — because
+    /// its market data may be from a previous session and stale. Current-session sources
+    /// (a parsed Market.json, or the station we're docked at) always win, and carriers are
+    /// skipped entirely (no public market; their stored inventory is shown instead).
+    #[cfg(not(target_arch = "wasm32"))]
+    pub fn poll_lazy_fetch(&mut self, api: &ApiClient, journal: &JournalData) {
+        if self.auto_fetch_in_flight.is_some() {
+            return;
+        }
+        let mid = match self.selected_item(journal) {
+            Some(ListItem::Journal(s)) => {
+                // This session already captured the market here — keep it, don't fetch.
+                if !s.commodities.is_empty() {
+                    return;
+                }
+                s.market_id
+            }
+            _ => return,
+        };
+        let is_carrier = journal.visited_carriers.iter().any(|c| c.market_id == mid);
+        let docked_here = journal.last_docked.as_ref().map(|(m, _, _, _)| *m == mid).unwrap_or(false);
+        let local_pending = journal.local_market.as_ref().map(|(m, _)| *m == mid).unwrap_or(false);
+        if is_carrier || docked_here || local_pending {
+            return;
+        }
+        self.request_station_data(mid, api);
     }
 
     fn build_display_list<'a>(&'a self, journal: &'a JournalData) -> Vec<ListItem<'a>> {
@@ -896,9 +931,11 @@ impl StationsView {
         }
         for carrier in &cur_carriers {
             shown.insert(carrier.market_id);
+            let mine = journal.carrier_cargo.contains_key(&carrier.market_id);
+            let icon = if mine { "\u{25C8}" } else { "  " };
             item_line!(item_idx,
-                format!("   {:<26} {}", truncate(&carrier.name, 26), &carrier.station_type),
-                Style::default().fg(Color::White));
+                format!(" {} {:<26} {}", icon, truncate(&carrier.name, 26), &carrier.station_type),
+                Style::default().fg(if mine { crate::theme::accent() } else { Color::White }));
         }
         if n_current > 0 { any_above = true; }
 
@@ -922,9 +959,11 @@ impl StationsView {
         }
         for carrier in &hist_carriers {
             shown.insert(carrier.market_id);
+            let mine = journal.carrier_cargo.contains_key(&carrier.market_id);
+            let icon = if mine { "\u{25C8}" } else { "\u{231a}" };
             item_line!(item_idx,
-                format!(" \u{231a} {:<26} {}", truncate(&carrier.name, 26), &carrier.system_name),
-                Style::default().fg(Color::Rgb(100, 180, 200)));
+                format!(" {} {:<26} {}", icon, truncate(&carrier.name, 26), &carrier.system_name),
+                Style::default().fg(if mine { crate::theme::accent() } else { Color::Rgb(100, 180, 200) }));
         }
 
         if item_idx == 0 {
@@ -1073,14 +1112,14 @@ impl StationsView {
                         ]
                     } else {
                         vec![Line::from(Span::styled(
-                            "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
+                            self.snapshot_data_msg(station),
                             Style::default().fg(Color::DarkGray),
                         ))]
                     }
                 }
                 DetailTab::PriceHistory => vec![],
                 _ => vec![Line::from(Span::styled(
-                    "No live data \u{2014} this is a visit snapshot.  Pin (p) to load full data.",
+                    self.snapshot_data_msg(station),
                     Style::default().fg(Color::DarkGray),
                 ))],
             },
@@ -1123,6 +1162,77 @@ impl StationsView {
         } else {
             None
         }
+    }
+
+    /// True only while a live fetch for this station is actually in flight. Used to show
+    /// an accurate "Loading…" message; stations we deliberately don't fetch (session data
+    /// present, docked here, carriers) never report pending.
+    #[cfg(not(target_arch = "wasm32"))]
+    fn live_fetch_pending(&self, market_id: i64) -> bool {
+        self.auto_fetch_in_flight == Some(market_id)
+    }
+    #[cfg(target_arch = "wasm32")]
+    fn live_fetch_pending(&self, _market_id: i64) -> bool {
+        false
+    }
+
+    /// Status message for a journal-snapshot station with no detailed data loaded yet,
+    /// reflecting whether a live fetch is in progress. Carriers are never fetched (their
+    /// market isn't public), so they get a distinct message rather than a perpetual "Loading…".
+    fn snapshot_data_msg(&self, station: &StationData) -> &'static str {
+        if station.station_type == "FleetCarrier" {
+            "No public market data \u{2014} carrier markets aren't tracked here."
+        } else if self.live_fetch_pending(station.market_id) {
+            "Loading live data\u{2026}"
+        } else {
+            "No live data available for this station."
+        }
+    }
+
+    /// Returns the market ID of the selected station if it is a fleet carrier.
+    fn selected_carrier_market_id(&self, journal: &JournalData) -> Option<i64> {
+        let mid = self.mid_at_idx(journal)?;
+        journal.visited_carriers.iter().any(|c| c.market_id == mid).then_some(mid)
+    }
+
+    /// Renders the "mark as mine" prompt or, for owned carriers, their stored inventory
+    /// (tallied live from CargoTransfer events in `journal.carrier_cargo`).
+    fn carrier_inventory_lines(&self, market_id: i64, journal: &JournalData) -> Vec<Line<'static>> {
+        let mut lines = vec![Line::from("")];
+        let Some(cargo) = journal.carrier_cargo.get(&market_id) else {
+            lines.push(Line::from(Span::styled(
+                "── Carrier — press m to mark as mine and track its inventory ──",
+                Style::default().fg(crate::theme::accent()),
+            )));
+            return lines;
+        };
+        lines.push(Line::from(Span::styled(
+            "── My Carrier Inventory (m: unmark as mine) ──",
+            Style::default().fg(crate::theme::accent()),
+        )));
+        let mut items: Vec<(&String, i32)> = cargo.iter()
+            .filter(|(_, &count)| count > 0)
+            .map(|(name, &count)| (name, count))
+            .collect();
+        if items.is_empty() {
+            lines.push(Line::from(Span::styled(
+                "  Empty — cargo transferred to this carrier will appear here.",
+                Style::default().fg(Color::DarkGray),
+            )));
+            return lines;
+        }
+        items.sort_by(|a, b| a.0.cmp(b.0));
+        let total: i32 = items.iter().map(|(_, count)| count).sum();
+        for (name, count) in &items {
+            let display = journal.commodity_names.get(*name).cloned()
+                .unwrap_or_else(|| prettify_commodity(name));
+            lines.push(Line::from(format!("  {:<28} {:>7}", truncate(&display, 28), count)));
+        }
+        lines.push(Line::from(Span::styled(
+            format!("  {:<28} {:>7}", "Total", total),
+            Style::default().fg(Color::DarkGray),
+        )));
+        lines
     }
 
     fn construction_resource_count(&self, market_id: i64, journal: &crate::journal_reader::JournalData) -> usize {
@@ -1207,11 +1317,21 @@ impl StationsView {
                 lines.push(Line::from(format!("  {}", chunk.join(", "))));
             }
         }
-        lines.push(Line::from(""));
-        lines.push(Line::from(Span::styled(
-            "Visit snapshot \u{2014} pin (p) to load live market data.",
-            Style::default().fg(Color::DarkGray),
-        )));
+        if station.station_type == "FleetCarrier" {
+            lines.extend(self.carrier_inventory_lines(station.market_id, journal));
+        } else {
+            lines.push(Line::from(""));
+            let has_session_market = !station.commodities.is_empty()
+                || journal.local_market.as_ref().map(|(m, _)| *m == station.market_id).unwrap_or(false);
+            let msg = if has_session_market {
+                "Market data captured this session \u{2014} see the Market tab."
+            } else if self.live_fetch_pending(station.market_id) {
+                "Loading live market data\u{2026}"
+            } else {
+                "No market data available for this station."
+            };
+            lines.push(Line::from(Span::styled(msg, Style::default().fg(Color::DarkGray))));
+        }
         let has_construction = journal.construction_depots.contains_key(&station.market_id)
             || self.depots.iter().any(|d| d.market_id == station.market_id);
         if has_construction {
@@ -1506,6 +1626,15 @@ impl StationsView {
                     }
                 }
             }
+            KeyCode::Char('m') => {
+                let ok_tab = self.focus == FocusArea::List
+                    || (self.focus == FocusArea::Detail && self.detail_tab == DetailTab::Overview);
+                if ok_tab {
+                    if let Some(mid) = self.selected_carrier_market_id(journal) {
+                        return ViewEvent::ToggleMyCarrier(mid);
+                    }
+                }
+            }
             KeyCode::Char('c') => {
                 if let Some(item) = self.selected_item(journal) {
                     let name = match item {
@@ -1525,6 +1654,22 @@ impl StationsView {
 
         ViewEvent::None
     }
+}
+
+/// Fallback display name for a commodity key when no localised name is known:
+/// turns "low_temperature_diamonds" / "lowtemperaturediamond" into Title Case.
+fn prettify_commodity(name: &str) -> String {
+    name.split(|c| c == '_' || c == ' ')
+        .filter(|w| !w.is_empty())
+        .map(|w| {
+            let mut chars = w.chars();
+            match chars.next() {
+                Some(first) => first.to_uppercase().collect::<String>() + chars.as_str(),
+                None => String::new(),
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 fn journal_station_to_response(s: &StationData) -> StationResponse {
