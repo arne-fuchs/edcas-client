@@ -159,15 +159,30 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
 ///
 /// After a BGS tick a faction's influence changes; the change shows up as a non-zero
 /// delta versus that faction-system's previous reading — i.e. exactly on the *first*
-/// observation after the tick. Between ticks the same value is re-reported (delta 0)
-/// and does not count, so this isolates real BGS activity from mere player traffic.
+/// observation after the tick. Between ticks the same value is re-reported (delta 0).
 ///
-/// Because commanders visit systems at scattered times, those first-change observations
-/// are spread over the hours *following* the tick. The raw peak therefore lags the tick.
-/// We instead take the **leading edge**: the earliest 15-min window of the day that
-/// already reaches at least half the day's peak change count. `system_count` is the
-/// day's total of distinct systems that changed (a measure of tick coverage, not of a
-/// single window). Returns (tick_time, system_count, tick_date), newest first.
+/// The hard part: with dense, global data a single tick's first-observations are smeared
+/// across the whole *following* day, because commanders visit ~thousands of systems at
+/// scattered times. The raw count of changing systems therefore tracks the diurnal
+/// player-activity curve (evening peak, early-morning trough), *not* the tick — so any
+/// "leading edge of raw counts" locks onto the daily player ramp, not the BGS tick. (The
+/// old version used the earliest window reaching 50 % of the day's peak and, once the
+/// table filled up 24/7, degenerated to the first window after 00:00 UTC every day.)
+///
+/// The signal that cancels player activity is the **normalized change rate** =
+/// (systems that changed) / (systems observed) per 15-min window. Right after a tick
+/// nearly every visited system reports a fresh value, so the rate is high; as the cycle
+/// ages, repeat visits dominate and the rate decays to a trough just before the next
+/// tick. We smooth that rate, find its **local minima** (the pre-tick lulls), and place
+/// the tick one window after each trough. This is calendar-day-agnostic (no 00:00 reset),
+/// robust to the diurnal curve, and yields one tick per ~24 h cycle.
+///
+/// Windows with < 30 observed systems are dropped so ingestion gaps (e.g. a server
+/// restart) can't masquerade as a change lull. The most recent trough is only emitted
+/// once it has >= 2 h of following data to confirm it as a real minimum (the cost is a
+/// ~2-3 h confirmation lag on the current day's tick). `system_count` is the distinct
+/// systems that changed in the 24 h following the tick (tick coverage). Returns
+/// (tick_time, system_count, tick_date), newest first.
 ///
 /// Uses the indexed faction_influence_history table (fast, no JSONB).
 async fn detect_from_influence_history(
@@ -178,8 +193,7 @@ async fn detect_from_influence_history(
             r#"
             WITH influence_changes AS (
                 -- Per-faction-system influence delta vs the previous reading. We look
-                -- slightly beyond 72 h so LAG can see a "previous" value for entries
-                -- near the 72 h boundary.
+                -- back a few days so several tick cycles are visible at once.
                 SELECT
                     system_address,
                     event_timestamp,
@@ -190,57 +204,71 @@ async fn detect_from_influence_history(
                         )
                     ) AS delta
                 FROM faction_influence_history
-                WHERE event_timestamp > NOW() - INTERVAL '74 hours'
-            ),
-            changed AS (
-                -- Each system that changed, bucketed into the 15-min window of its
-                -- first post-tick observation. delta > 0.001 = > 0.1 pp in 0–1 scale.
-                SELECT DISTINCT
-                    system_address,
-                    date_trunc('hour', event_timestamp) +
-                        make_interval(mins => (EXTRACT(MINUTE FROM event_timestamp)::int / 15) * 15)
-                        AS window_start
-                FROM influence_changes
-                WHERE delta IS NOT NULL
-                  AND delta > 0.001
-                  AND event_timestamp > NOW() - INTERVAL '72 hours'
+                WHERE event_timestamp > NOW() - INTERVAL '98 hours'
             ),
             windows AS (
+                -- Per 15-min window: how many distinct systems were observed at all, and
+                -- how many showed an influence change (delta > 0.001 = > 0.1 pp in 0-1
+                -- scale). Drop windows with < 30 observed systems so ingestion gaps don't
+                -- look like change lulls.
+                SELECT
+                    date_trunc('hour', event_timestamp) +
+                        make_interval(mins => (EXTRACT(MINUTE FROM event_timestamp)::int / 15) * 15)
+                        AS window_start,
+                    COUNT(DISTINCT system_address)                                  AS observed,
+                    COUNT(DISTINCT system_address) FILTER (WHERE delta > 0.001)     AS changed
+                FROM influence_changes
+                GROUP BY 1
+                HAVING COUNT(DISTINCT system_address) >= 30
+            ),
+            smoothed AS (
+                -- Normalized change rate, smoothed with a centered 9-window moving average
+                -- to suppress 15-min noise.
                 SELECT
                     window_start,
-                    (window_start AT TIME ZONE 'UTC')::date AS tick_date,
-                    COUNT(DISTINCT system_address)::int     AS win_count
-                FROM changed
-                GROUP BY window_start
-            ),
-            day_peaks AS (
-                SELECT tick_date, MAX(win_count) AS peak
+                    AVG(changed::float / observed) OVER (
+                        ORDER BY window_start ROWS BETWEEN 4 PRECEDING AND 4 FOLLOWING
+                    ) AS rate_ma
                 FROM windows
-                GROUP BY tick_date
             ),
-            day_totals AS (
+            troughs AS (
+                -- A window is a pre-tick lull when its smoothed rate is the minimum within
+                -- +/- 3 h. Require >= 2 h of *following* data so the trailing edge of the
+                -- data window isn't mistaken for a trough.
                 SELECT
-                    (window_start AT TIME ZONE 'UTC')::date AS tick_date,
-                    COUNT(DISTINCT system_address)::int     AS total_systems
-                FROM changed
-                GROUP BY 1
+                    window_start,
+                    rate_ma,
+                    MIN(rate_ma) OVER (
+                        ORDER BY window_start ROWS BETWEEN 12 PRECEDING AND 12 FOLLOWING
+                    ) AS local_min,
+                    COUNT(*) OVER (
+                        ORDER BY window_start ROWS BETWEEN 1 FOLLOWING AND 12 FOLLOWING
+                    ) AS following
+                FROM smoothed
             ),
-            edge AS (
-                -- Leading edge: earliest window of the day reaching >= 50% of the day's
-                -- peak. Require a meaningful peak (>= 10 systems) to avoid noise days.
-                SELECT DISTINCT ON (w.tick_date)
-                    w.tick_date,
-                    w.window_start
-                FROM windows w
-                JOIN day_peaks d USING (tick_date)
-                WHERE d.peak >= 10
-                  AND w.win_count >= GREATEST(5, d.peak / 2)
-                ORDER BY w.tick_date, w.window_start
+            ticks AS (
+                -- The tick onset is the window just after the lull bottom. One per UTC day
+                -- (the 24 h cadence keeps troughs > 6 h apart, so this only de-dupes ties).
+                SELECT DISTINCT ON ((window_start AT TIME ZONE 'UTC')::date)
+                    window_start + INTERVAL '15 minutes'   AS tick_time,
+                    (window_start AT TIME ZONE 'UTC')::date AS tick_date
+                FROM troughs
+                WHERE rate_ma = local_min
+                  AND following >= 8
+                ORDER BY (window_start AT TIME ZONE 'UTC')::date, window_start
             )
-            SELECT e.window_start AS tick_time, t.total_systems AS system_count, e.tick_date
-            FROM edge e
-            JOIN day_totals t USING (tick_date)
-            ORDER BY e.window_start DESC
+            SELECT
+                t.tick_time,
+                (
+                    SELECT COUNT(DISTINCT ic.system_address)::int
+                    FROM influence_changes ic
+                    WHERE ic.delta > 0.001
+                      AND ic.event_timestamp >= t.tick_time
+                      AND ic.event_timestamp <  t.tick_time + INTERVAL '24 hours'
+                ) AS system_count,
+                t.tick_date
+            FROM ticks t
+            ORDER BY t.tick_time DESC
             "#,
             &[],
         )
