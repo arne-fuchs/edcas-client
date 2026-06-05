@@ -8,6 +8,8 @@
   --text:      #ffce9e;
   --text-dim:  #8a5a30;
   --glow:      0 0 8px hsla(22, 75%, 39%, 0.65), 0 0 24px hsla(22, 75%, 39%, 0.35);
+  --count:     hsl(12, 88%, 45%);   /* countdown — redder & deeper than HUD orange */
+  --count-glow:0 0 6px hsla(12, 90%, 46%, 0.55), 0 0 18px hsla(12, 85%, 40%, 0.3);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -88,7 +90,7 @@ body::after {
 .countdown {
   display: flex; flex-wrap: nowrap; align-items: center; justify-content: center;
   gap: clamp(0.4rem, 1.5vw, 2rem);
-  color: var(--orange);
+  color: var(--count);
   line-height: 0.9;
 }
 .countdown[data-state="imminent"] { display: none; }
@@ -101,7 +103,7 @@ body::after {
 .num {
   font-weight: 900;
   font-size: clamp(3.5rem, 17vw, 30rem);
-  text-shadow: var(--glow);
+  text-shadow: var(--count-glow);
   white-space: nowrap;
 }
 /* Fixed-width cell per digit — Orbitron isn't monospace, so without this the
