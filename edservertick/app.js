@@ -23,8 +23,14 @@ const pad = (n) => String(n).padStart(2, "0");
 
 // Render each character in its own fixed-width cell so the (non-monospace)
 // Orbitron digits don't shift the layout as the numbers change every second.
+// render() ticks 4×/sec for a smooth rollover, but most of those ticks don't
+// change the value — bail out when the string is unchanged so we don't repaint
+// the (expensive) glowing digits needlessly. Cheap on GPU, big saving on CPU.
 function setDigits(elm, str) {
-  elm.innerHTML = String(str)
+  str = String(str);
+  if (elm._v === str) return;
+  elm._v = str;
+  elm.innerHTML = str
     .split("")
     .map((c) => `<span class="d">${c}</span>`)
     .join("");
@@ -120,8 +126,8 @@ async function fetchHistory() {
     data.push(d.getUTCHours() + d.getUTCMinutes() / 60);
   }
 
-  const orange = "#eb5600";
-  const orangeHi = "#ff711f";
+  const orange = "#ed7d0c";   // site accent (hsl(30,90%,49%)) — matches the countdown
+  const orangeHi = "#fa9938"; // brighter amber (hsl(30,95%,60%))
   const dim = "#8a5a30";
 
   new Chart(document.getElementById("tickChart"), {
@@ -147,6 +153,7 @@ async function fetchHistory() {
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: false, // skip the load animation — one less burst of CPU paint
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -168,13 +175,13 @@ async function fetchHistory() {
       },
       scales: {
         x: {
-          grid: { color: "rgba(235,86,0,0.08)" },
+          grid: { color: "rgba(237,125,12,0.08)" },
           ticks: { color: dim, maxRotation: 60, minRotation: 45, autoSkipPadding: 16 },
         },
         y: {
           min: 0,
           max: 24,
-          grid: { color: "rgba(235,86,0,0.08)" },
+          grid: { color: "rgba(237,125,12,0.08)" },
           ticks: {
             color: dim,
             stepSize: 3,

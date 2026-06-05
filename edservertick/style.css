@@ -2,15 +2,15 @@
 :root {
   --bg:        #050505;
   --bg-panel:  rgba(20, 10, 2, 0.35);
-  --orange:    hsl(22, 75%, 39%);   /* ED HUD orange — deep, slightly brown */
-  --orange-hi: #ff711f;             /* highlight / hover — hsl(22,100%,56%) */
-  --orange-dim:hsl(22, 68%, 27%);   /* separators — darker brown */
+  --orange:    hsl(30, 90%, 49%);   /* site accent — matches the countdown */
+  --orange-hi: hsl(30, 95%, 60%);   /* highlight / hover — brighter amber */
+  --orange-dim:hsl(30, 80%, 30%);   /* separators — darker amber */
   --text:      #ffce9e;
   --text-dim:  #8a5a30;
-  --glow:      0 0 8px hsla(22, 75%, 39%, 0.65), 0 0 24px hsla(22, 75%, 39%, 0.35);
+  --glow:      0 0 8px hsla(30, 90%, 49%, 0.6), 0 0 20px hsla(30, 85%, 43%, 0.3);
   --count:     hsl(30, 90%, 49%);   /* countdown — warm orange-amber */
   --count-dim: hsl(30, 82%, 32%);   /* countdown separators — darker orange */
-  --count-glow:0 0 6px hsla(30, 92%, 49%, 0.55), 0 0 18px hsla(30, 86%, 43%, 0.3);
+  --count-glow:0 0 5px hsla(30, 92%, 49%, 0.55), 0 0 12px hsla(30, 86%, 43%, 0.3);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -32,8 +32,8 @@ body::before {
   content: "";
   position: fixed; inset: 0; z-index: -2;
   background:
-    radial-gradient(circle at 50% 38%, rgba(235, 86, 0, 0.10), transparent 55%),
-    radial-gradient(circle at 50% 120%, rgba(235, 86, 0, 0.08), transparent 50%),
+    radial-gradient(circle at 50% 38%, rgba(237, 125, 12, 0.10), transparent 55%),
+    radial-gradient(circle at 50% 120%, rgba(237, 125, 12, 0.08), transparent 50%),
     var(--bg);
 }
 
@@ -42,16 +42,21 @@ body::after {
   content: "";
   position: fixed; inset: 0; z-index: -1; opacity: 0.05; pointer-events: none;
   background-image:
-    linear-gradient(rgba(235, 86, 0,0.6) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(235, 86, 0,0.6) 1px, transparent 1px);
+    linear-gradient(rgba(237, 125, 12,0.6) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(237, 125, 12,0.6) 1px, transparent 1px);
   background-size: 64px 64px;
 }
 
+/* Plain dark scanline overlay. We deliberately avoid mix-blend-mode here: blend
+   modes force the (software) compositor to re-blend the whole viewport against
+   everything beneath them every time anything under them repaints — which the
+   per-second countdown does — and that's a major cost on CPU-rendered machines.
+   A normal semi-transparent black gradient looks all but identical and composites
+   for free. */
 .scanlines {
-  position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0.28;
+  position: fixed; inset: 0; z-index: 50; pointer-events: none; opacity: 0.5;
   background: repeating-linear-gradient(
-    to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.25) 3px, rgba(0,0,0,0) 4px);
-  mix-blend-mode: multiply;
+    to bottom, rgba(0,0,0,0) 0, rgba(0,0,0,0) 2px, rgba(0,0,0,0.28) 3px, rgba(0,0,0,0) 4px);
 }
 .vignette {
   position: fixed; inset: 0; z-index: 49; pointer-events: none;
@@ -84,7 +89,7 @@ body::after {
   letter-spacing: 0.55em;
   text-indent: 0.55em; /* compensate trailing letter-spacing so it stays centred */
   color: var(--orange);
-  text-shadow: 0 0 10px rgba(235, 86, 0, 0.4);
+  text-shadow: 0 0 10px rgba(237, 125, 12, 0.4);
   margin-bottom: clamp(0.8rem, 3vh, 2rem);
 }
 
@@ -148,7 +153,7 @@ body::after {
   margin-top: clamp(1.5rem, 5vh, 4rem);
 }
 .meta dt { font-size: clamp(0.5rem, 1.1vw, 0.8rem); color: var(--text-dim); letter-spacing: 0.3em; }
-.meta dd { font-size: clamp(0.85rem, 1.8vw, 1.4rem); color: var(--text); margin-top: 0.4em; text-shadow: 0 0 6px rgba(235, 86, 0,0.3); }
+.meta dd { font-size: clamp(0.85rem, 1.8vw, 1.4rem); color: var(--text); margin-top: 0.4em; text-shadow: 0 0 6px rgba(237, 125, 12,0.3); }
 
 .scroll-hint {
   position: absolute; bottom: 3vh; left: 50%; transform: translateX(-50%);
@@ -186,7 +191,7 @@ body.active .scroll-hint { opacity: 1; }
 }
 .chart-wrap {
   position: relative; flex: 1; min-height: 320px;
-  border: 1px solid rgba(235, 86, 0,0.2); background: var(--bg-panel); padding: 1rem;
+  border: 1px solid rgba(237, 125, 12,0.2); background: var(--bg-panel); padding: 1rem;
 }
 #tickChart { width: 100% !important; height: 100% !important; }
 .chart-empty {
@@ -210,7 +215,7 @@ body.active .scroll-hint { opacity: 1; }
   margin: 0.9rem 0; max-width: 75ch;
 }
 .about strong { color: var(--orange-hi); font-weight: 500; }
-.about a { color: var(--orange); text-decoration: none; border-bottom: 1px solid rgba(235, 86, 0,0.4); }
+.about a { color: var(--orange); text-decoration: none; border-bottom: 1px solid rgba(237, 125, 12,0.4); }
 .about a:hover { color: var(--orange-hi); }
 .about .q {
   font-weight: 500; text-transform: none; letter-spacing: 0.04em;
@@ -228,7 +233,7 @@ body.active .scroll-hint { opacity: 1; }
 .footer {
   width: min(900px, 92vw); margin: 1.2rem auto 0;
   display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;
-  padding-top: 1.2rem; border-top: 1px solid rgba(235, 86, 0,0.15);
+  padding-top: 1.2rem; border-top: 1px solid rgba(237, 125, 12,0.15);
   font-size: 0.65rem; letter-spacing: 0.25em; color: var(--text-dim);
 }
 .footer a { color: var(--text-dim); text-decoration: none; }
