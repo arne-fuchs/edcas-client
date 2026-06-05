@@ -29,6 +29,13 @@ services:
             -c effective_io_concurrency=200
             -c max_parallel_workers_per_gather=2
             -c max_parallel_workers=4
+            # Guardrails: a single unbounded query once spilled ~485 GB of temp
+            # files and filled the host disk.  Cap per-query temp usage well below
+            # disk size, abort multi-hour runaways, and log any big spill so a new
+            # offender shows up in the server log instead of silently growing.
+            -c temp_file_limit=50GB
+            -c statement_timeout=10min
+            -c log_temp_files=1GB
         volumes:
             - ${DATA_PATH:-../edcas-data}/postgres-data:/var/lib/postgresql/data
             # Schema is applied automatically on first start by the official
