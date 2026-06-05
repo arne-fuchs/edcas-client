@@ -2293,12 +2293,18 @@ pub fn build_body_tree(bodies: &[BodyScan]) -> Vec<TreeNode> {
     let mut has_known_parent: HashSet<i32> = HashSet::new();
 
     for (&body_id, body) in &body_map {
-        if let Some(first_parent) = body.parents.first() {
-            let parent_id = first_parent.body_id;
-            if body_map.contains_key(&parent_id) {
-                children_of.entry(parent_id).or_default().push(body_id);
-                has_known_parent.insert(body_id);
-            }
+        // The immediate parent is often not a scannable body (an unscanned
+        // barycentre for binary stars, or a ring for belt clusters). Walk up the
+        // parent chain and attach to the nearest ancestor that exists in the map,
+        // so e.g. a planet still nests under its star and belt clusters under theirs.
+        if let Some(parent_id) = body
+            .parents
+            .iter()
+            .map(|p| p.body_id)
+            .find(|pid| body_map.contains_key(pid))
+        {
+            children_of.entry(parent_id).or_default().push(body_id);
+            has_known_parent.insert(body_id);
         }
     }
 

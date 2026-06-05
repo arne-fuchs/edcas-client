@@ -1648,14 +1648,6 @@ fn size_planet_icon(radius: f32, is_gas: bool) -> &'static str {
     }
 }
 
-fn size_star_icon(radius: f32) -> &'static str {
-    if radius < 20_000_000.0 { "·" }            // neutron stars, white dwarfs
-    else if radius < 300_000_000.0 { "✦" }       // brown dwarfs, tiny red dwarfs
-    else if radius < 2_000_000_000.0 { "★" }     // M, K, G, F main sequence
-    else if radius < 10_000_000_000.0 { "✸" }    // A, B, O and large stars
-    else { "✵" }                                  // giants and supergiants
-}
-
 fn node_icon(node: &FlatNode, settings: &Settings) -> (String, Style) {
     if node.planet_class.is_empty() {
         if node.is_barycentre {
@@ -1670,14 +1662,11 @@ fn node_icon(node: &FlatNode, settings: &Settings) -> (String, Style) {
         let color = settings.stars.get(&node.star_type).filter(|i| i.enabled)
             .map(|i| parse_color(&i.color))
             .unwrap_or(crate::theme::accent());
-        let icon = if node.radius > 0.0 {
-            size_star_icon(node.radius).to_string()
-        } else {
-            settings.stars.get(&node.star_type).filter(|i| i.enabled)
-                .map(|i| i.char.clone())
-                .unwrap_or_else(|| "★".to_string())
-        };
-        (icon, Style::default().fg(color))
+        // Stars are exempt from radius-based sizing — always drawn at full size.
+        let icon = settings.stars.get(&node.star_type).filter(|i| i.enabled)
+            .map(|i| i.char.clone())
+            .unwrap_or_else(|| "✺".to_string());
+        (icon, Style::default().fg(color).add_modifier(Modifier::BOLD))
     } else {
         body_class_icon(&node.planet_class, node.radius, settings)
     }
