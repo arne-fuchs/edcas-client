@@ -8,9 +8,9 @@
   --text:      #ffce9e;
   --text-dim:  #8a5a30;
   --glow:      0 0 8px hsla(22, 75%, 39%, 0.65), 0 0 24px hsla(22, 75%, 39%, 0.35);
-  --count:     hsl(354, 85%, 47%);  /* countdown — crimson */
-  --count-dim: hsl(354, 78%, 31%);  /* countdown separators — darker crimson */
-  --count-glow:0 0 6px hsla(354, 88%, 48%, 0.55), 0 0 18px hsla(354, 82%, 42%, 0.3);
+  --count:     hsl(42, 90%, 50%);   /* countdown — amber/gold */
+  --count-dim: hsl(42, 82%, 33%);   /* countdown separators — darker amber */
+  --count-glow:0 0 6px hsla(42, 92%, 50%, 0.55), 0 0 18px hsla(42, 86%, 44%, 0.3);
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
