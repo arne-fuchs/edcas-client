@@ -155,127 +155,117 @@ async fn detect_and_store(pool: &Pool) -> anyhow::Result<()> {
     Ok(())
 }
 
-/// Detect ticks from ACTUAL influence changes in faction_influence_history.
+/// Detect the BGS tick as the moment the **first systems start reporting changed influence**.
 ///
-/// After a BGS tick a faction's influence changes; the change shows up as a non-zero
-/// delta versus that faction-system's previous reading — i.e. exactly on the *first*
-/// observation after the tick. Between ticks the same value is re-reported (delta 0).
+/// A tick is a single global instant once per day; in the data it shows up as a sharp lift
+/// off a flat lull — before the tick almost nothing is changing, then a wave of systems begin
+/// reporting new influence values. We detect that leading edge directly. (Empirically the tick
+/// is ~18:45–19:00 UTC; the bulk of changes that follow, peaking ~20:00–22:00, are just the
+/// evening player-activity smear as commanders re-scan systems — NOT the tick.)
 ///
-/// The hard part: with dense, global data a single tick's first-observations are smeared
-/// across the whole *following* day, because commanders visit ~thousands of systems at
-/// scattered times. The raw count of changing systems therefore tracks the diurnal
-/// player-activity curve (evening peak, early-morning trough), *not* the tick — so any
-/// "leading edge of raw counts" locks onto the daily player ramp, not the BGS tick. (The
-/// old version used the earliest window reaching 50 % of the day's peak and, once the
-/// table filled up 24/7, degenerated to the first window after 00:00 UTC every day.)
+/// ## Why a *stable* reference, not the previous row
+/// `faction_influence_history` is contaminated: the same (faction, system) gets OLD and NEW
+/// values reported within seconds of each other for *hours* after a tick (commanders with
+/// lagged / cached / replayed uploads). So `influence - LAG(influence)` over consecutive rows
+/// flip-flops constantly and just tracks player traffic — the failure mode of every earlier
+/// version. Instead we compare each reading to that system's **own average 2–4 h earlier**
+/// (`ref`), a stable pre-window baseline. A reading only counts as "changed" if it departs
+/// from `ref` by > 0.005 (0.5 pp). During the pre-tick lull current ≈ ref (both old) ⇒ ~0
+/// changes; right after the tick the first fresh values diverge ⇒ the count lifts.
 ///
-/// The signal that cancels player activity is the **normalized change rate** =
-/// (systems that changed) / (systems observed) per 15-min window. Right after a tick
-/// nearly every visited system reports a fresh value, so the rate is high; as the cycle
-/// ages, repeat visits dominate and the rate decays to a trough just before the next
-/// tick. We smooth that rate and find the **deepest minimum of each ~24 h cycle** — the
-/// single pre-tick lull — then place the tick one window after it. The minimum is taken
-/// over the preceding ~11 h (not a narrow +/- 3 h window, which shallow mid-decline noise
-/// dips would satisfy), so only the genuine cycle-wide lull qualifies. This is
-/// calendar-day-agnostic (no 00:00 reset), robust to the diurnal curve, and yields one
-/// tick per ~24 h cycle.
+/// ## The detection rule (simple, leading-edge, self-deduping)
+/// Per 15-min window: `rate = (distinct systems changed vs ref) / (distinct systems observed)`.
+/// A window is the tick when its `rate` clears a small floor (≥ 0.007) **and** the preceding
+/// 3 h stayed quiet (`max rate < 0.005`). The quiet-precondition is what makes this the
+/// *leading edge*: only the lull→activity transition fires, so it self-limits to one tick per
+/// ~24 h cycle with no calendar-day reset (the post-tick smear and the next day's pre-dawn tail
+/// never satisfy "preceding 3 h was quiet"). `following >= 6` requires ~1.5 h of data after the
+/// candidate before emitting it (so the current day's tick lands with a ~1.5–2 h confirmation
+/// lag). Windows with < 50 observed systems are dropped to ignore ingestion gaps.
 ///
-/// Windows with < 30 observed systems are dropped so ingestion gaps (e.g. a server
-/// restart) can't masquerade as a change lull. The most recent trough is only emitted
-/// once it has >= 2 h of following data to confirm it as a real minimum (the cost is a
-/// ~2-3 h confirmation lag on the current day's tick). `system_count` is the distinct
-/// systems that changed in the 24 h following the tick (tick coverage). Returns
-/// (tick_time, system_count, tick_date), newest first.
-///
-/// Uses the indexed faction_influence_history table (fast, no JSONB).
+/// `system_count` = distinct systems that genuinely changed (vs `ref`) within 24 h of the tick
+/// (real tick coverage). Returns (tick_time, system_count, tick_date), newest first. Uses the
+/// indexed faction_influence_history table (no JSONB).
 async fn detect_from_influence_history(
     client: &tokio_postgres::Client,
 ) -> anyhow::Result<Vec<tokio_postgres::Row>> {
     Ok(client
         .query(
             r#"
-            WITH influence_changes AS (
-                -- Per-faction-system influence delta vs the previous reading. We look
-                -- back a few days so several tick cycles are visible at once.
+            WITH refd AS (
+                -- Each reading paired with this faction-system's own average influence
+                -- 2-4 h earlier: a stable pre-window baseline that is immune to the
+                -- old/new flip-flop of interleaved lagged uploads.
                 SELECT
                     system_address,
                     event_timestamp,
-                    ABS(
-                        influence - LAG(influence) OVER (
-                            PARTITION BY faction_name, system_address
-                            ORDER BY event_timestamp
-                        )
-                    ) AS delta
+                    influence,
+                    AVG(influence) OVER (
+                        PARTITION BY faction_name, system_address
+                        ORDER BY event_timestamp
+                        RANGE BETWEEN INTERVAL '4 hours' PRECEDING
+                                  AND INTERVAL '2 hours' PRECEDING
+                    ) AS ref
                 FROM faction_influence_history
                 WHERE event_timestamp > NOW() - INTERVAL '98 hours'
             ),
             windows AS (
-                -- Per 15-min window: how many distinct systems were observed at all, and
-                -- how many showed an influence change (delta > 0.001 = > 0.1 pp in 0-1
-                -- scale). Drop windows with < 30 observed systems so ingestion gaps don't
-                -- look like change lulls.
+                -- Per 15-min window: distinct systems observed, and distinct systems whose
+                -- influence has departed from its 2-4 h baseline by > 0.005 (a genuine change,
+                -- not the per-row noise). Drop windows with < 50 observed (ingestion gaps).
                 SELECT
                     date_trunc('hour', event_timestamp) +
                         make_interval(mins => (EXTRACT(MINUTE FROM event_timestamp)::int / 15) * 15)
                         AS window_start,
-                    COUNT(DISTINCT system_address)                                  AS observed,
-                    COUNT(DISTINCT system_address) FILTER (WHERE delta > 0.001)     AS changed
-                FROM influence_changes
+                    COUNT(DISTINCT system_address) AS observed,
+                    COUNT(DISTINCT system_address)
+                        FILTER (WHERE ref IS NOT NULL AND ABS(influence - ref) > 0.005) AS changed
+                FROM refd
                 GROUP BY 1
-                HAVING COUNT(DISTINCT system_address) >= 30
+                HAVING COUNT(DISTINCT system_address) >= 50
             ),
-            smoothed AS (
-                -- Normalized change rate, smoothed with a centered 9-window moving average
-                -- to suppress 15-min noise.
-                SELECT
-                    window_start,
-                    AVG(changed::float / observed) OVER (
-                        ORDER BY window_start ROWS BETWEEN 4 PRECEDING AND 4 FOLLOWING
-                    ) AS rate_ma
+            rated AS (
+                SELECT window_start, changed::float / observed AS rate
                 FROM windows
             ),
-            troughs AS (
-                -- A window is *the* pre-tick lull when its smoothed change-rate is the lowest
-                -- across the preceding ~11 h (most of a full tick cycle) AND the next 2 h, i.e.
-                -- the rate has already bottomed out and turned back up.
-                --
-                -- The old test only compared against +/- 3 h, so during the long, gentle decline
-                -- from the post-tick peak any shallow noise dip was trivially "the minimum within
-                -- 3 h" and got mistaken for the lull — pinning the tick to a random daytime window
-                -- (e.g. a bogus 10:45 when the real trough/tick is ~17:45). Requiring the deepest
-                -- point of the whole cycle isolates the single genuine lull that precedes a tick;
-                -- the 8 FOLLOWING (rate has risen again) is what makes it a trough rather than just
-                -- the lowest-so-far point on the way down.
+            flagged AS (
+                -- For each window: the highest change-rate in the preceding 3 h (the lull
+                -- level), and how many windows of data follow (confirmation guard).
                 SELECT
                     window_start,
-                    rate_ma,
-                    MIN(rate_ma) OVER (
-                        ORDER BY window_start ROWS BETWEEN 44 PRECEDING AND 8 FOLLOWING
-                    ) AS local_min,
+                    rate,
+                    MAX(rate) OVER (
+                        ORDER BY window_start
+                        RANGE BETWEEN INTERVAL '3 hours' PRECEDING
+                                  AND INTERVAL '15 minutes' PRECEDING
+                    ) AS prior_max_rate,
                     COUNT(*) OVER (
-                        ORDER BY window_start ROWS BETWEEN 1 FOLLOWING AND 12 FOLLOWING
+                        ORDER BY window_start
+                        RANGE BETWEEN INTERVAL '15 minutes' FOLLOWING
+                                  AND INTERVAL '2 hours' FOLLOWING
                     ) AS following
-                FROM smoothed
+                FROM rated
             ),
             ticks AS (
-                -- The tick onset is the window just after the lull bottom. One per UTC day
-                -- (the 24 h cadence keeps troughs > 6 h apart, so this only de-dupes ties).
-                SELECT DISTINCT ON ((window_start AT TIME ZONE 'UTC')::date)
-                    window_start + INTERVAL '15 minutes'   AS tick_time,
-                    (window_start AT TIME ZONE 'UTC')::date AS tick_date
-                FROM troughs
-                WHERE rate_ma = local_min
-                  AND following >= 8
-                ORDER BY (window_start AT TIME ZONE 'UTC')::date, window_start
+                -- The tick is the leading edge: the change-rate clears the floor while the
+                -- preceding 3 h was quiet. That quiet-precondition fires only on the
+                -- lull->activity transition, so it self-limits to one per ~24 h cycle.
+                SELECT window_start AS tick_time,
+                       (window_start AT TIME ZONE 'UTC')::date AS tick_date
+                FROM flagged
+                WHERE rate >= 0.007
+                  AND prior_max_rate <= 0.005
+                  AND following >= 6
             )
             SELECT
                 t.tick_time,
                 (
-                    SELECT COUNT(DISTINCT ic.system_address)::int
-                    FROM influence_changes ic
-                    WHERE ic.delta > 0.001
-                      AND ic.event_timestamp >= t.tick_time
-                      AND ic.event_timestamp <  t.tick_time + INTERVAL '24 hours'
+                    SELECT COUNT(DISTINCT r.system_address)::int
+                    FROM refd r
+                    WHERE r.ref IS NOT NULL
+                      AND ABS(r.influence - r.ref) > 0.005
+                      AND r.event_timestamp >= t.tick_time
+                      AND r.event_timestamp <  t.tick_time + INTERVAL '24 hours'
                 ) AS system_count,
                 t.tick_date
             FROM ticks t
