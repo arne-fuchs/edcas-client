@@ -5,6 +5,12 @@ use tracing::{error, info};
 
 const REFRESH_INTERVAL_SECS: u64 = 15 * 60;
 const RADIUS: f32 = 500.0;
+/// Max buy/sell candidates kept per commodity before the all-pairs route join.
+/// Bounds the candidate set so the join can't spill millions of rows to temp
+/// files (a single unbounded refresh once filled the host disk with ~485 GB of
+/// pgsql_tmp). The top few cheapest buys / dearest sells dominate by profit, so
+/// a small cap loses no realistic top-50 route.
+const TOP_PER_COMMODITY: i64 = 25;
 
 pub fn spawn_cache_refresher(pool: Pool) {
     tokio::spawn(async move {
@@ -43,6 +49,7 @@ async fn refresh_routes(pool: &Pool, pad: &str) -> Result<u64, Box<dyn std::erro
     let client = pool.get().await?;
     let pad_clause = pad_nearby_clause(pad);
     let r = RADIUS;
+    let k = TOP_PER_COMMODITY;
 
     let sql = format!(
         r#"
@@ -61,18 +68,26 @@ async fn refresh_routes(pool: &Pool, pad: &str) -> Result<u64, Box<dyn std::erro
             {pad_clause}
         ),
         best_buys AS MATERIALIZED (
-            SELECT DISTINCT ON (cl.name)
-                cl.market_id, cl.name, cl.buy_price, cl.stock
-            FROM commodity_listening cl
-            JOIN nearby n ON n.market_id = cl.market_id
-            WHERE cl.buy_price > 0 AND cl.stock >= 10000 AND cl.stock_bracket > 0
-            ORDER BY cl.name, cl.buy_price ASC
+            SELECT market_id, name, buy_price, stock
+            FROM (
+                SELECT cl.market_id, cl.name, cl.buy_price, cl.stock,
+                       ROW_NUMBER() OVER (PARTITION BY cl.name ORDER BY cl.buy_price ASC) AS rn
+                FROM commodity_listening cl
+                JOIN nearby n ON n.market_id = cl.market_id
+                WHERE cl.buy_price > 0 AND cl.stock >= 10000 AND cl.stock_bracket > 0
+            ) ranked
+            WHERE rn <= {k}
         ),
         sells AS MATERIALIZED (
-            SELECT cl.market_id, cl.name, cl.sell_price, cl.demand
-            FROM commodity_listening cl
-            JOIN nearby n ON n.market_id = cl.market_id
-            WHERE cl.demand > 0 AND cl.sell_price > 0 AND cl.demand_bracket > 0
+            SELECT market_id, name, sell_price, demand
+            FROM (
+                SELECT cl.market_id, cl.name, cl.sell_price, cl.demand,
+                       ROW_NUMBER() OVER (PARTITION BY cl.name ORDER BY cl.sell_price DESC) AS rn
+                FROM commodity_listening cl
+                JOIN nearby n ON n.market_id = cl.market_id
+                WHERE cl.demand > 0 AND cl.sell_price > 0 AND cl.demand_bracket > 0
+            ) ranked
+            WHERE rn <= {k}
         ),
         results AS (
             SELECT
@@ -166,6 +181,7 @@ async fn refresh_loops(pool: &Pool, pad: &str) -> Result<u64, Box<dyn std::error
     let client = pool.get().await?;
     let pad_clause = pad_nearby_clause(pad);
     let r = RADIUS;
+    let k = TOP_PER_COMMODITY;
 
     let sql = format!(
         r#"
@@ -184,18 +200,26 @@ async fn refresh_loops(pool: &Pool, pad: &str) -> Result<u64, Box<dyn std::error
             {pad_clause}
         ),
         best_buys AS MATERIALIZED (
-            SELECT DISTINCT ON (cl.name)
-                cl.market_id, cl.name, cl.buy_price, cl.stock
-            FROM commodity_listening cl
-            JOIN nearby n ON n.market_id = cl.market_id
-            WHERE cl.buy_price > 0 AND cl.stock >= 10000 AND cl.stock_bracket > 0
-            ORDER BY cl.name, cl.buy_price ASC
+            SELECT market_id, name, buy_price, stock
+            FROM (
+                SELECT cl.market_id, cl.name, cl.buy_price, cl.stock,
+                       ROW_NUMBER() OVER (PARTITION BY cl.name ORDER BY cl.buy_price ASC) AS rn
+                FROM commodity_listening cl
+                JOIN nearby n ON n.market_id = cl.market_id
+                WHERE cl.buy_price > 0 AND cl.stock >= 10000 AND cl.stock_bracket > 0
+            ) ranked
+            WHERE rn <= {k}
         ),
         sells AS MATERIALIZED (
-            SELECT cl.market_id, cl.name, cl.sell_price, cl.demand
-            FROM commodity_listening cl
-            JOIN nearby n ON n.market_id = cl.market_id
-            WHERE cl.demand > 0 AND cl.sell_price > 0 AND cl.demand_bracket > 0
+            SELECT market_id, name, sell_price, demand
+            FROM (
+                SELECT cl.market_id, cl.name, cl.sell_price, cl.demand,
+                       ROW_NUMBER() OVER (PARTITION BY cl.name ORDER BY cl.sell_price DESC) AS rn
+                FROM commodity_listening cl
+                JOIN nearby n ON n.market_id = cl.market_id
+                WHERE cl.demand > 0 AND cl.sell_price > 0 AND cl.demand_bracket > 0
+            ) ranked
+            WHERE rn <= {k}
         ),
         -- Best outbound route per (A, B) station pair
         outbound AS MATERIALIZED (

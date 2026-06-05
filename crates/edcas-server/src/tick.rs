@@ -6,6 +6,11 @@ use tracing::{error, info, warn};
 const MIN_TICK_INTERVAL_SECS: i64 = 20 * 3600; // ticks cannot be closer than 20 h
 const FALLBACK_INTERVAL_SECS: i64 = 24 * 3600;
 
+/// Once the predicted tick time has passed we keep returning it (rather than rolling
+/// straight to the next cycle) for this long, so clients display "Tick Imminent" for a
+/// full window instead of a flicker. The real tick lands somewhere inside it.
+const IMMINENT_WINDOW_SECS: i64 = 15 * 60;
+
 // Minimum rows in faction_influence_history within the last 48 h before we trust
 // it for tick detection. Below this threshold the table is too new and we fall back
 // to the slower JSONB scan of journal_events.
@@ -13,7 +18,9 @@ const MIN_HISTORY_ROWS_FOR_DETECTION: i64 = 500;
 
 /// Fetches the last 14 ticks and returns (last_tick, next_predicted_tick, system_count).
 /// Intervals shorter than 20 h are treated as false positives and excluded from the average.
-/// Falls back to +24 h if no valid intervals exist.
+/// Falls back to +24 h if no valid intervals exist. Once the predicted time passes it is held
+/// (kept <= now) for `IMMINENT_WINDOW_SECS` so clients show "Tick Imminent" for a full window
+/// rather than a flicker, then rolls forward to the next cycle.
 pub async fn get_tick_prediction(
     pool: &Pool,
 ) -> anyhow::Result<Option<(DateTime<Utc>, DateTime<Utc>, i32)>> {
@@ -67,7 +74,10 @@ pub async fn get_tick_prediction(
 
     let mut next_predicted = last_tick + chrono::Duration::seconds(avg_secs);
     let now = Utc::now();
-    while next_predicted <= now {
+    // Hold the predicted time in the past for IMMINENT_WINDOW_SECS after it passes — that
+    // keeps next_predicted_tick <= now, which is the signal the client renders as "Tick
+    // Imminent". Only once the window has fully elapsed do we roll forward to the next cycle.
+    while next_predicted + chrono::Duration::seconds(IMMINENT_WINDOW_SECS) <= now {
         next_predicted += chrono::Duration::seconds(avg_secs);
     }
 
