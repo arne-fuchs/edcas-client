@@ -4,6 +4,10 @@
 
 Shows system information compact for explorer.
 
+# THIS REPO IS OUT OF DATE
+
+Currently edcas is being developed on a private repo. Open source release will be available soon.
+
 <h2>Gotta see all those planets!</h2>
 
 ![Screenshot of explorer panel](assets/graphics/screenshots/explorer-screenshot.png "Explorer Panel")
